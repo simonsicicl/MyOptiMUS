@@ -36,72 +36,6 @@ formulator_instruction_template = """
 You are an expert mathematical formulator and an optimization professor at a top university. Your task is to model {targetType} of the problem in the standard LP or MILP form. 
 """
 
-# formulator_prompt_template = """
-
-# Here is a {targetType} we need you to model:
-# -----
-# {targetDescription}
-# -----
-
-# Here is some context on the problem:
-# -----
-# {background}
-# -----
-
-# Here is the list of available variables:
-# -----
-# {variables}
-# -----
-
-# And finally, here is list of input parameters:
-# -----
-# {parameters}
-# -----
-
-# First, take a deep breath and explain how we should define the {targetType}. Feel free to define new variables if you think it is necessary. Then, generate a json file accordingly with the following format (STICK TO THIS FORMAT!):
-
-
-# {{
-#     "{targetType}": {{
-#       "description": "The description of the {targetType}",
-#       "formulation": "The LaTeX mathematical expression representing the formulation of the {targetType}"
-#     }},
-#     "auxiliary_constraints": [
-#         {{
-#             "description": "The description of the auxiliary constraint",
-#             "formulation": "The LaTeX mathematical expression representing the formulation of the auxiliary constraint"
-#         }}
-#     ]
-#     "new_variables": [
-#         {{
-#             "definition": "The definition of the variable",
-#             "symbol": "The symbol for the variable",
-#             "shape": [ "symbol1", "symbol2", ... ]
-#         }}
-#     ],
-#     "related_variables": [
-#         {{
-
-#         }}
-#     ]
-# }}
-
-# - Your formulation should be in LaTeX mathematical format (do not include the $ symbols). 
-# - Note that I'm going to use python json.loads() function to parse the json file, so please make sure the format is correct (don't add ',' before enclosing '}}' or ']' characters.
-# - Generate the complete json file and don't omit anything.
-# - Use '```json' and '```' to enclose the json file.
-# - Important: You can not define new parameters. You can only define new variables.Use CamelCase and full words for new variable symbols, and do not include indices in the symbol (e.g. ItemsSold instead of itemsSold or items_sold or ItemsSold_i)
-# - Use \\textup{{}} when writing variable and parameter names. For example (\\sum_{{i=1}}^{{N}} \\textup{{ItemsSold}}_{{i}} instead of \\sum_{{i=1}}^{{N}} ItemsSold_{{i}})
-# - Use \\quad for spaces.
-# - Use empty list ([]) if no new variables are defined.
-# - Always use non-strict inequalities (e.g. \\leq instead of <), even if the constraint is strict.
-# - Define auxiliary constraints when necessary. Set it to an empty list ([]) if no auxiliary constraints are needed. If new auxiliary constraints need new variables, add them to the "new_variables" list too.
-# - All \\ in the result should be expended to \\\\ to fit the format string requirement, included the term mentioned before
-
-# Take a deep breath and solve the problem step by step.
-
-# """
-
 formulator_prompt_template = """
 
 Here is a {targetType} we need you to model:
@@ -170,6 +104,165 @@ Take a deep breath and solve the problem step by step.
 
 """
 
+variable_definition_instruction_template = """
+You're an expert programmer in a team of optimization experts. The goal of the team is to solve an optimization problem. Your responsibility is to write {solver} code for defining variables of the problem.
+"""
+variable_definition_prompt_template = """
+Here's a variable we need you to write the code for defining:
+
+-----
+{variable}
+-----
+
+Assume the parameters are defined. Now generate a code accordingly and enclose it between "=====" lines. Only generate the code, and don't generate any other text. Here's an example:
+
+**input**:
+
+{{
+    "definition": "Quantity of oil i bought in month m",
+    "symbol": "buy_{{i,m}}",
+    "shape": ["I","M"] 
+}}
+
+***output***:
+
+=====
+buy = model.addVars(I, M, vtype=gp.GRB.CONTINUOUS, name="buy")
+=====
+
+
+- Note that the indices in symbol (what comes after _) are not a part of the variable name in code.
+- Use model.addVar instead of model.addVars if the variable is a scalar.
+
+"""
+
+main_constraint_instruction_template = """
+You're an expert programmer in a team of optimization experts. The goal of the team is to solve an optimization problem. Your responsibility is to write {solver} code for different constraints of the problem. 
+"""
+
+main_constraint_prompt_template = """
+Here's a constraint we need you to write the code for, along with the list of related variables and parameters:
+
+-----
+{context}
+-----
+
+- Assume the parameters and variables are defined, and gurobipy is imported as gp. Now generate a code accordingly and enclose it between "=====" lines. 
+- Only generate the code and the ===== lines, and don't generate any other text.
+- If the constraint requires changing a variable's integralilty, generate the code for changing the variable's integrality rather than defining the variable again.
+- If there is no code needed, just generate the comment line (using # ) enclosed in ===== lines explaining why.
+- Variables should become before parameters when defining inequality constraints in gurobipy (because of the gurobi parsing order syntax)
+
+Here's an example:
+
+
+**input**:
+
+
+{{
+    "description": "in month m, it is possible to store up to storageSize_{{m}} tons of each raw oil for use later.",
+    "formulation": "\\(storage_{{i,m}} \\leq storageSize, \\quad \\forall i, m\\)",
+    "related_variables": [
+        {{
+            "symbol": "storage_{{i,m}}",
+            "definition": "quantity of oil i stored in month m",
+            "shape": [
+                "I",
+                "M"
+            ]
+        }}
+        ],
+    "related_parameters": [
+        {{
+            "symbol": "storageSize_{{m}}",
+            "definition": "storage size available in month m",
+            "shape": [
+                "M"
+            ]
+        }}
+    ]
+}}
+
+***output***:
+
+=====
+# Add storage capacity constraints
+for i in range(I):
+    for m in range(M):
+        model.addConstr(storage[i, m] <= storageSize[m], name="storage_capacity")
+=====
+
+Take a deep breath and approach this task methodically, step by step.
+
+"""
+main_objective_instruction_template = """
+You're an expert programmer in a team of optimization experts. The goal of the team is to solve an optimization problem. Your responsibility is to write {solver} code for the objective function of the problem.
+"""
+main_objective_prompt_template = """"
+Here's the objective function we need you to write the code for, along with the list of related variables and parameters:
+
+-----
+{context}
+-----
+
+Assume the parameters and variables are defined, and gurobipy is imported as gp. Now generate a code accordingly and enclose it between "=====" lines. Only generate the code and the =====s, and don't generate any other text. Here's an example:
+
+**input**:
+
+{{
+    "description": "Maximize the total profit from selling goods",
+    "formulation": "Maximize \\(Z = \\sum_{{k=1}}^{{K}} \\sum_{{i=1}}^{{I}} (profit_k \\cdot x_{{k,i}} - storeCost \\cdot s_{{k,i}})\\)",
+    "related_variables": [
+        {{
+            "symbol": "x_{{k,i}}",
+            "definition": "quantity of product k produced in month i",
+            "shape": [
+                "K",
+                "I"
+            ],
+            "code": "x = model.addVars(K, I, vtype=gp.GRB.CONTINUOUS, name='x')"
+        }},
+        {{
+            "symbol": "s_{{k,i}}",
+            "definition": "quantity of product k stored in month i",
+            "shape": [
+                "K",
+                "I"
+            ],
+            "code": "s = model.addVars(K, I, vtype=gp.GRB.CONTINUOUS, name='s')"
+        }}
+    ],
+    "related_parameters": [
+        {{
+            "symbol": "profit_{{k}}",
+            "definition": "profit from selling product k",
+            "shape": [
+                "K"
+            ]
+        }},
+        {{
+            "symbol": "storeCost",
+            "definition": "price of storing one unit of product",
+            "shape": []
+        }}
+    ]
+}}
+
+
+***output***:
+
+=====
+# Set objective
+m.setObjective(gp.quicksum(profit[k] * x[k, i] - storeCost * s[k, i] for k in range(K) for i in range(I)), gp.GRB.MAXIMIZE)
+=====
+
+Take a deep breath and approach this task methodically, step by step.
+
+"""
+
+main_instruction_templates = {"constraints": main_constraint_instruction_template, "objective": main_objective_instruction_template}
+main_prompt_templates = {"constraints": main_constraint_prompt_template, "objective": main_objective_prompt_template}
+
 problem_path = "data/nlp4lp/1/"
 
 
@@ -185,8 +278,9 @@ if __name__ == "__main__":
     
     target_type = "constraints"
     model = "gpt-4-1106-preview"
-    seed = 2
     # model = "gpt-4o"
+    seed = 2
+    solver = 'gurobipy'
     instruction = formulator_instruction_template.format(targetType=target_type)
     # state[target_type] = [state[target_type]]
     state['variables'] = []
@@ -263,3 +357,50 @@ if __name__ == "__main__":
     #     auxiliary_constraints_start -= 1
     # while output[auxiliary_constraints_start] != '"':
     #     auxiliary_constraints_start -= 1
+
+    for variable in state["variables"]:
+        if variable["status"] == "formulated":
+            messages = [
+                {"role": "developer", "content": variable_definition_instruction_template.format(solver=solver)},
+                {"role": "user", "content": variable_definition_prompt_template.format(variable=variable)},
+            ]
+            completion = client.chat.completions.create(messages=messages, model=model, seed=seed)
+            response = completion.choices[0].message.content
+            code = [r.strip() for r in response.split("=====") if len(r.strip()) > 2][0]
+            variable["code"] = code
+            variable["status"] = "coded"
+        elif variable["status"] == "coded":
+            pass
+
+    for target_type in ["constraints", "objective"]:
+        for target in state[target_type]:
+            if target["status"] == "formulated":
+                context = {}
+                context["description"] = target["description"]
+                context["formulation"] = target["formulation"]
+                context["related_variables"] = []
+                context["related_parameters"] = []
+
+                for each in state["parameters"]:
+                    if each["symbol"] in target["related_parameters"]:
+                        context["related_parameters"].append(each)
+
+                for each in state["variables"]:
+                    if each["symbol"] in target["related_variables"]:
+                        context["related_variables"].append(each)
+
+                messages = [
+                    {"role": "developer", "content": main_instruction_templates[target_type].format(solver=solver)},
+                    {"role": "user", "content": main_prompt_templates[target_type].format(context=json.dumps(context, indent=4))},
+                ]
+
+                completion = client.chat.completions.create(messages=messages, model=model, seed=seed)
+                response = completion.choices[0].message.content
+                code = [r.strip() for r in response.split("=====") if len(r.strip()) > 2][0]
+                target["code"] = code
+                target["status"] = "coded"
+            elif target["status"] == "coded":
+                pass
+    print('state')
+    print(json.dumps(state, indent=4))
+    print("="*20)
