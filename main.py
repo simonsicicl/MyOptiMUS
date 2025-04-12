@@ -4,24 +4,15 @@ import traceback
 import numpy
 from openai import OpenAI
 from dotenv import load_dotenv
+from template_loader import TemplateLoader
 
-names = ["evaluator", "formulator", "manager", "programmer_variable", "programmer_constraints", "programmer_objective"]
-templates = {}
-problem_path = "data/nlp4lp/1/"
+template_path = "./template/"
+problem_path = "data/nlp4lp/10/"
 
 if __name__ == "__main__":
     load_dotenv()
 
-    for name in names:
-        for each in ["_instruction", "_prompt"]:
-            with open("./template/" + name + each + "_template.txt") as f:
-                templates[name + each] = f.read()
-    with open("./template/prep_code.txt") as f:
-        templates['prep_code'] = f.read()
-    with open("./template/post_code.txt") as f:
-        templates['post_code'] = f.read()
-    with open("./template/solver_prep_code.txt") as f:
-        templates['solver_prep_code'] = f.read()
+    templates = TemplateLoader(template_path=template_path)
 
     client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'), organization=os.environ.get('OPENAI_ORG_KEY'))
 
@@ -34,9 +25,10 @@ if __name__ == "__main__":
     seed = 2
     solver = 'gurobipy'
     instruction = templates['formulator_instruction'].format(targetType=target_type)
-    # state[target_type] = [state[target_type]]
     state['variables'] = []
     state["objective"] = [state["objective"]]
+
+    print('Formulating...')
 
     for parameter in state["parameters"]:
         # assert "shape" in parameter.keys(), "shape is not defined for parameter"
@@ -120,6 +112,8 @@ if __name__ == "__main__":
     print(json.dumps(state, indent=4))
     print("="*20)
 
+    print('Programming...')
+
     for variable in state["variables"]:
         if variable["status"] == "formulated":
             messages = [
@@ -163,9 +157,12 @@ if __name__ == "__main__":
                 target["status"] = "coded"
             elif target["status"] == "coded":
                 pass
-    print('state after programming')
-    print(json.dumps(state, indent=4))
-    print("="*20)
+    
+    # print('state after programming')
+    # print(json.dumps(state, indent=4))
+    # print("="*20)
+
+    print('Evaluating...')
 
     local_env = {}
     code = ""
@@ -224,7 +221,6 @@ if __name__ == "__main__":
             "error_message": None,
         }
     except Exception as e:
-            print(local_env)
             print("COOOODE")
             print(code)
             print()
