@@ -6,6 +6,7 @@ from openai import OpenAI
 from dotenv import load_dotenv
 from template_loader import TemplateLoader
 from formulator import Formulator
+from programmer import Programmer
 
 template_path = "./template/"
 problem_path = "data/nlp4lp/10/"
@@ -21,7 +22,8 @@ if __name__ == "__main__":
     templates = TemplateLoader(template_path=template_path)
     client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'), organization=os.environ.get('OPENAI_ORG_KEY'))
 
-    formulator = Formulator(client=client, model = model)
+    formulator = Formulator(client=client, model=model)
+    programmer = Programmer(client=client, model=model)
 
     with open(f"{problem_path}/input_targets.json", "r") as f:
         state = json.load(f)
@@ -33,55 +35,13 @@ if __name__ == "__main__":
 
     formulator.run(state=state, templates=templates)
 
-    print('state after formulation')
-    print(json.dumps(state, indent=4))
-    print("="*20)
+    # print('state after formulation')
+    # print(json.dumps(state, indent=4))
+    # print("="*20)
 
     print('Programming...')
 
-    for variable in state["variables"]:
-        if variable["status"] == "formulated":
-            messages = [
-                {"role": "developer", "content": templates['programmer_variable_instruction'].format(solver=solver)},
-                {"role": "user", "content": templates['programmer_variable_prompt'].format(variable=variable)},
-            ]
-            completion = client.chat.completions.create(messages=messages, model=model, seed=seed)
-            response = completion.choices[0].message.content
-            code = [r.strip() for r in response.split("=====") if len(r.strip()) > 2][0]
-            variable["code"] = code
-            variable["status"] = "coded"
-        elif variable["status"] == "coded":
-            pass
-
-    for target_type in ["constraints", "objective"]:
-        for target in state[target_type]:
-            if target["status"] == "formulated":
-                context = {}
-                context["description"] = target["description"]
-                context["formulation"] = target["formulation"]
-                context["related_variables"] = []
-                context["related_parameters"] = []
-
-                for each in state["parameters"]:
-                    if each["symbol"] in target["related_parameters"]:
-                        context["related_parameters"].append(each)
-
-                for each in state["variables"]:
-                    if each["symbol"] in target["related_variables"]:
-                        context["related_variables"].append(each)
-
-                messages = [
-                    {"role": "developer", "content": templates['programmer_' + target_type + '_instruction'].format(solver=solver)},
-                    {"role": "user", "content": templates['programmer_' + target_type + '_prompt'].format(context=json.dumps(context, indent=4))},
-                ]
-
-                completion = client.chat.completions.create(messages=messages, model=model, seed=seed)
-                response = completion.choices[0].message.content
-                code = [r.strip() for r in response.split("=====") if len(r.strip()) > 2][0]
-                target["code"] = code
-                target["status"] = "coded"
-            elif target["status"] == "coded":
-                pass
+    programmer.run(state=state, templates=templates)
     
     # print('state after programming')
     # print(json.dumps(state, indent=4))
