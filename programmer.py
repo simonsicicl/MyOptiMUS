@@ -1,20 +1,18 @@
 import json
 from openai import OpenAI, Client
 from template_loader import TemplateLoader
+from agent import Agent
 
-class Programmer:
-    def __init__(self, client:Client, model:str):
-        self.client = client
-        self.model = model
-        self.seed = 2
-        self.solver = 'gurobipy'
+class Programmer(Agent):
+    def __init__(self, client:Client, model:str, templates:TemplateLoader):
+        super().__init__(client=client, model=model, templates=templates)
 
-    def run(self, state:dict, templates:TemplateLoader):
+    def run(self, state:dict):
         for variable in state["variables"]:
             if variable["status"] == "formulated":
                 messages = [
-                    {"role": "developer", "content": templates['programmer_variable_instruction'].format(solver=self.solver)},
-                    {"role": "user", "content": templates['programmer_variable_prompt'].format(variable=variable)},
+                    {"role": "developer", "content": self.templates['programmer_variable_instruction'].format(solver=self.solver)},
+                    {"role": "user", "content": self.templates['programmer_variable_prompt'].format(variable=variable)},
                 ]
                 completion = self.client.chat.completions.create(messages=messages, model=self.model, seed=self.seed)
                 response = completion.choices[0].message.content
@@ -42,8 +40,8 @@ class Programmer:
                             context["related_variables"].append(each)
 
                     messages = [
-                        {"role": "developer", "content": templates['programmer_' + target_type + '_instruction'].format(solver=self.solver)},
-                        {"role": "user", "content": templates['programmer_' + target_type + '_prompt'].format(context=json.dumps(context, indent=4))},
+                        {"role": "developer", "content": self.templates['programmer_' + target_type + '_instruction'].format(solver=self.solver)},
+                        {"role": "user", "content": self.templates['programmer_' + target_type + '_prompt'].format(context=json.dumps(context, indent=4))},
                     ]
 
                     completion = self.client.chat.completions.create(messages=messages, model=self.model, seed=self.seed)

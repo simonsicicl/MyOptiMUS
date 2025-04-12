@@ -2,22 +2,20 @@ import json
 import traceback
 from openai import OpenAI, Client
 from template_loader import TemplateLoader
+from agent import Agent
 
-class Evaluator:
-    def __init__(self, client:Client, model:str):
-        self.client = client
-        self.model = model
-        self.seed = 2
-        self.solver = 'gurobipy'
+class Evaluator(Agent):
+    def __init__(self, client:Client, model:str, templates:TemplateLoader):
+        super().__init__(client=client, model=model, templates=templates)
 
-    def run(self, state:dict, templates:TemplateLoader):
+    def run(self, state:dict):
         local_env = {}
         code = ""
         last_line = ""
         bogus_context = None
 
         try:
-            last_line = templates['prep_code'].format(solver_prep_code=templates['solver_prep_code'], data_json_path=state['problem_path']+"data.json")
+            last_line = self.templates['prep_code'].format(solver_prep_code=self.templates['solver_prep_code'], data_json_path=state['problem_path']+"data.json")
             code += last_line + "\n"
 
             exec(last_line, local_env, local_env)
@@ -52,7 +50,7 @@ class Evaluator:
             exec(last_line, local_env, local_env)
 
             bogus_context = None
-            last_line = templates['post_code']
+            last_line = self.templates['post_code']
             code += last_line + "\n"
             exec(last_line, local_env, local_env)
 
@@ -92,7 +90,7 @@ class Evaluator:
         if not res["success"]:
             state["solution_status"] = "runtime_error"
             state["error_message"] = res["error_message"]
-            state["prep_code"] = templates['prep_code'].format(solver_prep_code=templates['solver_prep_code'], data_json_path=state['problem_path']+"data.json")
+            state["prep_code"] = self.templates['prep_code'].format(solver_prep_code=self.templates['solver_prep_code'], data_json_path=state['problem_path']+"data.json")
             code += last_line + "\n"
 
             # if not res["bogus_context"]:

@@ -23,9 +23,9 @@ if __name__ == "__main__":
     templates = TemplateLoader(template_path=template_path)
     client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'), organization=os.environ.get('OPENAI_ORG_KEY'))
 
-    formulator = Formulator(client=client, model=model)
-    programmer = Programmer(client=client, model=model)
-    evaluator = Evaluator(client=client, model=model)
+    formulator = Formulator(client=client, model=model, templates=templates)
+    programmer = Programmer(client=client, model=model, templates=templates)
+    evaluator = Evaluator(client=client, model=model, templates=templates)
 
     with open(f"{problem_path}/input_targets.json", "r") as f:
         state = json.load(f)
@@ -36,7 +36,7 @@ if __name__ == "__main__":
 
     print('Formulating...')
 
-    formulator.run(state=state, templates=templates)
+    formulator.run(state=state)
 
     # print('state after formulation')
     # print(json.dumps(state, indent=4))
@@ -44,7 +44,7 @@ if __name__ == "__main__":
 
     print('Programming...')
 
-    programmer.run(state=state, templates=templates)
+    programmer.run(state=state)
     
     # print('state after programming')
     # print(json.dumps(state, indent=4))
@@ -52,7 +52,7 @@ if __name__ == "__main__":
 
     print('Evaluating...')
 
-    evaluator.run(state=state, templates=templates)
+    evaluator.run(state=state)
     
     print('state after evaluation')
     print(json.dumps(state, indent=4))

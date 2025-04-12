@@ -1,14 +1,13 @@
 import json
 from openai import OpenAI, Client
 from template_loader import TemplateLoader
+from agent import Agent
 
-class Formulator:
-    def __init__(self, client:Client, model:str):
-        self.client = client
-        self.model = model
-        self.seed = 2
-        self.solver = 'gurobipy'
-    def run(self, state:dict, templates:TemplateLoader):
+class Formulator(Agent):
+    def __init__(self, client:Client, model:str, templates:TemplateLoader):
+        super().__init__(client=client, model=model, templates=templates)
+
+    def run(self, state:dict):
         for parameter in state["parameters"]:
             # assert "shape" in parameter.keys(), "shape is not defined for parameter"
             # assert "symbol" in parameter.keys(), "symbol is not defined for parameter"
@@ -27,7 +26,7 @@ class Formulator:
             state[target] = [{"description": x, "status": "not_formulated"} for x in state[target]]
         for target_type in ['constraints', 'objective']:
             for target in state[target_type]:
-                prompt = templates['formulator_prompt'].format(
+                prompt = self.templates['formulator_prompt'].format(
                     background=state["background"],
                     targetType=target_type,
                     targetDescription=target["description"],
@@ -55,7 +54,7 @@ class Formulator:
                     )
                 )
                 messages = [
-                    {"role": "developer", "content": templates['formulator_instruction'].format(targetType=target_type)},
+                    {"role": "developer", "content": self.templates['formulator_instruction'].format(targetType=target_type)},
                     {"role": "user", "content": prompt},
                 ]
                 completion = self.client.chat.completions.create(model=self.model, messages=messages, seed=self.seed)
