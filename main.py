@@ -5,108 +5,33 @@ import numpy
 from openai import OpenAI
 from dotenv import load_dotenv
 from template_loader import TemplateLoader
+from formulator import Formulator
 
 template_path = "./template/"
 problem_path = "data/nlp4lp/10/"
+
+model = "gpt-4-1106-preview"
+# model = "gpt-4o"
+seed = 2
+solver = 'gurobipy'
 
 if __name__ == "__main__":
     load_dotenv()
 
     templates = TemplateLoader(template_path=template_path)
-
     client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'), organization=os.environ.get('OPENAI_ORG_KEY'))
+
+    formulator = Formulator(client=client, model = model)
 
     with open(f"{problem_path}/input_targets.json", "r") as f:
         state = json.load(f)
     
-    target_type = "constraints"
-    model = "gpt-4-1106-preview"
-    # model = "gpt-4o"
-    seed = 2
-    solver = 'gurobipy'
-    instruction = templates['formulator_instruction'].format(targetType=target_type)
     state['variables'] = []
     state["objective"] = [state["objective"]]
 
     print('Formulating...')
 
-    for parameter in state["parameters"]:
-        # assert "shape" in parameter.keys(), "shape is not defined for parameter"
-        # assert "symbol" in parameter.keys(), "symbol is not defined for parameter"
-        # assert (
-        #     "definition" in parameter.keys() and len(parameter["definition"]) > 0
-        # ), "definition is not defined for parameter"
-
-        if parameter["shape"]:
-            code_symbol = parameter["symbol"].split("_")[0]
-            parameter["code"] = (
-                f'{code_symbol} = np.array(data["{code_symbol}"]) # {parameter["shape"]}'
-            )
-        else:
-            code_symbol = parameter["symbol"].split("_")[0]
-            parameter["code"] = (
-                f'{code_symbol} = data["{code_symbol}"] # scalar parameter'
-            )
-
-    for target in ["constraints", "objective"]:
-        state[target] = [
-            {
-                "description": x,
-                "status": "not_formulated",
-            }
-            for x in state[target]
-        ]
-    for target_type in ['constraints', 'objective']:
-        for target in state[target_type]:
-            prompt = templates['formulator_prompt'].format(
-                background=state["background"],
-                targetType=target_type,
-                targetDescription=target["description"],
-                variables=json.dumps(
-                    [
-                        {
-                            "definition": v["definition"],
-                            "symbol": v["symbol"],
-                            "shape": v["shape"],
-                        }
-                        for v in state["variables"]
-                    ],
-                    indent=4,
-                ),
-                parameters=json.dumps(
-                    [
-                        {
-                            "definition": p["definition"],
-                            "symbol": p["symbol"],
-                            "shape": p["shape"],
-                        }
-                        for p in state["parameters"]
-                    ],
-                    indent=4,
-                )
-            )
-            messages = [
-                {"role": "developer", "content": instruction},
-                {"role": "user", "content": prompt},
-            ]
-            completion = client.chat.completions.create(
-                model=model,
-                messages=messages,
-                seed=seed,
-            )
-            output = completion.choices[0].message.content
-
-            output = output[output.find("```json") + 7 :]
-            output = output[: output.rfind("```")]
-
-            output = json.loads(output)
-
-            for each in output["auxiliary_constraints"]:
-                state["constraints"].append(each)
-            for each in output["new_variables"]:
-                state["variables"].append(each)
-            for key_name in output[target_type].keys():
-                target[key_name] = output[target_type][key_name]
+    formulator.run(state=state, templates=templates)
 
     print('state after formulation')
     print(json.dumps(state, indent=4))
