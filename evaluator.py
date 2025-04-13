@@ -1,5 +1,6 @@
 import json
 import traceback
+import gurobipy as gp
 from openai import OpenAI, Client
 from template_loader import TemplateLoader
 from agent import Agent
@@ -67,9 +68,6 @@ class Evaluator(Agent):
                 "error_message": None,
             }
         except Exception as e:
-                print("COOOODE")
-                print(code)
-                print()
                 if not bogus_context:
                     error_msg = traceback.format_exc()
                     raise Exception(

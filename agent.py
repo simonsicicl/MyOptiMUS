@@ -8,7 +8,6 @@ class Agent:
         self.description=description
         self.client = client
         self.model = model
-        self.seed = 2
         self.solver = 'gurobipy'
         self.templates = templates
 

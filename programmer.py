@@ -26,9 +26,15 @@ class Programmer(Agent):
                     {"role": "developer", "content": self.templates['programmer_variable_instruction'].format(solver=self.solver)},
                     {"role": "user", "content": self.templates['programmer_variable_prompt'].format(variable=variable)},
                 ]
-                completion = self.client.chat.completions.create(messages=messages, model=self.model, seed=self.seed)
-                response = completion.choices[0].message.content
-                code = [r.strip() for r in response.split("=====") if len(r.strip()) > 2][0]
+                for cnt in range(2, -2, -1):
+                    assert cnt >= 0, "    Programmer : Generating code for got variable invalid response!"
+                    try:
+                        completion = self.client.chat.completions.create(messages=messages, model=self.model, seed=cnt)
+                        response = completion.choices[0].message.content
+                        code = [r.strip() for r in response.split("=====") if len(r.strip()) > 2][0]
+                        break
+                    except Exception as e:
+                        print("    Programmer : Generating code for variable got invalid response! Try again ...")
                 variable["code"] = code
                 variable["status"] = "coded"
             elif variable["status"] == "coded":
@@ -55,10 +61,15 @@ class Programmer(Agent):
                         {"role": "developer", "content": self.templates['programmer_' + target_type + '_instruction'].format(solver=self.solver)},
                         {"role": "user", "content": self.templates['programmer_' + target_type + '_prompt'].format(context=json.dumps(context, indent=4))},
                     ]
-
-                    completion = self.client.chat.completions.create(messages=messages, model=self.model, seed=self.seed)
-                    response = completion.choices[0].message.content
-                    code = [r.strip() for r in response.split("=====") if len(r.strip()) > 2][0]
+                    for cnt in range(2, -2, -1):
+                        assert cnt >= 0, "    Programmer : Generating code for {target_type} got invalid response!".format(target_type=target_type)
+                        try:
+                            completion = self.client.chat.completions.create(messages=messages, model=self.model, seed=cnt)
+                            response = completion.choices[0].message.content
+                            code = [r.strip() for r in response.split("=====") if len(r.strip()) > 2][0]
+                            break
+                        except Exception as e:
+                            print("    Programmer : Generating code for {target_type} got invalid response! Try again ...").format(target_type=target_type)
                     target["code"] = code
                     target["status"] = "coded"
                 elif target["status"] == "coded":
@@ -91,7 +102,6 @@ class Programmer(Agent):
                 if variable["symbol"] in bogus_context["related_variables"]:
                     if not "code" in variable:
                         raise Exception(f"Variable {variable} is not coded yet!")
-
                     prep_code += variable["code"] + "\n"
             prompt = self.templates['programmer_debuger_targets_prompt'].format(
                 target=target,
@@ -124,13 +134,15 @@ class Programmer(Agent):
             raise Exception(
                 f"Invalid bogus_context {bogus_context}! \n {json.dumps(state, indent=4)}"
             )
-
-        completion = self.client.chat.completions.create(messages=messages, model=self.model, seed=self.seed)
-        response = completion.choices[0].message.content
-
-        response = response.split("```json")[1].split("```")[0]
-        print(response)
-        input()
+        for cnt in range(2, -2, -1):
+            assert cnt >= 0, "    Programmer : Debug got invalid response!"
+            try:
+                completion = self.client.chat.completions.create(messages=messages, model=self.model, seed=cnt)
+                response = completion.choices[0].message.content
+                response = response.split("```json")[1].split("```")[0]
+                break
+            except Exception as e:
+                print("    Programmer : Debug got invalid response! Try again ...")
 
         update = json.loads(response)
 

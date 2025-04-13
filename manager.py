@@ -18,10 +18,23 @@ class Manager(Agent):
     def run(self, state:dict) -> tuple[str, dict]: 
         self.history = []
 
+        for parameter in state["parameters"]:
+            assert "shape" in parameter.keys(), "Parameter: Shape is not defined"
+            assert "symbol" in parameter.keys(), "Parameter: Symbol is not defined"
+            assert ("definition" in parameter.keys() and len(parameter["definition"]) > 0), "Parameter: definition is not defined"
+
+            if parameter["shape"]:
+                code_symbol = parameter["symbol"].split("_")[0]
+                parameter["code"] = (f'{code_symbol} = np.array(data["{code_symbol}"]) # {parameter["shape"]}')
+            else:
+                code_symbol = parameter["symbol"].split("_")[0]
+                parameter["code"] = (f'{code_symbol} = data["{code_symbol}"] # scalar parameter')
+
+        for target in ["constraints", "objective"]:
+            state[target] = [{"description": x, "status": "not_formulated"} for x in state[target]]
+
         while self.conversation_state["round"] < self.max_rounds:
-            print("=" * 40)
-            print("=" * 40)
-            print("Round", self.conversation_state["round"])
+            print("Round", self.conversation_state["round"], end=':')
 
             agents_list = "".join(["-" + agent.name + ": " + agent.description + "\n" for agent in self.agents])
 
@@ -36,25 +49,29 @@ class Manager(Agent):
                 }
             ]
 
-            completion = self.client.chat.completions.create(model=self.model, messages=messages, seed=self.seed)
-            response = completion.choices[0].message.content
-            
-
-            decision = response.strip()
-            if "```json" in decision:
-                decision = decision.split("```json")[1].split("```")[0]
-            decision = decision.replace("\\", "")
-            print(decision)
-
-            if decision == "DONE":
-                print("DONE")
-                return "The problem is solved.", state
-            
-            decision = json.loads(decision)
+            for cnt in range(2, -2, -1):
+                assert cnt >= 0, "\n    Invalid decision!"
+                try:
+                    completion = self.client.chat.completions.create(model=self.model, messages=messages, seed=cnt)
+                    response = completion.choices[0].message.content
+                    decision = response.strip()
+                    if "```json" in decision:
+                        decision = decision.split("```json")[1].split("```")[0]
+                    decision = decision.replace("\\", "")
+                    if decision == "DONE":
+                        print(" The problem is SOLVED!")
+                        return "The problem is solved.", state
+                    decision = json.loads(decision)
+                    break
+                except Exception as e:
+                    print("\n    Invalid decision! Trying again ...")
+                
         
-            print("---- History:\n", "\n".join([json.dumps(item[0]) for item in self.history]))
+            # print("---- History:\n", "\n".join([json.dumps(item[0]) for item in self.history]))
 
-            print(f"\n---- Decision:||{decision}||\n")
+            # print(f"\n---- Decision:||{decision}||\n")
+
+            print(f" {decision["agent_name"]}\t\t{decision["task"]}")
 
             if not decision["agent_name"] in [agent.name for agent in self.agents]:
                 raise ValueError(f"Decision {decision} is not a valid agent name. Please choose from {self.agents}")
@@ -62,6 +79,8 @@ class Manager(Agent):
             agent = [each for each in self.agents if each.name == decision["agent_name"]][0]
 
             message, state = agent.run(state=state)
+
+            # print(message)
 
             with open(f"{state['log_path']}log_{self.conversation_state['round']}.json", "w") as f:
                 json.dump(state, f, indent=4)
@@ -77,4 +96,5 @@ class Manager(Agent):
                     f.write(state["code"])
 
             self.conversation_state["round"] += 1
-        return "The problem is not solved.", state
+        print("The problem is NOT SOLVED!")
+        return "The problem is NOT SOLVED!", state
