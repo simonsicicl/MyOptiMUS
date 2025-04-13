@@ -72,6 +72,14 @@ class Manager(Agent):
                         decision = decision.split("```json")[1].split("```")[0]
                     decision = decision.replace("\\", "")
                     if decision == "DONE":
+                        state['round'] = self.conversation_state["round"]
+                        state['agent_calls'] = {
+                            'Formulator': 0,
+                            'Programmer': 0,
+                            'Evaluator': 0
+                        }
+                        for each in self.history:
+                            state['agent_calls'][each[0]['agent_name']] += 1
                         print(" The problem is SOLVED!")
                         return "The problem is solved.", state
                     decision = json.loads(decision)
