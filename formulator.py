@@ -14,25 +14,33 @@ class Formulator(Agent):
     def run(self, state:dict) -> tuple[str, dict]: 
         for target_type in ['constraints', 'objective']:
             for target in state[target_type]:
+                if not "status" in target.keys():
+                    return ("CRASHED", state)
+                
                 if target["status"] == "formulated" or target["status"] == "coded":
                     continue
 
                 if target["status"] == "runtime_error":
-                    prompt = self.templates['formulator_fix_prompt'].format(
-                        target=target_type,
-                        constraint=json.dumps(target["description"], indent=4),
-                        variables=json.dumps(state["variables"], indent=4),
-                        parameters=json.dumps(state["parameters"], indent=4),
-                        formulation=json.dumps(target["formulation"], indent=4),
-                        json=json.dumps(target),
-                        error=state["error_message"],
-                    )
-                    messages = [
-                        {"role": "developer", "content": self.templates['formulator_fix_instruction'].format(target=target_type)},
-                        {"role": "user", "content": prompt}
-                    ]
+                    try:
+                        prompt = self.templates['formulator_fix_prompt'].format(
+                            target=target_type,
+                            constraint=json.dumps(target["description"], indent=4),
+                            variables=json.dumps(state["variables"], indent=4),
+                            parameters=json.dumps(state["parameters"], indent=4),
+                            formulation=json.dumps(target["formulation"], indent=4),
+                            json=json.dumps(target),
+                            error=state["error_message"],
+                        )
+                        messages = [
+                            {"role": "developer", "content": self.templates['formulator_fix_instruction'].format(target=target_type)},
+                            {"role": "user", "content": prompt}
+                        ]
+                    except:
+                        return ("CRASHED", state)
                     for cnt in range(2, -2, -1):
-                        assert cnt >= 0, "    Invalid json format!"
+                        # assert cnt >= 0, "    Invalid json format!"
+                        if cnt < 0:
+                            return ("CRASHED", state)
                         try:
                             completion = self.client.chat.completions.create(model=self.model, messages=messages, seed=cnt)
                             output = completion.choices[0].message.content
@@ -44,26 +52,36 @@ class Formulator(Agent):
                             break
                         except Exception as e:
                             print(f"    Invalid json format in {target_type} formulation! Try again ...")
-                    target["formulation"] = update["formulation"]
-                    target["related_variables"] = update["related_variables"]
-                    target["related_parameters"] = update["related_parameters"]
-                    target["status"] = "formulated"
+                    try:
+                        target["formulation"] = update["formulation"]
+                        target["related_variables"] = update["related_variables"]
+                        target["related_parameters"] = update["related_parameters"]
+                        target["status"] = "formulated"
+                        return "Formulation Done!", state
+                    except:
+                        return ("CRASHED", state)
                 
-                assert target["status"] == "not_formulated", f"Invalid status: {json.dumps(target, indent=4)}"
-
-                prompt = self.templates['formulator_prompt'].format(
-                    background=state["background"],
-                    targetType=target_type,
-                    targetDescription=target["description"],
-                    variables=json.dumps(state["variables"], indent=4),
-                    parameters=json.dumps(state["parameters"], indent=4)
-                )
-                messages = [
-                    {"role": "developer", "content": self.templates['formulator_instruction'].format(targetType=target_type)},
-                    {"role": "user", "content": prompt},
-                ]
+                # assert target["status"] == "not_formulated", f"Invalid status: {json.dumps(target, indent=4)}"
+                if target["status"] != "not_formulated":
+                    return ("CRASHED", state)
+                try:
+                    prompt = self.templates['formulator_prompt'].format(
+                        background=state["background"],
+                        targetType=target_type,
+                        targetDescription=target["description"],
+                        variables=json.dumps(state["variables"], indent=4),
+                        parameters=json.dumps(state["parameters"], indent=4)
+                    )
+                    messages = [
+                        {"role": "developer", "content": self.templates['formulator_instruction'].format(targetType=target_type)},
+                        {"role": "user", "content": prompt},
+                    ]
+                except:
+                    return ("CRASHED", state)
                 for cnt in range(2, -2, -1):
-                    assert cnt >= 0, "    Invalid json format!"
+                    # assert cnt >= 0, "    Invalid json format!"
+                    if cnt < 0:
+                        return ("CRASHED", state)
                     try:
                         completion = self.client.chat.completions.create(model=self.model, messages=messages, seed=cnt)
                         output = completion.choices[0].message.content

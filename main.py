@@ -13,11 +13,8 @@ from evaluator import Evaluator
 from manager import Manager
 
 template_path = "./template/"
-
-
 model = "gpt-4-1106-preview"
 # model = "gpt-4o"
-solver = 'gurobipy'
 
 if __name__ == "__main__":
     load_dotenv()
@@ -57,5 +54,5 @@ if __name__ == "__main__":
         "problem_path": problem_path,
     }
     
-    manager.run(state=state)
+    message, state = manager.run(state=state)
 

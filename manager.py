@@ -19,9 +19,15 @@ class Manager(Agent):
         self.history = []
 
         for parameter in state["parameters"]:
-            assert "shape" in parameter.keys(), "Parameter: Shape is not defined"
-            assert "symbol" in parameter.keys(), "Parameter: Symbol is not defined"
-            assert ("definition" in parameter.keys() and len(parameter["definition"]) > 0), "Parameter: definition is not defined"
+            # assert "shape" in parameter.keys(), "Parameter: Shape is not defined"
+            # assert "symbol" in parameter.keys(), "Parameter: Symbol is not defined"
+            # assert ("definition" in parameter.keys() and len(parameter["definition"]) > 0), "Parameter: definition is not defined"
+            if not "shape" in parameter.keys():
+                return ("CRASHED", state)
+            if not "symbol" in parameter.keys():
+                return ("CRASHED", state)
+            if not ("definition" in parameter.keys() and len(parameter["definition"]) > 0):
+                return ("CRASHED", state)
 
             if parameter["shape"]:
                 code_symbol = parameter["symbol"].split("_")[0]
@@ -29,28 +35,35 @@ class Manager(Agent):
             else:
                 code_symbol = parameter["symbol"].split("_")[0]
                 parameter["code"] = (f'{code_symbol} = data["{code_symbol}"] # scalar parameter')
+        try:
+            for target in ["constraints", "objective"]:
+                state[target] = [{"description": x, "status": "not_formulated"} for x in state[target]]
+        except:
+            return ("CRASHED", state)
 
-        for target in ["constraints", "objective"]:
-            state[target] = [{"description": x, "status": "not_formulated"} for x in state[target]]
+        while self.conversation_state["round"] <= self.max_rounds:
+            try:
+                print("Round", self.conversation_state["round"], end=':')
 
-        while self.conversation_state["round"] < self.max_rounds:
-            print("Round", self.conversation_state["round"], end=':')
+                agents_list = "".join(["-" + agent.name + ": " + agent.description + "\n" for agent in self.agents])
 
-            agents_list = "".join(["-" + agent.name + ": " + agent.description + "\n" for agent in self.agents])
-
-            messages = [
-                {"role": "developer", "content": self.templates['manager_instruction']},
-                {
-                    "role": "user", 
-                    "content": self.templates['manager_prompt'].format(
-                        agents=agents_list,
-                        history="\n".join([json.dumps(item[0]) for item in self.history])
-                    )
-                }
-            ]
+                messages = [
+                    {"role": "developer", "content": self.templates['manager_instruction']},
+                    {
+                        "role": "user", 
+                        "content": self.templates['manager_prompt'].format(
+                            agents=agents_list,
+                            history="\n".join([json.dumps(item[0]) for item in self.history])
+                        )
+                    }
+                ]
+            except:
+                return ("CRASHED", state)
 
             for cnt in range(2, -2, -1):
-                assert cnt >= 0, "\n    Invalid decision!"
+                # assert cnt >= 0, "\n    Invalid decision!"
+                if cnt < 0:
+                    return ("CRASHED", state)
                 try:
                     completion = self.client.chat.completions.create(model=self.model, messages=messages, seed=cnt)
                     response = completion.choices[0].message.content
@@ -70,31 +83,36 @@ class Manager(Agent):
             # print("---- History:\n", "\n".join([json.dumps(item[0]) for item in self.history]))
 
             # print(f"\n---- Decision:||{decision}||\n")
+            try:
+                print(f" {decision["agent_name"]}\t\t{decision["task"]}")
 
-            print(f" {decision["agent_name"]}\t\t{decision["task"]}")
+                if not decision["agent_name"] in [agent.name for agent in self.agents]:
+                    raise ValueError(f"Decision {decision} is not a valid agent name. Please choose from {self.agents}")
+                
+                agent = [each for each in self.agents if each.name == decision["agent_name"]][0]
 
-            if not decision["agent_name"] in [agent.name for agent in self.agents]:
-                raise ValueError(f"Decision {decision} is not a valid agent name. Please choose from {self.agents}")
-            
-            agent = [each for each in self.agents if each.name == decision["agent_name"]][0]
+                message, state = agent.run(state=state)
 
-            message, state = agent.run(state=state)
+                if message == "CRASHED":
+                    return ("CRASHED", state)
 
-            # print(message)
+                # print(message)
 
-            with open(f"{state['log_path']}log_{self.conversation_state['round']}.json", "w") as f:
-                json.dump(state, f, indent=4)
+                with open(f"{state['log_path']}log_{self.conversation_state['round']}.json", "w") as f:
+                    json.dump(state, f, indent=4)
 
-            decision["result"] = message
-            self.history.append((decision, state))
+                decision["result"] = message
+                self.history.append((decision, state))
 
-            with open(state["log_path"] + "selection_log.json", "w") as f:
-                json.dump([d for (d, s) in self.history], f, indent=4)
+                with open(state["log_path"] + "selection_log.json", "w") as f:
+                    json.dump([d for (d, s) in self.history], f, indent=4)
 
-            if "code" in state:
-                with open(state["log_path"] + "code.py", "w") as f:
-                    f.write(state["code"])
+                if "code" in state:
+                    with open(state["log_path"] + "code.py", "w") as f:
+                        f.write(state["code"])
 
-            self.conversation_state["round"] += 1
+                self.conversation_state["round"] += 1
+            except:
+                return ("CRASHED", state)
         print("The problem is NOT SOLVED!")
         return "The problem is NOT SOLVED!", state

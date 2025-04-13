@@ -69,14 +69,15 @@ class Evaluator(Agent):
             }
         except Exception as e:
                 if not bogus_context:
-                    error_msg = traceback.format_exc()
-                    raise Exception(
-                        f"Unexpected error in running code at {last_line}: "
-                        + "\n"
-                        + str(e)
-                        + "\n\n\n"
-                        + error_msg
-                    )
+                    return ("CRASHED", state)
+                    # error_msg = traceback.format_exc()
+                    # raise Exception(
+                    #     f"Unexpected error in running code at {last_line}: "
+                    #     + "\n"
+                    #     + str(e)
+                    #     + "\n\n\n"
+                    #     + error_msg
+                    # )
 
                 error_msg = traceback.format_exc()
                 res = {
@@ -88,23 +89,25 @@ class Evaluator(Agent):
                     "error_message": error_msg,
                     "bogus_context": bogus_context,
                 }
+        try:
+            if not res["success"]:
+                state["solution_status"] = "runtime_error"
+                state["error_message"] = res["error_message"]
+                state["prep_code"] = self.templates['prep_code'].format(solver_prep_code=self.templates['solver_prep_code'], data_json_path=state['problem_path']+"data.json")
+                code += last_line + "\n"
 
-        if not res["success"]:
-            state["solution_status"] = "runtime_error"
-            state["error_message"] = res["error_message"]
-            state["prep_code"] = self.templates['prep_code'].format(solver_prep_code=self.templates['solver_prep_code'], data_json_path=state['problem_path']+"data.json")
-            code += last_line + "\n"
+                if not res["bogus_context"]:
+                    return f"Bad model! Print DONE to finish the execution.", state
 
-            if not res["bogus_context"]:
-                return f"Bad model! Print DONE to finish the execution.", state
+                res["bogus_context"]["status"] = "runtime_error"
+                state["solver_output_status"] = res["bogus_context"]["status"]
+                return (f"There was an error in running the code! {res['error_message']}", state)
 
-            res["bogus_context"]["status"] = "runtime_error"
-            state["solver_output_status"] = res["bogus_context"]["status"]
-            return (f"There was an error in running the code! {res['error_message']}", state)
-
-        else:
-            state["solution_status"] = "solved"
-            state["solver_output_status"] = res["status"]
-            state["obj_val"] = res["obj_val"]
-            state["code"] = res["code"]
-            return ("Evaluation Done! The problem is solved.", state)
+            else:
+                state["solution_status"] = "solved"
+                state["solver_output_status"] = res["status"]
+                state["obj_val"] = res["obj_val"]
+                state["code"] = res["code"]
+                return ("Evaluation Done! The problem is solved.", state)
+        except:
+            return ("CRASHED", state)
