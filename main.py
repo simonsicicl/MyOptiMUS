@@ -36,7 +36,8 @@ if __name__ == "__main__":
 
     print('Formulating...')
 
-    formulator.run(state=state)
+    (message, state) = formulator.run(state=state)
+    print(message)
 
     # print('state after formulation')
     # print(json.dumps(state, indent=4))
@@ -44,7 +45,8 @@ if __name__ == "__main__":
 
     print('Programming...')
 
-    programmer.run(state=state)
+    (message, state) = programmer.run(state=state)
+    print(message)
     
     # print('state after programming')
     # print(json.dumps(state, indent=4))
@@ -52,7 +54,8 @@ if __name__ == "__main__":
 
     print('Evaluating...')
 
-    evaluator.run(state=state)
+    (message, state) = evaluator.run(state=state)
+    print(message)
     
     print('state after evaluation')
     print(json.dumps(state, indent=4))

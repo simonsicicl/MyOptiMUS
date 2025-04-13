@@ -6,9 +6,13 @@ from agent import Agent
 
 class Evaluator(Agent):
     def __init__(self, client:Client, model:str, templates:TemplateLoader):
-        super().__init__(client=client, model=model, templates=templates)
+        super().__init__(
+            name="Evaluator",
+            description="This is an evaluator agent that is an expert in running optimization codes, identifying the bugs and errors, ane evaluating the performance and correctness of the code.",
+            client=client, model=model, templates=templates
+            )
 
-    def run(self, state:dict):
+    def run(self, state:dict) -> tuple[str, dict]: 
         local_env = {}
         code = ""
         last_line = ""
@@ -98,9 +102,11 @@ class Evaluator(Agent):
 
             res["bogus_context"]["status"] = "runtime_error"
             state["solver_output_status"] = res["bogus_context"]["status"]
+            return (f"There was an error in running the code! {res['error_message']}", state)
 
         else:
             state["solution_status"] = "solved"
             state["solver_output_status"] = res["status"]
             state["obj_val"] = res["obj_val"]
             state["code"] = res["code"]
+            return ("Evaluation Done! The problem is solved.", state)

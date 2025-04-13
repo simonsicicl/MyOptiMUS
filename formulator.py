@@ -5,9 +5,12 @@ from agent import Agent
 
 class Formulator(Agent):
     def __init__(self, client:Client, model:str, templates:TemplateLoader):
-        super().__init__(client=client, model=model, templates=templates)
+        super().__init__(name="Formulator",
+            description="This is a mathematical formulator agent that is an expert in mathematical and optimization modeling and can define and modify variables, constraints, and objective functions. Does 3 things: 1) Defining constraints, variables, and objective functions, 2) Modifying constraints, variables, and objective functions, 3) Other things related to mathematical formulation. If the history is empty, start from this agent.",
+            client=client, model=model, templates=templates
+            )
 
-    def run(self, state:dict):
+    def run(self, state:dict) -> tuple[str, dict]: 
         for parameter in state["parameters"]:
             # assert "shape" in parameter.keys(), "shape is not defined for parameter"
             # assert "symbol" in parameter.keys(), "symbol is not defined for parameter"
@@ -70,3 +73,4 @@ class Formulator(Agent):
                     state["variables"].append(each)
                 for key_name in output[target_type].keys():
                     target[key_name] = output[target_type][key_name]
+        return "Formulation Done!", state

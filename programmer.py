@@ -5,9 +5,13 @@ from agent import Agent
 
 class Programmer(Agent):
     def __init__(self, client:Client, model:str, templates:TemplateLoader):
-        super().__init__(client=client, model=model, templates=templates)
+        super().__init__(
+            name="Programmer",
+            description="This is a mathematical programmer agent that is an expert in writing, modifying, and debugging code for optimization problems from the mathematical formulation of the problem. This agent should be called first when a bug or error happens in the code.",
+            client=client, model=model, templates=templates
+            )
 
-    def run(self, state:dict):
+    def run(self, state:dict) -> tuple[str, dict]: 
         for variable in state["variables"]:
             if variable["status"] == "formulated":
                 messages = [
@@ -51,3 +55,4 @@ class Programmer(Agent):
                     target["status"] = "coded"
                 elif target["status"] == "coded":
                     pass
+        return "Programming Done!", state
