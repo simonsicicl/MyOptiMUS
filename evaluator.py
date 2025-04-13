@@ -97,8 +97,8 @@ class Evaluator(Agent):
             state["prep_code"] = self.templates['prep_code'].format(solver_prep_code=self.templates['solver_prep_code'], data_json_path=state['problem_path']+"data.json")
             code += last_line + "\n"
 
-            # if not res["bogus_context"]:
-            #     return f"Bad model! Print DONE to finish the execution.", state
+            if not res["bogus_context"]:
+                return f"Bad model! Print DONE to finish the execution.", state
 
             res["bogus_context"]["status"] = "runtime_error"
             state["solver_output_status"] = res["bogus_context"]["status"]

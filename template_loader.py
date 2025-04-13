@@ -1,4 +1,4 @@
-names = ["evaluator", "formulator", "manager", "programmer_variable", "programmer_constraints", "programmer_objective"]
+names = ["evaluator", "formulator", "manager", "programmer_variable", "programmer_constraints", "programmer_objective", "programmer_debuger_variable", "programmer_debuger_targets"]
 templates = {}
 
 class TemplateLoader(dict):
