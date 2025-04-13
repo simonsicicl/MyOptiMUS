@@ -66,7 +66,7 @@ if __name__ == "__main__":
         
         message, state = manager.run(state=state)
 
-        if message == " The problem is SOLVED!":
+        if message == "The problem is solved.":
             exp_record["problems"].append({
                 "problem": problem,
                 "status": "solved",
