@@ -1,0 +1,232 @@
+{
+    "background": "The company seeks to maximize daily profit by determining an optimal production mix for N different products, considering assembly and testing time constraints, material costs, and the potential for overtime and discounts.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of different products",
+            "symbol": "N",
+            "value": "",
+            "shape": [],
+            "code": "N = data[\"N\"] # scalar parameter"
+        },
+        {
+            "definition": "Hours required to assemble product i",
+            "symbol": "AssemblyHour",
+            "value": "",
+            "shape": [
+                "N"
+            ],
+            "code": "AssemblyHour = np.array(data[\"AssemblyHour\"]) # ['N']"
+        },
+        {
+            "definition": "Hours required to test product i",
+            "symbol": "TestingHour",
+            "value": "",
+            "shape": [
+                "N"
+            ],
+            "code": "TestingHour = np.array(data[\"TestingHour\"]) # ['N']"
+        },
+        {
+            "definition": "Material cost for product i",
+            "symbol": "MaterialCost",
+            "value": "",
+            "shape": [
+                "N"
+            ],
+            "code": "MaterialCost = np.array(data[\"MaterialCost\"]) # ['N']"
+        },
+        {
+            "definition": "Maximum total hours available for assembly",
+            "symbol": "MaxAssembly",
+            "value": 0,
+            "shape": [],
+            "code": "MaxAssembly = data[\"MaxAssembly\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum total hours available for testing",
+            "symbol": "MaxTesting",
+            "value": 0,
+            "shape": [],
+            "code": "MaxTesting = data[\"MaxTesting\"] # scalar parameter"
+        },
+        {
+            "definition": "Selling price for product i",
+            "symbol": "Price",
+            "value": "",
+            "shape": [
+                "N"
+            ],
+            "code": "Price = np.array(data[\"Price\"]) # ['N']"
+        },
+        {
+            "definition": "Maximum overtime hours available for assembly",
+            "symbol": "MaxOvertimeAssembly",
+            "value": 0,
+            "shape": [],
+            "code": "MaxOvertimeAssembly = data[\"MaxOvertimeAssembly\"] # scalar parameter"
+        },
+        {
+            "definition": "Overtime cost for assembly per hour",
+            "symbol": "OvertimeAssemblyCost",
+            "value": 0,
+            "shape": [],
+            "code": "OvertimeAssemblyCost = data[\"OvertimeAssemblyCost\"] # scalar parameter"
+        },
+        {
+            "definition": "Discount on material cost when a certain threshold is reached",
+            "symbol": "MaterialDiscount",
+            "value": 0.0,
+            "shape": [],
+            "code": "MaterialDiscount = data[\"MaterialDiscount\"] # scalar parameter"
+        },
+        {
+            "definition": "Threshold for the quantity to reach to obtain the material discount",
+            "symbol": "DiscountThreshold",
+            "value": 0,
+            "shape": [],
+            "code": "DiscountThreshold = data[\"DiscountThreshold\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The total assembly hours used for producing all products must not exceed the maximum available assembly hours (MaxAssembly).",
+            "status": "formulated",
+            "formulation": "\\sum_{i=1}^{\\textup{N}} \\textup{AssemblyHour}_{i} \\cdot \\textup{QuantityProduced}_{i} \\leq \\textup{MaxAssembly}",
+            "related_variables": [
+                "QuantityProduced"
+            ],
+            "related_parameters": [
+                "AssemblyHour",
+                "MaxAssembly",
+                "N"
+            ]
+        },
+        {
+            "description": "The total testing hours required by all products produced must not exceed the maximum available testing hours (\\textup{MaxTesting}).",
+            "status": "formulated",
+            "formulation": "\\sum_{i=1}^{N} \\textup{TestingHour}_{i} \\cdot \\textup{QuantityProduced}_{i} \\leq \\textup{MaxTesting}",
+            "related_variables": [
+                "QuantityProduced"
+            ],
+            "related_parameters": [
+                "TestingHour",
+                "MaxTesting"
+            ]
+        },
+        {
+            "description": "The number of products produced is non-negative",
+            "status": "formulated",
+            "formulation": "\\textup{QuantityProduced}_{i} \\geq 0, \\quad \\forall \\, i \\in \\{1, 2, \\dots, \\textup{N}\\}",
+            "related_variables": [
+                "QuantityProduced"
+            ],
+            "related_parameters": [
+                "N"
+            ]
+        },
+        {
+            "description": "The number of overtime assembly hours used is at most MaxOvertimeAssembly",
+            "status": "formulated",
+            "formulation": "\\textup{OvertimeAssembly} \\leq \\textup{MaxOvertimeAssembly}",
+            "related_variables": [
+                "OvertimeAssembly"
+            ],
+            "related_parameters": [
+                "MaxOvertimeAssembly"
+            ]
+        },
+        {
+            "description": "Total assembly hours used must account for overtime when exceeding MaxAssembly",
+            "status": "formulated",
+            "formulation": "\\sum_{i=1}^{N} \\textup{AssemblyHour}_{i} \\cdot \\textup{QuantityProduced}_{i} \\leq \\textup{MaxAssembly} + \\textup{OvertimeAssembly}",
+            "related_variables": [
+                "QuantityProduced",
+                "OvertimeAssembly"
+            ],
+            "related_parameters": [
+                "AssemblyHour",
+                "MaxAssembly"
+            ]
+        },
+        {
+            "description": "Overtime assembly hours must be non-negative",
+            "status": "formulated",
+            "formulation": "\\textup{OvertimeAssembly} \\geq 0",
+            "related_variables": [
+                "OvertimeAssembly"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Link the discount application to the discount threshold using big-M constraint.",
+            "status": "formulated",
+            "formulation": "\\sum_{i=1}^{N} \\textup{QuantityProduced}_{i} - \\textup{DiscountThreshold} \\geq -M \\cdot (1 - \\textup{ApplyDiscount})",
+            "related_variables": [
+                "QuantityProduced",
+                "ApplyDiscount"
+            ],
+            "related_parameters": [
+                "DiscountThreshold",
+                "M"
+            ]
+        },
+        {
+            "description": "Ensure that total overtime assembly hours do not exceed the maximum allowed limit.",
+            "status": "formulated",
+            "formulation": "\\textup{OvertimeAssembly} \\leq \\textup{MaxOvertimeAssembly}",
+            "related_variables": [
+                "OvertimeAssembly"
+            ],
+            "related_parameters": [
+                "MaxOvertimeAssembly"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of units of product i produced",
+            "symbol": "QuantityProduced",
+            "shape": [
+                "N"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "The number of overtime assembly hours used",
+            "symbol": "OvertimeAssembly",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "Binary variable indicating whether the material discount is applied (1 if the discount applies, 0 otherwise).",
+            "symbol": "ApplyDiscount",
+            "shape": [],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize daily profit (revenue minus total costs including material cost, overtime cost, and accounting for discounts).",
+            "status": "formulated",
+            "formulation": "\\sum_{i=1}^{N} (\\textup{Price}_{i} \\cdot \\textup{QuantityProduced}_{i}) - \\left[ \\Big(\\sum_{i=1}^{N} (\\textup{MaterialCost}_{i} \\cdot \\textup{QuantityProduced}_{i}) \\cdot (1 - \\textup{MaterialDiscount} \\cdot \\textup{ApplyDiscount})\\Big) + (\\textup{OvertimeAssembly} \\cdot \\textup{OvertimeAssemblyCost}) \\right]",
+            "related_variables": [
+                "QuantityProduced",
+                "OvertimeAssembly",
+                "ApplyDiscount"
+            ],
+            "related_parameters": [
+                "Price",
+                "MaterialCost",
+                "MaterialDiscount",
+                "OvertimeAssemblyCost"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413153919_nlp4lp_16/",
+    "problem_path": "data/nlp4lp/16/"
+}

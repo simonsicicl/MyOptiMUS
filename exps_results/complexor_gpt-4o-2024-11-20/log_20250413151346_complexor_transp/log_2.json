@@ -1,0 +1,157 @@
+{
+    "background": "This is a transportation problem involving the transfer of goods from multiple origins to multiple destinations, each with their own supply and demand constraints, aiming to minimize the total transportation cost.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "symbol": "NumberOfOrigins",
+            "definition": "The total number of origins",
+            "shape": [],
+            "code": "NumberOfOrigins = data[\"NumberOfOrigins\"] # scalar parameter"
+        },
+        {
+            "symbol": "NumberOfDestinations",
+            "definition": "The total number of destinations",
+            "shape": [],
+            "code": "NumberOfDestinations = data[\"NumberOfDestinations\"] # scalar parameter"
+        },
+        {
+            "symbol": "SupplyOfOrigin",
+            "definition": "The supply available at each origin",
+            "shape": [
+                "NumberOfOrigins"
+            ],
+            "code": "SupplyOfOrigin = np.array(data[\"SupplyOfOrigin\"]) # ['NumberOfOrigins']"
+        },
+        {
+            "symbol": "DemandOfDestination",
+            "definition": "The demand that needs to be satisfied at each destination",
+            "shape": [
+                "NumberOfDestinations"
+            ],
+            "code": "DemandOfDestination = np.array(data[\"DemandOfDestination\"]) # ['NumberOfDestinations']"
+        },
+        {
+            "symbol": "CostPerUnit",
+            "definition": "The cost of transporting a unit from each origin to each destination",
+            "shape": [
+                "NumberOfOrigins",
+                "NumberOfDestinations"
+            ],
+            "code": "CostPerUnit = np.array(data[\"CostPerUnit\"]) # ['NumberOfOrigins', 'NumberOfDestinations']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Total supply from each origin must be exactly SupplyOfOrigin.",
+            "status": "coded",
+            "formulation": "\\sum_{j=1}^{\\textup{NumberOfDestinations}} \\textup{UnitsTransported}_{i,j} = \\textup{SupplyOfOrigin}_{i}, \\quad \\forall i \\in [1, \\textup{NumberOfOrigins}]",
+            "related_variables": [
+                "UnitsTransported"
+            ],
+            "related_parameters": [
+                "NumberOfOrigins",
+                "NumberOfDestinations",
+                "SupplyOfOrigin"
+            ],
+            "code": "# Add constraints ensuring total supply from each origin matches SupplyOfOrigin\nfor i in range(NumberOfOrigins):\n    model.addConstr(gp.quicksum(UnitsTransported[i, j] for j in range(NumberOfDestinations)) == SupplyOfOrigin[i], name=f\"supply_constraint_origin_{i}\")"
+        },
+        {
+            "description": "The total demand at each destination must be exactly satisfied by the units transported from all origins.",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{\\textup{NumberOfOrigins}} \\textup{UnitsTransported}_{i,j} = \\textup{DemandOfDestination}_{j}, \\quad \\forall j = 1, 2, \\dots, \\textup{NumberOfDestinations}",
+            "related_variables": [
+                "UnitsTransported"
+            ],
+            "related_parameters": [
+                "NumberOfOrigins",
+                "NumberOfDestinations",
+                "DemandOfDestination"
+            ],
+            "code": "# Add constraints to ensure the total demand at each destination is exactly satisfied\nfor j in range(NumberOfDestinations):\n    model.addConstr(\n        sum(UnitsTransported[i, j] for i in range(NumberOfOrigins)) == DemandOfDestination[j],\n        name=f\"demand_satisfaction_destination_{j}\"\n    )"
+        },
+        {
+            "description": "The number of units transported from each origin i to each destination j must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{UnitsTransported}_{i, j} \\geq 0, \\quad \\forall i \\in \\{1, 2, \\ldots, \\textup{NumberOfOrigins}\\}, \\forall j \\in \\{1, 2, \\ldots, \\textup{NumberOfDestinations}\\}",
+            "related_variables": [
+                "UnitsTransported"
+            ],
+            "related_parameters": [
+                "NumberOfOrigins",
+                "NumberOfDestinations"
+            ],
+            "code": "# No explicit constraints are needed because the non-negativity is inherently defined by the variable bounds when creating the variables in gurobi (vtype=gp.GRB.CONTINUOUS). UnitsTransported is already non-negative."
+        },
+        {
+            "description": "The total units transported from each origin cannot exceed its supply.",
+            "status": "coded",
+            "formulation": "\\sum_{j=1}^{\\textup{NumberOfDestinations}} \\textup{UnitsTransported}_{i,j} \\leq \\textup{SupplyOfOrigin}_{i} \\quad \\forall i",
+            "related_variables": [
+                "UnitsTransported"
+            ],
+            "related_parameters": [
+                "SupplyOfOrigin",
+                "NumberOfDestinations"
+            ],
+            "code": "# Add supply constraints for each origin\nfor i in range(NumberOfOrigins):\n    model.addConstr(\n        gp.quicksum(UnitsTransported[i, j] for j in range(NumberOfDestinations)) <= SupplyOfOrigin[i], \n        name=f\"supply_constraint_origin_{i}\"\n    )"
+        },
+        {
+            "description": "The total units received at each destination must meet its demand.",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{\\textup{NumberOfOrigins}} \\textup{UnitsTransported}_{i,j} = \\textup{DemandOfDestination}_{j} \\quad \\forall j",
+            "related_variables": [
+                "UnitsTransported"
+            ],
+            "related_parameters": [
+                "DemandOfDestination",
+                "NumberOfOrigins"
+            ],
+            "code": "# Add constraints to ensure the total units received at each destination meet their demand\nfor j in range(NumberOfDestinations):\n    model.addConstr(\n        gp.quicksum(UnitsTransported[i, j] for i in range(NumberOfOrigins)) == DemandOfDestination[j],\n        name=f\"demand_constraint_dest_{j}\"\n    )"
+        },
+        {
+            "description": "The number of units transported from each origin to each destination must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{UnitsTransported}_{i,j} \\geq 0 \\quad \\forall i, j",
+            "related_variables": [
+                "UnitsTransported"
+            ],
+            "related_parameters": [],
+            "code": "# The variable UnitsTransported was already defined as a non-negative continuous variable.  \n# Hence, no additional constraints are needed to enforce the non-negativity."
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of units transported from a specific origin to a specific destination.",
+            "symbol": "UnitsTransported",
+            "shape": [
+                "NumberOfOrigins",
+                "NumberOfDestinations"
+            ],
+            "status": "coded",
+            "code": "UnitsTransported = model.addVars(NumberOfOrigins, NumberOfDestinations, vtype=gp.GRB.CONTINUOUS, name=\"UnitsTransported\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total transportation cost across all origins and destinations.",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{\\textup{NumberOfOrigins}} \\sum_{j=1}^{\\textup{NumberOfDestinations}} \\textup{CostPerUnit}_{i,j} \\cdot \\textup{UnitsTransported}_{i,j}",
+            "related_variables": [
+                "UnitsTransported"
+            ],
+            "related_parameters": [
+                "CostPerUnit",
+                "NumberOfOrigins",
+                "NumberOfDestinations"
+            ],
+            "code": "# Set objective\nmodel.setObjective(gp.quicksum(CostPerUnit[i, j] * UnitsTransported[i, j] for i in range(NumberOfOrigins) for j in range(NumberOfDestinations)), gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 196200.0,
+    "log_path": "logs/log_20250413151346_complexor_transp/",
+    "problem_path": "data/complexor/transp/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/complexor/transp/data.json\", \"r\") as f:\n    data = json.load(f)\n\nNumberOfOrigins = data[\"NumberOfOrigins\"] # scalar parameter\nNumberOfDestinations = data[\"NumberOfDestinations\"] # scalar parameter\nSupplyOfOrigin = np.array(data[\"SupplyOfOrigin\"]) # ['NumberOfOrigins']\nDemandOfDestination = np.array(data[\"DemandOfDestination\"]) # ['NumberOfDestinations']\nCostPerUnit = np.array(data[\"CostPerUnit\"]) # ['NumberOfOrigins', 'NumberOfDestinations']\nUnitsTransported = model.addVars(NumberOfOrigins, NumberOfDestinations, vtype=gp.GRB.CONTINUOUS, name=\"UnitsTransported\")\n\n# Add constraints ensuring total supply from each origin matches SupplyOfOrigin\nfor i in range(NumberOfOrigins):\n    model.addConstr(gp.quicksum(UnitsTransported[i, j] for j in range(NumberOfDestinations)) == SupplyOfOrigin[i], name=f\"supply_constraint_origin_{i}\")\n\n# Add constraints to ensure the total demand at each destination is exactly satisfied\nfor j in range(NumberOfDestinations):\n    model.addConstr(\n        sum(UnitsTransported[i, j] for i in range(NumberOfOrigins)) == DemandOfDestination[j],\n        name=f\"demand_satisfaction_destination_{j}\"\n    )\n\n# No explicit constraints are needed because the non-negativity is inherently defined by the variable bounds when creating the variables in gurobi (vtype=gp.GRB.CONTINUOUS). UnitsTransported is already non-negative.\n\n# Add supply constraints for each origin\nfor i in range(NumberOfOrigins):\n    model.addConstr(\n        gp.quicksum(UnitsTransported[i, j] for j in range(NumberOfDestinations)) <= SupplyOfOrigin[i], \n        name=f\"supply_constraint_origin_{i}\"\n    )\n\n# Add constraints to ensure the total units received at each destination meet their demand\nfor j in range(NumberOfDestinations):\n    model.addConstr(\n        gp.quicksum(UnitsTransported[i, j] for i in range(NumberOfOrigins)) == DemandOfDestination[j],\n        name=f\"demand_constraint_dest_{j}\"\n    )\n\n# The variable UnitsTransported was already defined as a non-negative continuous variable.  \n# Hence, no additional constraints are needed to enforce the non-negativity.\n\n# Set objective\nmodel.setObjective(gp.quicksum(CostPerUnit[i, j] * UnitsTransported[i, j] for i in range(NumberOfOrigins) for j in range(NumberOfDestinations)), gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

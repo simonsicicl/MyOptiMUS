@@ -1,0 +1,222 @@
+{
+    "background": "A breakfast joint makes two different sandwiches: a regular and a special. Both need eggs and bacon.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of eggs required for a regular sandwich",
+            "symbol": "EggsReg",
+            "value": 2,
+            "shape": [],
+            "code": "EggsReg = data[\"EggsReg\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of eggs required for a special sandwich",
+            "symbol": "EggsSpec",
+            "value": 3,
+            "shape": [],
+            "code": "EggsSpec = data[\"EggsSpec\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of slices of bacon required for a regular sandwich",
+            "symbol": "BaconReg",
+            "value": 3,
+            "shape": [],
+            "code": "BaconReg = data[\"BaconReg\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of slices of bacon required for a special sandwich",
+            "symbol": "BaconSpec",
+            "value": 5,
+            "shape": [],
+            "code": "BaconSpec = data[\"BaconSpec\"] # scalar parameter"
+        },
+        {
+            "definition": "Total number of eggs available",
+            "symbol": "TotalEggs",
+            "value": 40,
+            "shape": [],
+            "code": "TotalEggs = data[\"TotalEggs\"] # scalar parameter"
+        },
+        {
+            "definition": "Total number of slices of bacon available",
+            "symbol": "TotalBacon",
+            "value": 70,
+            "shape": [],
+            "code": "TotalBacon = data[\"TotalBacon\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit from selling a regular sandwich",
+            "symbol": "ProfitReg",
+            "value": 3,
+            "shape": [],
+            "code": "ProfitReg = data[\"ProfitReg\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit from selling a special sandwich",
+            "symbol": "ProfitSpec",
+            "value": 4,
+            "shape": [],
+            "code": "ProfitSpec = data[\"ProfitSpec\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of regular sandwiches must be an integer.",
+            "status": "coded",
+            "formulation": "\\textup{RegularSandwiches} \\in \\mathbb{Z}",
+            "related_variables": [
+                "RegularSandwiches"
+            ],
+            "related_parameters": [],
+            "code": "# Changing RegularSandwiches to be an integer variable\nRegularSandwiches.vtype = gp.GRB.INTEGER"
+        },
+        {
+            "description": "The number of special sandwiches is an integer variable.",
+            "status": "coded",
+            "formulation": "\\textup{SpecialSandwiches} \\in \\mathbb{Z}",
+            "related_variables": [
+                "SpecialSandwiches"
+            ],
+            "related_parameters": [],
+            "code": "# Changing the integrality of the variable 'SpecialSandwiches' to integer\nSpecialSandwiches.vtype = gp.GRB.INTEGER"
+        },
+        {
+            "description": "The number of regular sandwiches produced must be non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{RegularSandwiches} \\\\geq 0",
+            "related_variables": [
+                "RegularSandwiches"
+            ],
+            "related_parameters": [],
+            "code": "# The RegularSandwiches variable is already coded with a non-negative domain due to its default non-negative domain in Gurobi,\n# so no constraint code is needed."
+        },
+        {
+            "description": "The number of special sandwiches must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{SpecialSandwiches} \\geq 0",
+            "related_variables": [
+                "SpecialSandwiches"
+            ],
+            "related_parameters": [],
+            "code": "# No additional code needed since the variable \"SpecialSandwiches\" is already defined as non-negative (its default lower bound is 0)"
+        },
+        {
+            "description": "The total eggs used for making regular sandwiches and special sandwiches cannot exceed the total number of available eggs.",
+            "status": "coded",
+            "formulation": "\\\\textup{EggsReg} \\\\cdot \\\\textup{RegularSandwiches} + \\\\textup{EggsSpec} \\\\cdot \\\\textup{SpecialSandwiches} \\\\leq \\\\textup{TotalEggs}",
+            "related_variables": [
+                "RegularSandwiches",
+                "SpecialSandwiches"
+            ],
+            "related_parameters": [
+                "EggsReg",
+                "EggsSpec",
+                "TotalEggs"
+            ],
+            "code": "# Adding constraint to ensure total eggs used does not exceed available eggs\nmodel.addConstr(\n    RegularSandwiches * EggsReg + SpecialSandwiches * EggsSpec <= TotalEggs,\n    name=\"egg_constraint\"\n)"
+        },
+        {
+            "description": "The total bacon used for regular and special sandwiches cannot exceed the available TotalBacon.",
+            "status": "coded",
+            "formulation": "\\\\textup{BaconReg} \\\\cdot \\\\textup{RegularSandwiches} + \\\\textup{BaconSpec} \\\\cdot \\\\textup{SpecialSandwiches} \\\\leq \\\\textup{TotalBacon}",
+            "related_variables": [
+                "RegularSandwiches",
+                "SpecialSandwiches"
+            ],
+            "related_parameters": [
+                "BaconReg",
+                "BaconSpec",
+                "TotalBacon"
+            ],
+            "code": "# Add bacon usage constraint\nmodel.addConstr(\n    BaconReg * RegularSandwiches + BaconSpec * SpecialSandwiches <= TotalBacon,\n    name=\"bacon_usage_limit\"\n)"
+        },
+        {
+            "description": "Eggs availability constraint",
+            "status": "coded",
+            "formulation": "\\textup{EggsReg} \\cdot \\textup{RegularSandwiches} + \\textup{EggsSpec} \\cdot \\textup{SpecialSandwiches} \\leq \\textup{TotalEggs}",
+            "related_variables": [
+                "RegularSandwiches",
+                "SpecialSandwiches"
+            ],
+            "related_parameters": [
+                "EggsReg",
+                "EggsSpec",
+                "TotalEggs"
+            ],
+            "code": "# Add eggs availability constraint\nmodel.addConstr(EggsReg * RegularSandwiches + EggsSpec * SpecialSandwiches <= TotalEggs, name=\"eggs_availability\")"
+        },
+        {
+            "description": "Bacon availability constraint",
+            "status": "coded",
+            "formulation": "\\textup{BaconReg} \\cdot \\textup{RegularSandwiches} + \\textup{BaconSpec} \\cdot \\textup{SpecialSandwiches} \\leq \\textup{TotalBacon}",
+            "related_variables": [
+                "RegularSandwiches",
+                "SpecialSandwiches"
+            ],
+            "related_parameters": [
+                "BaconReg",
+                "BaconSpec",
+                "TotalBacon"
+            ],
+            "code": "# Adding the bacon availability constraint\nmodel.addConstr(\n    RegularSandwiches * BaconReg + SpecialSandwiches * BaconSpec <= TotalBacon,\n    name=\"bacon_availability\"\n)"
+        },
+        {
+            "description": "Non-negativity constraint for RegularSandwiches",
+            "status": "coded",
+            "formulation": "\\textup{RegularSandwiches} \\geq 0",
+            "related_variables": [
+                "RegularSandwiches"
+            ],
+            "related_parameters": [],
+            "code": "# Add non-negativity constraint for RegularSandwiches\nmodel.addConstr(RegularSandwiches >= 0, name=\"non_negativity_RegularSandwiches\")"
+        },
+        {
+            "description": "Non-negativity constraint for SpecialSandwiches",
+            "status": "coded",
+            "formulation": "\\textup{SpecialSandwiches} \\geq 0",
+            "related_variables": [
+                "SpecialSandwiches"
+            ],
+            "related_parameters": [],
+            "code": "# Add non-negativity constraint for SpecialSandwiches\nmodel.addConstr(SpecialSandwiches >= 0, name=\"non_negativity_SpecialSandwiches\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of regular sandwiches produced",
+            "symbol": "RegularSandwiches",
+            "shape": [],
+            "status": "coded",
+            "code": "RegularSandwiches = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"RegularSandwiches\")"
+        },
+        {
+            "definition": "The number of special sandwiches produced",
+            "symbol": "SpecialSandwiches",
+            "shape": [],
+            "status": "coded",
+            "code": "SpecialSandwiches = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"SpecialSandwiches\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the profit from selling regular and special sandwiches",
+            "status": "coded",
+            "formulation": "\\textup{Maximize} \\quad \\textup{ProfitReg} \\cdot \\textup{RegularSandwiches} + \\textup{ProfitSpec} \\cdot \\textup{SpecialSandwiches}",
+            "related_variables": [
+                "RegularSandwiches",
+                "SpecialSandwiches"
+            ],
+            "related_parameters": [
+                "ProfitReg",
+                "ProfitSpec"
+            ],
+            "code": "# Set objective\nmodel.setObjective(ProfitReg * RegularSandwiches + ProfitSpec * SpecialSandwiches, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413154044_nl4opt_prob_12/",
+    "problem_path": "data/nl4opt/prob_12/"
+}

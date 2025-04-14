@@ -1,0 +1,195 @@
+{
+    "background": "A food company wants to run commercials on three streaming platforms, each with different costs and expected audience reach. The platforms have restrictions on the number of ads and budget allocation.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Cost of a commercial on Pi TV",
+            "symbol": "CostPiTV",
+            "value": 1200,
+            "shape": [],
+            "code": "CostPiTV = data[\"CostPiTV\"] # scalar parameter"
+        },
+        {
+            "definition": "Audience reach of a commercial on Pi TV",
+            "symbol": "ReachPiTV",
+            "value": 2000,
+            "shape": [],
+            "code": "ReachPiTV = data[\"ReachPiTV\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of commercials allowed on Beta Video",
+            "symbol": "MaxCommercialsBetaVideo",
+            "value": 8,
+            "shape": [],
+            "code": "MaxCommercialsBetaVideo = data[\"MaxCommercialsBetaVideo\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost of a commercial on Beta Video",
+            "symbol": "CostBetaVideo",
+            "value": 2000,
+            "shape": [],
+            "code": "CostBetaVideo = data[\"CostBetaVideo\"] # scalar parameter"
+        },
+        {
+            "definition": "Audience reach of a commercial on Beta Video",
+            "symbol": "ReachBetaVideo",
+            "value": 5000,
+            "shape": [],
+            "code": "ReachBetaVideo = data[\"ReachBetaVideo\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost of a commercial on Gamma Live",
+            "symbol": "CostGammaLive",
+            "value": 4000,
+            "shape": [],
+            "code": "CostGammaLive = data[\"CostGammaLive\"] # scalar parameter"
+        },
+        {
+            "definition": "Audience reach of a commercial on Gamma Live",
+            "symbol": "ReachGammaLive",
+            "value": 9000,
+            "shape": [],
+            "code": "ReachGammaLive = data[\"ReachGammaLive\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum proportion of total commercials that can be on Gamma Live",
+            "symbol": "MaxPropGammaLive",
+            "value": 0.33,
+            "shape": [],
+            "code": "MaxPropGammaLive = data[\"MaxPropGammaLive\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum proportion of total commercials that must be on Pi TV",
+            "symbol": "MinPropPiTV",
+            "value": 0.2,
+            "shape": [],
+            "code": "MinPropPiTV = data[\"MinPropPiTV\"] # scalar parameter"
+        },
+        {
+            "definition": "Weekly budget for commercials",
+            "symbol": "WeeklyBudget",
+            "value": 20000,
+            "shape": [],
+            "code": "WeeklyBudget = data[\"WeeklyBudget\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Number of commercials on any platform must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfCommercialsPiTV} \\geq 0 \\quad \\textup{NumberOfCommercialsBetaVideo} \\geq 0 \\quad \\textup{NumberOfCommercialsGammaLive} \\geq 0",
+            "related_variables": [
+                "NumberOfCommercialsPiTV",
+                "NumberOfCommercialsBetaVideo",
+                "NumberOfCommercialsGammaLive"
+            ],
+            "related_parameters": [],
+            "code": "# The number of commercials on any platform must be non-negative\nmodel.addConstr(NumberOfCommercialsPiTV >= 0, name=\"nonnegativity_PiTV\")\nmodel.addConstr(NumberOfCommercialsBetaVideo >= 0, name=\"nonnegativity_BetaVideo\")\nmodel.addConstr(NumberOfCommercialsGammaLive >= 0, name=\"nonnegativity_GammaLive\")"
+        },
+        {
+            "description": "The number of commercials aired on Beta Video should be at most as high as the maximum allowable number of commercials on Beta Video",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfCommercialsBetaVideo} \\leq \\textup{MaxCommercialsBetaVideo}",
+            "related_variables": [
+                "NumberOfCommercialsBetaVideo"
+            ],
+            "related_parameters": [
+                "MaxCommercialsBetaVideo"
+            ],
+            "code": "# Add constraint for the maximum number of commercials on Beta Video\nmodel.addConstr(NumberOfCommercialsBetaVideo <= MaxCommercialsBetaVideo, \"max_commercials_on_beta_video\")"
+        },
+        {
+            "description": "Number of commercials on Gamma Live is at most MaxPropGammaLive times the total number of commercials on all platforms",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfCommercialsGammaLive} \\leq \\textup{MaxPropGammaLive} \\times (\\textup{NumberOfCommercialsPiTV} + \\textup{NumberOfCommercialsBetaVideo} + \\textup{NumberOfCommercialsGammaLive})",
+            "related_variables": [
+                "NumberOfCommercialsPiTV",
+                "NumberOfCommercialsBetaVideo",
+                "NumberOfCommercialsGammaLive"
+            ],
+            "related_parameters": [
+                "MaxPropGammaLive"
+            ],
+            "code": "# Add constraint for the maximum proportion of commercials on Gamma Live\nmodel.addConstr(NumberOfCommercialsGammaLive <= MaxPropGammaLive * (NumberOfCommercialsPiTV + NumberOfCommercialsBetaVideo + NumberOfCommercialsGammaLive), \"MaxGammaLiveCommercials\")"
+        },
+        {
+            "description": "Number of commercials on Pi TV is at least a certain proportion of the total number of commercials",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfCommercialsPiTV} \\geq \\textup{MinPropPiTV} \\cdot (\\textup{NumberOfCommercialsPiTV} + \\textup{NumberOfCommercialsBetaVideo} + \\textup{NumberOfCommercialsGammaLive})",
+            "related_variables": [
+                "NumberOfCommercialsPiTV",
+                "NumberOfCommercialsBetaVideo",
+                "NumberOfCommercialsGammaLive"
+            ],
+            "related_parameters": [
+                "MinPropPiTV"
+            ],
+            "code": "# Number of commercials on Pi TV is at least a certain proportion of the total number of commercials\nmodel.addConstr(NumberOfCommercialsPiTV >= MinPropPiTV * (NumberOfCommercialsPiTV + NumberOfCommercialsBetaVideo + NumberOfCommercialsGammaLive), \"MinProportionConstraintPiTV\")"
+        },
+        {
+            "description": "Total cost of all commercials is less than or equal to WeeklyBudget",
+            "status": "coded",
+            "formulation": "\\textup{CostPiTV} \\times \\textup{NumberOfCommercialsPiTV} + \\textup{CostBetaVideo} \\times \\textup{NumberOfCommercialsBetaVideo} + \\textup{CostGammaLive} \\times \\textup{NumberOfCommercialsGammaLive} \\leq \\textup{WeeklyBudget}",
+            "related_variables": [
+                "NumberOfCommercialsPiTV",
+                "NumberOfCommercialsBetaVideo",
+                "NumberOfCommercialsGammaLive"
+            ],
+            "related_parameters": [
+                "CostPiTV",
+                "CostBetaVideo",
+                "CostGammaLive",
+                "WeeklyBudget"
+            ],
+            "code": "# Total cost of commercials constraint\nmodel.addConstr(CostPiTV * NumberOfCommercialsPiTV + CostBetaVideo * NumberOfCommercialsBetaVideo + CostGammaLive * NumberOfCommercialsGammaLive <= WeeklyBudget, \"Total_commercial_cost\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of commercials to be aired on Pi TV",
+            "symbol": "NumberOfCommercialsPiTV",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfCommercialsPiTV = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfCommercialsPiTV\")"
+        },
+        {
+            "definition": "Number of commercials to be aired on Beta Video",
+            "symbol": "NumberOfCommercialsBetaVideo",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfCommercialsBetaVideo = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfCommercialsBetaVideo\")"
+        },
+        {
+            "definition": "Number of commercials to be aired on Gamma Live",
+            "symbol": "NumberOfCommercialsGammaLive",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfCommercialsGammaLive = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfCommercialsGammaLive\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total audience reach of the commercials aired on three streaming platforms.",
+            "status": "coded",
+            "formulation": "\\textup{TotalReach} = \\textup{NumberOfCommercialsPiTV} \\times \\textup{ReachPiTV} + \\textup{NumberOfCommercialsBetaVideo} \\times \\textup{ReachBetaVideo} + \\textup{NumberOfCommercialsGammaLive} \\times \\textup{ReachGammaLive}",
+            "related_variables": [
+                "NumberOfCommercialsPiTV",
+                "NumberOfCommercialsBetaVideo",
+                "NumberOfCommercialsGammaLive"
+            ],
+            "related_parameters": [
+                "ReachPiTV",
+                "ReachBetaVideo",
+                "ReachGammaLive"
+            ],
+            "code": "# Set the objective for maximizing total audience reach\nmodel.setObjective(NumberOfCommercialsPiTV * ReachPiTV +\n                   NumberOfCommercialsBetaVideo * ReachBetaVideo +\n                   NumberOfCommercialsGammaLive * ReachGammaLive, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 46000.0,
+    "log_path": "logs/log_20250413163516_nl4opt_prob_223/",
+    "problem_path": "data/nl4opt/prob_223/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_223/data.json\", \"r\") as f:\n    data = json.load(f)\n\nCostPiTV = data[\"CostPiTV\"] # scalar parameter\nReachPiTV = data[\"ReachPiTV\"] # scalar parameter\nMaxCommercialsBetaVideo = data[\"MaxCommercialsBetaVideo\"] # scalar parameter\nCostBetaVideo = data[\"CostBetaVideo\"] # scalar parameter\nReachBetaVideo = data[\"ReachBetaVideo\"] # scalar parameter\nCostGammaLive = data[\"CostGammaLive\"] # scalar parameter\nReachGammaLive = data[\"ReachGammaLive\"] # scalar parameter\nMaxPropGammaLive = data[\"MaxPropGammaLive\"] # scalar parameter\nMinPropPiTV = data[\"MinPropPiTV\"] # scalar parameter\nWeeklyBudget = data[\"WeeklyBudget\"] # scalar parameter\nNumberOfCommercialsPiTV = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfCommercialsPiTV\")\nNumberOfCommercialsBetaVideo = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfCommercialsBetaVideo\")\nNumberOfCommercialsGammaLive = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfCommercialsGammaLive\")\n\n# The number of commercials on any platform must be non-negative\nmodel.addConstr(NumberOfCommercialsPiTV >= 0, name=\"nonnegativity_PiTV\")\nmodel.addConstr(NumberOfCommercialsBetaVideo >= 0, name=\"nonnegativity_BetaVideo\")\nmodel.addConstr(NumberOfCommercialsGammaLive >= 0, name=\"nonnegativity_GammaLive\")\n\n# Add constraint for the maximum number of commercials on Beta Video\nmodel.addConstr(NumberOfCommercialsBetaVideo <= MaxCommercialsBetaVideo, \"max_commercials_on_beta_video\")\n\n# Add constraint for the maximum proportion of commercials on Gamma Live\nmodel.addConstr(NumberOfCommercialsGammaLive <= MaxPropGammaLive * (NumberOfCommercialsPiTV + NumberOfCommercialsBetaVideo + NumberOfCommercialsGammaLive), \"MaxGammaLiveCommercials\")\n\n# Number of commercials on Pi TV is at least a certain proportion of the total number of commercials\nmodel.addConstr(NumberOfCommercialsPiTV >= MinPropPiTV * (NumberOfCommercialsPiTV + NumberOfCommercialsBetaVideo + NumberOfCommercialsGammaLive), \"MinProportionConstraintPiTV\")\n\n# Total cost of commercials constraint\nmodel.addConstr(CostPiTV * NumberOfCommercialsPiTV + CostBetaVideo * NumberOfCommercialsBetaVideo + CostGammaLive * NumberOfCommercialsGammaLive <= WeeklyBudget, \"Total_commercial_cost\")\n\n# Set the objective for maximizing total audience reach\nmodel.setObjective(NumberOfCommercialsPiTV * ReachPiTV +\n                   NumberOfCommercialsBetaVideo * ReachBetaVideo +\n                   NumberOfCommercialsGammaLive * ReachGammaLive, gp.GRB.MAXIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

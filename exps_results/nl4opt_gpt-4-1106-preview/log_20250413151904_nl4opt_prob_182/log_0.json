@@ -1,0 +1,184 @@
+{
+    "background": "The fish in a freezing pond need to be transported using helicopters and cars to maintain their survival, with each mode of transport having different capacities and time requirements.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of fish transported per helicopter trip",
+            "symbol": "FishPerHelicopter",
+            "value": 30,
+            "shape": [],
+            "code": "FishPerHelicopter = data[\"FishPerHelicopter\"] # scalar parameter"
+        },
+        {
+            "definition": "Time taken per helicopter trip",
+            "symbol": "TimeHelicopter",
+            "value": 40,
+            "shape": [],
+            "code": "TimeHelicopter = data[\"TimeHelicopter\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of fish transported per car trip",
+            "symbol": "FishPerCar",
+            "value": 20,
+            "shape": [],
+            "code": "FishPerCar = data[\"FishPerCar\"] # scalar parameter"
+        },
+        {
+            "definition": "Time taken per car trip",
+            "symbol": "TimeCar",
+            "value": 30,
+            "shape": [],
+            "code": "TimeCar = data[\"TimeCar\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of helicopter trips allowed",
+            "symbol": "MaxHelicopterTrips",
+            "value": 5,
+            "shape": [],
+            "code": "MaxHelicopterTrips = data[\"MaxHelicopterTrips\"] # scalar parameter"
+        },
+        {
+            "definition": "Percentage of trips that should be by car",
+            "symbol": "CarTripPercentage",
+            "value": 0.6,
+            "shape": [],
+            "code": "CarTripPercentage = data[\"CarTripPercentage\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of fish that need to be transported",
+            "symbol": "MinFishNeeded",
+            "value": 300,
+            "shape": [],
+            "code": "MinFishNeeded = data[\"MinFishNeeded\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of helicopter trips must be non-negative",
+            "status": "formulated",
+            "formulation": "\\textup{NumberOfHelicopterTrips} \\geq 0",
+            "related_variables": [
+                "NumberOfHelicopterTrips"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "The number of car trips to transport the fish must be non-negative",
+            "status": "formulated",
+            "formulation": "\\textup{NumberOfCarTrips} \\geq 0",
+            "related_variables": [
+                "NumberOfCarTrips"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "At least the minimum number of fish needed should be transported",
+            "status": "formulated",
+            "formulation": "\\textup{FishPerHelicopter} \\times \\textup{NumberOfHelicopterTrips} + \\textup{FishPerCar} \\times \\textup{NumberOfCarTrips} \\geq \\textup{MinFishNeeded}",
+            "related_variables": [
+                "NumberOfHelicopterTrips",
+                "NumberOfCarTrips"
+            ],
+            "related_parameters": [
+                "FishPerHelicopter",
+                "FishPerCar",
+                "MinFishNeeded"
+            ]
+        },
+        {
+            "description": "There can be at most MaxHelicopterTrips helicopter trips",
+            "status": "formulated",
+            "formulation": "\\textup{NumberOfHelicopterTrips} \\leq \\textup{MaxHelicopterTrips}",
+            "related_variables": [
+                "NumberOfHelicopterTrips"
+            ],
+            "related_parameters": [
+                "MaxHelicopterTrips"
+            ]
+        },
+        {
+            "description": "At least CarTripPercentage percent of the total number of trips must be by car",
+            "status": "formulated",
+            "formulation": "\\textup{NumberOfCarTrips} - \\textup{CarTripPercentage} \\times \\textup{NumberOfHelicopterTrips} \\geq \\textup{CarTripPercentage} \\times \\textup{NumberOfHelicopterTrips}",
+            "related_variables": [
+                "NumberOfHelicopterTrips",
+                "NumberOfCarTrips"
+            ],
+            "related_parameters": [
+                "CarTripPercentage"
+            ]
+        },
+        {
+            "description": "Ensure that the minimum number of fish needed are transported",
+            "status": "formulated",
+            "formulation": "\\textup{FishPerHelicopter} \\times \\textup{NumberOfHelicopterTrips} + \\textup{FishPerCar} \\times \\textup{NumberOfCarTrips} \\geq \\textup{MinFishNeeded}",
+            "related_variables": [
+                "NumberOfHelicopterTrips",
+                "NumberOfCarTrips"
+            ],
+            "related_parameters": [
+                "FishPerHelicopter",
+                "FishPerCar",
+                "MinFishNeeded"
+            ]
+        },
+        {
+            "description": "Ensure that the maximum number of helicopter trips is not exceeded",
+            "status": "formulated",
+            "formulation": "\\textup{NumberOfHelicopterTrips} \\leq \\textup{MaxHelicopterTrips}",
+            "related_variables": [
+                "NumberOfHelicopterTrips"
+            ],
+            "related_parameters": [
+                "MaxHelicopterTrips"
+            ]
+        },
+        {
+            "description": "Ensure that the required percentage of trips are by car",
+            "status": "formulated",
+            "formulation": "\\textup{NumberOfCarTrips} \\geq \\lceil \\textup{CarTripPercentage} \\times (\\textup{NumberOfHelicopterTrips} + \\textup{NumberOfCarTrips}) \\rceil",
+            "related_variables": [
+                "NumberOfHelicopterTrips",
+                "NumberOfCarTrips"
+            ],
+            "related_parameters": [
+                "CarTripPercentage"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of helicopter trips to transport the fish",
+            "symbol": "NumberOfHelicopterTrips",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "The number of car trips to transport the fish",
+            "symbol": "NumberOfCarTrips",
+            "shape": [],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total time needed to transport all fish using helicopters and cars",
+            "status": "formulated",
+            "formulation": "\\min (\\textup{TimeHelicopter} \\times \\textup{NumberOfHelicopterTrips} + \\textup{TimeCar} \\times \\textup{NumberOfCarTrips})",
+            "related_variables": [
+                "NumberOfHelicopterTrips",
+                "NumberOfCarTrips"
+            ],
+            "related_parameters": [
+                "TimeHelicopter",
+                "TimeCar"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413151904_nl4opt_prob_182/",
+    "problem_path": "data/nl4opt/prob_182/"
+}

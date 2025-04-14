@@ -1,0 +1,219 @@
+{
+    "background": "A clothing company looking to optimize its product distribution between retail stores and factory outlets, aiming to reduce the number of stores in operation while meeting customer and employee constraints.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of customers a retail store brings in every day",
+            "symbol": "RetailCustomers",
+            "value": 200,
+            "shape": [],
+            "code": "RetailCustomers = data[\"RetailCustomers\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of customers a factory outlet brings in every day",
+            "symbol": "OutletCustomers",
+            "value": 80,
+            "shape": [],
+            "code": "OutletCustomers = data[\"OutletCustomers\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of employees required to operate a retail store",
+            "symbol": "RetailEmployees",
+            "value": 6,
+            "shape": [],
+            "code": "RetailEmployees = data[\"RetailEmployees\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of employees required to operate a factory outlet",
+            "symbol": "OutletEmployees",
+            "value": 4,
+            "shape": [],
+            "code": "OutletEmployees = data[\"OutletEmployees\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum required number of customers every day",
+            "symbol": "MinCustomers",
+            "value": 1200,
+            "shape": [],
+            "code": "MinCustomers = data[\"MinCustomers\"] # scalar parameter"
+        },
+        {
+            "definition": "Total number of employees available to operate all stores",
+            "symbol": "TotalEmployees",
+            "value": 50,
+            "shape": [],
+            "code": "TotalEmployees = data[\"TotalEmployees\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The main constraints for customer satisfaction, employee availability, and non-negativity of store counts.",
+            "status": "coded",
+            "formulation": "\\textup{RetailStoreCount} \\times \\textup{RetailCustomers} + \\textup{OutletCount} \\times \\textup{OutletCustomers} \\geq \\textup{MinCustomers} \\\\ \\quad \\quad \\textup{RetailStoreCount} \\times \\textup{RetailEmployees} + \\textup{OutletCount} \\times \\textup{OutletEmployees} \\leq \\textup{TotalEmployees}",
+            "related_variables": [
+                "RetailStoreCount",
+                "OutletCount"
+            ],
+            "related_parameters": [
+                "RetailCustomers",
+                "OutletCustomers",
+                "MinCustomers",
+                "RetailEmployees",
+                "OutletEmployees",
+                "TotalEmployees"
+            ],
+            "code": "# Add customer satisfaction and employee availability constraints\nmodel.addConstr(RetailStoreCount * RetailCustomers + OutletCount * OutletCustomers >= MinCustomers, name=\"customer_satisfaction\")\nmodel.addConstr(RetailStoreCount * RetailEmployees + OutletCount * OutletEmployees <= TotalEmployees, name=\"employee_availability\")"
+        },
+        {
+            "description": "Number of factory outlets is non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{OutletCount} \\\\geq 0",
+            "related_variables": [
+                "OutletCount"
+            ],
+            "related_parameters": [],
+            "code": "# The non-negativity constraint is implicitly satisfied as Gurobi variables are non-negative by default unless otherwise specified (e.g., with lower bounds of negative values)."
+        },
+        {
+            "description": "The total number of customers from retail stores and factory outlets must be at least MinCustomers.",
+            "status": "coded",
+            "formulation": "\\\\textup{RetailStoreCount} \\\\cdot \\\\textup{RetailCustomers} + \\\\textup{OutletCount} \\\\cdot \\\\textup{OutletCustomers} \\\\geq \\\\textup{MinCustomers}",
+            "related_variables": [
+                "RetailStoreCount",
+                "OutletCount"
+            ],
+            "related_parameters": [
+                "RetailCustomers",
+                "OutletCustomers",
+                "MinCustomers"
+            ],
+            "code": "# Add customer count constraint\nmodel.addConstr(\n    RetailStoreCount * RetailCustomers + OutletCount * OutletCustomers >= MinCustomers,\n    name=\"customer_count_constraint\"\n)"
+        },
+        {
+            "description": "Total number of employees distributed to all stores cannot exceed the available total employees.",
+            "status": "coded",
+            "formulation": "\\\\textup{RetailEmployees} \\\\cdot \\\\textup{RetailStoreCount} + \\\\textup{OutletEmployees} \\\\cdot \\\\textup{OutletCount} \\\\leq \\\\textup{TotalEmployees}",
+            "related_variables": [
+                "RetailStoreCount",
+                "OutletCount"
+            ],
+            "related_parameters": [
+                "RetailEmployees",
+                "OutletEmployees",
+                "TotalEmployees"
+            ],
+            "code": "# Add total employee constraint for stores and outlets\nmodel.addConstr(\n    RetailEmployees * RetailStoreCount + OutletEmployees * OutletCount <= TotalEmployees,\n    name=\"employee_capacity\"\n)"
+        },
+        {
+            "description": "Each retail store requires RetailEmployees employees to operate. The total employees allocated to retail stores must equal \\textup{RetailStoreCount} multiplied by \\textup{RetailEmployees}.",
+            "status": "coded",
+            "formulation": "\\textup{RetailStoreCount} \\times \\textup{RetailEmployees} \\leq \\textup{TotalEmployees}",
+            "related_variables": [
+                "RetailStoreCount"
+            ],
+            "related_parameters": [
+                "RetailEmployees",
+                "TotalEmployees"
+            ],
+            "code": "# Change RetailStoreCount to integer (as store count must be an integer)\nRetailStoreCount.vtype = gp.GRB.INTEGER\n\n# Add employee allocation constraint \nmodel.addConstr(RetailStoreCount * RetailEmployees <= TotalEmployees, name=\"employee_allocation\")"
+        },
+        {
+            "description": "Each factory outlet requires OutletEmployees employees to run.",
+            "status": "coded",
+            "formulation": "\\textup{TotalEmployeesUsedByOutlets} = \\textup{OutletCount} \\cdot \\textup{OutletEmployees}",
+            "related_variables": [
+                "OutletCount"
+            ],
+            "related_parameters": [
+                "OutletEmployees"
+            ],
+            "code": "# Update OutletCount to integer, as the number of outlets in operation must be an integer count\nOutletCount.vtype = gp.GRB.INTEGER\n\n# Constraint to calculate TotalEmployeesUsedByOutlets\nTotalEmployeesUsedByOutlets = OutletCount * OutletEmployees"
+        },
+        {
+            "description": "Non-negativity constraint for the number of retail stores.",
+            "status": "coded",
+            "formulation": "\\textup{RetailStoreCount} \\geq 0",
+            "related_variables": [
+                "RetailStoreCount"
+            ],
+            "related_parameters": [],
+            "code": "# Non-negativity constraint for RetailStoreCount\nmodel.addConstr(RetailStoreCount >= 0, name=\"non_negativity_RetailStoreCount\")"
+        },
+        {
+            "description": "Non-negativity constraint for the number of factory outlets.",
+            "status": "coded",
+            "formulation": "\\textup{OutletCount} \\geq 0",
+            "related_variables": [
+                "OutletCount"
+            ],
+            "related_parameters": [],
+            "code": "# The non-negativity constraint for \"OutletCount\" is already enforced by defining it as a continuous variable, which is non-negative by default in Gurobi."
+        },
+        {
+            "description": "Ensure the total number of customers served meets the minimum required number.",
+            "status": "coded",
+            "formulation": "\\textup{RetailCustomers} \\times \\textup{RetailStoreCount} + \\textup{OutletCustomers} \\times \\textup{OutletCount} \\geq \\textup{MinCustomers}",
+            "related_variables": [
+                "RetailStoreCount",
+                "OutletCount"
+            ],
+            "related_parameters": [
+                "RetailCustomers",
+                "OutletCustomers",
+                "MinCustomers"
+            ],
+            "code": "# Add constraint to ensure total customers served meets the minimum required number\nmodel.addConstr(RetailCustomers * RetailStoreCount + OutletCustomers * OutletCount >= MinCustomers, name=\"min_customers_served\")"
+        },
+        {
+            "description": "Ensure the total number of employees used does not exceed the available number.",
+            "status": "coded",
+            "formulation": "\\textup{RetailEmployees} \\times \\textup{RetailStoreCount} + \\textup{OutletEmployees} \\times \\textup{OutletCount} \\leq \\textup{TotalEmployees}",
+            "related_variables": [
+                "RetailStoreCount",
+                "OutletCount"
+            ],
+            "related_parameters": [
+                "RetailEmployees",
+                "OutletEmployees",
+                "TotalEmployees"
+            ],
+            "code": "# Add employee limit constraint\nmodel.addConstr(\n    RetailEmployees * RetailStoreCount + OutletEmployees * OutletCount <= TotalEmployees,\n    name=\"employee_limit\"\n)"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of retail stores in operation.",
+            "symbol": "RetailStoreCount",
+            "shape": [],
+            "status": "coded",
+            "code": "RetailStoreCount = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"RetailStoreCount\")"
+        },
+        {
+            "definition": "The number of factory outlets in operation.",
+            "symbol": "OutletCount",
+            "shape": [],
+            "status": "coded",
+            "code": "OutletCount = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"OutletCount\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of stores (retail stores and factory outlets) that must be open.",
+            "status": "coded",
+            "formulation": "\\textup{Minimize } \\quad \\textup{RetailStoreCount} + \\textup{OutletCount}",
+            "related_variables": [
+                "RetailStoreCount",
+                "OutletCount"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(RetailStoreCount + OutletCount, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 6.0,
+    "log_path": "logs/log_20250413180717_nl4opt_prob_249/",
+    "problem_path": "data/nl4opt/prob_249/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_249/data.json\", \"r\") as f:\n    data = json.load(f)\n\nRetailCustomers = data[\"RetailCustomers\"] # scalar parameter\nOutletCustomers = data[\"OutletCustomers\"] # scalar parameter\nRetailEmployees = data[\"RetailEmployees\"] # scalar parameter\nOutletEmployees = data[\"OutletEmployees\"] # scalar parameter\nMinCustomers = data[\"MinCustomers\"] # scalar parameter\nTotalEmployees = data[\"TotalEmployees\"] # scalar parameter\nRetailStoreCount = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"RetailStoreCount\")\nOutletCount = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"OutletCount\")\n\n# Add customer satisfaction and employee availability constraints\nmodel.addConstr(RetailStoreCount * RetailCustomers + OutletCount * OutletCustomers >= MinCustomers, name=\"customer_satisfaction\")\nmodel.addConstr(RetailStoreCount * RetailEmployees + OutletCount * OutletEmployees <= TotalEmployees, name=\"employee_availability\")\n\n# The non-negativity constraint is implicitly satisfied as Gurobi variables are non-negative by default unless otherwise specified (e.g., with lower bounds of negative values).\n\n# Add customer count constraint\nmodel.addConstr(\n    RetailStoreCount * RetailCustomers + OutletCount * OutletCustomers >= MinCustomers,\n    name=\"customer_count_constraint\"\n)\n\n# Add total employee constraint for stores and outlets\nmodel.addConstr(\n    RetailEmployees * RetailStoreCount + OutletEmployees * OutletCount <= TotalEmployees,\n    name=\"employee_capacity\"\n)\n\n# Change RetailStoreCount to integer (as store count must be an integer)\nRetailStoreCount.vtype = gp.GRB.INTEGER\n\n# Add employee allocation constraint \nmodel.addConstr(RetailStoreCount * RetailEmployees <= TotalEmployees, name=\"employee_allocation\")\n\n# Update OutletCount to integer, as the number of outlets in operation must be an integer count\nOutletCount.vtype = gp.GRB.INTEGER\n\n# Constraint to calculate TotalEmployeesUsedByOutlets\nTotalEmployeesUsedByOutlets = OutletCount * OutletEmployees\n\n# Non-negativity constraint for RetailStoreCount\nmodel.addConstr(RetailStoreCount >= 0, name=\"non_negativity_RetailStoreCount\")\n\n# The non-negativity constraint for \"OutletCount\" is already enforced by defining it as a continuous variable, which is non-negative by default in Gurobi.\n\n# Add constraint to ensure total customers served meets the minimum required number\nmodel.addConstr(RetailCustomers * RetailStoreCount + OutletCustomers * OutletCount >= MinCustomers, name=\"min_customers_served\")\n\n# Add employee limit constraint\nmodel.addConstr(\n    RetailEmployees * RetailStoreCount + OutletEmployees * OutletCount <= TotalEmployees,\n    name=\"employee_limit\"\n)\n\n# Set objective\nmodel.setObjective(RetailStoreCount + OutletCount, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

@@ -1,0 +1,196 @@
+{
+    "background": "The problem is to find the optimal control profile that minimizes the maximum thrust required over a certain duration, considering initial and final conditions for position and velocity.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Initial position of the object",
+            "symbol": "X0",
+            "value": 0,
+            "shape": [],
+            "code": "X0 = data[\"X0\"] # scalar parameter"
+        },
+        {
+            "definition": "Initial velocity of the object",
+            "symbol": "V0",
+            "value": 0,
+            "shape": [],
+            "code": "V0 = data[\"V0\"] # scalar parameter"
+        },
+        {
+            "definition": "Final position of the object",
+            "symbol": "XT",
+            "value": 0,
+            "shape": [],
+            "code": "XT = data[\"XT\"] # scalar parameter"
+        },
+        {
+            "definition": "Final velocity of the object",
+            "symbol": "VT",
+            "value": 0,
+            "shape": [],
+            "code": "VT = data[\"VT\"] # scalar parameter"
+        },
+        {
+            "definition": "Time duration for the journey",
+            "symbol": "T",
+            "value": 0,
+            "shape": [],
+            "code": "T = data[\"T\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The constraints to model the minimization of the maximum absolute value of acceleration over time T, subject to initial and final conditions and kinematic equations.",
+            "status": "coded",
+            "formulation": "\\textup{Minimize } \\\\ M \\\\ \\textup{Subject to:} \\\\ X(0) = \\textup{X0}, \\\\ V(0) = \\textup{V0}, \\\\ X(\\textup{T}) = \\textup{XT}, \\\\ V(\\textup{T}) = \\textup{VT}, \\\\ \\frac{dX(t)}{dt} = V(t), \\\\ \\frac{dV(t)}{dt} = A(t), \\\\ -M \\leq A(t) \\leq M \\quad \\forall t \\in [0, T]",
+            "related_variables": [
+                "X(t)",
+                "V(t)",
+                "A(t)",
+                "M"
+            ],
+            "related_parameters": [
+                "X0",
+                "V0",
+                "XT",
+                "VT",
+                "T"
+            ],
+            "code": "# Add constraints for minimizing the maximum absolute value of acceleration over time\nmodel.addConstr(X == X0, name=\"initial_position\")\nmodel.addConstr(V == V0, name=\"initial_velocity\")\nmodel.addConstr(X + T * V == XT, name=\"final_position\")  # Enforces final position via kinematics\nmodel.addConstr(V + T * A == VT, name=\"final_velocity\")  # Enforces final velocity via kinematics\nmodel.addConstr(-M <= A, name=\"acceleration_lower_bound\")  # Bound acceleration by -M\nmodel.addConstr(A <= M, name=\"acceleration_upper_bound\")  # Bound acceleration by M"
+        },
+        {
+            "description": "Finite difference approximations for kinematics constraints over discretized time steps.",
+            "status": "coded",
+            "formulation": "X_{i+1} = X_i + \\Delta t \\cdot V_i, \\\\ V_{i+1} = V_i + \\Delta t \\cdot A_i, \\\\ -M \\leq A_i \\leq M \\quad \\forall i \\in \\{1, 2, \\dots, N\\}",
+            "related_variables": [
+                "X_i",
+                "V_i",
+                "A_i",
+                "M"
+            ],
+            "related_parameters": [
+                "T"
+            ],
+            "code": "# Add finite difference kinematics constraints\nfor i in range(N - 1):  # Time steps from 0 to N-2 (i.e., i+1 goes to N-1)\n    model.addConstr(X[i+1] == X[i] + delta_t * V[i], name=f\"position_update_{i}\")\n    model.addConstr(V[i+1] == V[i] + delta_t * A[i], name=f\"velocity_update_{i}\")\n    model.addConstr(-M <= A[i], name=f\"acceleration_lower_bound_{i}\")\n    model.addConstr(A[i] <= M, name=f\"acceleration_upper_bound_{i}\")"
+        },
+        {
+            "description": "Ensure M is greater than or equal to the absolute value of acceleration over the time duration.",
+            "status": "coded",
+            "formulation": "- \\textup{M} \\\\leq \\textup{A}(t) \\\\leq \\textup{M}, \\quad \\forall t \\in [0, \\textup{T}]",
+            "related_variables": [
+                "M",
+                "A(t)"
+            ],
+            "related_parameters": [
+                "T"
+            ],
+            "code": "# Add constraints to ensure M is greater than or equal to the absolute value of A(t)\nmodel.addConstr(A <= M, name=\"upper_bound_acceleration\")\nmodel.addConstr(A >= -M, name=\"lower_bound_acceleration\")"
+        },
+        {
+            "description": "Discretized velocity update equation.",
+            "status": "coded",
+            "formulation": "\\textup{V}(t_{k+1}) = \\textup{V}(t_k) + \\textup{A}(t_k) \\\\times \\Delta t",
+            "related_variables": [
+                "V(t)",
+                "A(t)"
+            ],
+            "related_parameters": [],
+            "code": "# Add discretized velocity update constraint\nmodel.addConstr(V_next == V + A * delta_t, name=\"velocity_update\")"
+        },
+        {
+            "description": "Discretized position update equation.",
+            "status": "coded",
+            "formulation": "\\textup{X}(t_{k+1}) = \\textup{X}(t_k) + \\textup{V}(t_k) \\\\times \\Delta t",
+            "related_variables": [
+                "X(t)",
+                "V(t)"
+            ],
+            "related_parameters": [],
+            "code": "# Add discretized position update equation constraint\nmodel.addConstr(X_next == X + V * delta_t, name=\"position_update\")"
+        },
+        {
+            "description": "Initial conditions for position and velocity.",
+            "status": "coded",
+            "formulation": "\\textup{X}(0) = \\textup{X0}, \\quad \\textup{V}(0) = \\textup{V0}",
+            "related_variables": [
+                "X(t)",
+                "V(t)"
+            ],
+            "related_parameters": [
+                "X0",
+                "V0"
+            ],
+            "code": "# Add initial condition constraints for position and velocity\nmodel.addConstr(X == X0, name=\"initial_position\")\nmodel.addConstr(V == V0, name=\"initial_velocity\")"
+        },
+        {
+            "description": "Final conditions for position and velocity.",
+            "status": "coded",
+            "formulation": "\\textup{X}(\\textup{T}) = \\textup{XT}, \\quad \\textup{V}(\\textup{T}) = \\textup{VT}",
+            "related_variables": [
+                "X(t)",
+                "V(t)"
+            ],
+            "related_parameters": [
+                "XT",
+                "VT",
+                "T"
+            ],
+            "code": "# Add constraints for final position and velocity\nmodel.addConstr(X == XT, name=\"final_position_constraint\")\nmodel.addConstr(V == VT, name=\"final_velocity_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Position of the object as a function of time",
+            "symbol": "X(t)",
+            "shape": [],
+            "status": "coded",
+            "code": "X = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"X\")"
+        },
+        {
+            "definition": "Velocity of the object as a function of time",
+            "symbol": "V(t)",
+            "shape": [],
+            "status": "coded",
+            "code": "V = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"V\")"
+        },
+        {
+            "definition": "Acceleration of the object as a function of time",
+            "symbol": "A(t)",
+            "shape": [],
+            "status": "coded",
+            "code": "A = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"A\")"
+        },
+        {
+            "definition": "The maximum absolute value of the acceleration over the duration",
+            "symbol": "M",
+            "shape": [],
+            "status": "coded",
+            "code": "M = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"M\")"
+        },
+        {
+            "definition": "The maximum absolute value of the acceleration over the duration",
+            "symbol": "M",
+            "shape": [],
+            "status": "coded",
+            "code": "M = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"M\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the maximum thrust (absolute acceleration) required across the given duration T.",
+            "status": "coded",
+            "formulation": "\\min \\textup{M}",
+            "related_variables": [
+                "M"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(M, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413153815_nlp4lp_7/",
+    "problem_path": "data/nlp4lp/7/"
+}

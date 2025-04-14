@@ -1,0 +1,230 @@
+{
+    "background": "A corn farmer needs to send corn to the city using tractors and cars, each with different carrying capacities. There is a requirement on the minimum ratio of cars to tractors, as well as a minimum corn shipment weight.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Capacity of the tractor for carrying corn",
+            "symbol": "Tc",
+            "value": 40,
+            "shape": [],
+            "code": "Tc = data[\"Tc\"] # scalar parameter"
+        },
+        {
+            "definition": "Capacity of the car for carrying corn",
+            "symbol": "Cc",
+            "value": 20,
+            "shape": [],
+            "code": "Cc = data[\"Cc\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum ratio of number of cars used to number of tractors used",
+            "symbol": "Ratio",
+            "value": 2,
+            "shape": [],
+            "code": "Ratio = data[\"Ratio\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum amount of corn to be sent to the city",
+            "symbol": "MinCorn",
+            "value": 500,
+            "shape": [],
+            "code": "MinCorn = data[\"MinCorn\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Each tractor can carry up to Tc kg of corn",
+            "status": "coded",
+            "formulation": "\\textup{CornByTractors} \\leq \\textup{NumberOfTractors} \\cdot \\textup{Tc}",
+            "related_variables": [
+                "CornByTractors",
+                "NumberOfTractors"
+            ],
+            "related_parameters": [
+                "Tc"
+            ],
+            "code": "# Add constraint for tractor capacity regarding corn\nmodel.addConstr(CornByTractors <= NumberOfTractors * Tc, name=\"tractor_corn_capacity\")"
+        },
+        {
+            "description": "Constraint ensuring that the total weight transported by cars does not exceed their total capacity.",
+            "status": "coded",
+            "formulation": "\\textup{CornByCars} \\leq \\textup{NumberOfCars} \\cdot \\textup{Cc}",
+            "related_variables": [
+                "CornByCars",
+                "NumberOfCars"
+            ],
+            "related_parameters": [
+                "Cc"
+            ],
+            "code": "# Add constraint to ensure total weight transported by cars does not exceed their total capacity\nmodel.addConstr(CornByCars <= NumberOfCars * Cc, name=\"car_capacity_constraint\")"
+        },
+        {
+            "description": "The number of cars used must be at least Ratio times the number of tractors used.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfCars} \\geq \\textup{Ratio} \\cdot \\textup{NumberOfTractors}",
+            "related_variables": [
+                "NumberOfCars",
+                "NumberOfTractors"
+            ],
+            "related_parameters": [
+                "Ratio"
+            ],
+            "code": "# Add constraint to ensure the number of cars used is at least Ratio times the number of tractors used\nmodel.addConstr(NumberOfCars >= Ratio * NumberOfTractors, name=\"min_cars_constraint\")"
+        },
+        {
+            "description": "At least MinCorn kg of corn must be sent to the city.",
+            "status": "coded",
+            "formulation": "\\textup{CornByTractors} + \\textup{CornByCars} \\geq \\textup{MinCorn}",
+            "related_variables": [
+                "CornByTractors",
+                "CornByCars"
+            ],
+            "related_parameters": [
+                "MinCorn"
+            ],
+            "code": "# Add constraint to ensure at least MinCorn kg of corn is sent to the city\nmodel.addConstr(CornByTractors + CornByCars >= MinCorn, name=\"min_corn_constraint\")"
+        },
+        {
+            "description": "The number of tractors used to transport corn must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfTractors} \\geq 0",
+            "related_variables": [
+                "NumberOfTractors"
+            ],
+            "related_parameters": [],
+            "code": "# No code is needed because the non-negativity constraint is automatically enforced due to the default non-negative domain of continuous variables in Gurobi."
+        },
+        {
+            "description": "The number of cars used to transport corn must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfCars} \\geq 0",
+            "related_variables": [
+                "NumberOfCars"
+            ],
+            "related_parameters": [],
+            "code": "# The variable \"NumberOfCars\" already has a non-negative domain since it is defined with CONTINUOUS type.\n# No additional constraints are needed to ensure non-negativity."
+        },
+        {
+            "description": "CornByCars must be non-negative as it represents a total weight.",
+            "status": "coded",
+            "formulation": "\\textup{CornByCars} \\geq 0",
+            "related_variables": [
+                "CornByCars"
+            ],
+            "related_parameters": [],
+            "code": "# Non-negativity constraint for CornByCars\nmodel.addConstr(CornByCars >= 0, name=\"non_negativity_CornByCars\")"
+        },
+        {
+            "description": "NumberOfCars must be a non-negative integer as it represents a count.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfCars} \\geq 0",
+            "related_variables": [
+                "NumberOfCars"
+            ],
+            "related_parameters": [],
+            "code": "# Change the variable \"NumberOfCars\" type to integer since it is defined as count\nNumberOfCars.vtype = gp.GRB.INTEGER"
+        },
+        {
+            "description": "The total weight of corn transported should be greater than or equal to the minimum shipment weight.",
+            "status": "coded",
+            "formulation": "\\textup{CornByTractors} + \\textup{CornByCars} \\geq \\textup{MinCorn}",
+            "related_variables": [
+                "CornByTractors",
+                "CornByCars"
+            ],
+            "related_parameters": [
+                "MinCorn"
+            ],
+            "code": "# Add constraint for transporting minimum corn weight\nmodel.addConstr(CornByTractors + CornByCars >= MinCorn, name=\"min_corn_shipment\")"
+        },
+        {
+            "description": "The amount of corn transported by tractors cannot exceed the tractor capacity times the number of tractors used.",
+            "status": "coded",
+            "formulation": "\\textup{CornByTractors} \\leq \\textup{Tc} \\cdot \\textup{NumberOfTractors}",
+            "related_variables": [
+                "CornByTractors",
+                "NumberOfTractors"
+            ],
+            "related_parameters": [
+                "Tc"
+            ],
+            "code": "# Add constraint to ensure the amount of corn transported by tractors does not exceed their total capacity\nmodel.addConstr(CornByTractors <= Tc * NumberOfTractors, name=\"corn_transport_constraint\")"
+        },
+        {
+            "description": "The amount of corn transported by cars cannot exceed the car capacity times the number of cars used.",
+            "status": "coded",
+            "formulation": "\\textup{CornByCars} \\leq \\textup{Cc} \\cdot \\textup{NumberOfCars}",
+            "related_variables": [
+                "CornByCars",
+                "NumberOfCars"
+            ],
+            "related_parameters": [
+                "Cc"
+            ],
+            "code": "# Add constraint: The amount of corn transported by cars cannot exceed \n# the car capacity multiplied by the number of cars used.\nmodel.addConstr(CornByCars <= Cc * NumberOfCars, name=\"corn_transport_capacity\")"
+        },
+        {
+            "description": "The number of cars used should be greater than or equal to the ratio times the number of tractors used.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfCars} \\geq \\textup{Ratio} \\cdot \\textup{NumberOfTractors}",
+            "related_variables": [
+                "NumberOfCars",
+                "NumberOfTractors"
+            ],
+            "related_parameters": [
+                "Ratio"
+            ],
+            "code": "# Add constraint ensuring the number of cars used is greater than or equal to the ratio times the number of tractors used\nmodel.addConstr(NumberOfCars >= Ratio * NumberOfTractors, name=\"cars_tractors_ratio\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The total weight of corn transported by tractors",
+            "symbol": "CornByTractors",
+            "shape": [],
+            "status": "coded",
+            "code": "CornByTractors = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"CornByTractors\")"
+        },
+        {
+            "definition": "The number of tractors used to transport corn",
+            "symbol": "NumberOfTractors",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfTractors = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfTractors\")"
+        },
+        {
+            "definition": "The total weight of corn transported by cars.",
+            "symbol": "CornByCars",
+            "shape": [],
+            "status": "coded",
+            "code": "CornByCars = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"CornByCars\")"
+        },
+        {
+            "definition": "The number of cars used to transport corn.",
+            "symbol": "NumberOfCars",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfCars = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfCars\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of tractors and cars used for transporting corn to the city.",
+            "status": "coded",
+            "formulation": "\\textup{Minimize: } \\quad \\textup{NumberOfTractors} + \\textup{NumberOfCars}",
+            "related_variables": [
+                "NumberOfTractors",
+                "NumberOfCars"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(NumberOfTractors + NumberOfCars, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 19.0,
+    "log_path": "logs/log_20250413163549_nl4opt_prob_177/",
+    "problem_path": "data/nl4opt/prob_177/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_177/data.json\", \"r\") as f:\n    data = json.load(f)\n\nTc = data[\"Tc\"] # scalar parameter\nCc = data[\"Cc\"] # scalar parameter\nRatio = data[\"Ratio\"] # scalar parameter\nMinCorn = data[\"MinCorn\"] # scalar parameter\nCornByTractors = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"CornByTractors\")\nNumberOfTractors = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfTractors\")\nCornByCars = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"CornByCars\")\nNumberOfCars = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfCars\")\n\n# Add constraint for tractor capacity regarding corn\nmodel.addConstr(CornByTractors <= NumberOfTractors * Tc, name=\"tractor_corn_capacity\")\n\n# Add constraint to ensure total weight transported by cars does not exceed their total capacity\nmodel.addConstr(CornByCars <= NumberOfCars * Cc, name=\"car_capacity_constraint\")\n\n# Add constraint to ensure the number of cars used is at least Ratio times the number of tractors used\nmodel.addConstr(NumberOfCars >= Ratio * NumberOfTractors, name=\"min_cars_constraint\")\n\n# Add constraint to ensure at least MinCorn kg of corn is sent to the city\nmodel.addConstr(CornByTractors + CornByCars >= MinCorn, name=\"min_corn_constraint\")\n\n# No code is needed because the non-negativity constraint is automatically enforced due to the default non-negative domain of continuous variables in Gurobi.\n\n# The variable \"NumberOfCars\" already has a non-negative domain since it is defined with CONTINUOUS type.\n# No additional constraints are needed to ensure non-negativity.\n\n# Non-negativity constraint for CornByCars\nmodel.addConstr(CornByCars >= 0, name=\"non_negativity_CornByCars\")\n\n# Change the variable \"NumberOfCars\" type to integer since it is defined as count\nNumberOfCars.vtype = gp.GRB.INTEGER\n\n# Add constraint for transporting minimum corn weight\nmodel.addConstr(CornByTractors + CornByCars >= MinCorn, name=\"min_corn_shipment\")\n\n# Add constraint to ensure the amount of corn transported by tractors does not exceed their total capacity\nmodel.addConstr(CornByTractors <= Tc * NumberOfTractors, name=\"corn_transport_constraint\")\n\n# Add constraint: The amount of corn transported by cars cannot exceed \n# the car capacity multiplied by the number of cars used.\nmodel.addConstr(CornByCars <= Cc * NumberOfCars, name=\"corn_transport_capacity\")\n\n# Add constraint ensuring the number of cars used is greater than or equal to the ratio times the number of tractors used\nmodel.addConstr(NumberOfCars >= Ratio * NumberOfTractors, name=\"cars_tractors_ratio\")\n\n# Set objective\nmodel.setObjective(NumberOfTractors + NumberOfCars, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

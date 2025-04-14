@@ -1,0 +1,191 @@
+{
+    "background": "An autobody shop is deciding on the purchase of two types of car jacks, an automatic electric one and a gas-powered one, to maximize the number of cars processed every hour while considering the limitations on power outlets, electricity, and gas.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of cars processed per hour by an automatic electric jack",
+            "symbol": "CarsPerHourElectric",
+            "value": 5,
+            "shape": [],
+            "code": "CarsPerHourElectric = data[\"CarsPerHourElectric\"] # scalar parameter"
+        },
+        {
+            "definition": "Electrical units used per hour by an automatic electric jack",
+            "symbol": "ElectricityPerJack",
+            "value": 6,
+            "shape": [],
+            "code": "ElectricityPerJack = data[\"ElectricityPerJack\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of cars processed per hour by a gas-powered jack",
+            "symbol": "CarsPerHourGas",
+            "value": 4,
+            "shape": [],
+            "code": "CarsPerHourGas = data[\"CarsPerHourGas\"] # scalar parameter"
+        },
+        {
+            "definition": "Gas units used per hour by a gas-powered jack",
+            "symbol": "GasPerJack",
+            "value": 7,
+            "shape": [],
+            "code": "GasPerJack = data[\"GasPerJack\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of automatic electric jacks due to limited power outlets",
+            "symbol": "MaxElectricJacks",
+            "value": 15,
+            "shape": [],
+            "code": "MaxElectricJacks = data[\"MaxElectricJacks\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum units of electricity available per hour",
+            "symbol": "MaxElectricity",
+            "value": 50,
+            "shape": [],
+            "code": "MaxElectricity = data[\"MaxElectricity\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum units of gas available per hour",
+            "symbol": "MaxGas",
+            "value": 80,
+            "shape": [],
+            "code": "MaxGas = data[\"MaxGas\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of automatic electric car jacks must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumElectricJacks} \\geq 0",
+            "related_variables": [
+                "NumElectricJacks"
+            ],
+            "related_parameters": [],
+            "code": "# Since the variable is defined as an INTEGER, it is implicitly non-negative. \n# No further constraint is needed."
+        },
+        {
+            "description": "Number of gas-powered car jacks must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumGasPoweredJacks} \\geq 0",
+            "related_variables": [
+                "NumGasPoweredJacks"
+            ],
+            "related_parameters": [],
+            "code": "# Constraint for non-negative number of gas-powered car jacks\nmodel.addConstr(NumGasPoweredJacks >= 0, name=\"non_negative_gas_powered_jacks\")"
+        },
+        {
+            "description": "Number of automatic electric car jacks must not exceed the maximum available due to limited power outlets",
+            "status": "coded",
+            "formulation": "\\textup{NumElectricJacks} \\leq \\textup{MaxElectricJacks}",
+            "related_variables": [
+                "NumElectricJacks"
+            ],
+            "related_parameters": [
+                "MaxElectricJacks"
+            ],
+            "code": "# Ensure that the number of automatic electric car jacks does not exceed the maximum available\nmodel.addConstr(NumElectricJacks <= MaxElectricJacks, name=\"limit_electric_jacks\")"
+        },
+        {
+            "description": "Total electricity usage of automatic electric car jacks is at most MaxElectricity",
+            "status": "coded",
+            "formulation": "\\textup{NumElectricJacks} \\times \\textup{ElectricityPerJack} \\leq \\textup{MaxElectricity}",
+            "related_variables": [
+                "NumElectricJacks"
+            ],
+            "related_parameters": [
+                "ElectricityPerJack",
+                "MaxElectricity"
+            ],
+            "code": "# Constraint for the total electricity usage of automatic electric car jacks\nmodel.addConstr(NumElectricJacks * ElectricityPerJack <= MaxElectricity, name=\"electricity_usage_limit\")"
+        },
+        {
+            "description": "Total gas usage of gas-powered car jacks is at most MaxGas",
+            "status": "coded",
+            "formulation": "\\textup{NumGasPoweredJacks} \\times \\textup{GasPerJack} \\leq \\textup{MaxGas}",
+            "related_variables": [
+                "NumGasPoweredJacks"
+            ],
+            "related_parameters": [
+                "GasPerJack",
+                "MaxGas"
+            ],
+            "code": "# Total gas usage constraint for gas-powered car jacks\nmodel.addConstr(NumGasPoweredJacks * GasPerJack <= MaxGas, name=\"total_gas_usage\")"
+        },
+        {
+            "description": "The total electrical units used by all electric jacks should not exceed the maximum units of electricity available per hour",
+            "status": "coded",
+            "formulation": "\\textup{ElectricityPerJack} \\cdot \\textup{NumElectricJacks} \\leq \\textup{MaxElectricity}",
+            "related_variables": [
+                "NumElectricJacks"
+            ],
+            "related_parameters": [
+                "ElectricityPerJack",
+                "MaxElectricity"
+            ],
+            "code": "ElectricityPerJack = data[\"ElectricityPerJack\"]  # scalar parameter\nMaxElectricity = data[\"MaxElectricity\"]  # scalar parameter\nNumElectricJacks = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumElectricJacks\")\nmodel.addConstr(ElectricityPerJack * NumElectricJacks <= MaxElectricity, name=\"max_electric_units_constraint\")"
+        },
+        {
+            "description": "The total gas units used by all gas-powered jacks should not exceed the maximum units of gas available per hour",
+            "status": "coded",
+            "formulation": "\\textup{GasPerJack} \\cdot \\textup{NumGasPoweredJacks} \\leq \\textup{MaxGas}",
+            "related_variables": [
+                "NumGasPoweredJacks"
+            ],
+            "related_parameters": [
+                "GasPerJack",
+                "MaxGas"
+            ],
+            "code": "# Constraint: Total gas units used by all gas-powered jacks should not exceed the maximum units of gas available per hour\nmodel.addConstr(GasPerJack * NumGasPoweredJacks <= MaxGas, name=\"max_gas_usage\")"
+        },
+        {
+            "description": "The number of electric jacks should not exceed the maximum number of automatic electric jacks due to limited power outlets",
+            "status": "coded",
+            "formulation": "\\textup{NumElectricJacks} \\leq \\textup{MaxElectricJacks}",
+            "related_variables": [
+                "NumElectricJacks"
+            ],
+            "related_parameters": [
+                "MaxElectricJacks"
+            ],
+            "code": "# Add constraint for the maximum number of electric jacks\nmodel.addConstr(NumElectricJacks <= MaxElectricJacks, name=\"Max_NumElectricJacks\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of automatic electric car jacks",
+            "symbol": "NumElectricJacks",
+            "shape": [],
+            "status": "coded",
+            "code": "NumElectricJacks = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumElectricJacks\")"
+        },
+        {
+            "definition": "Number of gas-powered car jacks",
+            "symbol": "NumGasPoweredJacks",
+            "shape": [],
+            "status": "coded",
+            "code": "NumGasPoweredJacks = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumGasPoweredJacks\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total number of cars processed every hour by both the automatic electric and gas-powered car jacks",
+            "status": "coded",
+            "formulation": "\\max (\\textup{CarsPerHourElectric} \\cdot \\textup{NumElectricJacks} + \\textup{CarsPerHourGas} \\cdot \\textup{NumGasPoweredJacks})",
+            "related_variables": [
+                "NumElectricJacks",
+                "NumGasPoweredJacks"
+            ],
+            "related_parameters": [
+                "CarsPerHourElectric",
+                "CarsPerHourGas"
+            ],
+            "code": "# Set objective\nmodel.setObjective(CarsPerHourElectric * NumElectricJacks + CarsPerHourGas * NumGasPoweredJacks, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413171704_nl4opt_prob_255/",
+    "problem_path": "data/nl4opt/prob_255/"
+}

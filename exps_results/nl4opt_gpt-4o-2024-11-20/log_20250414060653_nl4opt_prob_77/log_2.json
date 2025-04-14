@@ -1,0 +1,269 @@
+{
+    "background": "A post office is looking to purchase stamping machines with options for dual or single model stamping machines with different capacities and requirements.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Stamping capacity per minute of dual model stamping machine",
+            "symbol": "DualCap",
+            "value": 50,
+            "shape": [],
+            "code": "DualCap = data[\"DualCap\"] # scalar parameter"
+        },
+        {
+            "definition": "Stamping capacity per minute of single model stamping machine",
+            "symbol": "SingleCap",
+            "value": 30,
+            "shape": [],
+            "code": "SingleCap = data[\"SingleCap\"] # scalar parameter"
+        },
+        {
+            "definition": "Glue consumption per minute of dual model stamping machine",
+            "symbol": "DualGlue",
+            "value": 20,
+            "shape": [],
+            "code": "DualGlue = data[\"DualGlue\"] # scalar parameter"
+        },
+        {
+            "definition": "Glue consumption per minute of single model stamping machine",
+            "symbol": "SingleGlue",
+            "value": 15,
+            "shape": [],
+            "code": "SingleGlue = data[\"SingleGlue\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum total letters stamped per minute",
+            "symbol": "MinLetters",
+            "value": 300,
+            "shape": [],
+            "code": "MinLetters = data[\"MinLetters\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum glue consumption per minute",
+            "symbol": "MaxGlue",
+            "value": 135,
+            "shape": [],
+            "code": "MaxGlue = data[\"MaxGlue\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of dual model machines must be integer.",
+            "status": "coded",
+            "formulation": "\\textup{DualMachineCount} \\in \\mathbb{Z}",
+            "related_variables": [
+                "DualMachineCount"
+            ],
+            "related_parameters": [],
+            "code": "# Update the variable type of DualMachineCount to integer\nDualMachineCount.vType = gp.GRB.INTEGER\nmodel.update()"
+        },
+        {
+            "description": "The number of single model stamping machines must be recorded and treated as an integer value.",
+            "status": "coded",
+            "formulation": "\\textup{SingleMachineCount} \\in \\mathbb{Z}",
+            "related_variables": [
+                "SingleMachineCount"
+            ],
+            "related_parameters": [],
+            "code": "# Updating the integrality of SingleMachineCount to an integer variable\nSingleMachineCount.vtype = gp.GRB.INTEGER"
+        },
+        {
+            "description": "The number of dual model stamping machines being purchased must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{DualMachineCount} \\geq 0",
+            "related_variables": [
+                "DualMachineCount"
+            ],
+            "related_parameters": [],
+            "code": "# No additional code needed since the variable \"DualMachineCount\" is already defined with non-negativity guaranteed by being a continuous variable in gurobipy."
+        },
+        {
+            "description": "The number of single model stamping machines must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{SingleMachineCount} \\geq 0",
+            "related_variables": [
+                "SingleMachineCount"
+            ],
+            "related_parameters": [],
+            "code": "# The variable \"SingleMachineCount\" already has a non-negative domain by default in Gurobi as it is declared as a continuous variable.\n# No additional constraint is needed for this requirement."
+        },
+        {
+            "description": "The total stamping capacity must be at least \\textup{MinLetters} letters per minute.",
+            "status": "coded",
+            "formulation": "\\textup{DualCap} \\times \\textup{DualMachineCount} + \\textup{SingleCap} \\times \\textup{SingleMachineCount} \\geq \\textup{MinLetters}",
+            "related_variables": [
+                "DualMachineCount",
+                "SingleMachineCount"
+            ],
+            "related_parameters": [
+                "DualCap",
+                "SingleCap",
+                "MinLetters"
+            ],
+            "code": "# Add constraint for total stamping capacity\nmodel.addConstr(DualMachineCount * DualCap + SingleMachineCount * SingleCap >= MinLetters, name=\"min_stamping_capacity\")"
+        },
+        {
+            "description": "Constraint ensuring that the total glue usage per minute does not exceed the maximum allowed value MaxGlue.",
+            "status": "coded",
+            "formulation": "\\\\textup{DualMachineCount} \\\\times \\\\textup{DualGlue} + \\\\textup{SingleMachineCount} \\\\times \\\\textup{SingleGlue} \\\\leq \\\\textup{MaxGlue}",
+            "related_variables": [
+                "DualMachineCount",
+                "SingleMachineCount"
+            ],
+            "related_parameters": [
+                "DualGlue",
+                "SingleGlue",
+                "MaxGlue"
+            ],
+            "code": "# Add glue usage constraint\nmodel.addConstr(DualMachineCount * DualGlue + SingleMachineCount * SingleGlue <= MaxGlue, name=\"glue_usage_constraint\")"
+        },
+        {
+            "description": "The combined constraints ensuring the machines collectively stamp enough letters per minute and consume glue within the limit.",
+            "status": "coded",
+            "formulation": "\\textup{DualMachineCount} \\\\cdot \\textup{DualCap} + \\textup{SingleMachineCount} \\\\cdot \\textup{SingleCap} \\\\geq \\textup{MinLetters} \\quad \\textup{and} \\quad \\textup{DualMachineCount} \\\\cdot \\textup{DualGlue} + \\textup{SingleMachineCount} \\\\cdot \\textup{SingleGlue} \\\\leq \\textup{MaxGlue}",
+            "related_variables": [
+                "DualMachineCount",
+                "SingleMachineCount"
+            ],
+            "related_parameters": [
+                "DualCap",
+                "SingleCap",
+                "DualGlue",
+                "SingleGlue",
+                "MinLetters",
+                "MaxGlue"
+            ],
+            "code": "# Adding combined constraints for stamping capacity and glue consumption  \nmodel.addConstr(DualMachineCount * DualCap + SingleMachineCount * SingleCap >= MinLetters, name=\"stamping_capacity\")  \nmodel.addConstr(DualMachineCount * DualGlue + SingleMachineCount * SingleGlue <= MaxGlue, name=\"glue_consumption\")"
+        },
+        {
+            "description": "The problem requires defining the constraints for the operation of dual and single model stamping machines to meet a minimum letter stamping requirement and adhere to glue usage limits.",
+            "status": "coded",
+            "formulation": "\\textup{DualMachineCount} \\\\cdot \\textup{DualCap} + \\textup{SingleMachineCount} \\\\cdot \\textup{SingleCap} \\\\geq \\textup{MinLetters} \\\\quad \\textup{(Minimum letters constraint)} \\\\\\\n\\textup{DualMachineCount} \\\\cdot \\textup{DualGlue} + \\textup{SingleMachineCount} \\\\cdot \\textup{SingleGlue} \\\\leq \\textup{MaxGlue} \\\\quad \\textup{(Maximum glue constraint)}",
+            "related_variables": [
+                "DualMachineCount",
+                "SingleMachineCount"
+            ],
+            "related_parameters": [
+                "DualCap",
+                "SingleCap",
+                "MinLetters",
+                "DualGlue",
+                "SingleGlue",
+                "MaxGlue"
+            ],
+            "code": "# Add minimum letters constraint\nmodel.addConstr(DualMachineCount * DualCap + SingleMachineCount * SingleCap >= MinLetters, name=\"min_letters\")\n\n# Add maximum glue constraint\nmodel.addConstr(DualMachineCount * DualGlue + SingleMachineCount * SingleGlue <= MaxGlue, name=\"max_glue\")"
+        },
+        {
+            "description": "Constraints for the post office's machine purchases, including glue consumption and stamping capacity requirements.",
+            "status": "coded",
+            "formulation": "\\textup{DualGlue} \\times \\textup{DualMachineCount} + \\textup{SingleGlue} \\times \\textup{SingleMachineCount} \\leq \\textup{MaxGlue} \\\\ \\textup{DualCap} \\times \\textup{DualMachineCount} + \\textup{SingleCap} \\times \\textup{SingleMachineCount} \\geq \\textup{MinLetters}",
+            "related_variables": [
+                "DualMachineCount",
+                "SingleMachineCount"
+            ],
+            "related_parameters": [
+                "DualGlue",
+                "SingleGlue",
+                "MaxGlue",
+                "DualCap",
+                "SingleCap",
+                "MinLetters"
+            ],
+            "code": "# Add glue consumption and stamping capacity constraints\nmodel.addConstr(DualGlue * DualMachineCount + SingleGlue * SingleMachineCount <= MaxGlue, name=\"glue_consumption_limit\")\nmodel.addConstr(DualCap * DualMachineCount + SingleCap * SingleMachineCount >= MinLetters, name=\"stamping_capacity_requirement\")"
+        },
+        {
+            "description": "Total glue consumed per minute must not exceed the maximum allowable glue consumption (MaxGlue), and the total letters stamped must meet the minimum requirement (MinLetters).",
+            "status": "coded",
+            "formulation": "\\textup{DualGlue} \\cdot \\textup{DualMachineCount} + \\textup{SingleGlue} \\cdot \\textup{SingleMachineCount} \\leq \\textup{MaxGlue} \\quad \\textup{(glue constraint)} \\\\ \\textup{DualCap} \\cdot \\textup{DualMachineCount} + \\textup{SingleCap} \\cdot \\textup{SingleMachineCount} \\geq \\textup{MinLetters} \\quad \\textup{(capacity constraint)}",
+            "related_variables": [
+                "DualMachineCount",
+                "SingleMachineCount"
+            ],
+            "related_parameters": [
+                "DualGlue",
+                "SingleGlue",
+                "MaxGlue",
+                "DualCap",
+                "SingleCap",
+                "MinLetters"
+            ],
+            "code": "# Add glue and capacity constraints\nmodel.addConstr(DualGlue * DualMachineCount + SingleGlue * SingleMachineCount <= MaxGlue, name=\"glue_constraint\")\nmodel.addConstr(DualCap * DualMachineCount + SingleCap * SingleMachineCount >= MinLetters, name=\"capacity_constraint\")"
+        },
+        {
+            "description": "The number of single model stamping machines must be more than the number of dual model stamping machines.",
+            "status": "coded",
+            "formulation": "\\\\textup{SingleMachineCount} \\\\geq \\\\textup{DualMachineCount} + 1",
+            "related_variables": [
+                "SingleMachineCount",
+                "DualMachineCount"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint to ensure the number of single model stamping machines is greater than the number of dual model stamping machines\nmodel.addConstr(SingleMachineCount >= DualMachineCount + 1, name=\"machine_count_constraint\")"
+        },
+        {
+            "description": "The stamping capacity provided by the machines must meet or exceed the minimum required letters per minute.",
+            "status": "coded",
+            "formulation": "\\textup{DualCap} \\cdot \\textup{DualMachineCount} + \\textup{SingleCap} \\cdot \\textup{SingleMachineCount} \\geq \\textup{MinLetters}",
+            "related_variables": [
+                "DualMachineCount",
+                "SingleMachineCount"
+            ],
+            "related_parameters": [
+                "DualCap",
+                "SingleCap",
+                "MinLetters"
+            ],
+            "code": "# Add stamping capacity constraint\nmodel.addConstr(DualCap * DualMachineCount + SingleCap * SingleMachineCount >= MinLetters, name=\"stamping_capacity\")"
+        },
+        {
+            "description": "The total glue consumption from the machines cannot exceed the allowed maximum.",
+            "status": "coded",
+            "formulation": "\\textup{DualGlue} \\cdot \\textup{DualMachineCount} + \\textup{SingleGlue} \\cdot \\textup{SingleMachineCount} \\leq \\textup{MaxGlue}",
+            "related_variables": [
+                "DualMachineCount",
+                "SingleMachineCount"
+            ],
+            "related_parameters": [
+                "DualGlue",
+                "SingleGlue",
+                "MaxGlue"
+            ],
+            "code": "# Add glue consumption constraint\nmodel.addConstr(\n    DualGlue * DualMachineCount + SingleGlue * SingleMachineCount <= MaxGlue, \n    name=\"glue_consumption_constraint\"\n)"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of dual model stamping machines being purchased",
+            "symbol": "DualMachineCount",
+            "shape": [],
+            "status": "coded",
+            "code": "DualMachineCount = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"DualMachineCount\")"
+        },
+        {
+            "definition": "The number of single model stamping machines being purchased",
+            "symbol": "SingleMachineCount",
+            "shape": [],
+            "status": "coded",
+            "code": "SingleMachineCount = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"SingleMachineCount\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of stamping machines purchased.",
+            "status": "coded",
+            "formulation": "\\textup{DualMachineCount} + \\textup{SingleMachineCount}",
+            "related_variables": [
+                "DualMachineCount",
+                "SingleMachineCount"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(DualMachineCount + SingleMachineCount, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 1.0,
+    "log_path": "logs/log_20250414060653_nl4opt_prob_77/",
+    "problem_path": "data/nl4opt/prob_77/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_77/data.json\", \"r\") as f:\n    data = json.load(f)\n\nDualCap = data[\"DualCap\"] # scalar parameter\nSingleCap = data[\"SingleCap\"] # scalar parameter\nDualGlue = data[\"DualGlue\"] # scalar parameter\nSingleGlue = data[\"SingleGlue\"] # scalar parameter\nMinLetters = data[\"MinLetters\"] # scalar parameter\nMaxGlue = data[\"MaxGlue\"] # scalar parameter\nDualMachineCount = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"DualMachineCount\")\nSingleMachineCount = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"SingleMachineCount\")\n\n# Update the variable type of DualMachineCount to integer\nDualMachineCount.vType = gp.GRB.INTEGER\nmodel.update()\n\n# Updating the integrality of SingleMachineCount to an integer variable\nSingleMachineCount.vtype = gp.GRB.INTEGER\n\n# No additional code needed since the variable \"DualMachineCount\" is already defined with non-negativity guaranteed by being a continuous variable in gurobipy.\n\n# The variable \"SingleMachineCount\" already has a non-negative domain by default in Gurobi as it is declared as a continuous variable.\n# No additional constraint is needed for this requirement.\n\n# Add constraint for total stamping capacity\nmodel.addConstr(DualMachineCount * DualCap + SingleMachineCount * SingleCap >= MinLetters, name=\"min_stamping_capacity\")\n\n# Add glue usage constraint\nmodel.addConstr(DualMachineCount * DualGlue + SingleMachineCount * SingleGlue <= MaxGlue, name=\"glue_usage_constraint\")\n\n# Adding combined constraints for stamping capacity and glue consumption  \nmodel.addConstr(DualMachineCount * DualCap + SingleMachineCount * SingleCap >= MinLetters, name=\"stamping_capacity\")  \nmodel.addConstr(DualMachineCount * DualGlue + SingleMachineCount * SingleGlue <= MaxGlue, name=\"glue_consumption\")\n\n# Add minimum letters constraint\nmodel.addConstr(DualMachineCount * DualCap + SingleMachineCount * SingleCap >= MinLetters, name=\"min_letters\")\n\n# Add maximum glue constraint\nmodel.addConstr(DualMachineCount * DualGlue + SingleMachineCount * SingleGlue <= MaxGlue, name=\"max_glue\")\n\n# Add glue consumption and stamping capacity constraints\nmodel.addConstr(DualGlue * DualMachineCount + SingleGlue * SingleMachineCount <= MaxGlue, name=\"glue_consumption_limit\")\nmodel.addConstr(DualCap * DualMachineCount + SingleCap * SingleMachineCount >= MinLetters, name=\"stamping_capacity_requirement\")\n\n# Add glue and capacity constraints\nmodel.addConstr(DualGlue * DualMachineCount + SingleGlue * SingleMachineCount <= MaxGlue, name=\"glue_constraint\")\nmodel.addConstr(DualCap * DualMachineCount + SingleCap * SingleMachineCount >= MinLetters, name=\"capacity_constraint\")\n\n# Add constraint to ensure the number of single model stamping machines is greater than the number of dual model stamping machines\nmodel.addConstr(SingleMachineCount >= DualMachineCount + 1, name=\"machine_count_constraint\")\n\n# Add stamping capacity constraint\nmodel.addConstr(DualCap * DualMachineCount + SingleCap * SingleMachineCount >= MinLetters, name=\"stamping_capacity\")\n\n# Add glue consumption constraint\nmodel.addConstr(\n    DualGlue * DualMachineCount + SingleGlue * SingleMachineCount <= MaxGlue, \n    name=\"glue_consumption_constraint\"\n)\n\n# Set objective\nmodel.setObjective(DualMachineCount + SingleMachineCount, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

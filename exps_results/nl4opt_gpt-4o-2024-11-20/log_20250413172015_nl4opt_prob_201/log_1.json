@@ -1,0 +1,212 @@
+{
+    "background": "An appliance company is determining the optimal number of refrigerators and stoves to sell and install to maximize profit, given constraints on movers' and setup time.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Profit per refrigerator",
+            "symbol": "ProfitRefrigerator",
+            "value": 400,
+            "shape": [],
+            "code": "ProfitRefrigerator = data[\"ProfitRefrigerator\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit per stove",
+            "symbol": "ProfitStove",
+            "value": 260,
+            "shape": [],
+            "code": "ProfitStove = data[\"ProfitStove\"] # scalar parameter"
+        },
+        {
+            "definition": "Mover time required per refrigerator",
+            "symbol": "MoverTimeRefrigerator",
+            "value": 60,
+            "shape": [],
+            "code": "MoverTimeRefrigerator = data[\"MoverTimeRefrigerator\"] # scalar parameter"
+        },
+        {
+            "definition": "Mover time required per stove",
+            "symbol": "MoverTimeStove",
+            "value": 45,
+            "shape": [],
+            "code": "MoverTimeStove = data[\"MoverTimeStove\"] # scalar parameter"
+        },
+        {
+            "definition": "Setup time required per refrigerator",
+            "symbol": "SetupTimeRefrigerator",
+            "value": 20,
+            "shape": [],
+            "code": "SetupTimeRefrigerator = data[\"SetupTimeRefrigerator\"] # scalar parameter"
+        },
+        {
+            "definition": "Setup time required per stove",
+            "symbol": "SetupTimeStove",
+            "value": 25,
+            "shape": [],
+            "code": "SetupTimeStove = data[\"SetupTimeStove\"] # scalar parameter"
+        },
+        {
+            "definition": "Total available mover time",
+            "symbol": "TotalMoverTime",
+            "value": 20000,
+            "shape": [],
+            "code": "TotalMoverTime = data[\"TotalMoverTime\"] # scalar parameter"
+        },
+        {
+            "definition": "Total available setup time",
+            "symbol": "TotalSetupTime",
+            "value": 13000,
+            "shape": [],
+            "code": "TotalSetupTime = data[\"TotalSetupTime\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of refrigerators sold must be non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{RefrigeratorsSold} \\\\geq 0",
+            "related_variables": [
+                "RefrigeratorsSold"
+            ],
+            "related_parameters": [],
+            "code": "# Non-negativity constraint for the number of refrigerators sold\nmodel.addConstr(RefrigeratorsSold >= 0, name=\"non_negative_refrigerators_sold\")"
+        },
+        {
+            "description": "The number of stoves sold is non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{StovesSold} \\geq 0",
+            "related_variables": [
+                "StovesSold"
+            ],
+            "related_parameters": [],
+            "code": "# Adding constraint: The number of stoves sold is non-negative\nmodel.addConstr(StovesSold >= 0, name=\"non_negative_stoves\")"
+        },
+        {
+            "description": "The total mover time required for refrigerators and stoves must not exceed the total available mover time.",
+            "status": "coded",
+            "formulation": "\\textup{MoverTimeRefrigerator} \\cdot \\textup{RefrigeratorsSold} + \\textup{MoverTimeStove} \\cdot \\textup{StovesSold} \\leq \\textup{TotalMoverTime}",
+            "related_variables": [
+                "RefrigeratorsSold",
+                "StovesSold"
+            ],
+            "related_parameters": [
+                "MoverTimeRefrigerator",
+                "MoverTimeStove",
+                "TotalMoverTime"
+            ],
+            "code": "# Add total mover time constraint\nmodel.addConstr(\n    RefrigeratorsSold * MoverTimeRefrigerator + StovesSold * MoverTimeStove <= TotalMoverTime,\n    name=\"total_mover_time_constraint\"\n)"
+        },
+        {
+            "description": "The total setup time for all refrigerators and stoves must be at most TotalSetupTime.",
+            "status": "coded",
+            "formulation": "(\\textup{SetupTimeRefrigerator} \\times \\textup{RefrigeratorsSold}) + (\\textup{SetupTimeStove} \\times \\textup{StovesSold}) \\leq \\textup{TotalSetupTime}",
+            "related_variables": [
+                "RefrigeratorsSold",
+                "StovesSold"
+            ],
+            "related_parameters": [
+                "SetupTimeRefrigerator",
+                "SetupTimeStove",
+                "TotalSetupTime"
+            ],
+            "code": "# Add the total setup time constraint\nmodel.addConstr(\n    (RefrigeratorsSold * SetupTimeRefrigerator) + (StovesSold * SetupTimeStove) <= TotalSetupTime, \n    name=\"total_setup_time_constraint\"\n)"
+        },
+        {
+            "description": "The total mover time used, which is the sum of mover time for refrigerators and stoves, must not exceed the total available mover time.",
+            "status": "coded",
+            "formulation": "\\\\textup{MoverTimeRefrigerator} \\\\cdot \\\\textup{RefrigeratorsSold} + \\\\textup{MoverTimeStove} \\\\cdot \\\\textup{StovesSold} \\\\leq \\\\textup{TotalMoverTime}",
+            "related_variables": [
+                "RefrigeratorsSold",
+                "StovesSold"
+            ],
+            "related_parameters": [
+                "MoverTimeRefrigerator",
+                "MoverTimeStove",
+                "TotalMoverTime"
+            ],
+            "code": "# Add constraint to limit total mover time\nmodel.addConstr(\n    RefrigeratorsSold * MoverTimeRefrigerator + StovesSold * MoverTimeStove <= TotalMoverTime,\n    name=\"TotalMoverTimeConstraint\"\n)"
+        },
+        {
+            "description": "The total setup time used is the sum of the setup time for refrigerators and stoves, and it must be at most the available TotalSetupTime.",
+            "status": "coded",
+            "formulation": "\\textup{SetupTimeRefrigerator} \\\\cdot \\\\textup{RefrigeratorsSold} + \\\\textup{SetupTimeStove} \\\\cdot \\\\textup{StovesSold} \\\\leq \\\\textup{TotalSetupTime}",
+            "related_variables": [
+                "RefrigeratorsSold",
+                "StovesSold"
+            ],
+            "related_parameters": [
+                "SetupTimeRefrigerator",
+                "SetupTimeStove",
+                "TotalSetupTime"
+            ],
+            "code": "# Add total setup time constraint\nmodel.addConstr(RefrigeratorsSold * SetupTimeRefrigerator + StovesSold * SetupTimeStove <= TotalSetupTime, name=\"total_setup_time\")"
+        },
+        {
+            "description": "Mover time constraint ensuring the movers' time does not exceed the total available time.",
+            "status": "coded",
+            "formulation": "\\textup{MoverTimeRefrigerator} \\cdot \\textup{RefrigeratorsSold} + \\textup{MoverTimeStove} \\cdot \\textup{StovesSold} \\leq \\textup{TotalMoverTime}",
+            "related_variables": [
+                "RefrigeratorsSold",
+                "StovesSold"
+            ],
+            "related_parameters": [
+                "MoverTimeRefrigerator",
+                "MoverTimeStove",
+                "TotalMoverTime"
+            ],
+            "code": "# Add mover time constraint\nmodel.addConstr(\n    MoverTimeRefrigerator * RefrigeratorsSold + MoverTimeStove * StovesSold <= TotalMoverTime,\n    name=\"mover_time_constraint\"\n)"
+        },
+        {
+            "description": "Setup time constraint ensuring the setup time does not exceed the total available time.",
+            "status": "coded",
+            "formulation": "\\textup{SetupTimeRefrigerator} \\cdot \\textup{RefrigeratorsSold} + \\textup{SetupTimeStove} \\cdot \\textup{StovesSold} \\leq \\textup{TotalSetupTime}",
+            "related_variables": [
+                "RefrigeratorsSold",
+                "StovesSold"
+            ],
+            "related_parameters": [
+                "SetupTimeRefrigerator",
+                "SetupTimeStove",
+                "TotalSetupTime"
+            ],
+            "code": "# Add setup time constraint ensuring total setup time does not exceed available time\nmodel.addConstr(\n    RefrigeratorsSold * SetupTimeRefrigerator + StovesSold * SetupTimeStove <= TotalSetupTime, \n    name=\"setup_time_constraint\"\n)"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of refrigerators sold.",
+            "symbol": "RefrigeratorsSold",
+            "shape": [],
+            "status": "coded",
+            "code": "RefrigeratorsSold = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"RefrigeratorsSold\")"
+        },
+        {
+            "definition": "The number of stoves sold.",
+            "symbol": "StovesSold",
+            "shape": [],
+            "status": "coded",
+            "code": "StovesSold = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"StovesSold\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total profit from the sale and installation of refrigerators and stoves.",
+            "status": "coded",
+            "formulation": "\\textup{Maximize} \\quad \\textup{ProfitRefrigerator} \\cdot \\textup{RefrigeratorsSold} + \\textup{ProfitStove} \\cdot \\textup{StovesSold}",
+            "related_variables": [
+                "RefrigeratorsSold",
+                "StovesSold"
+            ],
+            "related_parameters": [
+                "ProfitRefrigerator",
+                "ProfitStove"
+            ],
+            "code": "# Set objective\nmodel.setObjective(ProfitRefrigerator * RefrigeratorsSold + ProfitStove * StovesSold, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413172015_nl4opt_prob_201/",
+    "problem_path": "data/nl4opt/prob_201/"
+}

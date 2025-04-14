@@ -1,0 +1,187 @@
+{
+    "background": "A toy store aims to maximize gift deliveries using seasonal and full-time volunteers within the points budget they have for rewarding the volunteers. They must also adhere to a certain composition of volunteer types.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Points for service per seasonal volunteer",
+            "symbol": "SeasonalPoints",
+            "value": 2,
+            "shape": [],
+            "code": "SeasonalPoints = data[\"SeasonalPoints\"] # scalar parameter"
+        },
+        {
+            "definition": "Points for service per full-time volunteer",
+            "symbol": "FullTimePoints",
+            "value": 5,
+            "shape": [],
+            "code": "FullTimePoints = data[\"FullTimePoints\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum total points to allocate",
+            "symbol": "MaxPoints",
+            "value": 200,
+            "shape": [],
+            "code": "MaxPoints = data[\"MaxPoints\"] # scalar parameter"
+        },
+        {
+            "definition": "Gifts delivered by a seasonal volunteer",
+            "symbol": "GiftsPerSeasonal",
+            "value": 5,
+            "shape": [],
+            "code": "GiftsPerSeasonal = data[\"GiftsPerSeasonal\"] # scalar parameter"
+        },
+        {
+            "definition": "Gifts delivered by a full-time volunteer",
+            "symbol": "GiftsPerFullTime",
+            "value": 8,
+            "shape": [],
+            "code": "GiftsPerFullTime = data[\"GiftsPerFullTime\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum percentage of volunteers that can be seasonal",
+            "symbol": "MaxSeasonalPercent",
+            "value": 0.3,
+            "shape": [],
+            "code": "MaxSeasonalPercent = data[\"MaxSeasonalPercent\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of full-time volunteers",
+            "symbol": "MinFullTimeVolunteers",
+            "value": 10,
+            "shape": [],
+            "code": "MinFullTimeVolunteers = data[\"MinFullTimeVolunteers\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The total points awarded to seasonal volunteers cannot exceed the maximum allowed points (MaxPoints).",
+            "status": "coded",
+            "formulation": "\\\\textup{SeasonalPoints} \\\\cdot \\\\textup{SeasonalVolunteers} \\\\leq \\\\textup{MaxPoints}",
+            "related_variables": [
+                "SeasonalVolunteers"
+            ],
+            "related_parameters": [
+                "SeasonalPoints",
+                "MaxPoints"
+            ],
+            "code": "# Adding the constraint for total seasonal points\nmodel.addConstr(SeasonalVolunteers * SeasonalPoints <= MaxPoints, name=\"seasonal_points_constraint\")"
+        },
+        {
+            "description": "The total points awarded to full-time volunteers cannot exceed MaxPoints.",
+            "status": "coded",
+            "formulation": "\\textup{FullTimePoints} \\\\cdot \\textup{FullTimeVolunteers} \\\\leq \\textup{MaxPoints}",
+            "related_variables": [
+                "FullTimeVolunteers"
+            ],
+            "related_parameters": [
+                "FullTimePoints",
+                "MaxPoints"
+            ],
+            "code": "# Add constraint to ensure total points from full-time volunteers does not exceed MaxPoints\nmodel.addConstr(FullTimePoints * FullTimeVolunteers <= MaxPoints, name=\"FullTimePoints_Limit\")"
+        },
+        {
+            "description": "The percentage of seasonal volunteers cannot exceed MaxSeasonalPercent",
+            "status": "coded",
+            "formulation": "(1 - \\textup{MaxSeasonalPercent}) \\cdot \\textup{SeasonalVolunteers} \\leq \\textup{MaxSeasonalPercent} \\cdot \\textup{FullTimeVolunteers}",
+            "related_variables": [
+                "SeasonalVolunteers",
+                "FullTimeVolunteers"
+            ],
+            "related_parameters": [
+                "MaxSeasonalPercent"
+            ],
+            "code": "# Add constraint to limit the percentage of seasonal volunteers\nmodel.addConstr((1 - MaxSeasonalPercent) * SeasonalVolunteers <= MaxSeasonalPercent * FullTimeVolunteers, \n                name=\"limit_seasonal_volunteers\")"
+        },
+        {
+            "description": "The number of full-time volunteers must be at least MinFullTimeVolunteers.",
+            "status": "coded",
+            "formulation": "\\textup{FullTimeVolunteers} \\geq \\textup{MinFullTimeVolunteers}",
+            "related_variables": [
+                "FullTimeVolunteers"
+            ],
+            "related_parameters": [
+                "MinFullTimeVolunteers"
+            ],
+            "code": "# Add constraint to ensure the number of full-time volunteers is at least the minimum required\nmodel.addConstr(FullTimeVolunteers >= MinFullTimeVolunteers, name=\"min_full_time_volunteers\")"
+        },
+        {
+            "description": "The total points used by volunteers cannot exceed the maximum points budget.",
+            "status": "coded",
+            "formulation": "\\textup{SeasonalPoints} \\cdot \\textup{SeasonalVolunteers} + \\textup{FullTimePoints} \\cdot \\textup{FullTimeVolunteers} \\leq \\textup{MaxPoints}",
+            "related_variables": [
+                "SeasonalVolunteers",
+                "FullTimeVolunteers"
+            ],
+            "related_parameters": [
+                "SeasonalPoints",
+                "FullTimePoints",
+                "MaxPoints"
+            ],
+            "code": "# Adding constraint for total points used by volunteers\nmodel.addConstr(\n    SeasonalPoints * SeasonalVolunteers + FullTimePoints * FullTimeVolunteers <= MaxPoints,\n    name=\"points_budget_constraint\"\n)"
+        },
+        {
+            "description": "The maximum percentage of seasonal volunteers must not exceed the specified limit.",
+            "status": "coded",
+            "formulation": "(1 - \\textup{MaxSeasonalPercent}) \\cdot \\textup{SeasonalVolunteers} \\leq \\textup{MaxSeasonalPercent} \\cdot \\textup{FullTimeVolunteers}",
+            "related_variables": [
+                "SeasonalVolunteers",
+                "FullTimeVolunteers"
+            ],
+            "related_parameters": [
+                "MaxSeasonalPercent"
+            ],
+            "code": "# Add constraint for maximum percentage of seasonal volunteers\nmodel.addConstr((1 - MaxSeasonalPercent) * SeasonalVolunteers <= MaxSeasonalPercent * FullTimeVolunteers, \n                name=\"max_seasonal_volunteers\")"
+        },
+        {
+            "description": "The number of full-time volunteers must be at least the specified minimum threshold.",
+            "status": "coded",
+            "formulation": "\\textup{FullTimeVolunteers} \\geq \\textup{MinFullTimeVolunteers}",
+            "related_variables": [
+                "FullTimeVolunteers"
+            ],
+            "related_parameters": [
+                "MinFullTimeVolunteers"
+            ],
+            "code": "# Add minimum full-time volunteers constraint\nmodel.addConstr(FullTimeVolunteers >= MinFullTimeVolunteers, name=\"min_full_time_volunteers\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of seasonal volunteers hired.",
+            "symbol": "SeasonalVolunteers",
+            "shape": [],
+            "status": "coded",
+            "code": "SeasonalVolunteers = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"SeasonalVolunteers\")"
+        },
+        {
+            "definition": "The number of full-time volunteers hired.",
+            "symbol": "FullTimeVolunteers",
+            "shape": [],
+            "status": "coded",
+            "code": "FullTimeVolunteers = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"FullTimeVolunteers\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total number of gifts delivered by the volunteers.",
+            "status": "coded",
+            "formulation": "\\textup{GiftsPerSeasonal} \\cdot \\textup{SeasonalVolunteers} + \\textup{GiftsPerFullTime} \\cdot \\textup{FullTimeVolunteers}",
+            "related_variables": [
+                "SeasonalVolunteers",
+                "FullTimeVolunteers"
+            ],
+            "related_parameters": [
+                "GiftsPerSeasonal",
+                "GiftsPerFullTime"
+            ],
+            "code": "# Set objective\nmodel.setObjective(GiftsPerSeasonal * SeasonalVolunteers + GiftsPerFullTime * FullTimeVolunteers, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 346.3414634146341,
+    "log_path": "logs/log_20250413163435_nl4opt_prob_175/",
+    "problem_path": "data/nl4opt/prob_175/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_175/data.json\", \"r\") as f:\n    data = json.load(f)\n\nSeasonalPoints = data[\"SeasonalPoints\"] # scalar parameter\nFullTimePoints = data[\"FullTimePoints\"] # scalar parameter\nMaxPoints = data[\"MaxPoints\"] # scalar parameter\nGiftsPerSeasonal = data[\"GiftsPerSeasonal\"] # scalar parameter\nGiftsPerFullTime = data[\"GiftsPerFullTime\"] # scalar parameter\nMaxSeasonalPercent = data[\"MaxSeasonalPercent\"] # scalar parameter\nMinFullTimeVolunteers = data[\"MinFullTimeVolunteers\"] # scalar parameter\nSeasonalVolunteers = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"SeasonalVolunteers\")\nFullTimeVolunteers = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"FullTimeVolunteers\")\n\n# Adding the constraint for total seasonal points\nmodel.addConstr(SeasonalVolunteers * SeasonalPoints <= MaxPoints, name=\"seasonal_points_constraint\")\n\n# Add constraint to ensure total points from full-time volunteers does not exceed MaxPoints\nmodel.addConstr(FullTimePoints * FullTimeVolunteers <= MaxPoints, name=\"FullTimePoints_Limit\")\n\n# Add constraint to limit the percentage of seasonal volunteers\nmodel.addConstr((1 - MaxSeasonalPercent) * SeasonalVolunteers <= MaxSeasonalPercent * FullTimeVolunteers, \n                name=\"limit_seasonal_volunteers\")\n\n# Add constraint to ensure the number of full-time volunteers is at least the minimum required\nmodel.addConstr(FullTimeVolunteers >= MinFullTimeVolunteers, name=\"min_full_time_volunteers\")\n\n# Adding constraint for total points used by volunteers\nmodel.addConstr(\n    SeasonalPoints * SeasonalVolunteers + FullTimePoints * FullTimeVolunteers <= MaxPoints,\n    name=\"points_budget_constraint\"\n)\n\n# Add constraint for maximum percentage of seasonal volunteers\nmodel.addConstr((1 - MaxSeasonalPercent) * SeasonalVolunteers <= MaxSeasonalPercent * FullTimeVolunteers, \n                name=\"max_seasonal_volunteers\")\n\n# Add minimum full-time volunteers constraint\nmodel.addConstr(FullTimeVolunteers >= MinFullTimeVolunteers, name=\"min_full_time_volunteers\")\n\n# Set objective\nmodel.setObjective(GiftsPerSeasonal * SeasonalVolunteers + GiftsPerFullTime * FullTimeVolunteers, gp.GRB.MAXIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

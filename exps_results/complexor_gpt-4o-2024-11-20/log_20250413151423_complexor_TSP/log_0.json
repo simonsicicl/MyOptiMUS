@@ -1,0 +1,150 @@
+{
+    "background": "The problem is focused on allocating goods from multiple origins to multiple destinations, considering the individual supply limits at each origin and demand requirements at each destination, with the goal of minimizing the total transportation cost.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "symbol": "OriginNum",
+            "definition": "The total number of origins",
+            "shape": [],
+            "code": "OriginNum = data[\"OriginNum\"] # scalar parameter"
+        },
+        {
+            "symbol": "DestinationNum",
+            "definition": "The total number of destinations",
+            "shape": [],
+            "code": "DestinationNum = data[\"DestinationNum\"] # scalar parameter"
+        },
+        {
+            "symbol": "Supply",
+            "definition": "The supply of goods available at each origin",
+            "shape": [
+                "OriginNum"
+            ],
+            "code": "Supply = np.array(data[\"Supply\"]) # ['OriginNum']"
+        },
+        {
+            "symbol": "Demand",
+            "definition": "The demand for goods to be satisfied at each destination",
+            "shape": [
+                "DestinationNum"
+            ],
+            "code": "Demand = np.array(data[\"Demand\"]) # ['DestinationNum']"
+        },
+        {
+            "symbol": "Cost",
+            "definition": "The cost of transporting goods from origin i to destination j",
+            "shape": [
+                "OriginNum",
+                "DestinationNum"
+            ],
+            "code": "Cost = np.array(data[\"Cost\"]) # ['OriginNum', 'DestinationNum']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Each origin i has a supply limit, restricting the total amount of goods transported from that origin to destinations.",
+            "status": "formulated",
+            "formulation": "\\sum_{j=1}^{\\textup{DestinationNum}} \\textup{GoodsTransported}_{ij} \\leq \\textup{Supply}_{i}, \\quad \\forall i \\in \\{1, 2, \\dots, \\textup{OriginNum}\\}",
+            "related_variables": [
+                "GoodsTransported"
+            ],
+            "related_parameters": [
+                "Supply",
+                "OriginNum",
+                "DestinationNum"
+            ]
+        },
+        {
+            "description": "The total goods transported to each destination j must satisfy its demand requirement.",
+            "status": "formulated",
+            "formulation": "\\sum_{i=1}^{\\textup{OriginNum}} \\textup{GoodsTransported}_{i,j} = \\textup{Demand}_{j} \\quad \\forall j \\in \\{1, 2, \\dots, \\textup{DestinationNum}\\}",
+            "related_variables": [
+                "GoodsTransported"
+            ],
+            "related_parameters": [
+                "Demand",
+                "OriginNum",
+                "DestinationNum"
+            ]
+        },
+        {
+            "description": "The amount of goods transported from any origin to any destination must be non-negative.",
+            "status": "formulated",
+            "formulation": "\\textup{GoodsTransported}_{ij} \\geq 0 \\quad \\textup{for all} \\quad i \\in \\{1, 2, \\dots, \\textup{OriginNum}\\}, \\quad j \\in \\{1, 2, \\dots, \\textup{DestinationNum}\\}",
+            "related_variables": [
+                "GoodsTransported"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Ensure the total goods transported from each origin does not exceed its supply limit",
+            "status": "formulated",
+            "formulation": "\\sum_{j=1}^{\\textup{DestinationNum}} \\textup{GoodsTransported}_{i,j} \\leq \\textup{Supply}_{i}, \\quad \\forall \\, i \\in \\{1, 2, ..., \\textup{OriginNum}\\}",
+            "related_variables": [
+                "GoodsTransported"
+            ],
+            "related_parameters": [
+                "Supply",
+                "DestinationNum",
+                "OriginNum"
+            ]
+        },
+        {
+            "description": "Ensure the total goods transported to each destination meets its demand",
+            "status": "formulated",
+            "formulation": "\\sum_{i=1}^{\\textup{OriginNum}} \\textup{GoodsTransported}_{i,j} = \\textup{Demand}_{j}, \\quad \\forall \\, j \\in \\{1, 2, ..., \\textup{DestinationNum}\\}",
+            "related_variables": [
+                "GoodsTransported"
+            ],
+            "related_parameters": [
+                "Demand",
+                "OriginNum",
+                "DestinationNum"
+            ]
+        },
+        {
+            "description": "Ensure non-negativity of the transported goods",
+            "status": "formulated",
+            "formulation": "\\textup{GoodsTransported}_{i,j} \\geq 0, \\quad \\forall \\, i \\in \\{1, 2, ..., \\textup{OriginNum}\\}, \\, \\forall \\, j \\in \\{1, 2, ..., \\textup{DestinationNum}\\}",
+            "related_variables": [
+                "GoodsTransported"
+            ],
+            "related_parameters": [
+                "OriginNum",
+                "DestinationNum"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The amount of goods transported from origin i to destination j",
+            "symbol": "GoodsTransported",
+            "shape": [
+                "OriginNum",
+                "DestinationNum"
+            ],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total transportation cost from origins to destinations",
+            "status": "formulated",
+            "formulation": "\\sum_{i=1}^{\\textup{OriginNum}} \\sum_{j=1}^{\\textup{DestinationNum}} \\textup{Cost}_{i,j} \\cdot \\textup{GoodsTransported}_{i,j}",
+            "related_variables": [
+                "GoodsTransported"
+            ],
+            "related_parameters": [
+                "Cost",
+                "OriginNum",
+                "DestinationNum"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413151423_complexor_TSP/",
+    "problem_path": "data/complexor/TSP/"
+}

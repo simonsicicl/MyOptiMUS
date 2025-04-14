@@ -1,0 +1,164 @@
+{
+    "background": "The goal is to determine the optimal execution frequency of each process to maximize the revenue for the coming month, involving various processes, options, and price points, each with associated resources, prices, inputs, outputs, and costs.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of options",
+            "symbol": "O",
+            "value": "",
+            "shape": [],
+            "code": "O = data[\"O\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of price points",
+            "symbol": "P",
+            "value": "",
+            "shape": [],
+            "code": "P = data[\"P\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of processes",
+            "symbol": "L",
+            "value": "",
+            "shape": [],
+            "code": "L = data[\"L\"] # scalar parameter"
+        },
+        {
+            "definition": "Allocated resources for each option",
+            "symbol": "Allocated",
+            "value": "",
+            "shape": [
+                "O"
+            ],
+            "code": "Allocated = np.array(data[\"Allocated\"]) # ['O']"
+        },
+        {
+            "definition": "Price at each price point",
+            "symbol": "Price",
+            "value": "",
+            "shape": [
+                "P"
+            ],
+            "code": "Price = np.array(data[\"Price\"]) # ['P']"
+        },
+        {
+            "definition": "Input resources required for each option in each process",
+            "symbol": "Input",
+            "value": "",
+            "shape": [
+                "L",
+                "O"
+            ],
+            "code": "Input = np.array(data[\"Input\"]) # ['L', 'O']"
+        },
+        {
+            "definition": "Output produced for each price point in each process",
+            "symbol": "Output",
+            "value": "",
+            "shape": [
+                "L",
+                "P"
+            ],
+            "code": "Output = np.array(data[\"Output\"]) # ['L', 'P']"
+        },
+        {
+            "definition": "Cost for each process",
+            "symbol": "Cost",
+            "value": "",
+            "shape": [
+                "L"
+            ],
+            "code": "Cost = np.array(data[\"Cost\"]) # ['L']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Each process execution number must be non-negative",
+            "status": "coded",
+            "formulation": "\\forall l \\in \\{1, \\ldots, L\\}, \\quad \\textup{ProcessExecutions}_l \\geq 0",
+            "related_variables": [
+                "ProcessExecutions"
+            ],
+            "related_parameters": [
+                "L"
+            ],
+            "code": "# Each process execution number must be non-negative\nfor l in range(L):\n    model.addConstr(ProcessExecutions[l] >= 0, name=f\"ProcessExecutions_nonneg_{l}\")"
+        },
+        {
+            "description": "Total resource allocation for all processes does not exceed allocated resources for each option",
+            "status": "coded",
+            "formulation": "\\sum_{l=1}^{L} \\textup{Input}_{l,o} \\cdot \\textup{ProcessExecutions}_l \\leq \\textup{Allocated}_o \\quad \\forall o \\in \\{1, \\ldots, O\\}",
+            "related_variables": [
+                "ProcessExecutions"
+            ],
+            "related_parameters": [
+                "Input",
+                "Allocated"
+            ],
+            "code": "# Add constraints to ensure total resource allocation for all processes does not exceed allocated resources for each option\nfor o in range(O):\n    model.addConstr(gp.quicksum(Input[l, o] * ProcessExecutions[l] for l in range(L)) <= Allocated[o], name=\"resource_allocation_o{}\".format(o))"
+        },
+        {
+            "description": "The total input resources used by the processes for each option do not exceed the allocated resources for that option",
+            "status": "coded",
+            "formulation": "\\sum_{l=1}^{L} \\textup{Input}_{l,o} \\times \\textup{ProcessExecutions}_{l} \\leq \\textup{Allocated}_o \\quad \\forall o \\in \\{1, ..., O\\}",
+            "related_variables": [
+                "ProcessExecutions"
+            ],
+            "related_parameters": [
+                "Input",
+                "Allocated"
+            ],
+            "code": "# Add constraints for total input resources used by the processes for each option not exceeding the allocated resources\nfor o in range(O):\n    model.addConstr(gp.quicksum(Input[l, o] * ProcessExecutions[l] for l in range(L)) <= Allocated[o], name=f\"resource_limit_option_{o}\")"
+        },
+        {
+            "description": "Outputs produced for all price points from executing processes do not exceed demand",
+            "status": "coded",
+            "formulation": "\\sum_{l=1}^{L} \\textup{ProcessExecutions}_l \\times \\textup{Output}_{l,p} \\leq \\textup{Output}_{l,p} \\quad \\forall p \\in \\{1, \\ldots, P\\}",
+            "related_variables": [
+                "ProcessExecutions"
+            ],
+            "related_parameters": [
+                "Output",
+                "L",
+                "P"
+            ],
+            "code": "Demand = data[\"Demand\"] # loading Demand from the data file, assuming it's present\nProcessExecutions = model.addVars(L, vtype=gp.GRB.INTEGER, name=\"ProcessExecutions\")\n\n# Outputs produced for all price points from executing processes do not exceed demand\nfor p in range(P):\n    model.addConstr(gp.quicksum(Output[l, p] * ProcessExecutions[l] for l in range(L)) <= Demand[p], name=f\"output_vs_demand_p{p}\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Execution number for each process",
+            "symbol": "ProcessExecutions",
+            "shape": [
+                "L"
+            ],
+            "status": "coded",
+            "code": "ProcessExecutions = model.addVars(L, vtype=gp.GRB.INTEGER, name=\"ProcessExecutions\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total revenue, which is the sum of the product of the price, the number of executions, and the output at each price point, minus the product of the number of executions and the cost for each process.",
+            "status": "coded",
+            "formulation": "\\max \\quad \\sum_{l=1}^{\\textup{L}} \\left( \\sum_{p=1}^{\\textup{P}} (\\textup{Price}_p \\cdot \\textup{ProcessExecutions}_l \\cdot \\textup{Output}_{lp}) - \\textup{Cost}_l \\cdot \\textup{ProcessExecutions}_l \\right)",
+            "related_variables": [
+                "ProcessExecutions"
+            ],
+            "related_parameters": [
+                "L",
+                "P",
+                "Price",
+                "Output",
+                "Cost"
+            ],
+            "code": "# Define the objective function\nmodel.setObjective(\n    gp.quicksum(\n        (gp.quicksum(Price[p] * ProcessExecutions[l] * Output[l, p] for p in range(P)) -\n         Cost[l] * ProcessExecutions[l]\n        ) for l in range(L)\n    ),\n    gp.GRB.MAXIMIZE\n)"
+        }
+    ],
+    "solution_status": "runtime_error",
+    "solver_output_status": "runtime_error",
+    "error_message": "Traceback (most recent call last):\n  File \"c:\\Users\\Simon\\Desktop\\Courses\\ECE 570\\ECE570_Project\\MyOptiMUS\\evaluator.py\", line 45, in run\n    exec(last_line, local_env, local_env)\n  File \"<string>\", line 3, in <module>\nNameError: name 'Demand' is not defined\n",
+    "obj_val": null,
+    "log_path": "logs/log_20250413074220_nlp4lp_17/",
+    "problem_path": "data/nlp4lp/17/",
+    "prep_code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nlp4lp/17/data.json\", \"r\") as f:\n    data = json.load(f)\n"
+}

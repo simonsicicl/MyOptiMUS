@@ -1,0 +1,250 @@
+{
+    "background": "Custom Tees aims to achieve specific click targets from young and old age groups through a selection of different ad types, each with its own characteristics and limitations.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Total goal for clicks by young individuals",
+            "symbol": "GoalYoung",
+            "value": "",
+            "shape": [],
+            "code": "GoalYoung = data[\"GoalYoung\"] # scalar parameter"
+        },
+        {
+            "definition": "Total goal for clicks by old individuals",
+            "symbol": "GoalOld",
+            "value": "",
+            "shape": [],
+            "code": "GoalOld = data[\"GoalOld\"] # scalar parameter"
+        },
+        {
+            "definition": "Total goal for unique clicks by young individuals",
+            "symbol": "GoalUniqueYoung",
+            "value": "",
+            "shape": [],
+            "code": "GoalUniqueYoung = data[\"GoalUniqueYoung\"] # scalar parameter"
+        },
+        {
+            "definition": "Total goal for unique clicks by old individuals",
+            "symbol": "GoalUniqueOld",
+            "value": "",
+            "shape": [],
+            "code": "GoalUniqueOld = data[\"GoalUniqueOld\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of clicks by young individuals for each ad type",
+            "symbol": "YoungClicks",
+            "value": "",
+            "shape": [
+                "A"
+            ],
+            "code": "YoungClicks = np.array(data[\"YoungClicks\"]) # ['A']"
+        },
+        {
+            "definition": "Number of clicks by old individuals for each ad type",
+            "symbol": "OldClicks",
+            "value": "",
+            "shape": [
+                "A"
+            ],
+            "code": "OldClicks = np.array(data[\"OldClicks\"]) # ['A']"
+        },
+        {
+            "definition": "Cost associated with each ad type",
+            "symbol": "Costs",
+            "value": "",
+            "shape": [
+                "A"
+            ],
+            "code": "Costs = np.array(data[\"Costs\"]) # ['A']"
+        },
+        {
+            "definition": "Maximum number of clicks possible for each ad type",
+            "symbol": "MaxClicks",
+            "value": "",
+            "shape": [
+                "A"
+            ],
+            "code": "MaxClicks = np.array(data[\"MaxClicks\"]) # ['A']"
+        },
+        {
+            "definition": "Number of unique clicks for each ad type",
+            "symbol": "UniqueClicks",
+            "value": "",
+            "shape": [
+                "A"
+            ],
+            "code": "UniqueClicks = np.array(data[\"UniqueClicks\"]) # ['A']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The total clicks from young individuals must meet or exceed GoalYoung.",
+            "status": "formulated",
+            "formulation": "\\sum_{a \\in A} \\textup{YoungClicks}_{a} \\geq \\textup{GoalYoung}",
+            "related_variables": [
+                "YoungClicks"
+            ],
+            "related_parameters": [
+                "GoalYoung"
+            ]
+        },
+        {
+            "description": "Total clicks from old individuals must meet or exceed GoalOld",
+            "status": "formulated",
+            "formulation": "\\sum_{a \\in \\textup{AdTypes}} \\textup{OldClicks}[a] \\cdot \\textup{AdDecision}[a] \\geq \\textup{GoalOld}",
+            "related_variables": [
+                "AdDecision"
+            ],
+            "related_parameters": [
+                "OldClicks",
+                "GoalOld"
+            ]
+        },
+        {
+            "description": "The total unique clicks from young individuals must meet or exceed GoalUniqueYoung",
+            "status": "formulated",
+            "formulation": "\\sum_{a \\in A} \\textup{AdDecision}_{a} \\times \\textup{UniqueClicks}_{a} \\geq \\textup{GoalUniqueYoung}",
+            "related_variables": [
+                "AdDecision"
+            ],
+            "related_parameters": [
+                "UniqueClicks",
+                "GoalUniqueYoung"
+            ]
+        },
+        {
+            "description": "The total unique clicks from old individuals must be greater than or equal to GoalUniqueOld.",
+            "status": "formulated",
+            "formulation": "\\sum_{a \\in A} \\textup{OldUniqueClicks}_{a} \\geq \\textup{GoalUniqueOld}",
+            "related_variables": [
+                "OldUniqueClicks"
+            ],
+            "related_parameters": [
+                "GoalUniqueOld"
+            ]
+        },
+        {
+            "description": "The total number of clicks from each ad type must not exceed the maximum allowed clicks (MaxClicks).",
+            "status": "formulated",
+            "formulation": "\\textup{TotalClicks}_{a} \\leq \\textup{MaxClicks}_{a}, \\quad \\forall \\ a \\in \\textup{A}",
+            "related_variables": [
+                "TotalClicks"
+            ],
+            "related_parameters": [
+                "MaxClicks"
+            ]
+        },
+        {
+            "description": "The total number of clicks for each ad type must be non-negative.",
+            "status": "formulated",
+            "formulation": "\\textup{TotalClicks}_{a} \\geq 0 \\quad \\forall \\ a \\in A",
+            "related_variables": [
+                "TotalClicks"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Ad decisions must not exceed the maximum feasible clicks for each ad type",
+            "status": "formulated",
+            "formulation": "0 \\leq \\textup{AdDecision}[a] \\leq \\textup{MaxClicks}[a] \\quad \\forall \\ a",
+            "related_variables": [
+                "AdDecision"
+            ],
+            "related_parameters": [
+                "MaxClicks"
+            ]
+        },
+        {
+            "description": "The unique clicks allocated to old individuals for each ad type cannot exceed the total unique clicks for that ad type.",
+            "status": "formulated",
+            "formulation": "\\textup{OldUniqueClicks}_{a} \\leq \\textup{UniqueClicks}_{a}, \\quad \\forall a \\in A",
+            "related_variables": [
+                "OldUniqueClicks"
+            ],
+            "related_parameters": [
+                "UniqueClicks"
+            ]
+        },
+        {
+            "description": "Defines the total number of clicks for each ad type as the sum of young and old clicks.",
+            "status": "formulated",
+            "formulation": "\\textup{TotalClicks}_{a} = \\textup{YoungClicks}_{a} + \\textup{OldClicks}_{a}, \\quad \\forall \\ a \\in \\textup{A}",
+            "related_variables": [
+                "TotalClicks"
+            ],
+            "related_parameters": [
+                "YoungClicks",
+                "OldClicks"
+            ]
+        },
+        {
+            "description": "Ensure the total clicks generated by the selected ads for young individuals meets or exceeds the goal.",
+            "status": "formulated",
+            "formulation": "\\sum_{a \\in A} \\textup{YoungClicks}_{a} \\cdot \\textup{AdDecision}_{a} \\geq \\textup{GoalYoung}",
+            "related_variables": [
+                "AdDecision"
+            ],
+            "related_parameters": [
+                "YoungClicks",
+                "GoalYoung"
+            ]
+        },
+        {
+            "description": "Ensure the total clicks generated by the selected ads for old individuals meets or exceeds the goal.",
+            "status": "formulated",
+            "formulation": "\\sum_{a \\in A} \\textup{OldClicks}_{a} \\cdot \\textup{AdDecision}_{a} \\geq \\textup{GoalOld}",
+            "related_variables": [
+                "AdDecision"
+            ],
+            "related_parameters": [
+                "OldClicks",
+                "GoalOld"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of ads selected for each ad type",
+            "symbol": "AdDecision",
+            "shape": [
+                "A"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "Unique clicks from old individuals for each ad type.",
+            "symbol": "OldUniqueClicks",
+            "shape": [
+                "A"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "The total number of clicks for each ad type.",
+            "symbol": "TotalClicks",
+            "shape": [
+                "A"
+            ],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the overall cost of ad selection while meeting the click goals for both young and old individuals.",
+            "status": "formulated",
+            "formulation": "\\sum_{a \\in A} \\textup{Costs}_{a} \\cdot \\textup{AdDecision}_{a}",
+            "related_variables": [
+                "AdDecision"
+            ],
+            "related_parameters": [
+                "Costs"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413171625_nlp4lp_48/",
+    "problem_path": "data/nlp4lp/48/"
+}

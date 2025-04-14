@@ -1,0 +1,232 @@
+{
+    "background": "Patients need to be transported to a hospital following an accident. They can be transported by either helicopter or bus, each with different capacities and trip times.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of patients a helicopter can transport per trip",
+            "symbol": "HelicopterCapacity",
+            "value": 5,
+            "shape": [],
+            "code": "HelicopterCapacity = data[\"HelicopterCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Time taken for one trip by helicopter",
+            "symbol": "HelicopterTripTime",
+            "value": 1,
+            "shape": [],
+            "code": "HelicopterTripTime = data[\"HelicopterTripTime\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of patients a bus can transport per trip",
+            "symbol": "BusCapacity",
+            "value": 8,
+            "shape": [],
+            "code": "BusCapacity = data[\"BusCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Time taken for one trip by bus",
+            "symbol": "BusTripTime",
+            "value": 3,
+            "shape": [],
+            "code": "BusTripTime = data[\"BusTripTime\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of patients that need transportation",
+            "symbol": "MinPatients",
+            "value": 120,
+            "shape": [],
+            "code": "MinPatients = data[\"MinPatients\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum percentage of trips that must be by helicopter",
+            "symbol": "MinHelicopterTripsPercentage",
+            "value": 0.33,
+            "shape": [],
+            "code": "MinHelicopterTripsPercentage = data[\"MinHelicopterTripsPercentage\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of bus trips allowed",
+            "symbol": "MaxBusTrips",
+            "value": 10,
+            "shape": [],
+            "code": "MaxBusTrips = data[\"MaxBusTrips\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of patients transported by helicopter must be non-negative.",
+            "status": "formulated",
+            "formulation": "\\\\textup{PatientsTransportedByHelicopter} \\\\geq 0",
+            "related_variables": [
+                "PatientsTransportedByHelicopter"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "The number of patients transported by bus must be non-negative.",
+            "status": "formulated",
+            "formulation": "\\textup{PatientsTransportedByBus} \\geq 0",
+            "related_variables": [
+                "PatientsTransportedByBus"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Ensure that at least \\textup{MinHelicopterTripsPercentage} of the total trips are made by helicopter.",
+            "status": "formulated",
+            "formulation": "\\frac{\\textup{HelicopterTrips}}{\\textup{HelicopterTrips} + \\textup{BusTrips}} \\geq \\textup{MinHelicopterTripsPercentage}",
+            "related_variables": [
+                "PatientsTransportedByHelicopter",
+                "PatientsTransportedByBus",
+                "HelicopterTrips",
+                "BusTrips"
+            ],
+            "related_parameters": [
+                "MinHelicopterTripsPercentage",
+                "HelicopterCapacity",
+                "BusCapacity"
+            ]
+        },
+        {
+            "description": "The number of bus trips is non-negative and at most MaxBusTrips.",
+            "status": "formulated",
+            "formulation": "\\textup{BusTrips} \\geq 0, \\quad \\textup{BusTrips} \\leq \\textup{MaxBusTrips}",
+            "related_variables": [
+                "BusTrips"
+            ],
+            "related_parameters": [
+                "MaxBusTrips"
+            ]
+        },
+        {
+            "description": "Define the number of helicopter trips as the total patients transported by helicopter divided by helicopter capacity.",
+            "status": "formulated",
+            "formulation": "\\textup{HelicopterTrips} = \\frac{\\textup{PatientsTransportedByHelicopter}}{\\textup{HelicopterCapacity}}",
+            "related_variables": [
+                "HelicopterTrips",
+                "PatientsTransportedByHelicopter"
+            ],
+            "related_parameters": [
+                "HelicopterCapacity"
+            ]
+        },
+        {
+            "description": "Define the number of bus trips as the total patients transported by bus divided by bus capacity.",
+            "status": "formulated",
+            "formulation": "\\textup{BusTrips} = \\frac{\\textup{PatientsTransportedByBus}}{\\textup{BusCapacity}}",
+            "related_variables": [
+                "BusTrips",
+                "PatientsTransportedByBus"
+            ],
+            "related_parameters": [
+                "BusCapacity"
+            ]
+        },
+        {
+            "description": "Patients transported by helicopter must equal the number of helicopter trips times the helicopter capacity.",
+            "status": "formulated",
+            "formulation": "\\\\textup{PatientsTransportedByHelicopter} = \\\\textup{HelicopterTrips} \\\\times \\\\textup{HelicopterCapacity}",
+            "related_variables": [
+                "PatientsTransportedByHelicopter",
+                "HelicopterTrips"
+            ],
+            "related_parameters": [
+                "HelicopterCapacity"
+            ]
+        },
+        {
+            "description": "Patients transported by bus must equal the number of bus trips times the bus capacity.",
+            "status": "formulated",
+            "formulation": "\\\\textup{PatientsTransportedByBus} = \\\\textup{BusTrips} \\\\times \\\\textup{BusCapacity}",
+            "related_variables": [
+                "PatientsTransportedByBus",
+                "BusTrips"
+            ],
+            "related_parameters": [
+                "BusCapacity"
+            ]
+        },
+        {
+            "description": "The total number of patients transported must meet or exceed the minimum required patients.",
+            "status": "formulated",
+            "formulation": "\\\\textup{PatientsTransportedByHelicopter} + \\\\textup{PatientsTransportedByBus} \\\\geq \\\\textup{MinPatients}",
+            "related_variables": [
+                "PatientsTransportedByHelicopter",
+                "PatientsTransportedByBus"
+            ],
+            "related_parameters": [
+                "MinPatients"
+            ]
+        },
+        {
+            "description": "The number of helicopter trips must meet the minimum proportion requirement.",
+            "status": "formulated",
+            "formulation": "\\\\textup{HelicopterTrips} \\\\geq \\\\textup{MinHelicopterTripsPercentage} \\\\times (\\\\textup{HelicopterTrips} + \\\\textup{BusTrips})",
+            "related_variables": [
+                "HelicopterTrips",
+                "BusTrips"
+            ],
+            "related_parameters": [
+                "MinHelicopterTripsPercentage"
+            ]
+        },
+        {
+            "description": "The total number of bus trips must not exceed the maximum allowed bus trips.",
+            "status": "formulated",
+            "formulation": "\\\\textup{BusTrips} \\\\leq \\\\textup{MaxBusTrips}",
+            "related_variables": [
+                "BusTrips"
+            ],
+            "related_parameters": [
+                "MaxBusTrips"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of patients transported by helicopter.",
+            "symbol": "PatientsTransportedByHelicopter",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "The number of patients transported by bus.",
+            "symbol": "PatientsTransportedByBus",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "The number of trips made by helicopter.",
+            "symbol": "HelicopterTrips",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "The number of trips made by bus.",
+            "symbol": "BusTrips",
+            "shape": [],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total time to transport all patients to the hospital.",
+            "status": "formulated",
+            "formulation": "\\\\textup{Objective} = \\\\textup{HelicopterTrips} \\\\times \\\\textup{HelicopterTripTime} + \\\\textup{BusTrips} \\\\times \\\\textup{BusTripTime}",
+            "related_variables": [
+                "HelicopterTrips",
+                "BusTrips"
+            ],
+            "related_parameters": [
+                "HelicopterTripTime",
+                "BusTripTime"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413171050_nl4opt_prob_192/",
+    "problem_path": "data/nl4opt/prob_192/"
+}

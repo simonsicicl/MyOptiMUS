@@ -1,0 +1,276 @@
+{
+    "background": "A chocolate shop produces two types of chocolate bars, milk chocolate and dark chocolate, which require cocoa and milk in different quantities.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Units of cocoa required for one milk chocolate bar",
+            "symbol": "CocoaMilk",
+            "value": 4,
+            "shape": [],
+            "code": "CocoaMilk = data[\"CocoaMilk\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of milk required for one milk chocolate bar",
+            "symbol": "MilkMilk",
+            "value": 7,
+            "shape": [],
+            "code": "MilkMilk = data[\"MilkMilk\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of cocoa required for one dark chocolate bar",
+            "symbol": "CocoaDark",
+            "value": 6,
+            "shape": [],
+            "code": "CocoaDark = data[\"CocoaDark\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of milk required for one dark chocolate bar",
+            "symbol": "MilkDark",
+            "value": 3,
+            "shape": [],
+            "code": "MilkDark = data[\"MilkDark\"] # scalar parameter"
+        },
+        {
+            "definition": "Total units of cocoa available",
+            "symbol": "TotalCocoa",
+            "value": 2000,
+            "shape": [],
+            "code": "TotalCocoa = data[\"TotalCocoa\"] # scalar parameter"
+        },
+        {
+            "definition": "Total units of milk available",
+            "symbol": "TotalMilk",
+            "value": 1750,
+            "shape": [],
+            "code": "TotalMilk = data[\"TotalMilk\"] # scalar parameter"
+        },
+        {
+            "definition": "Proportion of the number of milk chocolate bars to dark chocolate bars",
+            "symbol": "MilkDarkRatio",
+            "value": 2,
+            "shape": [],
+            "code": "MilkDarkRatio = data[\"MilkDarkRatio\"] # scalar parameter"
+        },
+        {
+            "definition": "Production time for one milk chocolate bar",
+            "symbol": "TimeMilk",
+            "value": 15,
+            "shape": [],
+            "code": "TimeMilk = data[\"TimeMilk\"] # scalar parameter"
+        },
+        {
+            "definition": "Production time for one dark chocolate bar",
+            "symbol": "TimeDark",
+            "value": 12,
+            "shape": [],
+            "code": "TimeDark = data[\"TimeDark\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Ensure the number of milk chocolate bars produced is non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{MilkBars} \\\\geq 0",
+            "related_variables": [
+                "MilkBars"
+            ],
+            "related_parameters": [],
+            "code": "# Non-negativity constraint for MilkBars\nmodel.addConstr(MilkBars >= 0, name=\"non_negativity_MilkBars\")"
+        },
+        {
+            "description": "The number of dark chocolate bars produced must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{DarkBars} \\geq 0",
+            "related_variables": [
+                "DarkBars"
+            ],
+            "related_parameters": [],
+            "code": "# The variable \"DarkBars\" is already constrained to be non-negative by default as it is defined as a continuous variable with no lower bound change needed."
+        },
+        {
+            "description": "The total used cocoa must not exceed TotalCocoa units.",
+            "status": "coded",
+            "formulation": "\\\\textup{CocoaMilk} \\\\cdot \\\\textup{MilkBars} + \\\\textup{CocoaDark} \\\\cdot \\\\textup{DarkBars} \\\\leq \\\\textup{TotalCocoa}",
+            "related_variables": [
+                "MilkBars",
+                "DarkBars"
+            ],
+            "related_parameters": [
+                "CocoaMilk",
+                "CocoaDark",
+                "TotalCocoa"
+            ],
+            "code": "# Add total cocoa usage constraint\nmodel.addConstr(CocoaMilk * MilkBars + CocoaDark * DarkBars <= TotalCocoa, name=\"total_cocoa_limit\")"
+        },
+        {
+            "description": "The total milk used for producing milk chocolate and dark chocolate bars must not exceed the total available milk (\textup{TotalMilk}).",
+            "status": "coded",
+            "formulation": "\\\\textup{MilkMilk} \\\\times \\\\textup{MilkBars} + \\\\textup{MilkDark} \\\\times \\\\textup{DarkBars} \\\\leq \\\\textup{TotalMilk}",
+            "related_variables": [
+                "MilkBars",
+                "DarkBars"
+            ],
+            "related_parameters": [
+                "MilkMilk",
+                "MilkDark",
+                "TotalMilk"
+            ],
+            "code": "# Add constraint for the total milk usage\nmodel.addConstr(MilkMilk * MilkBars + MilkDark * DarkBars <= TotalMilk, name=\"milk_usage\")"
+        },
+        {
+            "description": "At least \\textup{MilkDarkRatio} times as many milk chocolate bars as dark chocolate bars.",
+            "status": "coded",
+            "formulation": "\\textup{MilkBars} \\geq \\textup{MilkDarkRatio} \\cdot \\textup{DarkBars}",
+            "related_variables": [
+                "MilkBars",
+                "DarkBars"
+            ],
+            "related_parameters": [
+                "MilkDarkRatio"
+            ],
+            "code": "# Add constraint to ensure at least MilkDarkRatio times as many milk chocolate bars as dark chocolate bars\nmodel.addConstr(MilkBars >= MilkDarkRatio * DarkBars, name=\"MilkDarkRatioConstraint\")"
+        },
+        {
+            "description": "The amount of cocoa used for milk chocolate bars is at most the cocoa required per milk chocolate bar times the number of milk chocolate bars.",
+            "status": "runtime_error",
+            "formulation": "\\\\textup{CocoaUsedByMilkBars} \\\\leq \\\\textup{CocoaMilk} \\\\cdot \\\\textup{MilkBars}",
+            "related_variables": [
+                "MilkBars"
+            ],
+            "related_parameters": [
+                "CocoaMilk"
+            ],
+            "code": "# Add constraint for cocoa used by milk chocolate bars\nmodel.addConstr(CocoaUsedByMilkBars <= CocoaMilk * MilkBars, name=\"cocoa_limit_milk_bars\")"
+        },
+        {
+            "description": "The milk used for milk chocolate bars is restricted to at most MilkMilk times the number of milk chocolate bars produced.",
+            "status": "coded",
+            "formulation": "\\textup{MilkMilk} \\times \\textup{MilkBars} \\leq \\textup{TotalMilk}",
+            "related_variables": [
+                "MilkBars"
+            ],
+            "related_parameters": [
+                "MilkMilk",
+                "TotalMilk"
+            ],
+            "code": "# Add milk usage constraint for milk chocolate bars\nmodel.addConstr(MilkMilk * MilkBars <= TotalMilk, name=\"milk_usage_constraint\")"
+        },
+        {
+            "description": "The cocoa used for dark chocolate bars is at most CocoaDark times the number of dark chocolate bars",
+            "status": "coded",
+            "formulation": "\\\\textup{Cocoa used for dark bars} \\\\leq \\\\textup{CocoaDark} \\\\cdot \\\\textup{DarkBars}",
+            "related_variables": [
+                "DarkBars"
+            ],
+            "related_parameters": [
+                "CocoaDark"
+            ],
+            "code": "# Add constraint for cocoa usage in dark chocolate bars\nmodel.addConstr(CocoaUsedDark <= CocoaDark * DarkBars, name=\"cocoa_dark_limit\")"
+        },
+        {
+            "description": "Milk used for dark chocolate bars is at most MilkDark times the number of dark chocolate bars produced",
+            "status": "coded",
+            "formulation": "\\\\textup{MilkUsedForDarkBars} \\\\leq \\\\textup{MilkDark} \\\\cdot \\\\textup{DarkBars}",
+            "related_variables": [
+                "DarkBars"
+            ],
+            "related_parameters": [
+                "MilkDark"
+            ],
+            "code": "# Add constraint for milk used for dark chocolate bars\nmodel.addConstr(MilkUsedForDarkBars <= MilkDark * DarkBars, name=\"milk_constraint_dark_bars\")"
+        },
+        {
+            "description": "The total cocoa required for both types of chocolate bars does not exceed the available cocoa.",
+            "status": "coded",
+            "formulation": "\\textup{CocoaMilk} \\cdot \\textup{MilkBars} + \\textup{CocoaDark} \\cdot \\textup{DarkBars} \\leq \\textup{TotalCocoa}",
+            "related_variables": [
+                "MilkBars",
+                "DarkBars"
+            ],
+            "related_parameters": [
+                "CocoaMilk",
+                "CocoaDark",
+                "TotalCocoa"
+            ],
+            "code": "# Add cocoa requirement constraint\nmodel.addConstr(CocoaMilk * MilkBars + CocoaDark * DarkBars <= TotalCocoa, name=\"cocoa_constraint\")"
+        },
+        {
+            "description": "The total milk required for both types of chocolate bars does not exceed the available milk.",
+            "status": "coded",
+            "formulation": "\\textup{MilkMilk} \\cdot \\textup{MilkBars} + \\textup{MilkDark} \\cdot \\textup{DarkBars} \\leq \\textup{TotalMilk}",
+            "related_variables": [
+                "MilkBars",
+                "DarkBars"
+            ],
+            "related_parameters": [
+                "MilkMilk",
+                "MilkDark",
+                "TotalMilk"
+            ],
+            "code": "# Add milk constraint\nmodel.addConstr(MilkMilk * MilkBars + MilkDark * DarkBars <= TotalMilk, name=\"milk_constraint\")"
+        },
+        {
+            "description": "The number of milk chocolate bars must be twice the number of dark chocolate bars as per the given ratio.",
+            "status": "coded",
+            "formulation": "\\textup{MilkBars} = \\textup{MilkDarkRatio} \\cdot \\textup{DarkBars}",
+            "related_variables": [
+                "MilkBars",
+                "DarkBars"
+            ],
+            "related_parameters": [
+                "MilkDarkRatio"
+            ],
+            "code": "# Add constraint to enforce the ratio between MilkBars and DarkBars\nmodel.addConstr(MilkBars == MilkDarkRatio * DarkBars, name=\"milk_dark_ratio_constraint\")"
+        },
+        {
+            "description": "Non-negativity constraint for the number of chocolate bars produced.",
+            "status": "coded",
+            "formulation": "\\textup{MilkBars} \\geq 0, \\quad \\textup{DarkBars} \\geq 0",
+            "related_variables": [
+                "MilkBars",
+                "DarkBars"
+            ],
+            "related_parameters": [],
+            "code": "# Non-negativity constraints for MilkBars and DarkBars\nmodel.addConstr(MilkBars >= 0, name=\"non_negativity_MilkBars\")\nmodel.addConstr(DarkBars >= 0, name=\"non_negativity_DarkBars\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of milk chocolate bars produced",
+            "symbol": "MilkBars",
+            "shape": [],
+            "status": "coded",
+            "code": "MilkBars = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"MilkBars\")"
+        },
+        {
+            "definition": "The number of dark chocolate bars produced",
+            "symbol": "DarkBars",
+            "shape": [],
+            "status": "coded",
+            "code": "DarkBars = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"DarkBars\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total production time of chocolate bars (milk and dark chocolate).",
+            "status": "coded",
+            "formulation": "\\textup{Minimize}\\quad Z = \\textup{TimeMilk} \\cdot \\textup{MilkBars} + \\textup{TimeDark} \\cdot \\textup{DarkBars}",
+            "related_variables": [
+                "MilkBars",
+                "DarkBars"
+            ],
+            "related_parameters": [
+                "TimeMilk",
+                "TimeDark"
+            ],
+            "code": "# Set objective\nmodel.setObjective(TimeMilk * MilkBars + TimeDark * DarkBars, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "runtime_error",
+    "solver_output_status": "runtime_error",
+    "error_message": "Traceback (most recent call last):\n  File \"c:\\Users\\Simon\\Desktop\\Courses\\ECE 570\\ECE570_Project\\MyOptiMUS3\\evaluator.py\", line 45, in run\n    exec(last_line, local_env, local_env)\n  File \"<string>\", line 2, in <module>\nNameError: name 'CocoaUsedByMilkBars' is not defined\n",
+    "obj_val": null,
+    "log_path": "logs/log_20250414081507_nl4opt_prob_96/",
+    "problem_path": "data/nl4opt/prob_96/",
+    "prep_code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_96/data.json\", \"r\") as f:\n    data = json.load(f)\n"
+}

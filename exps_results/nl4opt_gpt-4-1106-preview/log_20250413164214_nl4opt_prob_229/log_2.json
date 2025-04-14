@@ -1,0 +1,230 @@
+{
+    "background": "A strata-management company is considering purchasing two types of air conditioners - low-power and high-power models - to cool down housing units within certain electricity and aesthetic constraints.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Cooling capacity of a low-powered air conditioner",
+            "symbol": "LowPowerCapacity",
+            "value": 12,
+            "shape": [],
+            "code": "LowPowerCapacity = data[\"LowPowerCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Electricity usage of a low-powered air conditioner per day",
+            "symbol": "LowPowerElectricity",
+            "value": 150,
+            "shape": [],
+            "code": "LowPowerElectricity = data[\"LowPowerElectricity\"] # scalar parameter"
+        },
+        {
+            "definition": "Cooling capacity of a high-powered air conditioner",
+            "symbol": "HighPowerCapacity",
+            "value": 17,
+            "shape": [],
+            "code": "HighPowerCapacity = data[\"HighPowerCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Electricity usage of a high-powered air conditioner per day",
+            "symbol": "HighPowerElectricity",
+            "value": 250,
+            "shape": [],
+            "code": "HighPowerElectricity = data[\"HighPowerElectricity\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum proportion of low-powered air conditioners",
+            "symbol": "MaxLowPowerProportion",
+            "value": 0.3,
+            "shape": [],
+            "code": "MaxLowPowerProportion = data[\"MaxLowPowerProportion\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of high-powered air conditioners required",
+            "symbol": "MinHighPower",
+            "value": 7,
+            "shape": [],
+            "code": "MinHighPower = data[\"MinHighPower\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of housing units to condition",
+            "symbol": "MinHousingUnits",
+            "value": 250,
+            "shape": [],
+            "code": "MinHousingUnits = data[\"MinHousingUnits\"] # scalar parameter"
+        },
+        {
+            "definition": "Total electricity available per day",
+            "symbol": "TotalElectricity",
+            "value": 3400,
+            "shape": [],
+            "code": "TotalElectricity = data[\"TotalElectricity\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of low-power air conditioners must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{LowPowerAirConditioners} \\geq 0",
+            "related_variables": [
+                "LowPowerAirConditioners"
+            ],
+            "related_parameters": [],
+            "code": "# Since LowPowerAirConditioners is an INTEGER variable in Gurobi and Gurobi doesn't allow negative integers by definition, \n# there's no need to add an explicit non-negative constraint.\n# Hence, no code is needed for this constraint.\n\n# In case the variable was not limited to non-negative values, the constraint would be as follows:\n# model.addConstr(LowPowerAirConditioners >= 0, name=\"low_power_ac_nonnegativity\")"
+        },
+        {
+            "description": "The number of high-power air conditioners must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{HighPowerAirConditioners} \\geq 0",
+            "related_variables": [
+                "HighPowerAirConditioners"
+            ],
+            "related_parameters": [],
+            "code": "# Since the variable HighPowerAirConditioners is already non-negative by definition,\n# and it is an integer variable, no further constraint is needed."
+        },
+        {
+            "description": "Limit the number of low-power air conditioners to MaxLowPowerProportion of the total air conditioners",
+            "status": "coded",
+            "formulation": "\\textup{LowPowerAirConditioners} \\leq \\textup{MaxLowPowerProportion} \\times (\\textup{LowPowerAirConditioners} + \\textup{HighPowerAirConditioners})",
+            "related_variables": [
+                "LowPowerAirConditioners",
+                "HighPowerAirConditioners"
+            ],
+            "related_parameters": [
+                "MaxLowPowerProportion"
+            ],
+            "code": "# Limit the number of low-power air conditioners to MaxLowPowerProportion of the total air conditioners\nmodel.addConstr(LowPowerAirConditioners <= MaxLowPowerProportion * (LowPowerAirConditioners + HighPowerAirConditioners), \"LowPowerAirConditioners_limit\")"
+        },
+        {
+            "description": "At least MinHighPower high-powered air conditioners must be used",
+            "status": "coded",
+            "formulation": "\\textup{HighPowerAirConditioners} \\geq \\textup{MinHighPower}",
+            "related_variables": [
+                "HighPowerAirConditioners"
+            ],
+            "related_parameters": [
+                "MinHighPower"
+            ],
+            "code": "# Constraint for the minimum number of high-powered air conditioners\nmodel.addConstr(HighPowerAirConditioners >= MinHighPower, name=\"min_high_power_acs\")"
+        },
+        {
+            "description": "Ensure that the total number of housing units conditioned by the air conditioners is at least the minimum required",
+            "status": "coded",
+            "formulation": "\\textup{LowPowerCapacity} \\cdot \\textup{LowPowerAirConditioners} + \\textup{HighPowerCapacity} \\cdot \\textup{HighPowerAirConditioners} \\geq \\textup{MinHousingUnits}",
+            "related_variables": [
+                "LowPowerAirConditioners",
+                "HighPowerAirConditioners"
+            ],
+            "related_parameters": [
+                "LowPowerCapacity",
+                "HighPowerCapacity",
+                "MinHousingUnits"
+            ],
+            "code": "# Ensure that the total number of housing units conditioned by the air conditioners is at least the minimum required\nmodel.addConstr(LowPowerCapacity * LowPowerAirConditioners + HighPowerCapacity * HighPowerAirConditioners >= MinHousingUnits, name=\"min_housing_units_conditioned\")"
+        },
+        {
+            "description": "The total electricity used per day by both low-power and high-power air conditioners should not exceed the available electricity",
+            "status": "coded",
+            "formulation": "\\textup{LowPowerElectricity} \\times \\textup{LowPowerAirConditioners} + \\textup{HighPowerElectricity} \\times \\textup{HighPowerAirConditioners} \\leq \\textup{TotalElectricity}",
+            "related_variables": [
+                "LowPowerAirConditioners",
+                "HighPowerAirConditioners"
+            ],
+            "related_parameters": [
+                "LowPowerElectricity",
+                "HighPowerElectricity",
+                "TotalElectricity"
+            ],
+            "code": "# Add constraint for total electricity usage by air conditioners not to exceed available electricity\nmodel.addConstr(LowPowerElectricity * LowPowerAirConditioners + HighPowerElectricity * HighPowerAirConditioners <= TotalElectricity, name=\"electricity_usage\")"
+        },
+        {
+            "description": "Ensure that no more than the maximum proportion of air conditioners are low-powered models",
+            "status": "coded",
+            "formulation": "\\textup{LowPowerAirConditioners} \\leq \\textup{MaxLowPowerProportion} \\times (\\textup{LowPowerAirConditioners} + \\textup{HighPowerAirConditioners})",
+            "related_variables": [
+                "LowPowerAirConditioners",
+                "HighPowerAirConditioners"
+            ],
+            "related_parameters": [
+                "MaxLowPowerProportion"
+            ],
+            "code": "# Ensure that no more than the maximum proportion of air conditioners are low-powered models\nmodel.addConstr(LowPowerAirConditioners <= MaxLowPowerProportion * (LowPowerAirConditioners + HighPowerAirConditioners), name=\"max_low_power_proportion\")"
+        },
+        {
+            "description": "Ensure that there are at least the minimum number of high-powered air conditioners",
+            "status": "coded",
+            "formulation": "\\textup{HighPowerAirConditioners} \\geq \\textup{MinHighPower}",
+            "related_variables": [
+                "HighPowerAirConditioners"
+            ],
+            "related_parameters": [
+                "MinHighPower"
+            ],
+            "code": "# Ensure that there are at least the minimum number of high-powered air conditioners\nmodel.addConstr(HighPowerAirConditioners >= MinHighPower, name=\"min_high_power_ac_constraint\")"
+        },
+        {
+            "description": "Ensure the cooling capacity meets the minimum requirement for housing units",
+            "status": "coded",
+            "formulation": "\\textup{LowPowerCapacity} \\times \\textup{LowPowerAirConditioners} + \\textup{HighPowerCapacity} \\times \\textup{HighPowerAirConditioners} \\geq \\textup{MinHousingUnits}",
+            "related_variables": [
+                "LowPowerAirConditioners",
+                "HighPowerAirConditioners"
+            ],
+            "related_parameters": [
+                "LowPowerCapacity",
+                "HighPowerCapacity",
+                "MinHousingUnits"
+            ],
+            "code": "# Ensure the cooling capacity meets the minimum requirement for housing units\nmodel.addConstr(LowPowerCapacity * LowPowerAirConditioners + HighPowerCapacity * HighPowerAirConditioners >= MinHousingUnits, name=\"min_cooling_capacity\")"
+        },
+        {
+            "description": "Ensure the total electricity usage does not exceed the total electricity available per day",
+            "status": "coded",
+            "formulation": "\\textup{LowPowerElectricity} \\times \\textup{LowPowerAirConditioners} + \\textup{HighPowerElectricity} \\times \\textup{HighPowerAirConditioners} \\leq \\textup{TotalElectricity}",
+            "related_variables": [
+                "LowPowerAirConditioners",
+                "HighPowerAirConditioners"
+            ],
+            "related_parameters": [
+                "LowPowerElectricity",
+                "HighPowerElectricity",
+                "TotalElectricity"
+            ],
+            "code": "# Ensure the total electricity usage does not exceed the total electricity available per day\nmodel.addConstr(LowPowerElectricity * LowPowerAirConditioners + HighPowerElectricity * HighPowerAirConditioners <= TotalElectricity, \"TotalElectricityUsage\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of low-power air conditioners",
+            "symbol": "LowPowerAirConditioners",
+            "shape": [],
+            "status": "coded",
+            "code": "LowPowerAirConditioners = model.addVar(vtype=gp.GRB.INTEGER, name=\"LowPowerAirConditioners\")"
+        },
+        {
+            "definition": "The number of high-power air conditioners",
+            "symbol": "HighPowerAirConditioners",
+            "shape": [],
+            "status": "coded",
+            "code": "HighPowerAirConditioners = model.addVar(vtype=gp.GRB.INTEGER, name=\"HighPowerAirConditioners\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of air conditioners purchased",
+            "status": "coded",
+            "formulation": "\\min \\textup{LowPowerAirConditioners} + \\textup{HighPowerAirConditioners}",
+            "related_variables": [
+                "LowPowerAirConditioners",
+                "HighPowerAirConditioners"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(LowPowerAirConditioners + HighPowerAirConditioners, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 3,
+    "error_message": null,
+    "obj_val": "infeasible",
+    "log_path": "logs/log_20250413164214_nl4opt_prob_229/",
+    "problem_path": "data/nl4opt/prob_229/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_229/data.json\", \"r\") as f:\n    data = json.load(f)\n\nLowPowerCapacity = data[\"LowPowerCapacity\"] # scalar parameter\nLowPowerElectricity = data[\"LowPowerElectricity\"] # scalar parameter\nHighPowerCapacity = data[\"HighPowerCapacity\"] # scalar parameter\nHighPowerElectricity = data[\"HighPowerElectricity\"] # scalar parameter\nMaxLowPowerProportion = data[\"MaxLowPowerProportion\"] # scalar parameter\nMinHighPower = data[\"MinHighPower\"] # scalar parameter\nMinHousingUnits = data[\"MinHousingUnits\"] # scalar parameter\nTotalElectricity = data[\"TotalElectricity\"] # scalar parameter\nLowPowerAirConditioners = model.addVar(vtype=gp.GRB.INTEGER, name=\"LowPowerAirConditioners\")\nHighPowerAirConditioners = model.addVar(vtype=gp.GRB.INTEGER, name=\"HighPowerAirConditioners\")\n\n# Since LowPowerAirConditioners is an INTEGER variable in Gurobi and Gurobi doesn't allow negative integers by definition, \n# there's no need to add an explicit non-negative constraint.\n# Hence, no code is needed for this constraint.\n\n# In case the variable was not limited to non-negative values, the constraint would be as follows:\n# model.addConstr(LowPowerAirConditioners >= 0, name=\"low_power_ac_nonnegativity\")\n\n# Since the variable HighPowerAirConditioners is already non-negative by definition,\n# and it is an integer variable, no further constraint is needed.\n\n# Limit the number of low-power air conditioners to MaxLowPowerProportion of the total air conditioners\nmodel.addConstr(LowPowerAirConditioners <= MaxLowPowerProportion * (LowPowerAirConditioners + HighPowerAirConditioners), \"LowPowerAirConditioners_limit\")\n\n# Constraint for the minimum number of high-powered air conditioners\nmodel.addConstr(HighPowerAirConditioners >= MinHighPower, name=\"min_high_power_acs\")\n\n# Ensure that the total number of housing units conditioned by the air conditioners is at least the minimum required\nmodel.addConstr(LowPowerCapacity * LowPowerAirConditioners + HighPowerCapacity * HighPowerAirConditioners >= MinHousingUnits, name=\"min_housing_units_conditioned\")\n\n# Add constraint for total electricity usage by air conditioners not to exceed available electricity\nmodel.addConstr(LowPowerElectricity * LowPowerAirConditioners + HighPowerElectricity * HighPowerAirConditioners <= TotalElectricity, name=\"electricity_usage\")\n\n# Ensure that no more than the maximum proportion of air conditioners are low-powered models\nmodel.addConstr(LowPowerAirConditioners <= MaxLowPowerProportion * (LowPowerAirConditioners + HighPowerAirConditioners), name=\"max_low_power_proportion\")\n\n# Ensure that there are at least the minimum number of high-powered air conditioners\nmodel.addConstr(HighPowerAirConditioners >= MinHighPower, name=\"min_high_power_ac_constraint\")\n\n# Ensure the cooling capacity meets the minimum requirement for housing units\nmodel.addConstr(LowPowerCapacity * LowPowerAirConditioners + HighPowerCapacity * HighPowerAirConditioners >= MinHousingUnits, name=\"min_cooling_capacity\")\n\n# Ensure the total electricity usage does not exceed the total electricity available per day\nmodel.addConstr(LowPowerElectricity * LowPowerAirConditioners + HighPowerElectricity * HighPowerAirConditioners <= TotalElectricity, \"TotalElectricityUsage\")\n\n# Set objective\nmodel.setObjective(LowPowerAirConditioners + HighPowerAirConditioners, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

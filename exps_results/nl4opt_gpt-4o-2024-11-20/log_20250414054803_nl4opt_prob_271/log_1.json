@@ -1,0 +1,254 @@
+{
+    "background": "A clinical firm operates two factories, a northern and a western, where they make anti-itch injections and topical cream, both of which require plastic for packaging.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Amount of anti-itch injections produced per hour by the northern factory",
+            "symbol": "NorthernInjectionsRate",
+            "value": 800,
+            "shape": [],
+            "code": "NorthernInjectionsRate = data[\"NorthernInjectionsRate\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of topical cream produced per hour by the northern factory",
+            "symbol": "NorthernCreamRate",
+            "value": 700,
+            "shape": [],
+            "code": "NorthernCreamRate = data[\"NorthernCreamRate\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of anti-itch injections produced per hour by the western factory",
+            "symbol": "WesternInjectionsRate",
+            "value": 650,
+            "shape": [],
+            "code": "WesternInjectionsRate = data[\"WesternInjectionsRate\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of topical cream produced per hour by the western factory",
+            "symbol": "WesternCreamRate",
+            "value": 750,
+            "shape": [],
+            "code": "WesternCreamRate = data[\"WesternCreamRate\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of plastic required per hour by the northern factory",
+            "symbol": "NorthernPlasticRate",
+            "value": 40,
+            "shape": [],
+            "code": "NorthernPlasticRate = data[\"NorthernPlasticRate\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of plastic required per hour by the western factory",
+            "symbol": "WesternPlasticRate",
+            "value": 35,
+            "shape": [],
+            "code": "WesternPlasticRate = data[\"WesternPlasticRate\"] # scalar parameter"
+        },
+        {
+            "definition": "Total units of plastic available",
+            "symbol": "TotalPlastic",
+            "value": 60000,
+            "shape": [],
+            "code": "TotalPlastic = data[\"TotalPlastic\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum total amount of anti-itch injections to be produced",
+            "symbol": "MinInjections",
+            "value": 800000,
+            "shape": [],
+            "code": "MinInjections = data[\"MinInjections\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum total amount of topical cream to be produced",
+            "symbol": "MinCream",
+            "value": 700000,
+            "shape": [],
+            "code": "MinCream = data[\"MinCream\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The total plastic used across both factories cannot exceed the total available plastic.",
+            "status": "coded",
+            "formulation": "\\textup{NorthernPlasticRate} \\times \\textup{NorthernHours} + \\textup{WesternPlasticRate} \\times \\textup{WesternHours} \\leq \\textup{TotalPlastic}",
+            "related_variables": [
+                "NorthernHours",
+                "WesternHours"
+            ],
+            "related_parameters": [
+                "NorthernPlasticRate",
+                "WesternPlasticRate",
+                "TotalPlastic"
+            ],
+            "code": "# Add constraint for total plastic usage across both factories not exceeding total available plastic\nmodel.addConstr(\n    NorthernPlasticRate * NorthernHours + WesternPlasticRate * WesternHours <= TotalPlastic,\n    name=\"plastic_usage\"\n)"
+        },
+        {
+            "description": "The total production of anti-itch injections across both factories must meet or exceed the minimum required production level, MinInjections.",
+            "status": "coded",
+            "formulation": "\\textup{NorthernInjectionsRate} \\cdot \\textup{NorthernHours} + \\textup{WesternInjectionsRate} \\cdot \\textup{WesternHours} \\geq \\textup{MinInjections}",
+            "related_variables": [
+                "NorthernHours",
+                "WesternHours"
+            ],
+            "related_parameters": [
+                "NorthernInjectionsRate",
+                "WesternInjectionsRate",
+                "MinInjections"
+            ],
+            "code": "# Add constraint to ensure minimum production of anti-itch injections\nmodel.addConstr(\n    NorthernInjectionsRate * NorthernHours + WesternInjectionsRate * WesternHours >= MinInjections, \n    name=\"minimum_injections_production\"\n)"
+        },
+        {
+            "description": "The firm must produce at least MinCream grams of topical cream.",
+            "status": "coded",
+            "formulation": "\\textup{NorthernCreamRate} \\cdot \\textup{NorthernHours} + \\textup{WesternCreamRate} \\cdot \\textup{WesternHours} \\geq \\textup{MinCream}",
+            "related_variables": [
+                "NorthernHours",
+                "WesternHours"
+            ],
+            "related_parameters": [
+                "NorthernCreamRate",
+                "WesternCreamRate",
+                "MinCream"
+            ],
+            "code": "# Add constraint: The total cream produced must be at least MinCream.\nmodel.addConstr(\n    NorthernCreamRate * NorthernHours + WesternCreamRate * WesternHours >= MinCream,\n    name=\"MinCream_Constraint\"\n)"
+        },
+        {
+            "description": "The number of hours the northern factory operates is non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NorthernHours} \\geq 0",
+            "related_variables": [
+                "NorthernHours"
+            ],
+            "related_parameters": [],
+            "code": "# No code is needed: Gurobi variables by default have non-negativity constraints unless otherwise specified (e.g., if set to unrestricted)."
+        },
+        {
+            "description": "The number of hours the western factory operates is non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{WesternHours} \\\\geq 0",
+            "related_variables": [
+                "WesternHours"
+            ],
+            "related_parameters": [],
+            "code": "# The variable WesternHours is already defined with the non-negativity implicitly ensured by Gurobi (default lower bound is non-negative)."
+        },
+        {
+            "description": "Total plastic usage cannot exceed the available plastic",
+            "status": "coded",
+            "formulation": "\\textup{NorthernPlasticRate} \\cdot \\textup{NorthernHours} + \\textup{WesternPlasticRate} \\cdot \\textup{WesternHours} \\leq \\textup{TotalPlastic}",
+            "related_variables": [
+                "NorthernHours",
+                "WesternHours"
+            ],
+            "related_parameters": [
+                "NorthernPlasticRate",
+                "WesternPlasticRate",
+                "TotalPlastic"
+            ],
+            "code": "# Add constraint to limit total plastic usage\nmodel.addConstr(\n    NorthernPlasticRate * NorthernHours + WesternPlasticRate * WesternHours <= TotalPlastic, \n    name=\"plastic_usage_limit\"\n)"
+        },
+        {
+            "description": "Total injections produced must meet the minimum requirements",
+            "status": "coded",
+            "formulation": "\\textup{NorthernInjectionsRate} \\cdot \\textup{NorthernHours} + \\textup{WesternInjectionsRate} \\cdot \\textup{WesternHours} = \\textup{InjectionsProduced}",
+            "related_variables": [
+                "NorthernHours",
+                "WesternHours",
+                "InjectionsProduced"
+            ],
+            "related_parameters": [
+                "NorthernInjectionsRate",
+                "WesternInjectionsRate"
+            ],
+            "code": "# Add constraint to ensure total injections produced meets the requirement\nmodel.addConstr(\n    NorthernInjectionsRate * NorthernHours + WesternInjectionsRate * WesternHours == InjectionsProduced,\n    name=\"total_injections_produced\"\n)"
+        },
+        {
+            "description": "Total injections produced must be greater than or equal to the minimum required injections",
+            "status": "coded",
+            "formulation": "\\textup{InjectionsProduced} \\geq \\textup{MinInjections}",
+            "related_variables": [
+                "InjectionsProduced"
+            ],
+            "related_parameters": [
+                "MinInjections"
+            ],
+            "code": "# Add constraint to ensure total injections produced meet or exceed the minimum required\nmodel.addConstr(InjectionsProduced >= MinInjections, name=\"min_injections_constraint\")"
+        },
+        {
+            "description": "Total cream produced must meet the minimum requirements",
+            "status": "coded",
+            "formulation": "\\textup{NorthernCreamRate} \\cdot \\textup{NorthernHours} + \\textup{WesternCreamRate} \\cdot \\textup{WesternHours} = \\textup{CreamProduced}",
+            "related_variables": [
+                "NorthernHours",
+                "WesternHours",
+                "CreamProduced"
+            ],
+            "related_parameters": [
+                "NorthernCreamRate",
+                "WesternCreamRate"
+            ],
+            "code": "# Add total cream production constraint\nmodel.addConstr(\n    NorthernCreamRate * NorthernHours + WesternCreamRate * WesternHours == CreamProduced,\n    name=\"total_cream_produced\"\n)"
+        },
+        {
+            "description": "Total cream produced must be greater than or equal to the minimum required cream",
+            "status": "coded",
+            "formulation": "\\textup{CreamProduced} \\geq \\textup{MinCream}",
+            "related_variables": [
+                "CreamProduced"
+            ],
+            "related_parameters": [
+                "MinCream"
+            ],
+            "code": "# Add constraint ensuring total cream produced is greater than or equal to the minimum required amount\nmodel.addConstr(CreamProduced >= MinCream, name=\"min_cream_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Total hours of operation for the northern factory",
+            "symbol": "NorthernHours",
+            "shape": [],
+            "status": "coded",
+            "code": "NorthernHours = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NorthernHours\")"
+        },
+        {
+            "definition": "Total hours of operation for the western factory",
+            "symbol": "WesternHours",
+            "shape": [],
+            "status": "coded",
+            "code": "WesternHours = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"WesternHours\")"
+        },
+        {
+            "definition": "Total number of injections produced across both factories",
+            "symbol": "InjectionsProduced",
+            "shape": [],
+            "status": "coded",
+            "code": "InjectionsProduced = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"InjectionsProduced\")"
+        },
+        {
+            "definition": "Total number of topical cream units produced across both factories",
+            "symbol": "CreamProduced",
+            "shape": [],
+            "status": "coded",
+            "code": "CreamProduced = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"CreamProduced\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total operational time of both the northern and western factories",
+            "status": "coded",
+            "formulation": "\\textup{Minimize} \\quad \\textup{NorthernHours} + \\textup{WesternHours}",
+            "related_variables": [
+                "NorthernHours",
+                "WesternHours"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(NorthernHours + WesternHours, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250414054803_nl4opt_prob_271/",
+    "problem_path": "data/nl4opt/prob_271/"
+}

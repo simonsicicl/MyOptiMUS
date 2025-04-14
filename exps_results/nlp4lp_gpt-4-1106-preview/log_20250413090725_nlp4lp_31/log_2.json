@@ -1,0 +1,114 @@
+{
+    "background": "The problem involves finding the 'best' linear relationship in the form of Y = bX + a that fits a set of data points. The 'best' fit minimizes the total absolute deviation of observed Y values from those predicted by the linear equation.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of data points",
+            "symbol": "K",
+            "value": "",
+            "shape": [],
+            "code": "K = data[\"K\"] # scalar parameter"
+        },
+        {
+            "definition": "Observed values of the dependent variable",
+            "symbol": "Y",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "Y = np.array(data[\"Y\"]) # ['K']"
+        },
+        {
+            "definition": "Observed values of the independent variable",
+            "symbol": "X",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "X = np.array(data[\"X\"]) # ['K']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Ensuring that deviations capture the absolute difference between observed and predicted Y values",
+            "status": "runtime_error",
+            "formulation": "\\textup{Y}_{k} - (b \\cdot \\textup{X}_{k} + a) = \\textup{DeviationPlus}_{k} - \\textup{DeviationMinus}_{k} \\quad \\forall k \\in \\{1, \\dots, K\\}",
+            "related_variables": [
+                "DeviationPlus",
+                "DeviationMinus"
+            ],
+            "related_parameters": [
+                "Y",
+                "X",
+                "K"
+            ],
+            "code": "# Ensure deviations capture the absolute difference between observed and predicted Y values\nfor k in range(K):\n    model.addConstr(Y[k] - (b * X[k] + a) == DeviationPlus[k] - DeviationMinus[k], name=f\"deviation_abs_{k}\")"
+        },
+        {
+            "description": "Non-negativity constraint for DeviationPlus",
+            "status": "coded",
+            "formulation": "\\textup{DeviationPlus}_{k} \\geq 0 \\quad \\forall k \\in \\{1, \\dots, K\\}",
+            "related_variables": [
+                "DeviationPlus"
+            ],
+            "related_parameters": [
+                "K"
+            ],
+            "code": "# Non-negativity constraint for DeviationPlus\nfor k in range(K):\n    model.addConstr(DeviationPlus[k] >= 0, name=f\"nonnegativity_devplus_{k}\")"
+        },
+        {
+            "description": "Non-negativity constraint for DeviationMinus",
+            "status": "coded",
+            "formulation": "\\textup{DeviationMinus}_{k} \\geq 0 \\quad \\forall k \\in \\{1, \\dots, K\\}",
+            "related_variables": [
+                "DeviationMinus"
+            ],
+            "related_parameters": [
+                "K"
+            ],
+            "code": "# Non-negativity constraint for DeviationMinus\nfor k in range(K):\n    model.addConstr(DeviationMinus[k] >= 0, name=f\"DeviationMinus_nonneg_{k}\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Positive deviation of prediction from the observed Y",
+            "symbol": "DeviationPlus",
+            "shape": [
+                "K"
+            ],
+            "status": "coded",
+            "code": "DeviationPlus = model.addVars(K, vtype=gp.GRB.CONTINUOUS, name=\"DeviationPlus\")"
+        },
+        {
+            "definition": "Negative deviation of prediction from the observed Y",
+            "symbol": "DeviationMinus",
+            "shape": [
+                "K"
+            ],
+            "status": "coded",
+            "code": "DeviationMinus = model.addVars(K, vtype=gp.GRB.CONTINUOUS, name=\"DeviationMinus\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the sum of absolute deviations between the observed Y values and the values predicted by the model",
+            "status": "coded",
+            "formulation": "\\min \\sum_{k=1}^{K} (\\textup{DeviationPlus}_{k} + \\textup{DeviationMinus}_{k})",
+            "related_variables": [
+                "DeviationPlus",
+                "DeviationMinus"
+            ],
+            "related_parameters": [
+                "K"
+            ],
+            "code": "# Set objective\nmodel.setObjective(gp.quicksum(DeviationPlus[k] + DeviationMinus[k] for k in range(K)), gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "runtime_error",
+    "solver_output_status": "runtime_error",
+    "error_message": "Traceback (most recent call last):\n  File \"c:\\Users\\Simon\\Desktop\\Courses\\ECE 570\\ECE570_Project\\MyOptiMUS\\evaluator.py\", line 45, in run\n    exec(last_line, local_env, local_env)\n  File \"<string>\", line 3, in <module>\nNameError: name 'b' is not defined\n",
+    "obj_val": null,
+    "log_path": "logs/log_20250413090725_nlp4lp_31/",
+    "problem_path": "data/nlp4lp/31/",
+    "prep_code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nlp4lp/31/data.json\", \"r\") as f:\n    data = json.load(f)\n"
+}

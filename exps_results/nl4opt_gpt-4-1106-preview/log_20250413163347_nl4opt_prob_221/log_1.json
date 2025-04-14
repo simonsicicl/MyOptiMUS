@@ -1,0 +1,164 @@
+{
+    "background": "Platinum Database sells two types of subscription software packages, personal and commercial licenses, with associated costs and profits, and aims to maximize profits under certain constraints.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Cost to generate a personal license",
+            "symbol": "PersonalLicenseCost",
+            "value": 550,
+            "shape": [],
+            "code": "PersonalLicenseCost = data[\"PersonalLicenseCost\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost to generate a commercial license",
+            "symbol": "CommercialLicenseCost",
+            "value": 2000,
+            "shape": [],
+            "code": "CommercialLicenseCost = data[\"CommercialLicenseCost\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of licenses sold per month",
+            "symbol": "MaxLicenses",
+            "value": 300,
+            "shape": [],
+            "code": "MaxLicenses = data[\"MaxLicenses\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit per personal license",
+            "symbol": "PersonalLicenseProfit",
+            "value": 450,
+            "shape": [],
+            "code": "PersonalLicenseProfit = data[\"PersonalLicenseProfit\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit per commercial license",
+            "symbol": "CommercialLicenseProfit",
+            "value": 1200,
+            "shape": [],
+            "code": "CommercialLicenseProfit = data[\"CommercialLicenseProfit\"] # scalar parameter"
+        },
+        {
+            "definition": "Total cost limit",
+            "symbol": "TotalCostLimit",
+            "value": 400000,
+            "shape": [],
+            "code": "TotalCostLimit = data[\"TotalCostLimit\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Number of personal licenses produced must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{PersonalLicensesProduced} \\geq 0",
+            "related_variables": [
+                "PersonalLicensesProduced"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint for non-negativity of personal licenses produced\nmodel.addConstr(PersonalLicensesProduced >= 0, name=\"non_negative_personal_licenses\")"
+        },
+        {
+            "description": "The number of commercial licenses produced must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{CommercialLicensesProduced} \\geq 0",
+            "related_variables": [
+                "CommercialLicensesProduced"
+            ],
+            "related_parameters": [],
+            "code": "# Since the variable is defined as an INTEGER, it is implicitly non-negative. \n# No further constraints are needed."
+        },
+        {
+            "description": "Combined number of personal and commercial licenses produced cannot exceed MaxLicenses",
+            "status": "coded",
+            "formulation": "\\textup{PersonalLicensesProduced} + \\textup{CommercialLicensesProduced} \\leq \\textup{MaxLicenses}",
+            "related_variables": [
+                "PersonalLicensesProduced",
+                "CommercialLicensesProduced"
+            ],
+            "related_parameters": [
+                "MaxLicenses"
+            ],
+            "code": "# Combined number of personal and commercial licenses produced constraint\nmodel.addConstr(PersonalLicensesProduced + CommercialLicensesProduced <= MaxLicenses, \"MaxLicensesConstraint\")"
+        },
+        {
+            "description": "Total cost of producing personal and commercial licenses cannot exceed the TotalCostLimit",
+            "status": "coded",
+            "formulation": "\\textup{PersonalLicensesProduced} \\cdot \\textup{PersonalLicenseCost} + \\textup{CommercialLicensesProduced} \\cdot \\textup{CommercialLicenseCost} \\leq \\textup{TotalCostLimit}",
+            "related_variables": [
+                "PersonalLicensesProduced",
+                "CommercialLicensesProduced"
+            ],
+            "related_parameters": [
+                "PersonalLicenseCost",
+                "CommercialLicenseCost",
+                "TotalCostLimit"
+            ],
+            "code": "# Add constraint for total cost of producing licenses\nmodel.addConstr(PersonalLicensesProduced * PersonalLicenseCost + CommercialLicensesProduced * CommercialLicenseCost <= TotalCostLimit, \"TotalCostConstraint\")"
+        },
+        {
+            "description": "The total number of licenses sold per month cannot exceed the maximum limit",
+            "status": "coded",
+            "formulation": "\\textup{PersonalLicensesProduced} + \\textup{CommercialLicensesProduced} \\leq \\textup{MaxLicenses}",
+            "related_variables": [
+                "PersonalLicensesProduced",
+                "CommercialLicensesProduced"
+            ],
+            "related_parameters": [
+                "MaxLicenses"
+            ],
+            "code": "# Constraint: The total number of licenses sold per month cannot exceed the maximum limit\nmodel.addConstr(PersonalLicensesProduced + CommercialLicensesProduced <= MaxLicenses, name=\"max_licenses_constraint\")"
+        },
+        {
+            "description": "The total cost of producing licenses cannot exceed the total cost limit",
+            "status": "coded",
+            "formulation": "(\\textup{PersonalLicenseCost} \\times \\textup{PersonalLicensesProduced}) + (\\textup{CommercialLicenseCost} \\times \\textup{CommercialLicensesProduced}) \\leq \\textup{TotalCostLimit}",
+            "related_variables": [
+                "PersonalLicensesProduced",
+                "CommercialLicensesProduced"
+            ],
+            "related_parameters": [
+                "PersonalLicenseCost",
+                "CommercialLicenseCost",
+                "TotalCostLimit"
+            ],
+            "code": "# Add constraint for total cost of producing licenses not to exceed the total cost limit\nmodel.addConstr((PersonalLicenseCost * PersonalLicensesProduced) + (CommercialLicenseCost * CommercialLicensesProduced) <= TotalCostLimit, name=\"TotalCostConstraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of personal licenses produced",
+            "symbol": "PersonalLicensesProduced",
+            "shape": [],
+            "status": "coded",
+            "code": "PersonalLicensesProduced = model.addVar(vtype=gp.GRB.INTEGER, name=\"PersonalLicensesProduced\")"
+        },
+        {
+            "definition": "Number of commercial licenses produced",
+            "symbol": "CommercialLicensesProduced",
+            "shape": [],
+            "status": "coded",
+            "code": "CommercialLicensesProduced = model.addVar(vtype=gp.GRB.INTEGER, name=\"CommercialLicensesProduced\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total profit from the sale of personal and commercial software licenses",
+            "status": "coded",
+            "formulation": "\\textup{Maximize} \\quad \\textup{TotalProfit} = (\\textup{PersonalLicenseProfit} \\times \\textup{PersonalLicensesProduced}) + (\\textup{CommercialLicenseProfit} \\times \\textup{CommercialLicensesProduced})",
+            "related_variables": [
+                "PersonalLicensesProduced",
+                "CommercialLicensesProduced"
+            ],
+            "related_parameters": [
+                "PersonalLicenseProfit",
+                "CommercialLicenseProfit"
+            ],
+            "code": "# Define the objective function\nmodel.setObjective((PersonalLicenseProfit * PersonalLicensesProduced) + \n                   (CommercialLicenseProfit * CommercialLicensesProduced), gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413163347_nl4opt_prob_221/",
+    "problem_path": "data/nl4opt/prob_221/"
+}

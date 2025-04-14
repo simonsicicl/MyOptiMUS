@@ -1,0 +1,178 @@
+{
+    "background": "Forest Paper produces graph paper and music paper, each requiring time on a printing and scanning machine.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Time taken on the printing machine to make a ream of graph paper",
+            "symbol": "TimePrintingGraph",
+            "value": 3,
+            "shape": [],
+            "code": "TimePrintingGraph = data[\"TimePrintingGraph\"] # scalar parameter"
+        },
+        {
+            "definition": "Time taken on the scanning machine to make a ream of graph paper",
+            "symbol": "TimeScanningGraph",
+            "value": 5.5,
+            "shape": [],
+            "code": "TimeScanningGraph = data[\"TimeScanningGraph\"] # scalar parameter"
+        },
+        {
+            "definition": "Time taken on the printing machine to make a ream of music paper",
+            "symbol": "TimePrintingMusic",
+            "value": 1.5,
+            "shape": [],
+            "code": "TimePrintingMusic = data[\"TimePrintingMusic\"] # scalar parameter"
+        },
+        {
+            "definition": "Time taken on the scanning machine to make a ream of music paper",
+            "symbol": "TimeScanningMusic",
+            "value": 3,
+            "shape": [],
+            "code": "TimeScanningMusic = data[\"TimeScanningMusic\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum available time per day for the printing machine",
+            "symbol": "MaxTimePrinting",
+            "value": 350,
+            "shape": [],
+            "code": "MaxTimePrinting = data[\"MaxTimePrinting\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum available time per day for the scanning machine",
+            "symbol": "MaxTimeScanning",
+            "value": 350,
+            "shape": [],
+            "code": "MaxTimeScanning = data[\"MaxTimeScanning\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit per package of graph paper sold",
+            "symbol": "ProfitGraph",
+            "value": 4,
+            "shape": [],
+            "code": "ProfitGraph = data[\"ProfitGraph\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit per package of music paper sold",
+            "symbol": "ProfitMusic",
+            "value": 2.5,
+            "shape": [],
+            "code": "ProfitMusic = data[\"ProfitMusic\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of reams of graph paper produced should be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{GraphPaperReamsProduced} \\geq 0",
+            "related_variables": [
+                "GraphPaperReamsProduced"
+            ],
+            "related_parameters": [],
+            "code": "# Non-negativity constraint for the number of reams of graph paper produced\nmodel.addConstr(GraphPaperReamsProduced >= 0, name=\"graph_paper_non_negativity\")"
+        },
+        {
+            "description": "The number of reams of music paper produced must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{MusicPaperReamsProduced} \\geq 0",
+            "related_variables": [
+                "MusicPaperReamsProduced"
+            ],
+            "related_parameters": [],
+            "code": "# Non-negativity constraint for the number of reams of music paper produced\nmodel.addConstr(MusicPaperReamsProduced >= 0, name=\"reams_non_negative\")"
+        },
+        {
+            "description": "Total time used on the printing machine for all graph paper is less than or equal to the maximum available time per day for the printing machine",
+            "status": "coded",
+            "formulation": "\\textup{TimePrintingGraph} \\cdot \\textup{GraphPaperReamsProduced} \\leq \\textup{MaxTimePrinting}",
+            "related_variables": [
+                "GraphPaperReamsProduced"
+            ],
+            "related_parameters": [
+                "TimePrintingGraph",
+                "MaxTimePrinting"
+            ],
+            "code": "# Add time constraint for graph paper printing\nmodel.addConstr(TimePrintingGraph * GraphPaperReamsProduced <= MaxTimePrinting, name=\"time_limit_printing_machine\")"
+        },
+        {
+            "description": "Total time spent on the scanning machine for all graph paper is less than or equal to the max time available for scanning",
+            "status": "coded",
+            "formulation": "\\textup{TimeScanningGraph} \\times \\textup{GraphPaperReamsProduced} \\leq \\textup{MaxTimeScanning}",
+            "related_variables": [
+                "GraphPaperReamsProduced"
+            ],
+            "related_parameters": [
+                "TimeScanningGraph",
+                "MaxTimeScanning"
+            ],
+            "code": "# Add constraint for the total time spent on the scanning machine for all graph paper\nmodel.addConstr(TimeScanningGraph * GraphPaperReamsProduced <= MaxTimeScanning, name=\"time_scanning_constraint\")"
+        },
+        {
+            "description": "Constraint for maximum available time on the printing machine",
+            "status": "coded",
+            "formulation": "\\textup{TimePrintingGraph} \\times \\textup{GraphPaperReamsProduced} + \\textup{TimePrintingMusic} \\times \\textup{MusicPaperReamsProduced} \\leq \\textup{MaxTimePrinting}",
+            "related_variables": [
+                "GraphPaperReamsProduced",
+                "MusicPaperReamsProduced"
+            ],
+            "related_parameters": [
+                "TimePrintingGraph",
+                "TimePrintingMusic",
+                "MaxTimePrinting"
+            ],
+            "code": "# Add constraint for maximum available time on the printing machine\nmodel.addConstr(TimePrintingGraph * GraphPaperReamsProduced + TimePrintingMusic * MusicPaperReamsProduced <= MaxTimePrinting, name=\"max_time_printing\")"
+        },
+        {
+            "description": "Constraint for maximum available time on the scanning machine",
+            "status": "coded",
+            "formulation": "\\textup{TimeScanningGraph} \\times \\textup{GraphPaperReamsProduced} + \\textup{TimeScanningMusic} \\times \\textup{MusicPaperReamsProduced} \\leq \\textup{MaxTimeScanning}",
+            "related_variables": [
+                "GraphPaperReamsProduced",
+                "MusicPaperReamsProduced"
+            ],
+            "related_parameters": [
+                "TimeScanningGraph",
+                "TimeScanningMusic",
+                "MaxTimeScanning"
+            ],
+            "code": "# Add maximum available time constraint on the scanning machine\nmodel.addConstr(TimeScanningGraph * GraphPaperReamsProduced + TimeScanningMusic * MusicPaperReamsProduced <= MaxTimeScanning, name=\"max_time_scanning\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of reams of graph paper produced",
+            "symbol": "GraphPaperReamsProduced",
+            "shape": [],
+            "status": "coded",
+            "code": "GraphPaperReamsProduced = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"GraphPaperReamsProduced\")"
+        },
+        {
+            "definition": "Number of reams of music paper produced",
+            "symbol": "MusicPaperReamsProduced",
+            "shape": [],
+            "status": "coded",
+            "code": "MusicPaperReamsProduced = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"MusicPaperReamsProduced\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the daily profit from the production of graph paper and music paper",
+            "status": "coded",
+            "formulation": "\\textup{Maximize Profit} = \\textup{ProfitGraph} \\times \\textup{GraphPaperReamsProduced} + \\textup{ProfitMusic} \\times \\textup{MusicPaperReamsProduced}",
+            "related_variables": [
+                "GraphPaperReamsProduced",
+                "MusicPaperReamsProduced"
+            ],
+            "related_parameters": [
+                "ProfitGraph",
+                "ProfitMusic"
+            ],
+            "code": "# Define the objective function\nmodel.setObjective(ProfitGraph * GraphPaperReamsProduced + ProfitMusic * MusicPaperReamsProduced, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413155331_nl4opt_prob_207/",
+    "problem_path": "data/nl4opt/prob_207/"
+}

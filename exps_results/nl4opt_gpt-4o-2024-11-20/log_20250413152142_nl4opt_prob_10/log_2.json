@@ -1,0 +1,234 @@
+{
+    "background": "A farmer wants to manufacture a special plant nutrition using fertilizers A and B.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Units of nitrogen per kg of fertilizer A",
+            "symbol": "NitrogenA",
+            "value": 13,
+            "shape": [],
+            "code": "NitrogenA = data[\"NitrogenA\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of phosphoric acid per kg of fertilizer A",
+            "symbol": "PhosphoricA",
+            "value": 5,
+            "shape": [],
+            "code": "PhosphoricA = data[\"PhosphoricA\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of vitamin A per kg of fertilizer A",
+            "symbol": "VitaminAA",
+            "value": 6,
+            "shape": [],
+            "code": "VitaminAA = data[\"VitaminAA\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of vitamin D per kg of fertilizer A",
+            "symbol": "VitaminDA",
+            "value": 5,
+            "shape": [],
+            "code": "VitaminDA = data[\"VitaminDA\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of nitrogen per kg of fertilizer B",
+            "symbol": "NitrogenB",
+            "value": 8,
+            "shape": [],
+            "code": "NitrogenB = data[\"NitrogenB\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of phosphoric acid per kg of fertilizer B",
+            "symbol": "PhosphoricB",
+            "value": 14,
+            "shape": [],
+            "code": "PhosphoricB = data[\"PhosphoricB\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of vitamin A per kg of fertilizer B",
+            "symbol": "VitaminAB",
+            "value": 6,
+            "shape": [],
+            "code": "VitaminAB = data[\"VitaminAB\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of vitamin D per kg of fertilizer B",
+            "symbol": "VitaminDB",
+            "value": 9,
+            "shape": [],
+            "code": "VitaminDB = data[\"VitaminDB\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum required units of nitrogen for the plant nutrition",
+            "symbol": "MinNitrogen",
+            "value": 220,
+            "shape": [],
+            "code": "MinNitrogen = data[\"MinNitrogen\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum required units of phosphoric acid for the plant nutrition",
+            "symbol": "MinPhosphoric",
+            "value": 160,
+            "shape": [],
+            "code": "MinPhosphoric = data[\"MinPhosphoric\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum allowed units of vitamin A for the plant nutrition",
+            "symbol": "MaxVitaminA",
+            "value": 350,
+            "shape": [],
+            "code": "MaxVitaminA = data[\"MaxVitaminA\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The amount of fertilizer A must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{AmountFertilizerA} \\geq 0",
+            "related_variables": [
+                "AmountFertilizerA"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint to ensure the amount of fertilizer A is non-negative\nmodel.addConstr(AmountFertilizerA >= 0, name=\"fertilizer_A_non_negative\")"
+        },
+        {
+            "description": "The amount of fertilizer B must be non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{AmountFertilizerB} \\\\geq 0",
+            "related_variables": [
+                "AmountFertilizerB"
+            ],
+            "related_parameters": [],
+            "code": "# No code is needed because non-negativity is already ensured by default in gurobipy for continuous variables."
+        },
+        {
+            "description": "The nutrition requires at least MinNitrogen units of nitrogen.",
+            "status": "coded",
+            "formulation": "\\\\textup{NitrogenA} \\\\cdot \\\\textup{AmountFertilizerA} + \\\\textup{NitrogenB} \\\\cdot \\\\textup{AmountFertilizerB} \\\\geq \\\\textup{MinNitrogen}",
+            "related_variables": [
+                "AmountFertilizerA",
+                "AmountFertilizerB"
+            ],
+            "related_parameters": [
+                "NitrogenA",
+                "NitrogenB",
+                "MinNitrogen"
+            ],
+            "code": "# Add nitrogen constraint ensuring enough nitrogen from fertilizers A and B\nmodel.addConstr(NitrogenA * AmountFertilizerA + NitrogenB * AmountFertilizerB >= MinNitrogen, name=\"nitrogen_requirement\")"
+        },
+        {
+            "description": "The total amount of phosphoric acid from fertilizers A and B must be at least MinPhosphoric.",
+            "status": "coded",
+            "formulation": "\\textup{PhosphoricA} \\cdot \\textup{AmountFertilizerA} + \\textup{PhosphoricB} \\cdot \\textup{AmountFertilizerB} \\geq \\textup{MinPhosphoric}",
+            "related_variables": [
+                "AmountFertilizerA",
+                "AmountFertilizerB"
+            ],
+            "related_parameters": [
+                "PhosphoricA",
+                "PhosphoricB",
+                "MinPhosphoric"
+            ],
+            "code": "# Add constraint to ensure the total amount of phosphoric acid meets the minimum requirement\nmodel.addConstr(PhosphoricA * AmountFertilizerA + PhosphoricB * AmountFertilizerB >= MinPhosphoric, name=\"min_phosphoric_constraint\")"
+        },
+        {
+            "description": "The nutrition contains no more than MaxVitaminA units of Vitamin A.",
+            "status": "coded",
+            "formulation": "\\\\textup{VitaminAA} \\\\cdot \\\\textup{AmountFertilizerA} + \\\\textup{VitaminAB} \\\\cdot \\\\textup{AmountFertilizerB} \\\\leq \\\\textup{MaxVitaminA}",
+            "related_variables": [
+                "AmountFertilizerA",
+                "AmountFertilizerB"
+            ],
+            "related_parameters": [
+                "VitaminAA",
+                "VitaminAB",
+                "MaxVitaminA"
+            ],
+            "code": "# Add constraint for maximum Vitamin A  \nmodel.addConstr(VitaminAA * AmountFertilizerA + VitaminAB * AmountFertilizerB <= MaxVitaminA, name=\"MaxVitaminA_constraint\")"
+        },
+        {
+            "description": "Minimum nitrogen requirement for the plant nutrition.",
+            "status": "coded",
+            "formulation": "\\textup{NitrogenA} \\cdot \\textup{AmountFertilizerA} + \\textup{NitrogenB} \\cdot \\textup{AmountFertilizerB} \\geq \\textup{MinNitrogen}",
+            "related_variables": [
+                "AmountFertilizerA",
+                "AmountFertilizerB"
+            ],
+            "related_parameters": [
+                "NitrogenA",
+                "NitrogenB",
+                "MinNitrogen"
+            ],
+            "code": "# Add minimum nitrogen requirement constraint\nmodel.addConstr(NitrogenA * AmountFertilizerA + NitrogenB * AmountFertilizerB >= MinNitrogen, \n                name=\"min_nitrogen_requirement\")"
+        },
+        {
+            "description": "Minimum phosphoric acid requirement for the plant nutrition.",
+            "status": "coded",
+            "formulation": "\\textup{PhosphoricA} \\cdot \\textup{AmountFertilizerA} + \\textup{PhosphoricB} \\cdot \\textup{AmountFertilizerB} \\geq \\textup{MinPhosphoric}",
+            "related_variables": [
+                "AmountFertilizerA",
+                "AmountFertilizerB"
+            ],
+            "related_parameters": [
+                "PhosphoricA",
+                "PhosphoricB",
+                "MinPhosphoric"
+            ],
+            "code": "# Add minimum phosphoric acid requirement constraint\nmodel.addConstr(\n    PhosphoricA * AmountFertilizerA + PhosphoricB * AmountFertilizerB >= MinPhosphoric,\n    name=\"min_phosphoric_requirement\"\n)"
+        },
+        {
+            "description": "Maximum allowed vitamin A for the plant nutrition.",
+            "status": "coded",
+            "formulation": "\\textup{VitaminAA} \\cdot \\textup{AmountFertilizerA} + \\textup{VitaminAB} \\cdot \\textup{AmountFertilizerB} \\leq \\textup{MaxVitaminA}",
+            "related_variables": [
+                "AmountFertilizerA",
+                "AmountFertilizerB"
+            ],
+            "related_parameters": [
+                "VitaminAA",
+                "VitaminAB",
+                "MaxVitaminA"
+            ],
+            "code": "# Add maximum allowed vitamin A constraint\nmodel.addConstr(\n    VitaminAA * AmountFertilizerA + VitaminAB * AmountFertilizerB <= MaxVitaminA,\n    name=\"max_vitamin_a_constraint\"\n)"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The amount of fertilizer A in kilograms.",
+            "symbol": "AmountFertilizerA",
+            "shape": [],
+            "status": "coded",
+            "code": "AmountFertilizerA = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"AmountFertilizerA\")"
+        },
+        {
+            "definition": "The amount of fertilizer B in kilograms.",
+            "symbol": "AmountFertilizerB",
+            "shape": [],
+            "status": "coded",
+            "code": "AmountFertilizerB = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"AmountFertilizerB\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the amount of vitamin D in the nutrition by adjusting fertilizers A and B",
+            "status": "coded",
+            "formulation": "\\textup{Minimize} \\quad \\textup{VitaminDA} \\cdot \\textup{AmountFertilizerA} + \\textup{VitaminDB} \\cdot \\textup{AmountFertilizerB}",
+            "related_variables": [
+                "AmountFertilizerA",
+                "AmountFertilizerB"
+            ],
+            "related_parameters": [
+                "VitaminDA",
+                "VitaminDB"
+            ],
+            "code": "# Set objective\nmodel.setObjective(VitaminDA * AmountFertilizerA + VitaminDB * AmountFertilizerB, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 125.49295774647888,
+    "log_path": "logs/log_20250413152142_nl4opt_prob_10/",
+    "problem_path": "data/nl4opt/prob_10/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_10/data.json\", \"r\") as f:\n    data = json.load(f)\n\nNitrogenA = data[\"NitrogenA\"] # scalar parameter\nPhosphoricA = data[\"PhosphoricA\"] # scalar parameter\nVitaminAA = data[\"VitaminAA\"] # scalar parameter\nVitaminDA = data[\"VitaminDA\"] # scalar parameter\nNitrogenB = data[\"NitrogenB\"] # scalar parameter\nPhosphoricB = data[\"PhosphoricB\"] # scalar parameter\nVitaminAB = data[\"VitaminAB\"] # scalar parameter\nVitaminDB = data[\"VitaminDB\"] # scalar parameter\nMinNitrogen = data[\"MinNitrogen\"] # scalar parameter\nMinPhosphoric = data[\"MinPhosphoric\"] # scalar parameter\nMaxVitaminA = data[\"MaxVitaminA\"] # scalar parameter\nAmountFertilizerA = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"AmountFertilizerA\")\nAmountFertilizerB = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"AmountFertilizerB\")\n\n# Add constraint to ensure the amount of fertilizer A is non-negative\nmodel.addConstr(AmountFertilizerA >= 0, name=\"fertilizer_A_non_negative\")\n\n# No code is needed because non-negativity is already ensured by default in gurobipy for continuous variables.\n\n# Add nitrogen constraint ensuring enough nitrogen from fertilizers A and B\nmodel.addConstr(NitrogenA * AmountFertilizerA + NitrogenB * AmountFertilizerB >= MinNitrogen, name=\"nitrogen_requirement\")\n\n# Add constraint to ensure the total amount of phosphoric acid meets the minimum requirement\nmodel.addConstr(PhosphoricA * AmountFertilizerA + PhosphoricB * AmountFertilizerB >= MinPhosphoric, name=\"min_phosphoric_constraint\")\n\n# Add constraint for maximum Vitamin A  \nmodel.addConstr(VitaminAA * AmountFertilizerA + VitaminAB * AmountFertilizerB <= MaxVitaminA, name=\"MaxVitaminA_constraint\")\n\n# Add minimum nitrogen requirement constraint\nmodel.addConstr(NitrogenA * AmountFertilizerA + NitrogenB * AmountFertilizerB >= MinNitrogen, \n                name=\"min_nitrogen_requirement\")\n\n# Add minimum phosphoric acid requirement constraint\nmodel.addConstr(\n    PhosphoricA * AmountFertilizerA + PhosphoricB * AmountFertilizerB >= MinPhosphoric,\n    name=\"min_phosphoric_requirement\"\n)\n\n# Add maximum allowed vitamin A constraint\nmodel.addConstr(\n    VitaminAA * AmountFertilizerA + VitaminAB * AmountFertilizerB <= MaxVitaminA,\n    name=\"max_vitamin_a_constraint\"\n)\n\n# Set objective\nmodel.setObjective(VitaminDA * AmountFertilizerA + VitaminDB * AmountFertilizerB, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

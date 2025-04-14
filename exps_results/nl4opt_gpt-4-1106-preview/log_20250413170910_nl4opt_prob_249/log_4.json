@@ -1,0 +1,193 @@
+{
+    "background": "A clothing company looking to optimize its product distribution between retail stores and factory outlets, aiming to reduce the number of stores in operation while meeting customer and employee constraints.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of customers a retail store brings in every day",
+            "symbol": "RetailCustomers",
+            "value": 200,
+            "shape": [],
+            "code": "RetailCustomers = data[\"RetailCustomers\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of customers a factory outlet brings in every day",
+            "symbol": "OutletCustomers",
+            "value": 80,
+            "shape": [],
+            "code": "OutletCustomers = data[\"OutletCustomers\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of employees required to operate a retail store",
+            "symbol": "RetailEmployees",
+            "value": 6,
+            "shape": [],
+            "code": "RetailEmployees = data[\"RetailEmployees\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of employees required to operate a factory outlet",
+            "symbol": "OutletEmployees",
+            "value": 4,
+            "shape": [],
+            "code": "OutletEmployees = data[\"OutletEmployees\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum required number of customers every day",
+            "symbol": "MinCustomers",
+            "value": 1200,
+            "shape": [],
+            "code": "MinCustomers = data[\"MinCustomers\"] # scalar parameter"
+        },
+        {
+            "definition": "Total number of employees available to operate all stores",
+            "symbol": "TotalEmployees",
+            "value": 50,
+            "shape": [],
+            "code": "TotalEmployees = data[\"TotalEmployees\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Number of retail stores must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfRetailStores} \\geq 0",
+            "related_variables": [
+                "NumberOfRetailStores"
+            ],
+            "related_parameters": [],
+            "code": "# The number of retail stores must be non-negative\n# This is inherently enforced by the variable type being INTEGER\n# No additional constraint is needed"
+        },
+        {
+            "description": "Number of factory outlets must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfFactoryOutlets} \\geq 0",
+            "related_variables": [
+                "NumberOfFactoryOutlets"
+            ],
+            "related_parameters": [],
+            "code": "# Since NumberOfFactoryOutlets is already defined as an integer variable, we just need to add a constraint to ensure it is non-negative\nmodel.addConstr(NumberOfFactoryOutlets >= 0, name=\"non_negative_factory_outlets\")"
+        },
+        {
+            "description": "Total number of customers from retail stores and factory outlets must be at least MinCustomers",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfRetailStores} \\times \\textup{RetailCustomers} + \\textup{NumberOfFactoryOutlets} \\times \\textup{OutletCustomers} \\geq \\textup{MinCustomers}",
+            "related_variables": [
+                "NumberOfRetailStores",
+                "NumberOfFactoryOutlets"
+            ],
+            "related_parameters": [
+                "RetailCustomers",
+                "OutletCustomers",
+                "MinCustomers"
+            ],
+            "code": "# Define the constraint for minimum total number of customers from retail stores and factory outlets\nmodel.addConstr(NumberOfRetailStores * RetailCustomers + NumberOfFactoryOutlets * OutletCustomers >= MinCustomers, name=\"Min_Customers_Constraint\")"
+        },
+        {
+            "description": "Total number of employees distributed to all stores cannot exceed the available number of employees",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfRetailStores} \\times \\textup{RetailEmployees} + \\textup{NumberOfFactoryOutlets} \\times \\textup{OutletEmployees} \\leq \\textup{TotalEmployees}",
+            "related_variables": [
+                "NumberOfRetailStores",
+                "NumberOfFactoryOutlets"
+            ],
+            "related_parameters": [
+                "RetailEmployees",
+                "OutletEmployees",
+                "TotalEmployees"
+            ],
+            "code": "# Total number of employees constraint\nmodel.addConstr(NumberOfRetailStores * RetailEmployees + NumberOfFactoryOutlets * OutletEmployees <= TotalEmployees, name=\"total_employee_constraint\")"
+        },
+        {
+            "description": "Total number of employees required for all retail stores cannot exceed the total available employees",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfRetailStores} \\times \\textup{RetailEmployees} \\leq \\textup{TotalEmployees}",
+            "related_variables": [
+                "NumberOfRetailStores"
+            ],
+            "related_parameters": [
+                "RetailEmployees",
+                "TotalEmployees"
+            ],
+            "code": "# Add constraint for total employees required by retail stores\nmodel.addConstr(NumberOfRetailStores * RetailEmployees <= TotalEmployees, name=\"total_employees_constraint\")"
+        },
+        {
+            "description": "Total number of employees required for all factory outlets cannot exceed the total number of employees available.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfFactoryOutlets} \\times \\textup{OutletEmployees} \\leq \\textup{TotalEmployees}",
+            "related_variables": [
+                "NumberOfFactoryOutlets"
+            ],
+            "related_parameters": [
+                "OutletEmployees",
+                "TotalEmployees"
+            ],
+            "code": "NumberOfFactoryOutlets = model.addVar(vtype=gp.GRB.INTEGER, name='NumberOfFactoryOutlets')"
+        },
+        {
+            "description": "The number of customers served daily must meet or exceed the minimum required",
+            "status": "coded",
+            "formulation": "\\textup{RetailCustomers} \\times \\textup{NumberOfRetailStores} + \\textup{OutletCustomers} \\times \\textup{NumberOfFactoryOutlets} \\geq \\textup{MinCustomers}",
+            "related_variables": [
+                "NumberOfRetailStores",
+                "NumberOfFactoryOutlets"
+            ],
+            "related_parameters": [
+                "RetailCustomers",
+                "OutletCustomers",
+                "MinCustomers"
+            ],
+            "code": "# Ensure the number of customers served daily meets or exceeds the minimum required\nmodel.addConstr(\n    RetailCustomers * NumberOfRetailStores + OutletCustomers * NumberOfFactoryOutlets >= MinCustomers,\n    name=\"min_customers_served\"\n)"
+        },
+        {
+            "description": "The number of employees used cannot exceed the total number of employees available",
+            "status": "coded",
+            "formulation": "\\textup{RetailEmployees} \\times \\textup{NumberOfRetailStores} + \\textup{OutletEmployees} \\times \\textup{NumberOfFactoryOutlets} \\leq \\textup{TotalEmployees}",
+            "related_variables": [
+                "NumberOfRetailStores",
+                "NumberOfFactoryOutlets"
+            ],
+            "related_parameters": [
+                "RetailEmployees",
+                "OutletEmployees",
+                "TotalEmployees"
+            ],
+            "code": "# Ensure the number of employees used does not exceed the total number of employees available\nmodel.addConstr(RetailEmployees * NumberOfRetailStores + OutletEmployees * NumberOfFactoryOutlets <= TotalEmployees, name=\"employee_limit\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of retail stores in operation",
+            "symbol": "NumberOfRetailStores",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfRetailStores = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfRetailStores\")"
+        },
+        {
+            "definition": "Number of factory outlets in operation",
+            "symbol": "NumberOfFactoryOutlets",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfFactoryOutlets = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfFactoryOutlets\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of stores in operation",
+            "status": "coded",
+            "formulation": "\\textup{Minimize } \\textup{NumberOfRetailStores} + \\textup{NumberOfFactoryOutlets}",
+            "related_variables": [
+                "NumberOfRetailStores",
+                "NumberOfFactoryOutlets"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(NumberOfRetailStores + NumberOfFactoryOutlets, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": "Traceback (most recent call last):\n  File \"c:\\Users\\Simon\\Desktop\\Courses\\ECE 570\\ECE570_Project\\MyOptiMUS\\evaluator.py\", line 45, in run\n    exec(last_line, local_env, local_env)\n  File \"<string>\", line 1\n    ```\n    ^\nSyntaxError: invalid syntax\n",
+    "obj_val": 6.0,
+    "log_path": "logs/log_20250413170910_nl4opt_prob_249/",
+    "problem_path": "data/nl4opt/prob_249/",
+    "prep_code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_249/data.json\", \"r\") as f:\n    data = json.load(f)\n",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_249/data.json\", \"r\") as f:\n    data = json.load(f)\n\nRetailCustomers = data[\"RetailCustomers\"] # scalar parameter\nOutletCustomers = data[\"OutletCustomers\"] # scalar parameter\nRetailEmployees = data[\"RetailEmployees\"] # scalar parameter\nOutletEmployees = data[\"OutletEmployees\"] # scalar parameter\nMinCustomers = data[\"MinCustomers\"] # scalar parameter\nTotalEmployees = data[\"TotalEmployees\"] # scalar parameter\nNumberOfRetailStores = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfRetailStores\")\nNumberOfFactoryOutlets = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfFactoryOutlets\")\n\n# The number of retail stores must be non-negative\n# This is inherently enforced by the variable type being INTEGER\n# No additional constraint is needed\n\n# Since NumberOfFactoryOutlets is already defined as an integer variable, we just need to add a constraint to ensure it is non-negative\nmodel.addConstr(NumberOfFactoryOutlets >= 0, name=\"non_negative_factory_outlets\")\n\n# Define the constraint for minimum total number of customers from retail stores and factory outlets\nmodel.addConstr(NumberOfRetailStores * RetailCustomers + NumberOfFactoryOutlets * OutletCustomers >= MinCustomers, name=\"Min_Customers_Constraint\")\n\n# Total number of employees constraint\nmodel.addConstr(NumberOfRetailStores * RetailEmployees + NumberOfFactoryOutlets * OutletEmployees <= TotalEmployees, name=\"total_employee_constraint\")\n\n# Add constraint for total employees required by retail stores\nmodel.addConstr(NumberOfRetailStores * RetailEmployees <= TotalEmployees, name=\"total_employees_constraint\")\n\nNumberOfFactoryOutlets = model.addVar(vtype=gp.GRB.INTEGER, name='NumberOfFactoryOutlets')\n\n# Ensure the number of customers served daily meets or exceeds the minimum required\nmodel.addConstr(\n    RetailCustomers * NumberOfRetailStores + OutletCustomers * NumberOfFactoryOutlets >= MinCustomers,\n    name=\"min_customers_served\"\n)\n\n# Ensure the number of employees used does not exceed the total number of employees available\nmodel.addConstr(RetailEmployees * NumberOfRetailStores + OutletEmployees * NumberOfFactoryOutlets <= TotalEmployees, name=\"employee_limit\")\n\n# Set objective\nmodel.setObjective(NumberOfRetailStores + NumberOfFactoryOutlets, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

@@ -1,0 +1,384 @@
+{
+    "background": "Super Shop sells two types of snacks in bulk and plans to create two mix products with specific percentage compositions of cat paw and gold shark snacks, aiming to maximize profit.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Percentage of cat paw snacks in the first snack mix",
+            "symbol": "PctCatPawFirst",
+            "value": 0.2,
+            "shape": [],
+            "code": "PctCatPawFirst = data[\"PctCatPawFirst\"] # scalar parameter"
+        },
+        {
+            "definition": "Percentage of gold shark snacks in the first snack mix",
+            "symbol": "PctGoldSharkFirst",
+            "value": 0.8,
+            "shape": [],
+            "code": "PctGoldSharkFirst = data[\"PctGoldSharkFirst\"] # scalar parameter"
+        },
+        {
+            "definition": "Percentage of cat paw snacks in the second snack mix",
+            "symbol": "PctCatPawSecond",
+            "value": 0.35,
+            "shape": [],
+            "code": "PctCatPawSecond = data[\"PctCatPawSecond\"] # scalar parameter"
+        },
+        {
+            "definition": "Percentage of gold shark snacks in the second snack mix",
+            "symbol": "PctGoldSharkSecond",
+            "value": 0.65,
+            "shape": [],
+            "code": "PctGoldSharkSecond = data[\"PctGoldSharkSecond\"] # scalar parameter"
+        },
+        {
+            "definition": "Total kg of cat paw snacks available",
+            "symbol": "TotalCatPaw",
+            "value": 20,
+            "shape": [],
+            "code": "TotalCatPaw = data[\"TotalCatPaw\"] # scalar parameter"
+        },
+        {
+            "definition": "Total kg of gold shark snacks available",
+            "symbol": "TotalGoldShark",
+            "value": 50,
+            "shape": [],
+            "code": "TotalGoldShark = data[\"TotalGoldShark\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit per kg of the first snack mix",
+            "symbol": "ProfitFirstMix",
+            "value": 12,
+            "shape": [],
+            "code": "ProfitFirstMix = data[\"ProfitFirstMix\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit per kg of the second snack mix",
+            "symbol": "ProfitSecondMix",
+            "value": 15,
+            "shape": [],
+            "code": "ProfitSecondMix = data[\"ProfitSecondMix\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The amount of cat paw snacks in the first mix must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{CatPawFirstMix} \\geq 0",
+            "related_variables": [
+                "CatPawFirstMix"
+            ],
+            "related_parameters": [],
+            "code": "model.addConstr(CatPawFirstMix >= 0, name=\"nonnegativity_catpaw\")"
+        },
+        {
+            "description": "The amount of gold shark snacks in the first mix is non-negative",
+            "status": "coded",
+            "formulation": "GoldSharkFirstMix \\geq 0",
+            "related_variables": [
+                "GoldSharkFirstMix"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint for non-negativity of the amount of gold shark snacks in the first mix\nmodel.addConstr(GoldSharkFirstMix >= 0, \"GoldSharkFirstMix_non_negative\")"
+        },
+        {
+            "description": "Amount of cat paw snacks in the second mix must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{CatPawSecondMix} \\geq 0",
+            "related_variables": [
+                "CatPawSecondMix"
+            ],
+            "related_parameters": [],
+            "code": "# Constraint: Amount of cat paw snacks in the second mix must be non-negative\nmodel.addConstr(CatPawSecondMix >= 0, name=\"cat_paw_second_mix_non_negative\")"
+        },
+        {
+            "description": "The amount of gold shark snacks in the second mix must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{GoldSharkSecondMix} \\geq 0",
+            "related_variables": [
+                "GoldSharkSecondMix"
+            ],
+            "related_parameters": [],
+            "code": "model.addConstr(GoldSharkSecondMix >= 0, name=\"GoldSharkSecondMix_nonneg\")"
+        },
+        {
+            "description": "Total amount of cat paw snacks used in both mixes must not exceed the total available kg of cat paw snacks",
+            "status": "coded",
+            "formulation": "\\textup{CatPawFirstMix} + \\textup{CatPawSecondMix} \\leq \\textup{TotalCatPaw}",
+            "related_variables": [
+                "CatPawFirstMix",
+                "CatPawSecondMix"
+            ],
+            "related_parameters": [
+                "TotalCatPaw"
+            ],
+            "code": "# Constraint: Total amount of cat paw snacks used in both mixes must not exceed the total available kg of cat paw snacks\nmodel.addConstr(CatPawFirstMix + CatPawSecondMix <= TotalCatPaw, \"cat_paw_snack_limit\")"
+        },
+        {
+            "description": "Total amount of gold shark snacks in both mixes cannot exceed TotalGoldShark kg",
+            "status": "coded",
+            "formulation": "\\textup{GoldSharkFirstMix} + \\textup{GoldSharkSecondMix} \\leq \\textup{TotalGoldShark}",
+            "related_variables": [
+                "GoldSharkFirstMix",
+                "GoldSharkSecondMix"
+            ],
+            "related_parameters": [
+                "TotalGoldShark"
+            ],
+            "code": "model.addConstr(GoldSharkFirstMix + GoldSharkSecondMix <= TotalGoldShark, \"gold_shark_mix_constraint\")"
+        },
+        {
+            "description": "The percentages of cat paw and gold shark snacks in the first snack mix must match the specified values",
+            "status": "coded",
+            "formulation": "\\frac{\\textup{CatPawFirstMix}}{\\textup{CatPawFirstMix} + \\textup{GoldSharkFirstMix}} = \\textup{PctCatPawFirst} \\quad \\text{and} \\quad \\frac{\\textup{GoldSharkFirstMix}}{\\textup{CatPawFirstMix} + \\textup{GoldSharkFirstMix}} = \\textup{PctGoldSharkFirst}",
+            "related_variables": [
+                "CatPawFirstMix",
+                "GoldSharkFirstMix"
+            ],
+            "related_parameters": [
+                "PctCatPawFirst",
+                "PctGoldSharkFirst"
+            ],
+            "code": "# The percentages of cat paw and gold shark snacks in the first snack mix must match the specified values\ntotal_mix = CatPawFirstMix + GoldSharkFirstMix\nmodel.addConstr(CatPawFirstMix == PctCatPawFirst * total_mix, name=\"pct_cat_paw_first_mix\")\nmodel.addConstr(GoldSharkFirstMix == PctGoldSharkFirst * total_mix, name=\"pct_gold_shark_first_mix\")"
+        },
+        {
+            "description": "The second mix must contain a specific percentage of cat paw and gold shark snacks",
+            "status": "coded",
+            "formulation": "CatPawSecondMix = PctCatPawSecond \\times TotalSecondMix \\quad \\textup{and} \\quad GoldSharkSecondMix = PctGoldSharkSecond \\times TotalSecondMix",
+            "related_variables": [
+                "CatPawSecondMix",
+                "GoldSharkSecondMix",
+                "TotalSecondMix"
+            ],
+            "related_parameters": [
+                "PctCatPawSecond",
+                "PctGoldSharkSecond"
+            ],
+            "code": "# Define specific percentage constraints for the second snack mix\nmodel.addConstr(CatPawSecondMix == PctCatPawSecond * TotalSecondMix, name=\"cat_paw_percentage_constraint\")\nmodel.addConstr(GoldSharkSecondMix == PctGoldSharkSecond * TotalSecondMix, name=\"gold_shark_percentage_constraint\")"
+        },
+        {
+            "description": "Relate GoldSharkFirstMix to CatPawFirstMix while accounting for the percentage composition of the first mix",
+            "status": "coded",
+            "formulation": "GoldSharkFirstMix = (CatPawFirstMix / \\textup{PctCatPawFirst}) \\times \\textup{PctGoldSharkFirst}",
+            "related_variables": [
+                "CatPawFirstMix",
+                "GoldSharkFirstMix"
+            ],
+            "related_parameters": [
+                "PctCatPawFirst",
+                "PctGoldSharkFirst"
+            ],
+            "code": "# Relate GoldSharkFirstMix to CatPawFirstMix with respect to their percentage compositions\nmodel.addConstr(GoldSharkFirstMix == (CatPawFirstMix / PctCatPawFirst) * PctGoldSharkFirst, name=\"mix_relation\")"
+        },
+        {
+            "description": "Relation between the first mix and its percentage composition of gold shark snacks",
+            "status": "coded",
+            "formulation": "\\textup{GoldSharkFirstMix} = \\textup{PctGoldSharkFirst} \\times (\\textup{GoldSharkFirstMix} + \\textup{CatPawFirstMix})",
+            "related_variables": [
+                "GoldSharkFirstMix",
+                "CatPawFirstMix"
+            ],
+            "related_parameters": [
+                "PctGoldSharkFirst"
+            ],
+            "code": "# Relation between the first mix and its percentage composition of gold shark snacks\nGoldSharkFirstMix = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"GoldSharkFirstMix\")\nCatPawFirstMix = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"CatPawFirstMix\")\nPctGoldSharkFirst = data[\"PctGoldSharkFirst\"] # scalar parameter\n\nmodel.addConstr(GoldSharkFirstMix == PctGoldSharkFirst * (GoldSharkFirstMix + CatPawFirstMix), name=\"gold_shark_composition\")"
+        },
+        {
+            "description": "Relation between the second mix and its percentage composition of gold shark snacks",
+            "status": "coded",
+            "formulation": "\\textup{GoldSharkSecondMix} = \\textup{PctGoldSharkSecond} \\times (\\textup{GoldSharkSecondMix} + \\frac{\\textup{CatPawSecondMix}}{\\textup{PctCatPawSecond}})",
+            "related_variables": [
+                "GoldSharkSecondMix",
+                "CatPawSecondMix"
+            ],
+            "related_parameters": [
+                "PctGoldSharkSecond",
+                "PctCatPawSecond"
+            ],
+            "code": "# Relation between the second mix and its percentage composition of gold shark snacks constraint\nmodel.addConstr(GoldSharkSecondMix == PctGoldSharkSecond * (GoldSharkSecondMix + CatPawSecondMix / PctCatPawSecond), name=\"GoldSharkSecondMix_Composition\")"
+        },
+        {
+            "description": "The sum of cat paw and gold shark snacks in the first mix must be 1 for percentage constraints",
+            "status": "coded",
+            "formulation": "\\textup{CatPawFirstMix} + \\textup{GoldSharkFirstMix} = \\textup{TotalFirstMix}",
+            "related_variables": [
+                "CatPawFirstMix",
+                "GoldSharkFirstMix",
+                "TotalFirstMix"
+            ],
+            "related_parameters": [],
+            "code": "# Constraint for the sum of cat paw and gold shark snacks in the first mix to equal the total amount for the first mix\nmodel.addConstr(CatPawFirstMix + GoldSharkFirstMix == TotalFirstMix, name=\"percentage_constraint_first_mix\")"
+        },
+        {
+            "description": "The percentage constraints for the first mix converted to linear form",
+            "status": "coded",
+            "formulation": "\\textup{CatPawFirstMix} = \\textup{PctCatPawFirst} \\times \\textup{TotalFirstMix} \\quad \\text{and} \\quad \\textup{GoldSharkFirstMix} = \\textup{PctGoldSharkFirst} \\times \\textup{TotalFirstMix}",
+            "related_variables": [
+                "CatPawFirstMix",
+                "GoldSharkFirstMix",
+                "TotalFirstMix"
+            ],
+            "related_parameters": [
+                "PctCatPawFirst",
+                "PctGoldSharkFirst"
+            ],
+            "code": "# Percentage constraints for the first mix converted to linear form\nmodel.addConstr(CatPawFirstMix == PctCatPawFirst * TotalFirstMix, name=\"CatPawFirstMix_constraint\")\nmodel.addConstr(GoldSharkFirstMix == PctGoldSharkFirst * TotalFirstMix, name=\"GoldSharkFirstMix_constraint\")"
+        },
+        {
+            "description": "The total amount of snacks in the second mix must equal the sum of cat paw and gold shark snacks in the second mix",
+            "status": "coded",
+            "formulation": "TotalSecondMix = CatPawSecondMix + GoldSharkSecondMix",
+            "related_variables": [
+                "CatPawSecondMix",
+                "GoldSharkSecondMix",
+                "TotalSecondMix"
+            ],
+            "related_parameters": [],
+            "code": "# Constraint for the total amount in the second mix to equal the sum of cat paw and gold shark snacks in the second mix\nmodel.addConstr(TotalSecondMix == CatPawSecondMix + GoldSharkSecondMix, name=\"mix_equality_constraint\")"
+        },
+        {
+            "description": "Total amount of cat paw snacks used in both mixes should not exceed the available amount",
+            "status": "coded",
+            "formulation": "\\textup{CatPawFirstMix} + \\textup{CatPawSecondMix} \\leq \\textup{TotalCatPaw}",
+            "related_variables": [
+                "CatPawFirstMix",
+                "CatPawSecondMix"
+            ],
+            "related_parameters": [
+                "TotalCatPaw"
+            ],
+            "code": "model.addConstr(CatPawFirstMix + CatPawSecondMix <= TotalCatPaw, \"total_cat_paw_snacks_constraint\")"
+        },
+        {
+            "description": "Total amount of gold shark snacks used in both mixes should not exceed the available amount",
+            "status": "coded",
+            "formulation": "\\textup{GoldSharkFirstMix} + \\textup{GoldSharkSecondMix} \\leq \\textup{TotalGoldShark}",
+            "related_variables": [
+                "GoldSharkFirstMix",
+                "GoldSharkSecondMix"
+            ],
+            "related_parameters": [
+                "TotalGoldShark"
+            ],
+            "code": "model.addConstr(GoldSharkFirstMix + GoldSharkSecondMix <= TotalGoldShark, \"gold_shark_mix_constraint\")"
+        },
+        {
+            "description": "The amount of cat paw snacks in the first mix should be 20% of its total amount",
+            "status": "coded",
+            "formulation": "\\textup{CatPawFirstMix} = \\textup{PctCatPawFirst} \\cdot \\textup{TotalFirstMix}",
+            "related_variables": [
+                "CatPawFirstMix",
+                "TotalFirstMix"
+            ],
+            "related_parameters": [
+                "PctCatPawFirst"
+            ],
+            "code": "# Constraint for the amount of cat paw snacks in the first mix to be 20% of its total amount\nmodel.addConstr(CatPawFirstMix == PctCatPawFirst * TotalFirstMix, name=\"cat_paw_first_mix_constraint\")"
+        },
+        {
+            "description": "The amount of gold shark snacks in the first mix should be 80% of its total amount",
+            "status": "coded",
+            "formulation": "\\textup{GoldSharkFirstMix} = \\textup{PctGoldSharkFirst} \\cdot \\textup{TotalFirstMix}",
+            "related_variables": [
+                "GoldSharkFirstMix",
+                "TotalFirstMix"
+            ],
+            "related_parameters": [
+                "PctGoldSharkFirst"
+            ],
+            "code": "# Constraint for the amount of gold shark snacks in the first mix\nGoldSharkFirstMix = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"GoldSharkFirstMix\")\nTotalFirstMix = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TotalFirstMix\")\nPctGoldSharkFirst = 0.8\n\nmodel.addConstr(GoldSharkFirstMix == PctGoldSharkFirst * TotalFirstMix, \"gold_shark_ratio_constraint\")"
+        },
+        {
+            "description": "The amount of cat paw snacks in the second mix should be 35% of its total amount",
+            "status": "coded",
+            "formulation": "\\textup{CatPawSecondMix} = \\textup{PctCatPawSecond} \\cdot \\textup{TotalSecondMix}",
+            "related_variables": [
+                "CatPawSecondMix",
+                "TotalSecondMix"
+            ],
+            "related_parameters": [
+                "PctCatPawSecond"
+            ],
+            "code": "# Constraint for the amount of cat paw snacks in the second mix to be 35% of its total amount\nmodel.addConstr(CatPawSecondMix == PctCatPawSecond * TotalSecondMix, \"pct_catpaw_second_mix\")"
+        },
+        {
+            "description": "The amount of gold shark snacks in the second mix should be 65% of its total amount",
+            "status": "coded",
+            "formulation": "\\textup{GoldSharkSecondMix} = \\textup{PctGoldSharkSecond} \\cdot \\textup{TotalSecondMix}",
+            "related_variables": [
+                "GoldSharkSecondMix",
+                "TotalSecondMix"
+            ],
+            "related_parameters": [
+                "PctGoldSharkSecond"
+            ],
+            "code": "# Constraint for the amount of gold shark snacks in the second mix to be 65% of its total amount\nmodel.addConstr(GoldSharkSecondMix == PctGoldSharkSecond * TotalSecondMix, name=\"gold_shark_second_mix_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Amount of cat paw snacks in the first snack mix",
+            "symbol": "CatPawFirstMix",
+            "shape": [],
+            "status": "coded",
+            "code": "CatPawFirstMix = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"CatPawFirstMix\")"
+        },
+        {
+            "definition": "Amount of gold shark snacks in the first snack mix",
+            "symbol": "GoldSharkFirstMix",
+            "shape": [],
+            "status": "coded",
+            "code": "GoldSharkFirstMix = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"GoldSharkFirstMix\")"
+        },
+        {
+            "definition": "Amount of cat paw snacks in the second snack mix",
+            "symbol": "CatPawSecondMix",
+            "shape": [],
+            "status": "coded",
+            "code": "CatPawSecondMix = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"CatPawSecondMix\")"
+        },
+        {
+            "definition": "The total amount of snacks in the first mix",
+            "symbol": "TotalFirstMix",
+            "shape": [],
+            "status": "coded",
+            "code": "TotalFirstMix = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TotalFirstMix\")"
+        },
+        {
+            "definition": "Total amount of snacks in the second mix",
+            "symbol": "TotalSecondMix",
+            "shape": [],
+            "status": "coded",
+            "code": "TotalSecondMix = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TotalSecondMix\")"
+        },
+        {
+            "definition": "Amount of gold shark snacks in the second snack mix",
+            "symbol": "GoldSharkSecondMix",
+            "shape": [],
+            "status": "coded",
+            "code": "GoldSharkSecondMix = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"GoldSharkSecondMix\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total profit from both snack mixes",
+            "status": "coded",
+            "formulation": "\\textup{ProfitFirstMix} \\cdot \\textup{TotalFirstMix} + \\textup{ProfitSecondMix} \\cdot \\textup{TotalSecondMix}",
+            "related_variables": [
+                "TotalFirstMix",
+                "TotalSecondMix"
+            ],
+            "related_parameters": [
+                "ProfitFirstMix",
+                "ProfitSecondMix"
+            ],
+            "code": "# Define objective function\nmodel.setObjective(ProfitFirstMix * TotalFirstMix + ProfitSecondMix * TotalSecondMix, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 4,
+    "error_message": null,
+    "obj_val": "infeasible or unbounded",
+    "log_path": "logs/log_20250413160659_nl4opt_prob_217/",
+    "problem_path": "data/nl4opt/prob_217/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_217/data.json\", \"r\") as f:\n    data = json.load(f)\n\nPctCatPawFirst = data[\"PctCatPawFirst\"] # scalar parameter\nPctGoldSharkFirst = data[\"PctGoldSharkFirst\"] # scalar parameter\nPctCatPawSecond = data[\"PctCatPawSecond\"] # scalar parameter\nPctGoldSharkSecond = data[\"PctGoldSharkSecond\"] # scalar parameter\nTotalCatPaw = data[\"TotalCatPaw\"] # scalar parameter\nTotalGoldShark = data[\"TotalGoldShark\"] # scalar parameter\nProfitFirstMix = data[\"ProfitFirstMix\"] # scalar parameter\nProfitSecondMix = data[\"ProfitSecondMix\"] # scalar parameter\nCatPawFirstMix = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"CatPawFirstMix\")\nGoldSharkFirstMix = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"GoldSharkFirstMix\")\nCatPawSecondMix = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"CatPawSecondMix\")\nTotalFirstMix = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TotalFirstMix\")\nTotalSecondMix = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TotalSecondMix\")\nGoldSharkSecondMix = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"GoldSharkSecondMix\")\n\nmodel.addConstr(CatPawFirstMix >= 0, name=\"nonnegativity_catpaw\")\n\n# Add constraint for non-negativity of the amount of gold shark snacks in the first mix\nmodel.addConstr(GoldSharkFirstMix >= 0, \"GoldSharkFirstMix_non_negative\")\n\n# Constraint: Amount of cat paw snacks in the second mix must be non-negative\nmodel.addConstr(CatPawSecondMix >= 0, name=\"cat_paw_second_mix_non_negative\")\n\nmodel.addConstr(GoldSharkSecondMix >= 0, name=\"GoldSharkSecondMix_nonneg\")\n\n# Constraint: Total amount of cat paw snacks used in both mixes must not exceed the total available kg of cat paw snacks\nmodel.addConstr(CatPawFirstMix + CatPawSecondMix <= TotalCatPaw, \"cat_paw_snack_limit\")\n\nmodel.addConstr(GoldSharkFirstMix + GoldSharkSecondMix <= TotalGoldShark, \"gold_shark_mix_constraint\")\n\n# The percentages of cat paw and gold shark snacks in the first snack mix must match the specified values\ntotal_mix = CatPawFirstMix + GoldSharkFirstMix\nmodel.addConstr(CatPawFirstMix == PctCatPawFirst * total_mix, name=\"pct_cat_paw_first_mix\")\nmodel.addConstr(GoldSharkFirstMix == PctGoldSharkFirst * total_mix, name=\"pct_gold_shark_first_mix\")\n\n# Define specific percentage constraints for the second snack mix\nmodel.addConstr(CatPawSecondMix == PctCatPawSecond * TotalSecondMix, name=\"cat_paw_percentage_constraint\")\nmodel.addConstr(GoldSharkSecondMix == PctGoldSharkSecond * TotalSecondMix, name=\"gold_shark_percentage_constraint\")\n\n# Relate GoldSharkFirstMix to CatPawFirstMix with respect to their percentage compositions\nmodel.addConstr(GoldSharkFirstMix == (CatPawFirstMix / PctCatPawFirst) * PctGoldSharkFirst, name=\"mix_relation\")\n\n# Relation between the first mix and its percentage composition of gold shark snacks\nGoldSharkFirstMix = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"GoldSharkFirstMix\")\nCatPawFirstMix = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"CatPawFirstMix\")\nPctGoldSharkFirst = data[\"PctGoldSharkFirst\"] # scalar parameter\n\nmodel.addConstr(GoldSharkFirstMix == PctGoldSharkFirst * (GoldSharkFirstMix + CatPawFirstMix), name=\"gold_shark_composition\")\n\n# Relation between the second mix and its percentage composition of gold shark snacks constraint\nmodel.addConstr(GoldSharkSecondMix == PctGoldSharkSecond * (GoldSharkSecondMix + CatPawSecondMix / PctCatPawSecond), name=\"GoldSharkSecondMix_Composition\")\n\n# Constraint for the sum of cat paw and gold shark snacks in the first mix to equal the total amount for the first mix\nmodel.addConstr(CatPawFirstMix + GoldSharkFirstMix == TotalFirstMix, name=\"percentage_constraint_first_mix\")\n\n# Percentage constraints for the first mix converted to linear form\nmodel.addConstr(CatPawFirstMix == PctCatPawFirst * TotalFirstMix, name=\"CatPawFirstMix_constraint\")\nmodel.addConstr(GoldSharkFirstMix == PctGoldSharkFirst * TotalFirstMix, name=\"GoldSharkFirstMix_constraint\")\n\n# Constraint for the total amount in the second mix to equal the sum of cat paw and gold shark snacks in the second mix\nmodel.addConstr(TotalSecondMix == CatPawSecondMix + GoldSharkSecondMix, name=\"mix_equality_constraint\")\n\nmodel.addConstr(CatPawFirstMix + CatPawSecondMix <= TotalCatPaw, \"total_cat_paw_snacks_constraint\")\n\nmodel.addConstr(GoldSharkFirstMix + GoldSharkSecondMix <= TotalGoldShark, \"gold_shark_mix_constraint\")\n\n# Constraint for the amount of cat paw snacks in the first mix to be 20% of its total amount\nmodel.addConstr(CatPawFirstMix == PctCatPawFirst * TotalFirstMix, name=\"cat_paw_first_mix_constraint\")\n\n# Constraint for the amount of gold shark snacks in the first mix\nGoldSharkFirstMix = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"GoldSharkFirstMix\")\nTotalFirstMix = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TotalFirstMix\")\nPctGoldSharkFirst = 0.8\n\nmodel.addConstr(GoldSharkFirstMix == PctGoldSharkFirst * TotalFirstMix, \"gold_shark_ratio_constraint\")\n\n# Constraint for the amount of cat paw snacks in the second mix to be 35% of its total amount\nmodel.addConstr(CatPawSecondMix == PctCatPawSecond * TotalSecondMix, \"pct_catpaw_second_mix\")\n\n# Constraint for the amount of gold shark snacks in the second mix to be 65% of its total amount\nmodel.addConstr(GoldSharkSecondMix == PctGoldSharkSecond * TotalSecondMix, name=\"gold_shark_second_mix_constraint\")\n\n# Define objective function\nmodel.setObjective(ProfitFirstMix * TotalFirstMix + ProfitSecondMix * TotalSecondMix, gp.GRB.MAXIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

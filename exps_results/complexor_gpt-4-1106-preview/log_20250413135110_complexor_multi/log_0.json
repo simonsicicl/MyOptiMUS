@@ -1,0 +1,150 @@
+{
+    "background": "The problem involves shipping multiple products from various origins to multiple destinations, with the goal of minimizing the total shipping cost while meeting supply and demand constraints.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "symbol": "OriginNum",
+            "definition": "The number of origins",
+            "shape": [],
+            "code": "OriginNum = data[\"OriginNum\"] # scalar parameter"
+        },
+        {
+            "symbol": "DestinationNum",
+            "definition": "The number of destinations",
+            "shape": [],
+            "code": "DestinationNum = data[\"DestinationNum\"] # scalar parameter"
+        },
+        {
+            "symbol": "ProductNum",
+            "definition": "The number of products",
+            "shape": [],
+            "code": "ProductNum = data[\"ProductNum\"] # scalar parameter"
+        },
+        {
+            "symbol": "Supply",
+            "definition": "The supply of each product at each origin",
+            "shape": [
+                "OriginNum",
+                "ProductNum"
+            ],
+            "code": "Supply = np.array(data[\"Supply\"]) # ['OriginNum', 'ProductNum']"
+        },
+        {
+            "symbol": "Demand",
+            "definition": "The demand of each product at each destination",
+            "shape": [
+                "ProductNum",
+                "DestinationNum"
+            ],
+            "code": "Demand = np.array(data[\"Demand\"]) # ['ProductNum', 'DestinationNum']"
+        },
+        {
+            "symbol": "Limit",
+            "definition": "The limit on the total amount of all products shipped from each origin to each destination",
+            "shape": [
+                "OriginNum",
+                "DestinationNum"
+            ],
+            "code": "Limit = np.array(data[\"Limit\"]) # ['OriginNum', 'DestinationNum']"
+        },
+        {
+            "symbol": "Cost",
+            "definition": "The cost of shipping one unit of each product from each origin to each destination",
+            "shape": [
+                "OriginNum",
+                "DestinationNum",
+                "ProductNum"
+            ],
+            "code": "Cost = np.array(data[\"Cost\"]) # ['OriginNum', 'DestinationNum', 'ProductNum']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "For each origin i and product p, the total amount shipped must equal the supply of that product at that origin",
+            "status": "formulated",
+            "formulation": "\\sum_{j=1}^{\\textup{DestinationNum}} \\textup{Shipment}_{i,j,p} = \\textup{Supply}_{i,p} \\quad \\forall i \\in \\{1, ..., \\textup{OriginNum}\\}, \\quad \\forall p \\in \\{1, ..., \\textup{ProductNum}\\}",
+            "related_variables": [
+                "Shipment"
+            ],
+            "related_parameters": [
+                "Supply",
+                "OriginNum",
+                "DestinationNum",
+                "ProductNum"
+            ]
+        },
+        {
+            "description": "For each destination j and product p, the total amount received equals the demand for that product at that destination",
+            "status": "formulated",
+            "formulation": "\\sum_{i=1}^{\\textup{OriginNum}} \\textup{Shipment}_{i,j,p} = \\textup{Demand}_{p,j} \\quad \\forall j \\in \\{1, \\ldots, \\textup{DestinationNum}\\}, \\quad \\forall p \\in \\{1, \\ldots, \\textup{ProductNum}\\}",
+            "related_variables": [
+                "Shipment"
+            ],
+            "related_parameters": [
+                "OriginNum",
+                "DestinationNum",
+                "ProductNum",
+                "Demand"
+            ]
+        },
+        {
+            "description": "For each origin i and destination j, the total amount of all products shipped does not exceed Limit_{i,j}",
+            "status": "formulated",
+            "formulation": "\\sum_{p=1}^{\\textup{ProductNum}} \\textup{Shipment}_{i,j,p} \\leq \\textup{Limit}_{i,j} \\quad \\forall i \\in \\{1, \\ldots, \\textup{OriginNum}\\}, \\quad \\forall j \\in \\{1, \\ldots, \\textup{DestinationNum}\\}",
+            "related_variables": [
+                "Shipment"
+            ],
+            "related_parameters": [
+                "ProductNum",
+                "Limit"
+            ]
+        },
+        {
+            "description": "All shipping quantities must be non-negative",
+            "status": "formulated",
+            "formulation": "\\forall i \\in \\{1, \\ldots, \\textup{OriginNum}\\}, \\quad \\forall j \\in \\{1, \\ldots, \\textup{DestinationNum}\\}, \\quad \\forall p \\in \\{1, \\ldots, \\textup{ProductNum}\\}, \\quad \\textup{Shipment}_{ijk} \\geq 0",
+            "related_variables": [
+                "Shipment"
+            ],
+            "related_parameters": [
+                "OriginNum",
+                "DestinationNum",
+                "ProductNum"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The amount of product p shipped from origin i to destination j",
+            "symbol": "Shipment",
+            "shape": [
+                "OriginNum",
+                "DestinationNum",
+                "ProductNum"
+            ],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total cost of shipping all products from the origins to the destinations",
+            "status": "formulated",
+            "formulation": "\\min \\sum_{i=1}^{\\textup{OriginNum}} \\sum_{j=1}^{\\textup{DestinationNum}} \\sum_{p=1}^{\\textup{ProductNum}} \\textup{Shipment}_{ijp} \\times \\textup{Cost}_{ijp}",
+            "related_variables": [
+                "Shipment"
+            ],
+            "related_parameters": [
+                "Cost",
+                "OriginNum",
+                "DestinationNum",
+                "ProductNum"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413135110_complexor_multi/",
+    "problem_path": "data/complexor/multi/"
+}

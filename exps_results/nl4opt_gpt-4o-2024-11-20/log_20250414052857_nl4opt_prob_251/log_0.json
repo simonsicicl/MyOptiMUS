@@ -1,0 +1,263 @@
+{
+    "background": "A candle-making company requires the transportation of their candle inventory using freight and air, each with different capacities and costs. The company has to fulfill a minimum transportation amount while meeting budget constraints and specific requirements regarding air transportation and minimum freight trips.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Freight transport capacity per trip",
+            "symbol": "FreightCapacity",
+            "value": 5,
+            "shape": [],
+            "code": "FreightCapacity = data[\"FreightCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Air transport capacity per trip",
+            "symbol": "AirCapacity",
+            "value": 3,
+            "shape": [],
+            "code": "AirCapacity = data[\"AirCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost for each freight trip",
+            "symbol": "FreightCost",
+            "value": 300,
+            "shape": [],
+            "code": "FreightCost = data[\"FreightCost\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost for each air trip",
+            "symbol": "AirCost",
+            "value": 550,
+            "shape": [],
+            "code": "AirCost = data[\"AirCost\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum total tons of candles to be transported",
+            "symbol": "MinimumTons",
+            "value": 200,
+            "shape": [],
+            "code": "MinimumTons = data[\"MinimumTons\"] # scalar parameter"
+        },
+        {
+            "definition": "Budget for transporting candles",
+            "symbol": "Budget",
+            "value": 20000,
+            "shape": [],
+            "code": "Budget = data[\"Budget\"] # scalar parameter"
+        },
+        {
+            "definition": "Fraction of total tons required to be transported by air",
+            "symbol": "AirFraction",
+            "value": 0.3,
+            "shape": [],
+            "code": "AirFraction = data[\"AirFraction\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of trips by freight",
+            "symbol": "MinimumFreightTrips",
+            "value": 5,
+            "shape": [],
+            "code": "MinimumFreightTrips = data[\"MinimumFreightTrips\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "At least MinimumTons tons of candles must be transported in total.",
+            "status": "formulated",
+            "formulation": "\\textup{FreightTrips} \\cdot \\textup{FreightCapacity} + \\textup{AirTrips} \\cdot \\textup{AirCapacity} \\geq \\textup{MinimumTons}",
+            "related_variables": [
+                "FreightTrips",
+                "AirTrips"
+            ],
+            "related_parameters": [
+                "FreightCapacity",
+                "AirCapacity",
+                "MinimumTons"
+            ]
+        },
+        {
+            "description": "The number of freight trips is non-negative",
+            "status": "formulated",
+            "formulation": "\\textup{FreightTrips} \\geq 0",
+            "related_variables": [
+                "FreightTrips"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "The number of air trips is non-negative.",
+            "status": "formulated",
+            "formulation": "\\textup{AirTrips} \\geq 0",
+            "related_variables": [
+                "AirTrips"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "The total cost of transportation (freight and air) should not exceed the allocated budget.",
+            "status": "formulated",
+            "formulation": "\\\\textup{FreightCost} \\\\cdot \\\\textup{FreightTrips} + \\\\textup{AirCost} \\\\cdot \\\\textup{AirTrips} \\\\leq \\\\textup{Budget}",
+            "related_variables": [
+                "FreightTrips",
+                "AirTrips"
+            ],
+            "related_parameters": [
+                "FreightCost",
+                "AirCost",
+                "Budget"
+            ]
+        },
+        {
+            "description": "At least \\textup{AirFraction} of the total tons of candles must be transported by air.",
+            "status": "formulated",
+            "formulation": "\\textup{TonsByAir} \\geq \\textup{AirFraction} \\cdot (\\textup{TonsByFreight} + \\textup{TonsByAir})",
+            "related_variables": [
+                "TonsByAir",
+                "TonsByFreight"
+            ],
+            "related_parameters": [
+                "AirFraction"
+            ]
+        },
+        {
+            "description": "Linking \\textup{TonsByFreight} to \\textup{FreightTrips} and \\textup{FreightCapacity}",
+            "status": "formulated",
+            "formulation": "\\textup{TonsByFreight} = \\textup{FreightTrips} \\cdot \\textup{FreightCapacity}",
+            "related_variables": [
+                "TonsByFreight",
+                "FreightTrips"
+            ],
+            "related_parameters": [
+                "FreightCapacity"
+            ]
+        },
+        {
+            "description": "Linking \\textup{TonsByAir} to \\textup{AirTrips} and \\textup{AirCapacity}",
+            "status": "formulated",
+            "formulation": "\\textup{TonsByAir} = \\textup{AirTrips} \\cdot \\textup{AirCapacity}",
+            "related_variables": [
+                "TonsByAir",
+                "AirTrips"
+            ],
+            "related_parameters": [
+                "AirCapacity"
+            ]
+        },
+        {
+            "description": "The total tons transported by freight cannot exceed the freight capacity per trip multiplied by the number of freight trips.",
+            "status": "formulated",
+            "formulation": "\\textup{TonsByFreight} \\\\leq \\textup{FreightCapacity} \\\\times \\textup{FreightTrips}",
+            "related_variables": [
+                "TonsByFreight",
+                "FreightTrips"
+            ],
+            "related_parameters": [
+                "FreightCapacity"
+            ]
+        },
+        {
+            "description": "The total tons transported by air cannot exceed the air capacity per trip multiplied by the number of air trips.",
+            "status": "formulated",
+            "formulation": "\\textup{TonsByAir} \\\\leq \\textup{AirCapacity} \\\\times \\textup{AirTrips}",
+            "related_variables": [
+                "TonsByAir",
+                "AirTrips"
+            ],
+            "related_parameters": [
+                "AirCapacity"
+            ]
+        },
+        {
+            "description": "The total tons transported (freight + air) must satisfy the minimum demand.",
+            "status": "formulated",
+            "formulation": "\\textup{TonsByFreight} + \\textup{TonsByAir} \\\\geq \\textup{MinimumTons}",
+            "related_variables": [
+                "TonsByFreight",
+                "TonsByAir"
+            ],
+            "related_parameters": [
+                "MinimumTons"
+            ]
+        },
+        {
+            "description": "The total cost of freight and air transportation must not exceed the budget.",
+            "status": "formulated",
+            "formulation": "\\textup{FreightCost} \\\\times \\textup{FreightTrips} + \\textup{AirCost} \\\\times \\textup{AirTrips} \\\\leq \\textup{Budget}",
+            "related_variables": [
+                "FreightTrips",
+                "AirTrips"
+            ],
+            "related_parameters": [
+                "FreightCost",
+                "AirCost",
+                "Budget"
+            ]
+        },
+        {
+            "description": "At least a fraction of the total tons transported must be by air.",
+            "status": "formulated",
+            "formulation": "\\textup{TonsByAir} \\\\geq \\textup{AirFraction} \\\\times (\\textup{TonsByFreight} + \\textup{TonsByAir})",
+            "related_variables": [
+                "TonsByAir",
+                "TonsByFreight"
+            ],
+            "related_parameters": [
+                "AirFraction"
+            ]
+        },
+        {
+            "description": "The number of freight trips must meet the minimum required freight trips.",
+            "status": "formulated",
+            "formulation": "\\textup{FreightTrips} \\\\geq \\textup{MinimumFreightTrips}",
+            "related_variables": [
+                "FreightTrips"
+            ],
+            "related_parameters": [
+                "MinimumFreightTrips"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of trips taken using freight transportation.",
+            "symbol": "FreightTrips",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "The number of trips taken using air transportation.",
+            "symbol": "AirTrips",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "The total tons of candles transported by freight.",
+            "symbol": "TonsByFreight",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "The total tons of candles transported by air.",
+            "symbol": "TonsByAir",
+            "shape": [],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of freight and air trips required to move the inventory.",
+            "status": "formulated",
+            "formulation": "\\textup{Minimize} \\\\quad \\textup{FreightTrips} + \\textup{AirTrips}",
+            "related_variables": [
+                "FreightTrips",
+                "AirTrips"
+            ],
+            "related_parameters": []
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250414052857_nl4opt_prob_251/",
+    "problem_path": "data/nl4opt/prob_251/"
+}

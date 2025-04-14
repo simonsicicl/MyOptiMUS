@@ -1,0 +1,158 @@
+{
+    "background": "A mining company needs to select which mines to operate and determine the production output to maximize profit, considering operational constraints and meeting clients' required material quality.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of mines",
+            "symbol": "K",
+            "value": 0,
+            "shape": [],
+            "code": "K = data[\"K\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of mines that can be operated in a year",
+            "symbol": "MaxWork",
+            "value": 0,
+            "shape": [],
+            "code": "MaxWork = data[\"MaxWork\"] # scalar parameter"
+        },
+        {
+            "definition": "Royalty cost for operating mine k",
+            "symbol": "Royalty",
+            "value": 0,
+            "shape": [
+                "K"
+            ],
+            "code": "Royalty = np.array(data[\"Royalty\"]) # ['K']"
+        },
+        {
+            "definition": "Production limit for mine k",
+            "symbol": "Limit",
+            "value": 0,
+            "shape": [
+                "K"
+            ],
+            "code": "Limit = np.array(data[\"Limit\"]) # ['K']"
+        },
+        {
+            "definition": "Quality of the material from mine k",
+            "symbol": "Quality",
+            "value": 0,
+            "shape": [
+                "K"
+            ],
+            "code": "Quality = np.array(data[\"Quality\"]) # ['K']"
+        },
+        {
+            "definition": "Required quality of the material for client i",
+            "symbol": "RequiredQuality",
+            "value": 0,
+            "shape": [
+                "I"
+            ],
+            "code": "RequiredQuality = np.array(data[\"RequiredQuality\"]) # ['I']"
+        },
+        {
+            "definition": "Price per unit of material sold",
+            "symbol": "Price",
+            "value": 0,
+            "shape": [],
+            "code": "Price = data[\"Price\"] # scalar parameter"
+        },
+        {
+            "definition": "Discount on the royalty cost per unit of material sold",
+            "symbol": "Discount",
+            "value": 0,
+            "shape": [],
+            "code": "Discount = data[\"Discount\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Number of operated mines should not exceed the maximum number of mines that can be operated, MaxWork",
+            "status": "formulated",
+            "formulation": "\\sum_{k=1}^{\\textup{K}} \\textup{IsMineOperational}_{k} \\leq \\textup{MaxWork}",
+            "related_variables": [
+                "IsMineOperational"
+            ],
+            "related_parameters": [
+                "K",
+                "MaxWork"
+            ]
+        },
+        {
+            "description": "Each mine produces a non-negative amount of material",
+            "status": "formulated",
+            "formulation": "\\forall k \\in \\{1, 2, ..., K\\}, \\quad 0 \\leq \\textup{MaterialProduced}_k",
+            "related_variables": [
+                "MaterialProduced"
+            ],
+            "related_parameters": [
+                "K"
+            ]
+        },
+        {
+            "description": "Each mine k must not produce more than its production limit",
+            "status": "formulated",
+            "formulation": "\\forall k \\in K, \\quad \\textup{MaterialProduced}_k \\leq \\textup{Limit}_k",
+            "related_variables": [
+                "MaterialProduced"
+            ],
+            "related_parameters": [
+                "Limit"
+            ]
+        },
+        {
+            "description": "Material from each operating mine must meet the required quality for each client",
+            "status": "formulated",
+            "formulation": "\\forall i \\in \\textup{Clients}, \\quad \\forall k \\in \\textup{Mines}, \\quad \\textup{Quality}_k \\geq \\textup{RequiredQuality}_i",
+            "related_variables": [
+                "IsMineOperational"
+            ],
+            "related_parameters": [
+                "Quality",
+                "RequiredQuality"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Binary variable indicating whether mine k is operational",
+            "symbol": "IsMineOperational",
+            "shape": [
+                "K"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "Continuous variable representing the amount of material produced by mine k",
+            "symbol": "MaterialProduced",
+            "shape": [
+                "K"
+            ],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the company's total profit, which is the revenue from selling the material minus the royalty costs considering the discount per unit sold.",
+            "status": "formulated",
+            "formulation": "\\max \\sum_{k=1}^{K} (\\textup{Price} \\cdot \\textup{MaterialProduced}_{k} - (\\textup{Royalty}_{k} - \\textup{Price} \\cdot \\textup{Discount}) \\cdot \\textup{IsMineOperational}_{k})",
+            "related_variables": [
+                "IsMineOperational",
+                "MaterialProduced"
+            ],
+            "related_parameters": [
+                "Price",
+                "Royalty",
+                "Discount"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413085233_nlp4lp_25/",
+    "problem_path": "data/nlp4lp/25/"
+}

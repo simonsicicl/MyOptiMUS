@@ -1,0 +1,137 @@
+{
+    "background": "The problem involves determining the optimal quantities of various spare parts to be produced in a month, considering the time required on different machines and the machines' monthly capacities.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of spare parts to be produced",
+            "symbol": "NumParts",
+            "value": "",
+            "shape": [],
+            "code": "NumParts = data[\"NumParts\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of machines available",
+            "symbol": "NumMachines",
+            "value": "",
+            "shape": [],
+            "code": "NumMachines = data[\"NumMachines\"] # scalar parameter"
+        },
+        {
+            "definition": "The time taken to make one unit of spare part k on machine s",
+            "symbol": "Time",
+            "value": "",
+            "shape": [
+                "NumParts",
+                "NumMachines"
+            ],
+            "code": "Time = np.array(data[\"Time\"]) # ['NumParts', 'NumMachines']"
+        },
+        {
+            "definition": "Profit from producing one unit of spare part k",
+            "symbol": "Profit",
+            "value": "",
+            "shape": [
+                "NumParts"
+            ],
+            "code": "Profit = np.array(data[\"Profit\"]) # ['NumParts']"
+        },
+        {
+            "definition": "Capacity of machine s for the month",
+            "symbol": "Capacity",
+            "value": "",
+            "shape": [
+                "NumMachines"
+            ],
+            "code": "Capacity = np.array(data[\"Capacity\"]) # ['NumMachines']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Every spare part quantity produced is non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{ProducedQuantity}_{k} \\geq 0 \\quad \\forall \\quad k \\in [1, \\textup{NumParts}]",
+            "related_variables": [
+                "ProducedQuantity"
+            ],
+            "related_parameters": [
+                "NumParts"
+            ],
+            "code": "# Add non-negativity constraints for spare part quantities produced\nfor k in range(NumParts):\n    model.addConstr(ProducedQuantity[k] >= 0, name=f\"non_negativity_{k}\")"
+        },
+        {
+            "description": "The total time used on each machine for all spare parts cannot exceed the machine's monthly capacity.",
+            "status": "coded",
+            "formulation": "\\sum_{k=1}^{\\textup{NumParts}} (\\textup{ProducedQuantity}_{k} \\cdot \\textup{Time}_{k,s}) \\leq \\textup{Capacity}_{s}, \\quad \\forall s \\in \\{1, 2, \\ldots, \\textup{NumMachines}\\}",
+            "related_variables": [
+                "ProducedQuantity"
+            ],
+            "related_parameters": [
+                "Time",
+                "Capacity",
+                "NumParts",
+                "NumMachines"
+            ],
+            "code": "# Add machine capacity constraints\nfor s in range(NumMachines):\n    model.addConstr(\n        gp.quicksum(ProducedQuantity[k] * Time[k, s] for k in range(NumParts)) <= Capacity[s],\n        name=f\"machine_capacity_{s}\"\n    )"
+        },
+        {
+            "description": "Machine capacity constraint: Total time used on machine s cannot exceed its monthly capacity",
+            "status": "coded",
+            "formulation": "\\sum_{k=1}^{\\textup{NumParts}} \\textup{Time}_{k, s} \\cdot \\textup{ProducedQuantity}_{k} \\leq \\textup{Capacity}_{s}, \\quad \\forall s \\in \\{1, \\dots, \\textup{NumMachines}\\}",
+            "related_variables": [
+                "ProducedQuantity"
+            ],
+            "related_parameters": [
+                "Time",
+                "Capacity",
+                "NumParts",
+                "NumMachines"
+            ],
+            "code": "# Add machine capacity constraints\nfor s in range(NumMachines):\n    model.addConstr(\n        gp.quicksum(Time[k, s] * ProducedQuantity[k] for k in range(NumParts)) <= Capacity[s], \n        name=f\"machine_capacity_{s}\"\n    )"
+        },
+        {
+            "description": "Non-negativity constraint for production quantities",
+            "status": "coded",
+            "formulation": "\\textup{ProducedQuantity}_{k} \\geq 0, \\quad \\forall k \\in \\{1, \\dots, \\textup{NumParts}\\}",
+            "related_variables": [
+                "ProducedQuantity"
+            ],
+            "related_parameters": [
+                "NumParts"
+            ],
+            "code": "# Add non-negativity constraints for production quantities\nfor k in range(NumParts):\n    model.addConstr(ProducedQuantity[k] >= 0, name=f\"non_negativity_{k}\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of units of spare part k produced in the month",
+            "symbol": "ProducedQuantity",
+            "shape": [
+                "NumParts"
+            ],
+            "status": "coded",
+            "code": "ProducedQuantity = model.addVars(NumParts, vtype=gp.GRB.CONTINUOUS, name=\"ProducedQuantity\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total profit from the production of spare parts",
+            "status": "coded",
+            "formulation": "\\sum_{k=1}^{\\textup{NumParts}} \\textup{Profit}_{k} \\cdot \\textup{ProducedQuantity}_{k}",
+            "related_variables": [
+                "ProducedQuantity"
+            ],
+            "related_parameters": [
+                "Profit",
+                "NumParts"
+            ],
+            "code": "# Set objective\nmodel.setObjective(gp.quicksum(Profit[k] * ProducedQuantity[k] for k in range(NumParts)), gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 12000.0,
+    "log_path": "logs/log_20250413154917_nlp4lp_8/",
+    "problem_path": "data/nlp4lp/8/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nlp4lp/8/data.json\", \"r\") as f:\n    data = json.load(f)\n\nNumParts = data[\"NumParts\"] # scalar parameter\nNumMachines = data[\"NumMachines\"] # scalar parameter\nTime = np.array(data[\"Time\"]) # ['NumParts', 'NumMachines']\nProfit = np.array(data[\"Profit\"]) # ['NumParts']\nCapacity = np.array(data[\"Capacity\"]) # ['NumMachines']\nProducedQuantity = model.addVars(NumParts, vtype=gp.GRB.CONTINUOUS, name=\"ProducedQuantity\")\n\n# Add non-negativity constraints for spare part quantities produced\nfor k in range(NumParts):\n    model.addConstr(ProducedQuantity[k] >= 0, name=f\"non_negativity_{k}\")\n\n# Add machine capacity constraints\nfor s in range(NumMachines):\n    model.addConstr(\n        gp.quicksum(ProducedQuantity[k] * Time[k, s] for k in range(NumParts)) <= Capacity[s],\n        name=f\"machine_capacity_{s}\"\n    )\n\n# Add machine capacity constraints\nfor s in range(NumMachines):\n    model.addConstr(\n        gp.quicksum(Time[k, s] * ProducedQuantity[k] for k in range(NumParts)) <= Capacity[s], \n        name=f\"machine_capacity_{s}\"\n    )\n\n# Add non-negativity constraints for production quantities\nfor k in range(NumParts):\n    model.addConstr(ProducedQuantity[k] >= 0, name=f\"non_negativity_{k}\")\n\n# Set objective\nmodel.setObjective(gp.quicksum(Profit[k] * ProducedQuantity[k] for k in range(NumParts)), gp.GRB.MAXIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

@@ -1,0 +1,218 @@
+{
+    "background": "A sand company needs to optimize the number of small and large containers to deliver sand for playgrounds given labor and container constraints.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of units of sand a small container can hold",
+            "symbol": "SmallCapacity",
+            "value": 20,
+            "shape": [],
+            "code": "SmallCapacity = data[\"SmallCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of units of sand a large container can hold",
+            "symbol": "LargeCapacity",
+            "value": 50,
+            "shape": [],
+            "code": "LargeCapacity = data[\"LargeCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of people required to unload a small container",
+            "symbol": "SmallUnload",
+            "value": 1,
+            "shape": [],
+            "code": "SmallUnload = data[\"SmallUnload\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of people required to unload a large container",
+            "symbol": "LargeUnload",
+            "value": 3,
+            "shape": [],
+            "code": "LargeUnload = data[\"LargeUnload\"] # scalar parameter"
+        },
+        {
+            "definition": "Ratio of the number of small containers to the number of large containers",
+            "symbol": "ContainerRatio",
+            "value": 3,
+            "shape": [],
+            "code": "ContainerRatio = data[\"ContainerRatio\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of small containers used",
+            "symbol": "MinSmallContainers",
+            "value": 5,
+            "shape": [],
+            "code": "MinSmallContainers = data[\"MinSmallContainers\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of large containers used",
+            "symbol": "MinLargeContainers",
+            "value": 3,
+            "shape": [],
+            "code": "MinLargeContainers = data[\"MinLargeContainers\"] # scalar parameter"
+        },
+        {
+            "definition": "Total number of people available for unloading",
+            "symbol": "PeopleAvailable",
+            "value": 100,
+            "shape": [],
+            "code": "PeopleAvailable = data[\"PeopleAvailable\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Small and large containers must be non-negative integers.",
+            "status": "coded",
+            "formulation": "\\textup{SmallContainers} \\geq 0, \\quad \\textup{LargeContainers} \\geq 0",
+            "related_variables": [
+                "SmallContainers",
+                "LargeContainers"
+            ],
+            "related_parameters": [],
+            "code": "# SmallContainers and LargeContainers integer constraints\nSmallContainers.vtype = gp.GRB.INTEGER\nLargeContainers.vtype = gp.GRB.INTEGER\n\n# SmallContainers and LargeContainers non-negativity constraints\nmodel.addConstr(SmallContainers >= 0, name=\"SmallContainers_non_negative\")\nmodel.addConstr(LargeContainers >= 0, name=\"LargeContainers_non_negative\")"
+        },
+        {
+            "description": "The total number of people required to unload small and large containers must not exceed the total available people.",
+            "status": "coded",
+            "formulation": "(\\\\textup{SmallUnload} \\\\times \\\\textup{SmallContainers}) + (\\\\textup{LargeUnload} \\\\times \\\\textup{LargeContainers}) \\\\leq \\\\textup{PeopleAvailable}",
+            "related_variables": [
+                "SmallContainers",
+                "LargeContainers"
+            ],
+            "related_parameters": [
+                "SmallUnload",
+                "LargeUnload",
+                "PeopleAvailable"
+            ],
+            "code": "# Add constraint to ensure total unloading workforce does not exceed available people\nmodel.addConstr(\n    (SmallContainers * SmallUnload) + (LargeContainers * LargeUnload) <= PeopleAvailable,\n    name=\"unloading_workforce_limit\"\n)"
+        },
+        {
+            "description": "Small containers used must be ContainerRatio times the number of large containers used.",
+            "status": "coded",
+            "formulation": "\\textup{SmallContainers} = \\textup{ContainerRatio} \\cdot \\textup{LargeContainers}",
+            "related_variables": [
+                "SmallContainers",
+                "LargeContainers"
+            ],
+            "related_parameters": [
+                "ContainerRatio"
+            ],
+            "code": "# Add constraint to enforce SmallContainers equals ContainerRatio times LargeContainers\nmodel.addConstr(SmallContainers == ContainerRatio * LargeContainers, name=\"container_ratio_constraint\")"
+        },
+        {
+            "description": "At least MinSmallContainers small containers must be used.",
+            "status": "coded",
+            "formulation": "\\textup{SmallContainers} \\geq \\textup{MinSmallContainers}",
+            "related_variables": [
+                "SmallContainers"
+            ],
+            "related_parameters": [
+                "MinSmallContainers"
+            ],
+            "code": "# Add minimum small containers constraint\nmodel.addConstr(SmallContainers >= MinSmallContainers, name=\"min_small_containers\")"
+        },
+        {
+            "description": "The minimum number of large containers required is MinLargeContainers.",
+            "status": "coded",
+            "formulation": "\\textup{LargeContainers} \\geq \\textup{MinLargeContainers}",
+            "related_variables": [
+                "LargeContainers"
+            ],
+            "related_parameters": [
+                "MinLargeContainers"
+            ],
+            "code": "# Ensure the minimum number of large containers constraint\nmodel.addConstr(LargeContainers >= MinLargeContainers, name=\"min_large_containers\")"
+        },
+        {
+            "description": "Labor availability constraint ensuring total unloading labor does not exceed the available people.",
+            "status": "coded",
+            "formulation": "(\\textup{SmallUnload} \\cdot \\textup{SmallContainers}) + (\\textup{LargeUnload} \\cdot \\textup{LargeContainers}) \\leq \\textup{PeopleAvailable}",
+            "related_variables": [
+                "SmallContainers",
+                "LargeContainers"
+            ],
+            "related_parameters": [
+                "SmallUnload",
+                "LargeUnload",
+                "PeopleAvailable"
+            ],
+            "code": "# Add labor availability constraint ensuring total unloading labor does not exceed available people\nmodel.addConstr(\n    SmallUnload * SmallContainers + LargeUnload * LargeContainers <= PeopleAvailable,\n    name=\"labor_availability\"\n)"
+        },
+        {
+            "description": "Minimum number of small containers constraint.",
+            "status": "coded",
+            "formulation": "\\textup{SmallContainers} \\geq \\textup{MinSmallContainers}",
+            "related_variables": [
+                "SmallContainers"
+            ],
+            "related_parameters": [
+                "MinSmallContainers"
+            ],
+            "code": "# Add constraint to ensure the minimum number of small containers is used\nmodel.addConstr(SmallContainers >= MinSmallContainers, name=\"min_small_containers\")"
+        },
+        {
+            "description": "Minimum number of large containers constraint.",
+            "status": "coded",
+            "formulation": "\\textup{LargeContainers} \\geq \\textup{MinLargeContainers}",
+            "related_variables": [
+                "LargeContainers"
+            ],
+            "related_parameters": [
+                "MinLargeContainers"
+            ],
+            "code": "model.addConstr(LargeContainers >= MinLargeContainers, name=\"min_large_containers\")"
+        },
+        {
+            "description": "Container ratio constraint ensuring the number of small containers is at least a multiple of the number of large containers.",
+            "status": "coded",
+            "formulation": "\\textup{SmallContainers} \\geq \\textup{ContainerRatio} \\cdot \\textup{LargeContainers}",
+            "related_variables": [
+                "SmallContainers",
+                "LargeContainers"
+            ],
+            "related_parameters": [
+                "ContainerRatio"
+            ],
+            "code": "# Add container ratio constraint\nmodel.addConstr(SmallContainers >= ContainerRatio * LargeContainers, name=\"container_ratio_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of small containers used.",
+            "symbol": "SmallContainers",
+            "shape": [],
+            "status": "coded",
+            "code": "SmallContainers = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"SmallContainers\")"
+        },
+        {
+            "definition": "Number of large containers used.",
+            "symbol": "LargeContainers",
+            "shape": [],
+            "status": "coded",
+            "code": "LargeContainers = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"LargeContainers\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total number of sand units delivered using small and large containers.",
+            "status": "coded",
+            "formulation": "\\textup{Maximize}: \\quad (\\textup{SmallCapacity} \\cdot \\textup{SmallContainers}) + (\\textup{LargeCapacity} \\cdot \\textup{LargeContainers})",
+            "related_variables": [
+                "SmallContainers",
+                "LargeContainers"
+            ],
+            "related_parameters": [
+                "SmallCapacity",
+                "LargeCapacity"
+            ],
+            "code": "# Set objective\nmodel.setObjective((SmallCapacity * SmallContainers) + (LargeCapacity * LargeContainers), gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 1760.0,
+    "log_path": "logs/log_20250413162406_nl4opt_prob_164/",
+    "problem_path": "data/nl4opt/prob_164/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_164/data.json\", \"r\") as f:\n    data = json.load(f)\n\nSmallCapacity = data[\"SmallCapacity\"] # scalar parameter\nLargeCapacity = data[\"LargeCapacity\"] # scalar parameter\nSmallUnload = data[\"SmallUnload\"] # scalar parameter\nLargeUnload = data[\"LargeUnload\"] # scalar parameter\nContainerRatio = data[\"ContainerRatio\"] # scalar parameter\nMinSmallContainers = data[\"MinSmallContainers\"] # scalar parameter\nMinLargeContainers = data[\"MinLargeContainers\"] # scalar parameter\nPeopleAvailable = data[\"PeopleAvailable\"] # scalar parameter\nSmallContainers = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"SmallContainers\")\nLargeContainers = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"LargeContainers\")\n\n# SmallContainers and LargeContainers integer constraints\nSmallContainers.vtype = gp.GRB.INTEGER\nLargeContainers.vtype = gp.GRB.INTEGER\n\n# SmallContainers and LargeContainers non-negativity constraints\nmodel.addConstr(SmallContainers >= 0, name=\"SmallContainers_non_negative\")\nmodel.addConstr(LargeContainers >= 0, name=\"LargeContainers_non_negative\")\n\n# Add constraint to ensure total unloading workforce does not exceed available people\nmodel.addConstr(\n    (SmallContainers * SmallUnload) + (LargeContainers * LargeUnload) <= PeopleAvailable,\n    name=\"unloading_workforce_limit\"\n)\n\n# Add constraint to enforce SmallContainers equals ContainerRatio times LargeContainers\nmodel.addConstr(SmallContainers == ContainerRatio * LargeContainers, name=\"container_ratio_constraint\")\n\n# Add minimum small containers constraint\nmodel.addConstr(SmallContainers >= MinSmallContainers, name=\"min_small_containers\")\n\n# Ensure the minimum number of large containers constraint\nmodel.addConstr(LargeContainers >= MinLargeContainers, name=\"min_large_containers\")\n\n# Add labor availability constraint ensuring total unloading labor does not exceed available people\nmodel.addConstr(\n    SmallUnload * SmallContainers + LargeUnload * LargeContainers <= PeopleAvailable,\n    name=\"labor_availability\"\n)\n\n# Add constraint to ensure the minimum number of small containers is used\nmodel.addConstr(SmallContainers >= MinSmallContainers, name=\"min_small_containers\")\n\nmodel.addConstr(LargeContainers >= MinLargeContainers, name=\"min_large_containers\")\n\n# Add container ratio constraint\nmodel.addConstr(SmallContainers >= ContainerRatio * LargeContainers, name=\"container_ratio_constraint\")\n\n# Set objective\nmodel.setObjective((SmallCapacity * SmallContainers) + (LargeCapacity * LargeContainers), gp.GRB.MAXIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

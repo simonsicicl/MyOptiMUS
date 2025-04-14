@@ -1,0 +1,249 @@
+{
+    "background": "A food company wants to run commercials on three streaming platforms, each with different costs and expected audience reach. The platforms have restrictions on the number of ads and budget allocation.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Cost of a commercial on Pi TV",
+            "symbol": "CostPiTV",
+            "value": 1200,
+            "shape": [],
+            "code": "CostPiTV = data[\"CostPiTV\"] # scalar parameter"
+        },
+        {
+            "definition": "Audience reach of a commercial on Pi TV",
+            "symbol": "ReachPiTV",
+            "value": 2000,
+            "shape": [],
+            "code": "ReachPiTV = data[\"ReachPiTV\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of commercials allowed on Beta Video",
+            "symbol": "MaxCommercialsBetaVideo",
+            "value": 8,
+            "shape": [],
+            "code": "MaxCommercialsBetaVideo = data[\"MaxCommercialsBetaVideo\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost of a commercial on Beta Video",
+            "symbol": "CostBetaVideo",
+            "value": 2000,
+            "shape": [],
+            "code": "CostBetaVideo = data[\"CostBetaVideo\"] # scalar parameter"
+        },
+        {
+            "definition": "Audience reach of a commercial on Beta Video",
+            "symbol": "ReachBetaVideo",
+            "value": 5000,
+            "shape": [],
+            "code": "ReachBetaVideo = data[\"ReachBetaVideo\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost of a commercial on Gamma Live",
+            "symbol": "CostGammaLive",
+            "value": 4000,
+            "shape": [],
+            "code": "CostGammaLive = data[\"CostGammaLive\"] # scalar parameter"
+        },
+        {
+            "definition": "Audience reach of a commercial on Gamma Live",
+            "symbol": "ReachGammaLive",
+            "value": 9000,
+            "shape": [],
+            "code": "ReachGammaLive = data[\"ReachGammaLive\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum proportion of total commercials that can be on Gamma Live",
+            "symbol": "MaxPropGammaLive",
+            "value": 0.33,
+            "shape": [],
+            "code": "MaxPropGammaLive = data[\"MaxPropGammaLive\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum proportion of total commercials that must be on Pi TV",
+            "symbol": "MinPropPiTV",
+            "value": 0.2,
+            "shape": [],
+            "code": "MinPropPiTV = data[\"MinPropPiTV\"] # scalar parameter"
+        },
+        {
+            "definition": "Weekly budget for commercials",
+            "symbol": "WeeklyBudget",
+            "value": 20000,
+            "shape": [],
+            "code": "WeeklyBudget = data[\"WeeklyBudget\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of commercials on any platform (Pi TV, Beta Video, Gamma Live) must be non-negative.",
+            "status": "formulated",
+            "formulation": "\\textup{NumCommercialsPiTV} \\geq 0, \\quad \\textup{NumCommercialsBetaVideo} \\geq 0, \\quad \\textup{NumCommercialsGammaLive} \\geq 0",
+            "related_variables": [
+                "NumCommercialsPiTV",
+                "NumCommercialsBetaVideo",
+                "NumCommercialsGammaLive"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Maximum number of commercials allowed on Beta Video.",
+            "status": "formulated",
+            "formulation": "\\textup{NumCommercialsBetaVideo} \\leq \\textup{MaxCommercialsBetaVideo}",
+            "related_variables": [
+                "NumCommercialsBetaVideo"
+            ],
+            "related_parameters": [
+                "MaxCommercialsBetaVideo"
+            ]
+        },
+        {
+            "description": "The number of commercials on Gamma Live cannot exceed MaxPropGammaLive times the total number of commercials across all platforms.",
+            "status": "formulated",
+            "formulation": "\\textup{NumCommercialsGammaLive} \\cdot (1 - \\textup{MaxPropGammaLive}) \\leq \\textup{MaxPropGammaLive} \\cdot (\\textup{NumCommercialsPiTV} + \\textup{NumCommercialsBetaVideo})",
+            "related_variables": [
+                "NumCommercialsPiTV",
+                "NumCommercialsBetaVideo",
+                "NumCommercialsGammaLive"
+            ],
+            "related_parameters": [
+                "MaxPropGammaLive"
+            ]
+        },
+        {
+            "description": "The number of commercials on Pi TV must be at least MinPropPiTV times the total number of commercials on all platforms.",
+            "status": "formulated",
+            "formulation": "(1 - \\textup{MinPropPiTV}) \\cdot \\textup{NumCommercialsPiTV} \\geq \\textup{MinPropPiTV} \\cdot (\\textup{NumCommercialsBetaVideo} + \\textup{NumCommercialsGammaLive})",
+            "related_variables": [
+                "NumCommercialsPiTV",
+                "NumCommercialsBetaVideo",
+                "NumCommercialsGammaLive"
+            ],
+            "related_parameters": [
+                "MinPropPiTV"
+            ]
+        },
+        {
+            "description": "The total cost of all commercials is less than or equal to the weekly budget.",
+            "status": "formulated",
+            "formulation": "(\\textup{CostPiTV} \\times \\textup{NumCommercialsPiTV}) + (\\textup{CostBetaVideo} \\times \\textup{NumCommercialsBetaVideo}) + (\\textup{CostGammaLive} \\times \\textup{NumCommercialsGammaLive}) \\leq \\textup{WeeklyBudget}",
+            "related_variables": [
+                "NumCommercialsPiTV",
+                "NumCommercialsBetaVideo",
+                "NumCommercialsGammaLive"
+            ],
+            "related_parameters": [
+                "CostPiTV",
+                "CostBetaVideo",
+                "CostGammaLive",
+                "WeeklyBudget"
+            ]
+        },
+        {
+            "description": "Total advertising cost must not exceed the weekly budget.",
+            "status": "formulated",
+            "formulation": "\\textup{CostPiTV} \\cdot \\textup{NumCommercialsPiTV} + \\textup{CostBetaVideo} \\cdot \\textup{NumCommercialsBetaVideo} + \\textup{CostGammaLive} \\cdot \\textup{NumCommercialsGammaLive} \\leq \\textup{WeeklyBudget}",
+            "related_variables": [
+                "NumCommercialsPiTV",
+                "NumCommercialsBetaVideo",
+                "NumCommercialsGammaLive"
+            ],
+            "related_parameters": [
+                "CostPiTV",
+                "CostBetaVideo",
+                "CostGammaLive",
+                "WeeklyBudget"
+            ]
+        },
+        {
+            "description": "The number of commercials on Beta Video cannot exceed the maximum allowed.",
+            "status": "formulated",
+            "formulation": "\\textup{NumCommercialsBetaVideo} \\leq \\textup{MaxCommercialsBetaVideo}",
+            "related_variables": [
+                "NumCommercialsBetaVideo"
+            ],
+            "related_parameters": [
+                "MaxCommercialsBetaVideo"
+            ]
+        },
+        {
+            "description": "The number of commercials on Gamma Live cannot exceed 33% of the total commercials.",
+            "status": "formulated",
+            "formulation": "\\textup{NumCommercialsGammaLive} \\leq \\textup{MaxPropGammaLive} \\cdot (\\textup{NumCommercialsPiTV} + \\textup{NumCommercialsBetaVideo} + \\textup{NumCommercialsGammaLive})",
+            "related_variables": [
+                "NumCommercialsPiTV",
+                "NumCommercialsBetaVideo",
+                "NumCommercialsGammaLive"
+            ],
+            "related_parameters": [
+                "MaxPropGammaLive"
+            ]
+        },
+        {
+            "description": "The number of commercials on Pi TV must be at least 20% of the total commercials.",
+            "status": "formulated",
+            "formulation": "\\textup{NumCommercialsPiTV} \\geq \\textup{MinPropPiTV} \\cdot (\\textup{NumCommercialsPiTV} + \\textup{NumCommercialsBetaVideo} + \\textup{NumCommercialsGammaLive})",
+            "related_variables": [
+                "NumCommercialsPiTV",
+                "NumCommercialsBetaVideo",
+                "NumCommercialsGammaLive"
+            ],
+            "related_parameters": [
+                "MinPropPiTV"
+            ]
+        },
+        {
+            "description": "Non-negativity constraint for all decision variables.",
+            "status": "formulated",
+            "formulation": "\\textup{NumCommercialsPiTV} \\geq 0, \\quad \\textup{NumCommercialsBetaVideo} \\geq 0, \\quad \\textup{NumCommercialsGammaLive} \\geq 0",
+            "related_variables": [
+                "NumCommercialsPiTV",
+                "NumCommercialsBetaVideo",
+                "NumCommercialsGammaLive"
+            ],
+            "related_parameters": []
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of commercials run on Pi TV.",
+            "symbol": "NumCommercialsPiTV",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "The number of commercials run on Beta Video.",
+            "symbol": "NumCommercialsBetaVideo",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "The number of commercials run on Gamma Live.",
+            "symbol": "NumCommercialsGammaLive",
+            "shape": [],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total audience reach across all three platforms.",
+            "status": "formulated",
+            "formulation": "\\textup{Maximize: } \\textup{ReachPiTV} \\cdot \\textup{NumCommercialsPiTV} + \\textup{ReachBetaVideo} \\cdot \\textup{NumCommercialsBetaVideo} + \\textup{ReachGammaLive} \\cdot \\textup{NumCommercialsGammaLive}",
+            "related_variables": [
+                "NumCommercialsPiTV",
+                "NumCommercialsBetaVideo",
+                "NumCommercialsGammaLive"
+            ],
+            "related_parameters": [
+                "ReachPiTV",
+                "ReachBetaVideo",
+                "ReachGammaLive"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413174113_nl4opt_prob_223/",
+    "problem_path": "data/nl4opt/prob_223/"
+}

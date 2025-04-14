@@ -1,0 +1,215 @@
+{
+    "background": "An international goods exporter requires transportation of goods using ships and planes, each with distinct capacities and fuel consumptions.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Containers a ship can take",
+            "symbol": "ShipCapacity",
+            "value": 40,
+            "shape": [],
+            "code": "ShipCapacity = data[\"ShipCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Fuel used by a ship per trip",
+            "symbol": "ShipFuel",
+            "value": 500,
+            "shape": [],
+            "code": "ShipFuel = data[\"ShipFuel\"] # scalar parameter"
+        },
+        {
+            "definition": "Containers a plane can take",
+            "symbol": "PlaneCapacity",
+            "value": 20,
+            "shape": [],
+            "code": "PlaneCapacity = data[\"PlaneCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Fuel used by a plane per trip",
+            "symbol": "PlaneFuel",
+            "value": 300,
+            "shape": [],
+            "code": "PlaneFuel = data[\"PlaneFuel\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum total containers that need to be transported",
+            "symbol": "MinContainers",
+            "value": 500,
+            "shape": [],
+            "code": "MinContainers = data[\"MinContainers\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of plane trips",
+            "symbol": "MaxPlaneTrips",
+            "value": 10,
+            "shape": [],
+            "code": "MaxPlaneTrips = data[\"MaxPlaneTrips\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum percentage of trips that must be made by ship",
+            "symbol": "MinShipTripPercentage",
+            "value": 0.5,
+            "shape": [],
+            "code": "MinShipTripPercentage = data[\"MinShipTripPercentage\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of ship trips must be non-negative",
+            "status": "coded",
+            "formulation": "\\\\textup{ShipTrips} \\\\geq 0",
+            "related_variables": [
+                "ShipTrips"
+            ],
+            "related_parameters": [],
+            "code": "# No constraint code needed: Gurobi variables by default enforce non-negativity for continuous variables unless specified otherwise."
+        },
+        {
+            "description": "The number of plane trips must be non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{PlaneTrips} \\\\geq 0",
+            "related_variables": [
+                "PlaneTrips"
+            ],
+            "related_parameters": [],
+            "code": "# No code needed as the Gurobi model automatically ensures the non-negativity of continuous variables by default unless defined with lower bounds less than zero."
+        },
+        {
+            "description": "The total number of containers transported must be at least MinContainers.",
+            "status": "coded",
+            "formulation": "\\textup{ShipCapacity} \\\\cdot \\\\textup{ShipTrips} + \\\\textup{PlaneCapacity} \\\\cdot \\\\textup{PlaneTrips} \\\\geq \\\\textup{MinContainers}",
+            "related_variables": [
+                "ShipTrips",
+                "PlaneTrips"
+            ],
+            "related_parameters": [
+                "ShipCapacity",
+                "PlaneCapacity",
+                "MinContainers"
+            ],
+            "code": "# Add constraint to ensure the total number of containers transported meets or exceeds MinContainers\nmodel.addConstr(ShipCapacity * ShipTrips + PlaneCapacity * PlaneTrips >= MinContainers, name=\"min_containers_requirement\")"
+        },
+        {
+            "description": "At most MaxPlaneTrips plane trips can be made.",
+            "status": "coded",
+            "formulation": "\\textup{PlaneTrips} \\leq \\textup{MaxPlaneTrips}",
+            "related_variables": [
+                "PlaneTrips"
+            ],
+            "related_parameters": [
+                "MaxPlaneTrips"
+            ],
+            "code": "# Add constraint to limit the number of plane trips\nmodel.addConstr(PlaneTrips <= MaxPlaneTrips, name=\"max_plane_trips\")"
+        },
+        {
+            "description": "At least a given percentage of all trips must be made by ship.",
+            "status": "coded",
+            "formulation": "\\textup{ShipTrips} \\cdot (1 - \\textup{MinShipTripPercentage}) \\geq \\textup{MinShipTripPercentage} \\cdot \\textup{PlaneTrips}",
+            "related_variables": [
+                "ShipTrips",
+                "PlaneTrips"
+            ],
+            "related_parameters": [
+                "MinShipTripPercentage"
+            ],
+            "code": "# Add constraint for minimum percentage of trips made by ship\nmodel.addConstr(\n    ShipTrips * (1 - MinShipTripPercentage) >= MinShipTripPercentage * PlaneTrips,\n    name=\"min_ship_trip_percentage\"\n)"
+        },
+        {
+            "description": "The total number of containers transported must meet or exceed the minimum required",
+            "status": "coded",
+            "formulation": "(\\textup{ShipCapacity} \\cdot \\textup{ShipTrips}) + (\\textup{PlaneCapacity} \\cdot \\textup{PlaneTrips}) \\geq \\textup{MinContainers}",
+            "related_variables": [
+                "ShipTrips",
+                "PlaneTrips"
+            ],
+            "related_parameters": [
+                "ShipCapacity",
+                "PlaneCapacity",
+                "MinContainers"
+            ],
+            "code": "# Add constraint to ensure the total number of containers transported meets or exceeds the minimum required\nmodel.addConstr(\n    (ShipCapacity * ShipTrips) + (PlaneCapacity * PlaneTrips) >= MinContainers, \n    name=\"min_containers_transport\"\n)"
+        },
+        {
+            "description": "The number of plane trips must not exceed the maximum allowed",
+            "status": "coded",
+            "formulation": "\\textup{PlaneTrips} \\leq \\textup{MaxPlaneTrips}",
+            "related_variables": [
+                "PlaneTrips"
+            ],
+            "related_parameters": [
+                "MaxPlaneTrips"
+            ],
+            "code": "# Add constraint for the maximum number of plane trips\nmodel.addConstr(PlaneTrips <= MaxPlaneTrips, name=\"max_plane_trips\")"
+        },
+        {
+            "description": "At least a specified percentage of total trips must be made by ships",
+            "status": "coded",
+            "formulation": "\\textup{ShipTrips} \\geq \\textup{MinShipTripPercentage} \\cdot \\textup{TotalTrips}",
+            "related_variables": [
+                "ShipTrips",
+                "TotalTrips"
+            ],
+            "related_parameters": [
+                "MinShipTripPercentage"
+            ],
+            "code": "# Add constraint to ensure at least a specified percentage of total trips are made by ships\nmodel.addConstr(ShipTrips >= MinShipTripPercentage * TotalTrips, name=\"min_ship_trip_percentage\")"
+        },
+        {
+            "description": "The total trips is the sum of ship trips and plane trips",
+            "status": "coded",
+            "formulation": "\\textup{TotalTrips} = \\textup{ShipTrips} + \\textup{PlaneTrips}",
+            "related_variables": [
+                "TotalTrips",
+                "ShipTrips",
+                "PlaneTrips"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint to ensure the total trips is the sum of ship trips and plane trips\nmodel.addConstr(TotalTrips == ShipTrips + PlaneTrips, name=\"total_trips_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of trips made by the ship",
+            "symbol": "ShipTrips",
+            "shape": [],
+            "status": "coded",
+            "code": "ShipTrips = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"ShipTrips\")"
+        },
+        {
+            "definition": "The number of trips made by planes",
+            "symbol": "PlaneTrips",
+            "shape": [],
+            "status": "coded",
+            "code": "PlaneTrips = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"PlaneTrips\")"
+        },
+        {
+            "definition": "The total number of trips made by ships and planes",
+            "symbol": "TotalTrips",
+            "shape": [],
+            "status": "coded",
+            "code": "TotalTrips = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TotalTrips\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total amount of fuel used for transporting the containers",
+            "status": "coded",
+            "formulation": "\\textup{Minimize:} \\quad (\\textup{ShipFuel} \\cdot \\textup{ShipTrips}) + (\\textup{PlaneFuel} \\cdot \\textup{PlaneTrips})",
+            "related_variables": [
+                "ShipTrips",
+                "PlaneTrips"
+            ],
+            "related_parameters": [
+                "ShipFuel",
+                "PlaneFuel"
+            ],
+            "code": "# Set objective\nmodel.setObjective((ShipFuel * ShipTrips) + (PlaneFuel * PlaneTrips), gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 6250.0,
+    "log_path": "logs/log_20250413161211_nl4opt_prob_151/",
+    "problem_path": "data/nl4opt/prob_151/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_151/data.json\", \"r\") as f:\n    data = json.load(f)\n\nShipCapacity = data[\"ShipCapacity\"] # scalar parameter\nShipFuel = data[\"ShipFuel\"] # scalar parameter\nPlaneCapacity = data[\"PlaneCapacity\"] # scalar parameter\nPlaneFuel = data[\"PlaneFuel\"] # scalar parameter\nMinContainers = data[\"MinContainers\"] # scalar parameter\nMaxPlaneTrips = data[\"MaxPlaneTrips\"] # scalar parameter\nMinShipTripPercentage = data[\"MinShipTripPercentage\"] # scalar parameter\nShipTrips = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"ShipTrips\")\nPlaneTrips = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"PlaneTrips\")\nTotalTrips = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TotalTrips\")\n\n# No constraint code needed: Gurobi variables by default enforce non-negativity for continuous variables unless specified otherwise.\n\n# No code needed as the Gurobi model automatically ensures the non-negativity of continuous variables by default unless defined with lower bounds less than zero.\n\n# Add constraint to ensure the total number of containers transported meets or exceeds MinContainers\nmodel.addConstr(ShipCapacity * ShipTrips + PlaneCapacity * PlaneTrips >= MinContainers, name=\"min_containers_requirement\")\n\n# Add constraint to limit the number of plane trips\nmodel.addConstr(PlaneTrips <= MaxPlaneTrips, name=\"max_plane_trips\")\n\n# Add constraint for minimum percentage of trips made by ship\nmodel.addConstr(\n    ShipTrips * (1 - MinShipTripPercentage) >= MinShipTripPercentage * PlaneTrips,\n    name=\"min_ship_trip_percentage\"\n)\n\n# Add constraint to ensure the total number of containers transported meets or exceeds the minimum required\nmodel.addConstr(\n    (ShipCapacity * ShipTrips) + (PlaneCapacity * PlaneTrips) >= MinContainers, \n    name=\"min_containers_transport\"\n)\n\n# Add constraint for the maximum number of plane trips\nmodel.addConstr(PlaneTrips <= MaxPlaneTrips, name=\"max_plane_trips\")\n\n# Add constraint to ensure at least a specified percentage of total trips are made by ships\nmodel.addConstr(ShipTrips >= MinShipTripPercentage * TotalTrips, name=\"min_ship_trip_percentage\")\n\n# Add constraint to ensure the total trips is the sum of ship trips and plane trips\nmodel.addConstr(TotalTrips == ShipTrips + PlaneTrips, name=\"total_trips_constraint\")\n\n# Set objective\nmodel.setObjective((ShipFuel * ShipTrips) + (PlaneFuel * PlaneTrips), gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

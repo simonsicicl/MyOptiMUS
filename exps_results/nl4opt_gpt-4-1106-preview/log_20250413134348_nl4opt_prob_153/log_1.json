@@ -1,0 +1,162 @@
+{
+    "background": "A soda company distributes bottles to stores using a fleet of old and new vans, each with different capacities and pollution outputs.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Capacity of an old van",
+            "symbol": "OldVanCapacity",
+            "value": 100,
+            "shape": [],
+            "code": "OldVanCapacity = data[\"OldVanCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Capacity of a new van",
+            "symbol": "NewVanCapacity",
+            "value": 80,
+            "shape": [],
+            "code": "NewVanCapacity = data[\"NewVanCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Pollution produced by an old van",
+            "symbol": "OldVanPollution",
+            "value": 50,
+            "shape": [],
+            "code": "OldVanPollution = data[\"OldVanPollution\"] # scalar parameter"
+        },
+        {
+            "definition": "Pollution produced by a new van",
+            "symbol": "NewVanPollution",
+            "value": 30,
+            "shape": [],
+            "code": "NewVanPollution = data[\"NewVanPollution\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum quantity of soda bottles to be sent",
+            "symbol": "MinBottles",
+            "value": 5000,
+            "shape": [],
+            "code": "MinBottles = data[\"MinBottles\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of new vans allowed",
+            "symbol": "MaxNewVans",
+            "value": 30,
+            "shape": [],
+            "code": "MaxNewVans = data[\"MaxNewVans\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Non-negativity constraint for the number of old vans used",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfOldVans} \\geq 0",
+            "related_variables": [
+                "NumberOfOldVans"
+            ],
+            "related_parameters": [],
+            "code": "model.addConstr(NumberOfOldVans >= 0, \"non_negativity_old_vans\")"
+        },
+        {
+            "description": "Number of new vans used must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfNewVans} \\geq 0",
+            "related_variables": [
+                "NumberOfNewVans"
+            ],
+            "related_parameters": [],
+            "code": "# Since NumberOfNewVans is already defined as an integer variable, no additional constraint is needed.\n# Non-negativity is implicit in the variable definition when using model.addVar() with vtype=GRB.INTEGER."
+        },
+        {
+            "description": "At least MinBottles bottles must be delivered using the old and new vans.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfOldVans} \\times \\textup{OldVanCapacity} + \\textup{NumberOfNewVans} \\times \\textup{NewVanCapacity} \\geq \\textup{MinBottles}",
+            "related_variables": [
+                "NumberOfOldVans",
+                "NumberOfNewVans"
+            ],
+            "related_parameters": [
+                "OldVanCapacity",
+                "NewVanCapacity",
+                "MinBottles"
+            ],
+            "code": "# Ensure at least MinBottles are delivered using the old and new vans\nmodel.addConstr(NumberOfOldVans * OldVanCapacity + NumberOfNewVans * NewVanCapacity >= MinBottles, \"min_bottles_delivery\")"
+        },
+        {
+            "description": "At most MaxNewVans new vans can be used",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfNewVans} \\leq \\textup{MaxNewVans}",
+            "related_variables": [
+                "NumberOfNewVans"
+            ],
+            "related_parameters": [
+                "MaxNewVans"
+            ],
+            "code": "model.addConstr(NumberOfNewVans <= MaxNewVans, name=\"max_new_vans_constraint\")"
+        },
+        {
+            "description": "The total number of bottles delivered must meet or exceed the minimum required amount.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfOldVans} \\times \\textup{OldVanCapacity} + \\textup{NumberOfNewVans} \\times \\textup{NewVanCapacity} \\geq \\textup{MinBottles}",
+            "related_variables": [
+                "NumberOfOldVans",
+                "NumberOfNewVans"
+            ],
+            "related_parameters": [
+                "OldVanCapacity",
+                "NewVanCapacity",
+                "MinBottles"
+            ],
+            "code": "# Add constraint to ensure total number of bottles delivered meets/exceeds the required minimum amount\nmodel.addConstr(NumberOfOldVans * OldVanCapacity + NumberOfNewVans * NewVanCapacity >= MinBottles, \"min_bottles_delivery\")"
+        },
+        {
+            "description": "The number of new vans used should be less than or equal to the maximum number of new vans allowed.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfNewVans} \\leq \\textup{MaxNewVans}",
+            "related_variables": [
+                "NumberOfNewVans"
+            ],
+            "related_parameters": [
+                "MaxNewVans"
+            ],
+            "code": "# Constraint for maximum number of new vans\nmodel.addConstr(NumberOfNewVans <= MaxNewVans, name=\"max_new_vans\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of old vans used",
+            "symbol": "NumberOfOldVans",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfOldVans = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfOldVans\")"
+        },
+        {
+            "definition": "Number of new vans used",
+            "symbol": "NumberOfNewVans",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfNewVans = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfNewVans\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total amount of pollution produced while meeting the delivery requirements.",
+            "status": "coded",
+            "formulation": "\\min (\\textup{NumberOfOldVans} \\times \\textup{OldVanPollution} + \\textup{NumberOfNewVans} \\times \\textup{NewVanPollution})",
+            "related_variables": [
+                "NumberOfOldVans",
+                "NumberOfNewVans"
+            ],
+            "related_parameters": [
+                "OldVanPollution",
+                "NewVanPollution"
+            ],
+            "code": "# Set objective\nmodel.setObjective(NumberOfOldVans * OldVanPollution + NumberOfNewVans * NewVanPollution, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413134348_nl4opt_prob_153/",
+    "problem_path": "data/nl4opt/prob_153/"
+}

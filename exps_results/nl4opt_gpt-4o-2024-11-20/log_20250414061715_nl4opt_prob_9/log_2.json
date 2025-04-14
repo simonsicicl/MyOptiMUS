@@ -1,0 +1,262 @@
+{
+    "background": "A store owner is looking to maximize profit by selling carrots and cucumbers with known costs and profits while adhering to budget constraints.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Monthly budget for carrots and cucumbers",
+            "symbol": "Budget",
+            "value": 500,
+            "shape": [],
+            "code": "Budget = data[\"Budget\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost per carrot",
+            "symbol": "CostCarrot",
+            "value": 0.3,
+            "shape": [],
+            "code": "CostCarrot = data[\"CostCarrot\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost per cucumber",
+            "symbol": "CostCucumber",
+            "value": 0.5,
+            "shape": [],
+            "code": "CostCucumber = data[\"CostCucumber\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit per carrot",
+            "symbol": "ProfitCarrot",
+            "value": 0.75,
+            "shape": [],
+            "code": "ProfitCarrot = data[\"ProfitCarrot\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit per cucumber",
+            "symbol": "ProfitCucumber",
+            "value": 0.8,
+            "shape": [],
+            "code": "ProfitCucumber = data[\"ProfitCucumber\"] # scalar parameter"
+        },
+        {
+            "definition": "Estimated maximum ratio of cucumbers sold to carrots sold",
+            "symbol": "RatioCucumbersToCarrots",
+            "value": 0.33,
+            "shape": [],
+            "code": "RatioCucumbersToCarrots = data[\"RatioCucumbersToCarrots\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of carrots sold per month",
+            "symbol": "MinCarrotsSold",
+            "value": 300,
+            "shape": [],
+            "code": "MinCarrotsSold = data[\"MinCarrotsSold\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of carrots sold per month",
+            "symbol": "MaxCarrotsSold",
+            "value": 500,
+            "shape": [],
+            "code": "MaxCarrotsSold = data[\"MaxCarrotsSold\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of carrots sold must be an integer.",
+            "status": "coded",
+            "formulation": "\\textup{CarrotsSold} \\in \\mathbb{Z}",
+            "related_variables": [
+                "CarrotsSold"
+            ],
+            "related_parameters": [],
+            "code": "# Modify the variable CarrotsSold to enforce integrality\nCarrotsSold.vtype = gp.GRB.INTEGER"
+        },
+        {
+            "description": "The number of cucumbers sold is an integer.",
+            "status": "coded",
+            "formulation": "\\\\textup{CucumbersSold} \\\\in \\\\mathbb{Z}",
+            "related_variables": [
+                "CucumbersSold"
+            ],
+            "related_parameters": [],
+            "code": "# Change the variable type to integer to ensure CucumbersSold is an integer\nCucumbersSold.vtype = gp.GRB.INTEGER"
+        },
+        {
+            "description": "The number of carrots sold must be greater than or equal to zero (non-negative).",
+            "status": "coded",
+            "formulation": "\\\\textup{CarrotsSold} \\\\geq 0",
+            "related_variables": [
+                "CarrotsSold"
+            ],
+            "related_parameters": [],
+            "code": "# Since the variable \"CarrotsSold\" is already coded as non-negative (continuous variables in gurobipy are non-negative by default), no additional constraint is needed."
+        },
+        {
+            "description": "The number of cucumbers sold must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{CucumbersSold} \\geq 0",
+            "related_variables": [
+                "CucumbersSold"
+            ],
+            "related_parameters": [],
+            "code": "# The variable \"CucumbersSold\" is already defined as non-negative due to its default non-negativity in Gurobi,\n# so no constraint code is needed."
+        },
+        {
+            "description": "The budget constraint to ensure the total cost of carrots and cucumbers sold does not exceed the monthly budget.",
+            "status": "coded",
+            "formulation": "\\textup{CostCarrot} \\cdot \\textup{CarrotsSold} + \\textup{CostCucumber} \\cdot \\textup{CucumbersSold} \\leq \\textup{Budget}",
+            "related_variables": [
+                "CarrotsSold",
+                "CucumbersSold"
+            ],
+            "related_parameters": [
+                "CostCarrot",
+                "CostCucumber",
+                "Budget"
+            ],
+            "code": "# Add budget constraint\nmodel.addConstr(CostCarrot * CarrotsSold + CostCucumber * CucumbersSold <= Budget, name=\"budget_constraint\")"
+        },
+        {
+            "description": "The number of cucumbers sold must not exceed the estimated ratio of cucumbers to carrots sold times the number of carrots sold.",
+            "status": "coded",
+            "formulation": "\\\\textup{CucumbersSold} \\\\leq \\\\textup{RatioCucumbersToCarrots} \\\\times \\\\textup{CarrotsSold}",
+            "related_variables": [
+                "CarrotsSold",
+                "CucumbersSold"
+            ],
+            "related_parameters": [
+                "RatioCucumbersToCarrots"
+            ],
+            "code": "# Add constraint ensuring that the number of cucumbers sold does not exceed the ratio times the number of carrots sold\nmodel.addConstr(CucumbersSold <= RatioCucumbersToCarrots * CarrotsSold, name=\"cucumber_to_carrot_ratio\")"
+        },
+        {
+            "description": "Ensure the number of carrots sold meets or exceeds the specified minimum requirement.",
+            "status": "coded",
+            "formulation": "\\textup{CarrotsSold} \\geq \\textup{MinCarrotsSold}",
+            "related_variables": [
+                "CarrotsSold"
+            ],
+            "related_parameters": [
+                "MinCarrotsSold"
+            ],
+            "code": "# Add constraint to ensure the number of carrots sold meets or exceeds the specified minimum\nmodel.addConstr(CarrotsSold >= MinCarrotsSold, name=\"min_carrots_sold\")"
+        },
+        {
+            "description": "The number of carrots sold should not exceed the maximum allowed number of carrots sold.",
+            "status": "coded",
+            "formulation": "\\textup{CarrotsSold} \\leq \\textup{MaxCarrotsSold}",
+            "related_variables": [
+                "CarrotsSold"
+            ],
+            "related_parameters": [
+                "MaxCarrotsSold"
+            ],
+            "code": "# Add constraint to ensure the number of carrots sold does not exceed the maximum allowed\nmodel.addConstr(CarrotsSold <= MaxCarrotsSold, name=\"max_carrots_sold_constraint\")"
+        },
+        {
+            "description": "Auxiliary constraint ensuring the number of carrots sold is within the specified minimum and maximum bounds.",
+            "status": "coded",
+            "formulation": "\\textup{MinCarrotsSold} \\leq \\textup{CarrotsSold} \\leq \\textup{MaxCarrotsSold}",
+            "related_variables": [
+                "CarrotsSold"
+            ],
+            "related_parameters": [
+                "MinCarrotsSold",
+                "MaxCarrotsSold"
+            ],
+            "code": "# Add constraint for bounding the number of carrots sold\nmodel.addConstr(MinCarrotsSold <= CarrotsSold, name=\"min_carrots_sold\")\nmodel.addConstr(CarrotsSold <= MaxCarrotsSold, name=\"max_carrots_sold\")"
+        },
+        {
+            "description": "Auxiliary constraint to enforce the cucumbers-to-carrots ratio does not exceed the limit.",
+            "status": "coded",
+            "formulation": "\\textup{CucumbersSold} \\leq \\textup{RatioCucumbersToCarrots} \\cdot \\textup{CarrotsSold}",
+            "related_variables": [
+                "CucumbersSold",
+                "CarrotsSold"
+            ],
+            "related_parameters": [
+                "RatioCucumbersToCarrots"
+            ],
+            "code": "# Add the cucumbers-to-carrots ratio constraint\nmodel.addConstr(CucumbersSold <= RatioCucumbersToCarrots * CarrotsSold, name=\"cucumber_to_carrot_ratio\")"
+        },
+        {
+            "description": "Ensure the total cost of carrots and cucumbers does not exceed the budget.",
+            "status": "coded",
+            "formulation": "\\textup{CostCarrot} \\times \\textup{CarrotsSold} + \\textup{CostCucumber} \\times \\textup{CucumbersSold} \\leq \\textup{Budget}",
+            "related_variables": [
+                "CarrotsSold",
+                "CucumbersSold"
+            ],
+            "related_parameters": [
+                "CostCarrot",
+                "CostCucumber",
+                "Budget"
+            ],
+            "code": "# Add budget constraint for carrots and cucumbers\nmodel.addConstr(CarrotsSold * CostCarrot + CucumbersSold * CostCucumber <= Budget, name=\"budget_constraint\")"
+        },
+        {
+            "description": "Ensure the number of cucumbers sold does not exceed the specified ratio relative to the number of carrots sold.",
+            "status": "coded",
+            "formulation": "\\textup{CucumbersSold} \\leq \\textup{RatioCucumbersToCarrots} \\times \\textup{CarrotsSold}",
+            "related_variables": [
+                "CarrotsSold",
+                "CucumbersSold"
+            ],
+            "related_parameters": [
+                "RatioCucumbersToCarrots"
+            ],
+            "code": "# Add constraint to ensure the number of cucumbers sold does not exceed the specified ratio of carrots sold\nmodel.addConstr(CucumbersSold <= RatioCucumbersToCarrots * CarrotsSold, name=\"cucumber_to_carrot_ratio\")"
+        },
+        {
+            "description": "Ensure the number of carrots sold is within the allowable range.",
+            "status": "coded",
+            "formulation": "\\textup{MinCarrotsSold} \\leq \\textup{CarrotsSold} \\leq \\textup{MaxCarrotsSold}",
+            "related_variables": [
+                "CarrotsSold"
+            ],
+            "related_parameters": [
+                "MinCarrotsSold",
+                "MaxCarrotsSold"
+            ],
+            "code": "# Add constraint to ensure the number of carrots sold is within the allowable range\nmodel.addConstr(MinCarrotsSold <= CarrotsSold, name=\"min_carrots_sold\")\nmodel.addConstr(CarrotsSold <= MaxCarrotsSold, name=\"max_carrots_sold\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of carrots sold in the store",
+            "symbol": "CarrotsSold",
+            "shape": [],
+            "status": "coded",
+            "code": "CarrotsSold = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"CarrotsSold\")"
+        },
+        {
+            "definition": "The number of cucumbers sold in the store",
+            "symbol": "CucumbersSold",
+            "shape": [],
+            "status": "coded",
+            "code": "CucumbersSold = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"CucumbersSold\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize total profit from selling carrots and cucumbers.",
+            "status": "coded",
+            "formulation": "\\textup{ProfitCarrot} \\times \\textup{CarrotsSold} + \\textup{ProfitCucumber} \\times \\textup{CucumbersSold}",
+            "related_variables": [
+                "CarrotsSold",
+                "CucumbersSold"
+            ],
+            "related_parameters": [
+                "ProfitCarrot",
+                "ProfitCucumber"
+            ],
+            "code": "# Set objective\nmodel.setObjective(ProfitCarrot * CarrotsSold + ProfitCucumber * CucumbersSold, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 507.0,
+    "log_path": "logs/log_20250414061715_nl4opt_prob_9/",
+    "problem_path": "data/nl4opt/prob_9/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_9/data.json\", \"r\") as f:\n    data = json.load(f)\n\nBudget = data[\"Budget\"] # scalar parameter\nCostCarrot = data[\"CostCarrot\"] # scalar parameter\nCostCucumber = data[\"CostCucumber\"] # scalar parameter\nProfitCarrot = data[\"ProfitCarrot\"] # scalar parameter\nProfitCucumber = data[\"ProfitCucumber\"] # scalar parameter\nRatioCucumbersToCarrots = data[\"RatioCucumbersToCarrots\"] # scalar parameter\nMinCarrotsSold = data[\"MinCarrotsSold\"] # scalar parameter\nMaxCarrotsSold = data[\"MaxCarrotsSold\"] # scalar parameter\nCarrotsSold = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"CarrotsSold\")\nCucumbersSold = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"CucumbersSold\")\n\n# Modify the variable CarrotsSold to enforce integrality\nCarrotsSold.vtype = gp.GRB.INTEGER\n\n# Change the variable type to integer to ensure CucumbersSold is an integer\nCucumbersSold.vtype = gp.GRB.INTEGER\n\n# Since the variable \"CarrotsSold\" is already coded as non-negative (continuous variables in gurobipy are non-negative by default), no additional constraint is needed.\n\n# The variable \"CucumbersSold\" is already defined as non-negative due to its default non-negativity in Gurobi,\n# so no constraint code is needed.\n\n# Add budget constraint\nmodel.addConstr(CostCarrot * CarrotsSold + CostCucumber * CucumbersSold <= Budget, name=\"budget_constraint\")\n\n# Add constraint ensuring that the number of cucumbers sold does not exceed the ratio times the number of carrots sold\nmodel.addConstr(CucumbersSold <= RatioCucumbersToCarrots * CarrotsSold, name=\"cucumber_to_carrot_ratio\")\n\n# Add constraint to ensure the number of carrots sold meets or exceeds the specified minimum\nmodel.addConstr(CarrotsSold >= MinCarrotsSold, name=\"min_carrots_sold\")\n\n# Add constraint to ensure the number of carrots sold does not exceed the maximum allowed\nmodel.addConstr(CarrotsSold <= MaxCarrotsSold, name=\"max_carrots_sold_constraint\")\n\n# Add constraint for bounding the number of carrots sold\nmodel.addConstr(MinCarrotsSold <= CarrotsSold, name=\"min_carrots_sold\")\nmodel.addConstr(CarrotsSold <= MaxCarrotsSold, name=\"max_carrots_sold\")\n\n# Add the cucumbers-to-carrots ratio constraint\nmodel.addConstr(CucumbersSold <= RatioCucumbersToCarrots * CarrotsSold, name=\"cucumber_to_carrot_ratio\")\n\n# Add budget constraint for carrots and cucumbers\nmodel.addConstr(CarrotsSold * CostCarrot + CucumbersSold * CostCucumber <= Budget, name=\"budget_constraint\")\n\n# Add constraint to ensure the number of cucumbers sold does not exceed the specified ratio of carrots sold\nmodel.addConstr(CucumbersSold <= RatioCucumbersToCarrots * CarrotsSold, name=\"cucumber_to_carrot_ratio\")\n\n# Add constraint to ensure the number of carrots sold is within the allowable range\nmodel.addConstr(MinCarrotsSold <= CarrotsSold, name=\"min_carrots_sold\")\nmodel.addConstr(CarrotsSold <= MaxCarrotsSold, name=\"max_carrots_sold\")\n\n# Set objective\nmodel.setObjective(ProfitCarrot * CarrotsSold + ProfitCucumber * CucumbersSold, gp.GRB.MAXIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

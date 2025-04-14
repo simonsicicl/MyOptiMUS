@@ -1,0 +1,120 @@
+{
+    "background": "The problem is focused on allocating goods from multiple origins to multiple destinations, considering the individual supply limits at each origin and demand requirements at each destination, with the goal of minimizing the total transportation cost.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "symbol": "OriginNum",
+            "definition": "The total number of origins",
+            "shape": [],
+            "code": "OriginNum = data[\"OriginNum\"] # scalar parameter"
+        },
+        {
+            "symbol": "DestinationNum",
+            "definition": "The total number of destinations",
+            "shape": [],
+            "code": "DestinationNum = data[\"DestinationNum\"] # scalar parameter"
+        },
+        {
+            "symbol": "Supply",
+            "definition": "The supply of goods available at each origin",
+            "shape": [
+                "OriginNum"
+            ],
+            "code": "Supply = np.array(data[\"Supply\"]) # ['OriginNum']"
+        },
+        {
+            "symbol": "Demand",
+            "definition": "The demand for goods to be satisfied at each destination",
+            "shape": [
+                "DestinationNum"
+            ],
+            "code": "Demand = np.array(data[\"Demand\"]) # ['DestinationNum']"
+        },
+        {
+            "symbol": "Cost",
+            "definition": "The cost of transporting goods from origin i to destination j",
+            "shape": [
+                "OriginNum",
+                "DestinationNum"
+            ],
+            "code": "Cost = np.array(data[\"Cost\"]) # ['OriginNum', 'DestinationNum']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Each origin has a supply limit which is not exceeded by the sum of goods it sends to all destinations.",
+            "status": "coded",
+            "formulation": "\\sum_{j=1}^{\\textup{DestinationNum}} \\textup{TransportedGoods}[i][j] \\leq \\textup{Supply}_i \\quad \\forall i \\in \\{1, \\dots, \\textup{OriginNum}\\}",
+            "related_variables": [
+                "TransportedGoods"
+            ],
+            "related_parameters": [
+                "Supply",
+                "DestinationNum",
+                "OriginNum"
+            ],
+            "code": "# Supply limit constraint at each origin\nfor i in range(OriginNum):\n    model.addConstr(gp.quicksum(TransportedGoods[i, j] for j in range(DestinationNum)) <= Supply[i], name=f\"supply_limit_origin_{i}\")"
+        },
+        {
+            "description": "Each destination must meet its demand",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{\\textup{OriginNum}} \\textup{TransportedGoods}_{ij} \\geq \\textup{Demand}_j \\quad \\forall j = 1, \\ldots, \\textup{DestinationNum}",
+            "related_variables": [
+                "TransportedGoods"
+            ],
+            "related_parameters": [
+                "OriginNum",
+                "DestinationNum",
+                "Demand"
+            ],
+            "code": "# Ensure each destination meets its demand\nfor j in range(DestinationNum):\n    model.addConstr(gp.quicksum(TransportedGoods[i, j] for i in range(OriginNum)) >= Demand[j], \n                    name=f\"demand_constraint_{j}\")"
+        },
+        {
+            "description": "The amount of goods sent from any origin to any destination must be non-negative",
+            "status": "coded",
+            "formulation": "\\forall i \\in \\{1,...,\\textup{OriginNum}\\}, \\forall j \\in \\{1,...,\\textup{DestinationNum}\\}, \\quad \\textup{TransportedGoods}_{ij} \\geq 0",
+            "related_variables": [
+                "TransportedGoods"
+            ],
+            "related_parameters": [
+                "OriginNum",
+                "DestinationNum"
+            ],
+            "code": "# Add non-negativity constraints for goods transported from any origin to any destination\nfor i in range(OriginNum):\n    for j in range(DestinationNum):\n        model.addConstr(TransportedGoods[i, j] >= 0, name=\"nonnegativity_constraint_{0}_{1}\".format(i, j))"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The amount of goods transported from origin i to destination j",
+            "symbol": "TransportedGoods",
+            "shape": [
+                "OriginNum",
+                "DestinationNum"
+            ],
+            "status": "coded",
+            "code": "TransportedGoods = model.addVars(OriginNum, DestinationNum, vtype=gp.GRB.CONTINUOUS, name=\"TransportedGoods\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total transportation cost from origins to destinations",
+            "status": "coded",
+            "formulation": "\\min \\sum_{i=1}^{\\textup{OriginNum}} \\sum_{j=1}^{\\textup{DestinationNum}} \\textup{TransportedGoods}_{ij} \\times \\textup{Cost}_{ij}",
+            "related_variables": [
+                "TransportedGoods"
+            ],
+            "related_parameters": [
+                "OriginNum",
+                "DestinationNum",
+                "Cost"
+            ],
+            "code": "# Set objective function\nmodel.setObjective(gp.quicksum(TransportedGoods[i, j] * Cost[i, j] for i in range(OriginNum) for j in range(DestinationNum)), gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413134929_complexor_TSP/",
+    "problem_path": "data/complexor/TSP/"
+}

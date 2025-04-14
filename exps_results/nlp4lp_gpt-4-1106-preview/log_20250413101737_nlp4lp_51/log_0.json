@@ -1,0 +1,251 @@
+{
+    "background": "Determine the amount of regular and overtime labor to be used weekly for assembling baskets to maximize seasonal profit, considering labor costs, assembly time, material costs, selling price, holding costs, and salvage value.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Cost of regular labor per unit of time",
+            "symbol": "RegularCost",
+            "value": 0.0,
+            "shape": [],
+            "code": "RegularCost = data[\"RegularCost\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost of overtime labor per unit of time",
+            "symbol": "OvertimeCost",
+            "value": 0.0,
+            "shape": [],
+            "code": "OvertimeCost = data[\"OvertimeCost\"] # scalar parameter"
+        },
+        {
+            "definition": "Time required to assemble a single basket",
+            "symbol": "AssemblyTime",
+            "value": 0.0,
+            "shape": [],
+            "code": "AssemblyTime = data[\"AssemblyTime\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost of materials per basket",
+            "symbol": "MaterialCost",
+            "value": 0.0,
+            "shape": [],
+            "code": "MaterialCost = data[\"MaterialCost\"] # scalar parameter"
+        },
+        {
+            "definition": "Selling price per basket",
+            "symbol": "SellingPrice",
+            "value": 0.0,
+            "shape": [],
+            "code": "SellingPrice = data[\"SellingPrice\"] # scalar parameter"
+        },
+        {
+            "definition": "Holding cost per basket per unit of time",
+            "symbol": "HoldingCost",
+            "value": 0.0,
+            "shape": [],
+            "code": "HoldingCost = data[\"HoldingCost\"] # scalar parameter"
+        },
+        {
+            "definition": "Salvage value per unsold basket at the end of the season",
+            "symbol": "SalvageValue",
+            "value": 0.0,
+            "shape": [],
+            "code": "SalvageValue = data[\"SalvageValue\"] # scalar parameter"
+        },
+        {
+            "definition": "Demand for baskets in week w",
+            "symbol": "Demand",
+            "value": 0.0,
+            "shape": [
+                "W"
+            ],
+            "code": "Demand = np.array(data[\"Demand\"]) # ['W']"
+        },
+        {
+            "definition": "Number of regular labor units available in week w",
+            "symbol": "RegularLabor",
+            "value": 0.0,
+            "shape": [
+                "W"
+            ],
+            "code": "RegularLabor = np.array(data[\"RegularLabor\"]) # ['W']"
+        },
+        {
+            "definition": "Number of overtime labor units available in week w",
+            "symbol": "OvertimeLabor",
+            "value": 0.0,
+            "shape": [
+                "W"
+            ],
+            "code": "OvertimeLabor = np.array(data[\"OvertimeLabor\"]) # ['W']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Regular labor used in any week is at most the available regular labor for that week",
+            "status": "formulated",
+            "formulation": "\\textup{RegularLaborUsed}_{w} \\leq \\textup{RegularLabor}_{w} \\quad \\forall w \\in \\{1, 2, \\ldots, W\\}",
+            "related_variables": [
+                "RegularLaborUsed"
+            ],
+            "related_parameters": [
+                "RegularLabor"
+            ]
+        },
+        {
+            "description": "Overtime labor used in any week is at most the available overtime labor units for that week",
+            "status": "formulated",
+            "formulation": "OvertimeLaborUsed_{w} \\leq \\textup{OvertimeLabor}_{w} \\quad \\forall w \\in \\{1, \\dots, W\\}",
+            "related_variables": [
+                "OvertimeLaborUsed"
+            ],
+            "related_parameters": [
+                "OvertimeLabor"
+            ]
+        },
+        {
+            "description": "Total assembly time in a week is limited by the sum of regular and overtime labor available",
+            "status": "formulated",
+            "formulation": "\\textup{RegularLaborUsed}_{w} + \\textup{OvertimeLaborUsed}_{w} \\leq \\textup{RegularLabor}_{w} + \\textup{OvertimeLabor}_{w} \\quad \\forall w \\in W",
+            "related_variables": [
+                "RegularLaborUsed",
+                "OvertimeLaborUsed"
+            ],
+            "related_parameters": [
+                "RegularLabor",
+                "OvertimeLabor"
+            ]
+        },
+        {
+            "description": "Total number of baskets assembled must match weekly demand",
+            "status": "formulated",
+            "formulation": "\\sum_{w=1}^{W} (\\frac{\\textup{RegularLaborUsed}_{w}}{\\textup{AssemblyTime}} + \\frac{\\textup{OvertimeLaborUsed}_{w}}{\\textup{AssemblyTime}}) = \\sum_{w=1}^{W} \\textup{Demand}_{w}",
+            "related_variables": [
+                "RegularLaborUsed",
+                "OvertimeLaborUsed"
+            ],
+            "related_parameters": [
+                "AssemblyTime",
+                "Demand"
+            ]
+        },
+        {
+            "description": "The number of baskets assembled in each week must be non-negative",
+            "status": "formulated",
+            "formulation": "\\forall w \\in W, \\quad \\textup{BasketsAssembled}_w \\geq 0",
+            "related_variables": [
+                "BasketsAssembled"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Regular labor used must be non-negative",
+            "status": "formulated",
+            "formulation": "\\textup{RegularLaborUsed}_{w} \\geq 0 \\quad \\forall w \\in W",
+            "related_variables": [
+                "RegularLaborUsed"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Overtime labor used must be non-negative",
+            "status": "formulated",
+            "formulation": "\\forall w \\in W, \\quad \\textup{OvertimeLaborUsed}_{w} \\geq 0",
+            "related_variables": [
+                "OvertimeLaborUsed"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "The number of baskets held in storage must be the accumulated difference between baskets assembled and baskets sold up to each week w minus the surplus sold for salvage",
+            "status": "formulated",
+            "formulation": "\\forall w \\in \\{1, \\ldots, W\\}, \\quad \\textup{BasketsHeld}_w = \\textup{max}(0, \\sum_{u=1}^{w} (\\textup{BasketsAssembled}_u - \\textup{Demand}_u) - \\textup{BasketsSalvaged})",
+            "related_variables": [
+                "BasketsAssembled",
+                "BasketsHeld",
+                "BasketsSalvaged"
+            ],
+            "related_parameters": [
+                "Demand"
+            ]
+        },
+        {
+            "description": "The number of baskets assembled cannot exceed the total available labor time divided by the time required to assemble a single basket",
+            "status": "formulated",
+            "formulation": "\\forall w \\in \\{1, \\ldots, W\\}, \\quad \\textup{BasketsAssembled}_w \\leq (\\textup{RegularLaborUsed}_w + \\textup{OvertimeLaborUsed}_w) / \\textup{AssemblyTime}",
+            "related_variables": [
+                "RegularLaborUsed",
+                "OvertimeLaborUsed",
+                "BasketsAssembled"
+            ],
+            "related_parameters": [
+                "AssemblyTime"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Amount of regular labor used in week w",
+            "symbol": "RegularLaborUsed",
+            "shape": [
+                "W"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "Amount of overtime labor used in week w",
+            "symbol": "OvertimeLaborUsed",
+            "shape": [
+                "W"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "Number of baskets assembled in week w",
+            "symbol": "BasketsAssembled",
+            "shape": [
+                "W"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "Number of baskets held in storage at the end of week w",
+            "symbol": "BasketsHeld",
+            "shape": [
+                "W"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "Number of surplus baskets salvaged at the end of the season",
+            "symbol": "BasketsSalvaged",
+            "shape": [],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize seasonal profit from the assembly and sale of baskets, considering labor costs, material costs, and holding costs",
+            "status": "formulated",
+            "formulation": "\\textup{Maximize} \\quad \\sum_{w=1}^{W} (\\textup{SellingPrice} * \\textup{BasketsAssembled}_w - \\textup{RegularCost} * \\textup{RegularLaborUsed}_w - \\textup{OvertimeCost} * \\textup{OvertimeLaborUsed}_w - \\textup{MaterialCost} * \\textup{BasketsAssembled}_w - \\textup{HoldingCost} * \\textup{BasketsHeld}_w)",
+            "related_variables": [
+                "RegularLaborUsed",
+                "OvertimeLaborUsed",
+                "BasketsAssembled",
+                "BasketsHeld"
+            ],
+            "related_parameters": [
+                "SellingPrice",
+                "RegularCost",
+                "OvertimeCost",
+                "MaterialCost",
+                "HoldingCost"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413101737_nlp4lp_51/",
+    "problem_path": "data/nlp4lp/51/"
+}

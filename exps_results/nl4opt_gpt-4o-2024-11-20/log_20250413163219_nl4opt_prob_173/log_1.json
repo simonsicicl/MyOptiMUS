@@ -1,0 +1,252 @@
+{
+    "background": "Children can go to school either by van or by minibus. Each mode of transportation has a certain capacity and associated pollution. The goal is to transport kids to school while minimizing pollution and adhering to the given constraints regarding the capacities and the transport vehicle limits.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Capacity of a van",
+            "symbol": "VanCapacity",
+            "value": 6,
+            "shape": [],
+            "code": "VanCapacity = data[\"VanCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Pollution produced by a van",
+            "symbol": "VanPollution",
+            "value": 7,
+            "shape": [],
+            "code": "VanPollution = data[\"VanPollution\"] # scalar parameter"
+        },
+        {
+            "definition": "Capacity of a minibus",
+            "symbol": "MinibusCapacity",
+            "value": 10,
+            "shape": [],
+            "code": "MinibusCapacity = data[\"MinibusCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Pollution produced by a minibus",
+            "symbol": "MinibusPollution",
+            "value": 10,
+            "shape": [],
+            "code": "MinibusPollution = data[\"MinibusPollution\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of kids that need transportation",
+            "symbol": "MinKids",
+            "value": 150,
+            "shape": [],
+            "code": "MinKids = data[\"MinKids\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of minibuses allowed",
+            "symbol": "MaxMinibuses",
+            "value": 10,
+            "shape": [],
+            "code": "MaxMinibuses = data[\"MaxMinibuses\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The total number of kids transported by vans and minibuses must be at least MinKids.",
+            "status": "coded",
+            "formulation": "\\textup{VanCapacity} \\\\cdot \\textup{NumVans} + \\textup{MinibusCapacity} \\\\cdot \\textup{NumMinibuses} \\\\geq \\textup{MinKids}",
+            "related_variables": [
+                "NumVans",
+                "NumMinibuses"
+            ],
+            "related_parameters": [
+                "VanCapacity",
+                "MinibusCapacity",
+                "MinKids"
+            ],
+            "code": "# Add constraint to ensure the total number of kids transported by vans and minibuses is at least MinKids\nmodel.addConstr(VanCapacity * NumVans + MinibusCapacity * NumMinibuses >= MinKids, name=\"min_kids_transport\")"
+        },
+        {
+            "description": "The number of minibuses used is non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumMinibuses} \\geq 0",
+            "related_variables": [
+                "NumMinibuses"
+            ],
+            "related_parameters": [],
+            "code": "# No additional code needed since NumMinibuses is already defined as non-negative due to its default lower bound (0) in Gurobi."
+        },
+        {
+            "description": "The number of vans used must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumVans} \\geq 0",
+            "related_variables": [
+                "NumVans"
+            ],
+            "related_parameters": [],
+            "code": "# The variable NumVans is already defined as non-negative due to being an integer type which is by default >= 0. No additional constraint is necessary."
+        },
+        {
+            "description": "The number of kids transported by vans cannot exceed the total capacity of the vans used.",
+            "status": "coded",
+            "formulation": "\\textup{VanKidsTransported} \\leq \\textup{NumVans} \\cdot \\textup{VanCapacity}",
+            "related_variables": [
+                "VanKidsTransported",
+                "NumVans"
+            ],
+            "related_parameters": [
+                "VanCapacity"
+            ],
+            "code": "# Add constraint: The number of kids transported by vans cannot exceed the total capacity of the vans used.\nmodel.addConstr(VanKidsTransported <= NumVans * VanCapacity, name=\"van_capacity_constraint\")"
+        },
+        {
+            "description": "The total number of kids transported by minibuses must not exceed the combined capacity of the minibuses.",
+            "status": "coded",
+            "formulation": "\\textup{MinibusKidsTransported} \\leq \\textup{NumMinibuses} \\times \\textup{MinibusCapacity}",
+            "related_variables": [
+                "MinibusKidsTransported",
+                "NumMinibuses"
+            ],
+            "related_parameters": [
+                "MinibusCapacity"
+            ],
+            "code": "# Add constraint for the total number of kids transported by minibuses \nmodel.addConstr(MinibusKidsTransported <= NumMinibuses * MinibusCapacity, name=\"total_kids_transportation\")"
+        },
+        {
+            "description": "No more than \\textup{MaxMinibuses} minibuses can be used.",
+            "status": "coded",
+            "formulation": "\\textup{NumMinibuses} \\leq \\textup{MaxMinibuses}",
+            "related_variables": [
+                "NumMinibuses"
+            ],
+            "related_parameters": [
+                "MaxMinibuses"
+            ],
+            "code": "# Add constraint to ensure no more than MaxMinibuses minibuses can be used\nmodel.addConstr(NumMinibuses <= MaxMinibuses, name=\"max_minibuses_constraint\")"
+        },
+        {
+            "description": "The total number of kids transported by vans and minibuses must meet or exceed the minimum required number of kids for transportation.",
+            "status": "coded",
+            "formulation": "\\textup{VanKidsTransported} + \\textup{MinibusKidsTransported} \\geq \\textup{MinKids}",
+            "related_variables": [
+                "VanKidsTransported",
+                "MinibusKidsTransported"
+            ],
+            "related_parameters": [
+                "MinKids"
+            ],
+            "code": "# Add constraint ensuring the total number of kids transported by vans and minibuses meets or exceeds the minimum required\nmodel.addConstr(VanKidsTransported + MinibusKidsTransported >= MinKids, name=\"min_kids_transport\")"
+        },
+        {
+            "description": "The total number of kids transported by vans and minibuses must be at least equal to the minimum number of kids needing transportation.",
+            "status": "coded",
+            "formulation": "\\textup{VanKidsTransported} + \\textup{MinibusKidsTransported} \\geq \\textup{MinKids}",
+            "related_variables": [
+                "VanKidsTransported",
+                "MinibusKidsTransported"
+            ],
+            "related_parameters": [
+                "MinKids"
+            ],
+            "code": "# Add constraint ensuring total transported kids meet minimum requirement\nmodel.addConstr(VanKidsTransported + MinibusKidsTransported >= MinKids, name=\"total_kids_transportation\")"
+        },
+        {
+            "description": "The number of kids transported by vans cannot exceed the total capacity of the vans used.",
+            "status": "coded",
+            "formulation": "\\textup{VanKidsTransported} \\leq \\textup{VanCapacity} \\times \\textup{NumVans}",
+            "related_variables": [
+                "VanKidsTransported",
+                "NumVans"
+            ],
+            "related_parameters": [
+                "VanCapacity"
+            ],
+            "code": "# Add constraint to ensure kids transported do not exceed van capacity\nmodel.addConstr(VanKidsTransported <= VanCapacity * NumVans, name=\"van_capacity_constraint\")"
+        },
+        {
+            "description": "The number of kids transported by minibuses cannot exceed the total capacity of the minibuses used.",
+            "status": "coded",
+            "formulation": "\\textup{MinibusKidsTransported} \\leq \\textup{MinibusCapacity} \\times \\textup{NumMinibuses}",
+            "related_variables": [
+                "MinibusKidsTransported",
+                "NumMinibuses"
+            ],
+            "related_parameters": [
+                "MinibusCapacity"
+            ],
+            "code": "# Add constraint to ensure the number of kids transported does not exceed the capacity of the minibuses used\nmodel.addConstr(MinibusKidsTransported <= MinibusCapacity * NumMinibuses, name=\"kids_transport_capacity\")"
+        },
+        {
+            "description": "The number of minibuses used cannot exceed the maximum allowed number of minibuses.",
+            "status": "coded",
+            "formulation": "\\textup{NumMinibuses} \\leq \\textup{MaxMinibuses}",
+            "related_variables": [
+                "NumMinibuses"
+            ],
+            "related_parameters": [
+                "MaxMinibuses"
+            ],
+            "code": "# Add constraint to ensure the number of minibuses used does not exceed the maximum allowed\nmodel.addConstr(NumMinibuses <= MaxMinibuses, name=\"max_minibuses_constraint\")"
+        },
+        {
+            "description": "All variables must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumVans} \\geq 0, \\quad \\textup{NumMinibuses} \\geq 0, \\quad \\textup{VanKidsTransported} \\geq 0, \\quad \\textup{MinibusKidsTransported} \\geq 0",
+            "related_variables": [
+                "NumVans",
+                "NumMinibuses",
+                "VanKidsTransported",
+                "MinibusKidsTransported"
+            ],
+            "related_parameters": [],
+            "code": "# Add non-negativity constraints for all variables\nmodel.addConstr(NumVans >= 0, name=\"NonNegativity_NumVans\")\nmodel.addConstr(NumMinibuses >= 0, name=\"NonNegativity_NumMinibuses\")\nmodel.addConstr(VanKidsTransported >= 0, name=\"NonNegativity_VanKidsTransported\")\nmodel.addConstr(MinibusKidsTransported >= 0, name=\"NonNegativity_MinibusKidsTransported\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of vans used for transportation",
+            "symbol": "NumVans",
+            "shape": [],
+            "status": "coded",
+            "code": "NumVans = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumVans\")"
+        },
+        {
+            "definition": "The number of minibuses used for transportation",
+            "symbol": "NumMinibuses",
+            "shape": [],
+            "status": "coded",
+            "code": "NumMinibuses = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumMinibuses\")"
+        },
+        {
+            "definition": "The total number of kids transported by vans.",
+            "symbol": "VanKidsTransported",
+            "shape": [],
+            "status": "coded",
+            "code": "VanKidsTransported = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"VanKidsTransported\")"
+        },
+        {
+            "definition": "The total number of kids transported by minibuses.",
+            "symbol": "MinibusKidsTransported",
+            "shape": [],
+            "status": "coded",
+            "code": "MinibusKidsTransported = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"MinibusKidsTransported\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total pollution generated by vans and minibuses used in transporting children to school.",
+            "status": "coded",
+            "formulation": "\\textup{Minimize} \\quad \\textup{VanPollution} \\times \\textup{NumVans} + \\textup{MinibusPollution} \\times \\textup{NumMinibuses}",
+            "related_variables": [
+                "NumVans",
+                "NumMinibuses"
+            ],
+            "related_parameters": [
+                "VanPollution",
+                "MinibusPollution"
+            ],
+            "code": "# Set objective\nmodel.setObjective(VanPollution * NumVans + MinibusPollution * NumMinibuses, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413163219_nl4opt_prob_173/",
+    "problem_path": "data/nl4opt/prob_173/"
+}

@@ -1,0 +1,155 @@
+{
+    "background": "A parent is trying to plan the servings of two flavors of baby food, apple and carrot, to satisfy their baby's fat and folate nutritional requirements while adhering to the baby's preference for apple flavor over carrot flavor.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Units of fat in each serving of apple flavored baby food",
+            "symbol": "FatApple",
+            "value": 2,
+            "shape": [],
+            "code": "FatApple = data[\"FatApple\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of folate in each serving of apple flavored baby food",
+            "symbol": "FolateApple",
+            "value": 5,
+            "shape": [],
+            "code": "FolateApple = data[\"FolateApple\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of fat in each serving of carrot flavored baby food",
+            "symbol": "FatCarrot",
+            "value": 4,
+            "shape": [],
+            "code": "FatCarrot = data[\"FatCarrot\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of folate in each serving of carrot flavored baby food",
+            "symbol": "FolateCarrot",
+            "value": 3,
+            "shape": [],
+            "code": "FolateCarrot = data[\"FolateCarrot\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of servings of carrot flavored baby food",
+            "symbol": "MinServingsCarrot",
+            "value": 2,
+            "shape": [],
+            "code": "MinServingsCarrot = data[\"MinServingsCarrot\"] # scalar parameter"
+        },
+        {
+            "definition": "Multiplied number of apple servings compared to carrot servings",
+            "symbol": "AppleCarrotRatio",
+            "value": 3,
+            "shape": [],
+            "code": "AppleCarrotRatio = data[\"AppleCarrotRatio\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum units of folate that the baby can consume",
+            "symbol": "MaxFolate",
+            "value": 100,
+            "shape": [],
+            "code": "MaxFolate = data[\"MaxFolate\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Number of servings of apple flavored baby food is non-negative",
+            "status": "coded",
+            "formulation": "\\textup{ServingsApple} \\geq 0",
+            "related_variables": [
+                "ServingsApple"
+            ],
+            "related_parameters": [],
+            "code": "model.addConstr(ServingsApple >= 0, name=\"ServingsApple_non_negative\")"
+        },
+        {
+            "description": "The number of servings of carrot flavored baby food must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{ServingsCarrot} \\geq 0",
+            "related_variables": [
+                "ServingsCarrot"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint to ensure the servings of carrot flavored baby food is non-negative\nmodel.addConstr(ServingsCarrot >= 0, name=\"ServingsCarrot_non_negative\")"
+        },
+        {
+            "description": "The baby must eat a certain ratio of apple to carrot flavored servings",
+            "status": "coded",
+            "formulation": "\\textup{ServingsApple} = \\textup{AppleCarrotRatio} \\times \\textup{ServingsCarrot}",
+            "related_variables": [
+                "ServingsApple",
+                "ServingsCarrot"
+            ],
+            "related_parameters": [
+                "AppleCarrotRatio"
+            ],
+            "code": "# Add the constraint that ServingsApple must be AppleCarrotRatio times ServingsCarrot\nmodel.addConstr(ServingsApple == AppleCarrotRatio * ServingsCarrot, name=\"apple_to_carrot_ratio\")"
+        },
+        {
+            "description": "The baby must eat at least MinServingsCarrot servings of carrot flavored baby food",
+            "status": "coded",
+            "formulation": "\\textup{ServingsCarrot} \\geq \\textup{MinServingsCarrot}",
+            "related_variables": [
+                "ServingsCarrot"
+            ],
+            "related_parameters": [
+                "MinServingsCarrot"
+            ],
+            "code": "# Ensure baby eats at least the minimum servings of carrot flavored baby food\nmodel.addConstr(ServingsCarrot >= MinServingsCarrot, \"min_servings_carrot\")"
+        },
+        {
+            "description": "The baby can consume at most MaxFolate units of folate from the servings of apple and carrot flavored baby food",
+            "status": "coded",
+            "formulation": "\\textup{ServingsApple} \\times \\textup{FolateApple} + \\textup{ServingsCarrot} \\times \\textup{FolateCarrot} \\leq \\textup{MaxFolate}",
+            "related_variables": [
+                "ServingsApple",
+                "ServingsCarrot"
+            ],
+            "related_parameters": [
+                "FolateApple",
+                "FolateCarrot",
+                "MaxFolate"
+            ],
+            "code": "# Add constraint for maximum units of folate that the baby can consume\nmodel.addConstr(ServingsApple * FolateApple + ServingsCarrot * FolateCarrot <= MaxFolate, \n                name=\"max_folate_intake\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of servings of apple flavored baby food",
+            "symbol": "ServingsApple",
+            "shape": [],
+            "status": "coded",
+            "code": "ServingsApple = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"ServingsApple\")"
+        },
+        {
+            "definition": "Number of servings of carrot flavored baby food",
+            "symbol": "ServingsCarrot",
+            "shape": [],
+            "status": "coded",
+            "code": "ServingsCarrot = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"ServingsCarrot\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the baby's fat intake from the servings of apple and carrot flavored baby food",
+            "status": "coded",
+            "formulation": "\\textup{Maximize} \\quad \\textup{TotalFatIntake} = \\textup{FatApple} \\times \\textup{ServingsApple} + \\textup{FatCarrot} \\times \\textup{ServingsCarrot}",
+            "related_variables": [
+                "ServingsApple",
+                "ServingsCarrot"
+            ],
+            "related_parameters": [
+                "FatApple",
+                "FatCarrot"
+            ],
+            "code": "# Set objective\nmodel.setObjective(FatApple * ServingsApple + FatCarrot * ServingsCarrot, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413110830_nl4opt_prob_114/",
+    "problem_path": "data/nl4opt/prob_114/"
+}

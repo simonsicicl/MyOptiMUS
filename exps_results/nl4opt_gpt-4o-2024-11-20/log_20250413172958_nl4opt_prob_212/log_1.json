@@ -1,0 +1,182 @@
+{
+    "background": "A man needs to meet his daily iron and calcium requirements by taking pills from two different supplements, A and B, which contain varying amounts of iron and calcium.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Units of iron in supplement A",
+            "symbol": "IronA",
+            "value": 5,
+            "shape": [],
+            "code": "IronA = data[\"IronA\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of calcium in supplement A",
+            "symbol": "CalciumA",
+            "value": 10,
+            "shape": [],
+            "code": "CalciumA = data[\"CalciumA\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of iron in supplement B",
+            "symbol": "IronB",
+            "value": 4,
+            "shape": [],
+            "code": "IronB = data[\"IronB\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of calcium in supplement B",
+            "symbol": "CalciumB",
+            "value": 15,
+            "shape": [],
+            "code": "CalciumB = data[\"CalciumB\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum daily requirement of iron",
+            "symbol": "IronReq",
+            "value": 40,
+            "shape": [],
+            "code": "IronReq = data[\"IronReq\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum daily requirement of calcium",
+            "symbol": "CalciumReq",
+            "value": 50,
+            "shape": [],
+            "code": "CalciumReq = data[\"CalciumReq\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost per pill of supplement A",
+            "symbol": "CostA",
+            "value": 2,
+            "shape": [],
+            "code": "CostA = data[\"CostA\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost per pill of supplement B",
+            "symbol": "CostB",
+            "value": 3,
+            "shape": [],
+            "code": "CostB = data[\"CostB\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of supplement A pills is non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{PillsA} \\geq 0",
+            "related_variables": [
+                "PillsA"
+            ],
+            "related_parameters": [],
+            "code": "# The variable PillsA is already defined. No additional code is needed for this constraint as non-negativity is implicitly handled by the domain of continuous variables in Gurobi."
+        },
+        {
+            "description": "The number of Supplement B pills must be non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{PillsB} \\\\geq 0",
+            "related_variables": [
+                "PillsB"
+            ],
+            "related_parameters": [],
+            "code": "# No additional code needed since the non-negativity constraint is inherently handled by the default lower bound (0) of the continuous variable PillsB during its definition."
+        },
+        {
+            "description": "The total units of iron from pills must be at least IronReq.",
+            "status": "coded",
+            "formulation": "\\\\textup{IronA} \\\\cdot \\\\textup{PillsA} + \\\\textup{IronB} \\\\cdot \\\\textup{PillsB} \\\\geq \\\\textup{IronReq}",
+            "related_variables": [
+                "PillsA",
+                "PillsB"
+            ],
+            "related_parameters": [
+                "IronA",
+                "IronB",
+                "IronReq"
+            ],
+            "code": "# Add constraint for total units of iron from pills being at least IronReq\nmodel.addConstr(IronA * PillsA + IronB * PillsB >= IronReq, name=\"iron_requirement\")"
+        },
+        {
+            "description": "The total units of calcium from pills must be at least CalciumReq. This ensures the calcium nutritional requirement is met.",
+            "status": "coded",
+            "formulation": "\\\\textup{PillsA} \\\\cdot \\\\textup{CalciumA} + \\\\textup{PillsB} \\\\cdot \\\\textup{CalciumB} \\\\geq \\\\textup{CalciumReq}",
+            "related_variables": [
+                "PillsA",
+                "PillsB"
+            ],
+            "related_parameters": [
+                "CalciumA",
+                "CalciumB",
+                "CalciumReq"
+            ],
+            "code": "# Add calcium requirement constraint\nmodel.addConstr(PillsA * CalciumA + PillsB * CalciumB >= CalciumReq, name=\"calcium_requirement\")"
+        },
+        {
+            "description": "Ensure the minimum iron requirement is met.",
+            "status": "coded",
+            "formulation": "\\\\textup{IronA} \\\\cdot \\\\textup{PillsA} + \\\\textup{IronB} \\\\cdot \\\\textup{PillsB} \\\\geq \\\\textup{IronReq}",
+            "related_variables": [
+                "PillsA",
+                "PillsB"
+            ],
+            "related_parameters": [
+                "IronA",
+                "IronB",
+                "IronReq"
+            ],
+            "code": "# Ensure the minimum iron requirement is met\nmodel.addConstr(IronA * PillsA + IronB * PillsB >= IronReq, name=\"min_iron_requirement\")"
+        },
+        {
+            "description": "Ensure the minimum calcium requirement is met.",
+            "status": "coded",
+            "formulation": "\\\\textup{CalciumA} \\\\cdot \\\\textup{PillsA} + \\\\textup{CalciumB} \\\\cdot \\\\textup{PillsB} \\\\geq \\\\textup{CalciumReq}",
+            "related_variables": [
+                "PillsA",
+                "PillsB"
+            ],
+            "related_parameters": [
+                "CalciumA",
+                "CalciumB",
+                "CalciumReq"
+            ],
+            "code": "# Add constraint to ensure the minimum calcium requirement is met\nmodel.addConstr(CalciumA * PillsA + CalciumB * PillsB >= CalciumReq, name=\"min_calcium_requirement\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of Supplement A pills taken per day.",
+            "symbol": "PillsA",
+            "shape": [],
+            "status": "coded",
+            "code": "PillsA = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"PillsA\")"
+        },
+        {
+            "definition": "The number of Supplement B pills taken per day.",
+            "symbol": "PillsB",
+            "shape": [],
+            "status": "coded",
+            "code": "PillsB = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"PillsB\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total cost of purchasing pills of supplements A and B.",
+            "status": "coded",
+            "formulation": "\\\\textup{Minimize:} \\\\quad \\\\textup{CostA} \\\\cdot \\\\textup{PillsA} + \\\\textup{CostB} \\\\cdot \\\\textup{PillsB}",
+            "related_variables": [
+                "PillsA",
+                "PillsB"
+            ],
+            "related_parameters": [
+                "CostA",
+                "CostB"
+            ],
+            "code": "# Set objective\nmodel.setObjective(CostA * PillsA + CostB * PillsB, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413172958_nl4opt_prob_212/",
+    "problem_path": "data/nl4opt/prob_212/"
+}

@@ -1,0 +1,178 @@
+{
+    "background": "The government is planning to revamp the water transportation system by deciding on a distribution of wide and narrow pipes to deliver a minimum amount of water to houses in the area.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Capacity of water transported by wide pipes per minute",
+            "symbol": "WidePipeCapacity",
+            "value": 25,
+            "shape": [],
+            "code": "WidePipeCapacity = data[\"WidePipeCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Capacity of water transported by narrow pipes per minute",
+            "symbol": "NarrowPipeCapacity",
+            "value": 15,
+            "shape": [],
+            "code": "NarrowPipeCapacity = data[\"NarrowPipeCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of wide pipes as a fraction of narrow pipes",
+            "symbol": "MaxWideToNarrowRatio",
+            "value": 0.33,
+            "shape": [],
+            "code": "MaxWideToNarrowRatio = data[\"MaxWideToNarrowRatio\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum total units of water to be transported every minute",
+            "symbol": "MinTotalWater",
+            "value": 900,
+            "shape": [],
+            "code": "MinTotalWater = data[\"MinTotalWater\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of wide pipes to be used",
+            "symbol": "MinWidePipes",
+            "value": 5,
+            "shape": [],
+            "code": "MinWidePipes = data[\"MinWidePipes\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of wide pipes must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberWidePipes} \\geq 0",
+            "related_variables": [
+                "NumberWidePipes"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint to ensure the number of wide pipes is non-negative\nmodel.addConstr(NumberWidePipes >= 0, name=\"non_negative_wide_pipes\")"
+        },
+        {
+            "description": "The number of narrow pipes used in the water transportation system must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberNarrowPipes} \\geq 0",
+            "related_variables": [
+                "NumberNarrowPipes"
+            ],
+            "related_parameters": [],
+            "code": "# Since NumberNarrowPipes is already ensured to be an integer variable, adding the non-negative constraint\nmodel.addConstr(NumberNarrowPipes >= 0, name=\"non_negativity_NumberNarrowPipes\")"
+        },
+        {
+            "description": "The number of wide pipes should be at most MaxWideToNarrowRatio times the number of narrow pipes",
+            "status": "coded",
+            "formulation": "\\textup{NumberWidePipes} \\leq \\textup{MaxWideToNarrowRatio} \\times \\textup{NumberNarrowPipes}",
+            "related_variables": [
+                "NumberWidePipes",
+                "NumberNarrowPipes"
+            ],
+            "related_parameters": [
+                "MaxWideToNarrowRatio"
+            ],
+            "code": "# Add constraint for the ratio of wide to narrow pipes\nmodel.addConstr(NumberWidePipes <= MaxWideToNarrowRatio * NumberNarrowPipes, \"wide_to_narrow_ratio\")"
+        },
+        {
+            "description": "At least MinTotalWater units of water must be transported every minute by the combination of wide and narrow pipes",
+            "status": "coded",
+            "formulation": "\\textup{NumberWidePipes} \\times \\textup{WidePipeCapacity} + \\textup{NumberNarrowPipes} \\times \\textup{NarrowPipeCapacity} \\geq \\textup{MinTotalWater}",
+            "related_variables": [
+                "NumberWidePipes",
+                "NumberNarrowPipes"
+            ],
+            "related_parameters": [
+                "WidePipeCapacity",
+                "NarrowPipeCapacity",
+                "MinTotalWater"
+            ],
+            "code": "# Add water transportation capacity constraint\nmodel.addConstr(NumberWidePipes * WidePipeCapacity + NumberNarrowPipes * NarrowPipeCapacity >= MinTotalWater, name=\"min_total_water\")"
+        },
+        {
+            "description": "At least MinWidePipes wide pipes must be used",
+            "status": "coded",
+            "formulation": "\\textup{NumberWidePipes} \\geq \\textup{MinWidePipes}",
+            "related_variables": [
+                "NumberWidePipes"
+            ],
+            "related_parameters": [
+                "MinWidePipes"
+            ],
+            "code": "# Add constraint for the minimum number of wide pipes\nmodel.addConstr(NumberWidePipes >= MinWidePipes, name=\"min_wide_pipes\")"
+        },
+        {
+            "description": "Ensure that the number of wide pipes does not exceed 0.33 times the number of narrow pipes",
+            "status": "coded",
+            "formulation": "\\textup{NumberWidePipes} \\leq \\textup{MaxWideToNarrowRatio} \\times \\textup{NumberNarrowPipes}",
+            "related_variables": [
+                "NumberWidePipes",
+                "NumberNarrowPipes"
+            ],
+            "related_parameters": [
+                "MaxWideToNarrowRatio"
+            ],
+            "code": "# Ensure that the number of wide pipes does not exceed 0.33 times the number of narrow pipes\nmodel.addConstr(NumberWidePipes <= MaxWideToNarrowRatio * NumberNarrowPipes, name=\"wide_to_narrow_pipe_ratio\")"
+        },
+        {
+            "description": "Ensure that the minimum total amount of water is transported",
+            "status": "coded",
+            "formulation": "\\textup{NumberWidePipes} \\times \\textup{WidePipeCapacity} + \\textup{NumberNarrowPipes} \\times \\textup{NarrowPipeCapacity} \\geq \\textup{MinTotalWater}",
+            "related_variables": [
+                "NumberWidePipes",
+                "NumberNarrowPipes"
+            ],
+            "related_parameters": [
+                "WidePipeCapacity",
+                "NarrowPipeCapacity",
+                "MinTotalWater"
+            ],
+            "code": "# Ensure that the minimum total amount of water is transported\nmodel.addConstr(NumberWidePipes * WidePipeCapacity + NumberNarrowPipes * NarrowPipeCapacity >= MinTotalWater, name=\"min_total_water_constraint\")"
+        },
+        {
+            "description": "Ensure that at least the minimum number of wide pipes are used",
+            "status": "coded",
+            "formulation": "\\textup{NumberWidePipes} \\geq \\textup{MinWidePipes}",
+            "related_variables": [
+                "NumberWidePipes"
+            ],
+            "related_parameters": [
+                "MinWidePipes"
+            ],
+            "code": "# Ensure that at least the minimum number of wide pipes are used\nmodel.addConstr(NumberWidePipes >= MinWidePipes, name=\"min_wide_pipes_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of wide pipes used in the water transportation system",
+            "symbol": "NumberWidePipes",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberWidePipes = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberWidePipes\")"
+        },
+        {
+            "definition": "Number of narrow pipes used in the water transportation system",
+            "symbol": "NumberNarrowPipes",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberNarrowPipes = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberNarrowPipes\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of wide and narrow pipes required",
+            "status": "coded",
+            "formulation": "\\textup{Minimize} \\quad \\textup{NumberWidePipes} + \\textup{NumberNarrowPipes}",
+            "related_variables": [
+                "NumberWidePipes",
+                "NumberNarrowPipes"
+            ],
+            "related_parameters": [],
+            "code": "# Define objective function\nmodel.setObjective(NumberWidePipes + NumberNarrowPipes, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413163719_nl4opt_prob_225/",
+    "problem_path": "data/nl4opt/prob_225/"
+}

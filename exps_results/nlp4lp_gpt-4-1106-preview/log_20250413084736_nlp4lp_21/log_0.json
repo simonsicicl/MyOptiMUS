@@ -1,0 +1,209 @@
+{
+    "background": "A company with multiple machines and product lines seeks to maximize profit while managing manufacturing, maintenance, storage, and inventory constraints.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of machines",
+            "symbol": "M",
+            "value": "",
+            "shape": [],
+            "code": "M = data[\"M\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit for product k",
+            "symbol": "Profit",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "Profit = np.array(data[\"Profit\"]) # ['K']"
+        },
+        {
+            "definition": "Time taken by product k on machine m",
+            "symbol": "Time",
+            "value": "",
+            "shape": [
+                "K",
+                "M"
+            ],
+            "code": "Time = np.array(data[\"Time\"]) # ['K', 'M']"
+        },
+        {
+            "definition": "Maintenance time for machine m in time period i",
+            "symbol": "Maintain",
+            "value": "",
+            "shape": [
+                "I",
+                "M"
+            ],
+            "code": "Maintain = np.array(data[\"Maintain\"]) # ['I', 'M']"
+        },
+        {
+            "definition": "Limit of storing product k for time period i",
+            "symbol": "Limit",
+            "value": "",
+            "shape": [
+                "K",
+                "I"
+            ],
+            "code": "Limit = np.array(data[\"Limit\"]) # ['K', 'I']"
+        },
+        {
+            "definition": "Price for storing products",
+            "symbol": "StorePrice",
+            "value": 0.33,
+            "shape": [],
+            "code": "StorePrice = data[\"StorePrice\"] # scalar parameter"
+        },
+        {
+            "definition": "Quantity of product k to keep",
+            "symbol": "KeepQuantity",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "KeepQuantity = np.array(data[\"KeepQuantity\"]) # ['K']"
+        },
+        {
+            "definition": "Number of working hours",
+            "symbol": "WorkHours",
+            "value": "",
+            "shape": [],
+            "code": "WorkHours = data[\"WorkHours\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Each machine can operate up to WorkHours per time period, taking into account the time taken by product k on machine m and the maintenance time for machine m in time period i",
+            "status": "formulated",
+            "formulation": "\\sum_{k=1}^{K} \\textup{ProductionQuantity}_{ikm} \\times \\textup{Time}_{km} + \\textup{Maintain}_{im} \\leq \\textup{WorkHours}",
+            "related_variables": [
+                "ProductionQuantity"
+            ],
+            "related_parameters": [
+                "Time",
+                "Maintain",
+                "WorkHours"
+            ]
+        },
+        {
+            "description": "Storage limit for product k in time period i must not be exceeded",
+            "status": "formulated",
+            "formulation": "\\sum_{m=1}^{\\textup{M}} \\textup{ProductionQuantity}_{i, k, m} \\leq \\textup{Limit}_{k, i} \\quad \\forall i \\in \\{1, \\ldots, I\\}, k \\in \\{1, \\ldots, K\\}",
+            "related_variables": [
+                "ProductionQuantity"
+            ],
+            "related_parameters": [
+                "M",
+                "Limit"
+            ]
+        },
+        {
+            "description": "Each machine can either be used or not, and the total number of machines used cannot exceed M",
+            "status": "formulated",
+            "formulation": "\\sum_{m=1}^{M} \\textup{MachineUsed}_{m} \\leq M",
+            "related_variables": [
+                "MachineUsed"
+            ],
+            "related_parameters": [
+                "M"
+            ]
+        },
+        {
+            "description": "Maintenance, manufacturing, and storage times must fit within the available WorkHours for each machine and time period",
+            "status": "formulated",
+            "formulation": "\\forall m \\in M, i \\in I: \\quad \\sum_{k \\in K} (\\textup{Time}_{km} \\cdot \\textup{ProductionQuantity}_{ikm}) + \\textup{Maintain}_{im} \\leq \\textup{WorkHours}",
+            "related_variables": [
+                "ProductionQuantity",
+                "Maintain"
+            ],
+            "related_parameters": [
+                "Time",
+                "WorkHours"
+            ]
+        },
+        {
+            "description": "Non-negative production and storage constraints for all products, machines, and time periods",
+            "status": "formulated",
+            "formulation": "\\forall i \\in I, \\quad \\forall k \\in K, \\quad \\forall m \\in M, \\quad \\textup{ProductionQuantity}_{i,k,m} \\geq 0",
+            "related_variables": [
+                "ProductionQuantity"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "ProductionQuantity represents the number of units of product k produced on machine m in time period i",
+            "status": "formulated",
+            "formulation": "\\textup{ProductionQuantity}_{ikm} \\geq 0 \\quad \\forall i, k, m",
+            "related_variables": [
+                "ProductionQuantity"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Introduce auxiliary binary variable MachineUsed for each machine to indicate if it is used (1) or not (0)",
+            "status": "formulated",
+            "formulation": "\\textup{MachineUsed}_{m} = \\begin{cases} 1, & \\textup{if }\\quad  \\exists i,\\quad \\exists k,\\quad \\textup{ProductionQuantity}_{i,k,m} > 0 \\\\ 0, & \\textup{otherwise} \\end{cases}",
+            "related_variables": [
+                "MachineUsed",
+                "ProductionQuantity"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Ensure the production does not exceed the machine's working hours accounting for maintenance",
+            "status": "formulated",
+            "formulation": "\\textup{WorkHours}_i \\geq \\sum_{k \\in K}(\\textup{Time}_{k,m} \\times \\textup{ProductionQuantity}_{i,k,m} + \\textup{Maintain}_{i,m})",
+            "related_variables": [
+                "ProductionQuantity",
+                "MachineUsed"
+            ],
+            "related_parameters": [
+                "WorkHours",
+                "Time",
+                "Maintain"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of units of product k produced on machine m in time period i",
+            "symbol": "ProductionQuantity",
+            "shape": [
+                "I",
+                "K",
+                "M"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "Binary variable indicating if machine m is utilized",
+            "symbol": "MachineUsed",
+            "shape": [
+                "M"
+            ],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the company's profit from selling its products while minimizing storage costs",
+            "status": "formulated",
+            "formulation": "\\textup{Maximize} \\quad \\sum_{i \\in I}\\sum_{k \\in K}\\sum_{m \\in M} (\\textup{Profit}_k \\times \\textup{ProductionQuantity}_{i,k,m}) - \\textup{StorePrice} \\times \\left(\\sum_{i \\in I}\\sum_{k \\in K}(\\textup{ProductionQuantity}_{i,k} - \\textup{KeepQuantity}_k)^+\\right)",
+            "related_variables": [
+                "ProductionQuantity"
+            ],
+            "related_parameters": [
+                "Profit",
+                "StorePrice",
+                "KeepQuantity"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413084736_nlp4lp_21/",
+    "problem_path": "data/nlp4lp/21/"
+}

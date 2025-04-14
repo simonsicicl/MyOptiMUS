@@ -1,0 +1,234 @@
+{
+    "background": "The company is looking to determine the optimal combination of different alloys to use in the production of various steel types to maximize profit. There are constraints related to the availability, composition, and cost of the alloys, as well as the composition and selling price of the steel types produced.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Total number of different alloys",
+            "symbol": "A",
+            "value": "",
+            "shape": [],
+            "code": "A = data[\"A\"] # scalar parameter"
+        },
+        {
+            "definition": "Total number of different steel types",
+            "symbol": "S",
+            "value": "",
+            "shape": [],
+            "code": "S = data[\"S\"] # scalar parameter"
+        },
+        {
+            "definition": "Available amount of alloy a",
+            "symbol": "AvailableAlloy",
+            "value": "",
+            "shape": [
+                "A"
+            ],
+            "code": "AvailableAlloy = np.array(data[\"AvailableAlloy\"]) # ['A']"
+        },
+        {
+            "definition": "Carbon content of alloy a",
+            "symbol": "CarbonContent",
+            "value": "",
+            "shape": [
+                "A"
+            ],
+            "code": "CarbonContent = np.array(data[\"CarbonContent\"]) # ['A']"
+        },
+        {
+            "definition": "Nickel content of alloy a",
+            "symbol": "NickelContent",
+            "value": "",
+            "shape": [
+                "A"
+            ],
+            "code": "NickelContent = np.array(data[\"NickelContent\"]) # ['A']"
+        },
+        {
+            "definition": "Price of alloy a",
+            "symbol": "AlloyPrice",
+            "value": "",
+            "shape": [
+                "A"
+            ],
+            "code": "AlloyPrice = np.array(data[\"AlloyPrice\"]) # ['A']"
+        },
+        {
+            "definition": "Price of steel type s",
+            "symbol": "SteelPrice",
+            "value": "",
+            "shape": [
+                "S"
+            ],
+            "code": "SteelPrice = np.array(data[\"SteelPrice\"]) # ['S']"
+        },
+        {
+            "definition": "Minimum required carbon content for steel type s",
+            "symbol": "CarbonMin",
+            "value": "",
+            "shape": [
+                "S"
+            ],
+            "code": "CarbonMin = np.array(data[\"CarbonMin\"]) # ['S']"
+        },
+        {
+            "definition": "Maximum allowed nickel content for steel type s",
+            "symbol": "NickelMax",
+            "value": "",
+            "shape": [
+                "S"
+            ],
+            "code": "NickelMax = np.array(data[\"NickelMax\"]) # ['S']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "For each alloy, the amount used is non-negative and cannot exceed the available amount.",
+            "status": "coded",
+            "formulation": "\\forall a \\in \\{1, 2, ..., A\\}, \\quad 0 \\leq \\textup{AlloyUsed}[a] \\leq \\textup{AvailableAlloy}[a]",
+            "related_variables": [
+                "AlloyUsed"
+            ],
+            "related_parameters": [
+                "AvailableAlloy",
+                "A"
+            ],
+            "code": "# Add constraints for non-negativity and usage limit of each alloy\nfor a in range(A):\n    model.addConstr(AlloyUsed[a] >= 0, name=f\"non_negativity_alloy_{a}\")\n    model.addConstr(AlloyUsed[a] <= AvailableAlloy[a], name=f\"usage_limit_alloy_{a}\")"
+        },
+        {
+            "description": "Ensure that the carbon content in each steel type s meets the minimum requirement CarbonMin[s]",
+            "status": "coded",
+            "formulation": "\\sum_{a=1}^{\\textup{A}} \\textup{AlloyUsed}_{a, s} \\times \\textup{CarbonContent}_a \\geq \\textup{SteelProduced}_s \\times \\textup{CarbonMin}_s, \\quad \\forall s \\in \\{1, \\dots, \\textup{S}\\}",
+            "related_variables": [
+                "AlloyUsed",
+                "SteelProduced"
+            ],
+            "related_parameters": [
+                "CarbonContent",
+                "CarbonMin"
+            ],
+            "code": "# Add carbon content constraints for each steel type\nfor s in range(S):\n    model.addConstr(\n        gp.quicksum(AlloyUsed[a, s] * CarbonContent[a] for a in range(A)) >= SteelProduced[s] * CarbonMin[s],\n        name=f\"carbon_content_minimum_s{s}\"\n    )"
+        },
+        {
+            "description": "The nickel content in each steel type s must not exceed NickelMax[s]",
+            "status": "coded",
+            "formulation": "\\sum_{a=1}^{\\textup{A}} \\textup{NickelContent}[a] \\cdot \\textup{AlloyUsedForSteel}[a,s] \\leq \\textup{NickelMax}[s], \\quad \\forall s \\in \\{1, \\dots, \\textup{S}\\}",
+            "related_variables": [
+                "AlloyUsedForSteel"
+            ],
+            "related_parameters": [
+                "NickelContent",
+                "NickelMax"
+            ],
+            "code": "# Add constraints to ensure nickel content in each steel type does not exceed NickelMax\nfor s in range(S):\n    model.addConstr(\n        gp.quicksum(NickelContent[a] * AlloyUsedForSteel[a, s] for a in range(A)) <= NickelMax[s],\n        name=f\"nickel_content_steel_{s}\"\n    )"
+        },
+        {
+            "description": "The overall materials used cannot exceed the total available amount for each alloy",
+            "status": "coded",
+            "formulation": "\\sum_{s=1}^{S} \\textup{AlloyUsedForSteel}_{a,s} \\leq \\textup{AvailableAlloy}_{a}, \\quad \\forall a \\in \\{1, \\dots, A\\}",
+            "related_variables": [
+                "AlloyUsedForSteel"
+            ],
+            "related_parameters": [
+                "AvailableAlloy",
+                "A",
+                "S"
+            ],
+            "code": "# Add constraints to ensure the total materials used do not exceed available amounts for each alloy\nfor a in range(A):\n    model.addConstr(\n        gp.quicksum(AlloyUsedForSteel[a, s] for s in range(S)) <= AvailableAlloy[a],\n        name=f\"AlloyUsageLimit_{a}\"\n    )"
+        },
+        {
+            "description": "For each steel type s, the amount produced is non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{SteelProduced}_s \\geq 0, \\quad \\forall \\, s \\in S",
+            "related_variables": [
+                "SteelProduced"
+            ],
+            "related_parameters": [],
+            "code": "# Add non-negativity constraints for SteelProduced\nfor s in S:\n    model.addConstr(SteelProduced[s] >= 0, name=f\"non_negativity_steelprod_{s}\")"
+        },
+        {
+            "description": "Define the total production of each steel type s as the sum of all alloys used in its production",
+            "status": "coded",
+            "formulation": "\\textup{SteelProduced}_s = \\sum_{a=1}^{\\textup{A}} \\textup{AlloyUsed}_{a, s}, \\quad \\forall s \\in \\{1, \\dots, \\textup{S}\\}",
+            "related_variables": [
+                "AlloyUsed",
+                "SteelProduced"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraints to define the total production of each steel type\nfor s in range(S):\n    model.addConstr(SteelProduced[s] == gp.quicksum(AlloyUsed[a, s] for a in range(A)), name=f\"SteelProduction_def_{s}\")"
+        },
+        {
+            "description": "Ensures that the total amount of alloy a used across all steel types does not exceed the total available amount of alloy a",
+            "status": "coded",
+            "formulation": "\\sum_{s=1}^{\\textup{S}} \\textup{AlloyUsedForSteel}[a,s] \\leq \\textup{AlloyUsed}[a], \\quad \\forall a \\in \\{1, \\dots, \\textup{A}\\}",
+            "related_variables": [
+                "AlloyUsed",
+                "AlloyUsedForSteel"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraints to ensure total alloy usage across all steel types does not exceed the available amount\nfor a in range(A):\n    model.addConstr(gp.quicksum(AlloyUsedForSteel[a, s] for s in range(S)) <= AlloyUsed[a], name=f\"alloy_usage_{a}\")"
+        },
+        {
+            "description": "Ensure that total alloy used (AlloyUsed_a) equals the sum of the alloy used in the production of all steel types.",
+            "status": "coded",
+            "formulation": "\\textup{AlloyUsed}_{a} = \\sum_{s=1}^{S} \\textup{AlloyUsedForSteel}_{a,s} \\quad \\forall a=1, ..., A",
+            "related_variables": [
+                "AlloyUsed",
+                "AlloyUsedForSteel"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraints to ensure total alloy used equals the sum of alloy used in production of all steel types\nfor a in range(A):\n    model.addConstr(AlloyUsed[a] == gp.quicksum(AlloyUsedForSteel[a, s] for s in range(S)), name=f\"alloy_usage_balance_a{a}\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The amount of alloy a used in production",
+            "symbol": "AlloyUsed",
+            "shape": [
+                "A"
+            ],
+            "status": "coded",
+            "code": "AlloyUsed = model.addVars(A, vtype=gp.GRB.CONTINUOUS, name=\"AlloyUsed\")"
+        },
+        {
+            "definition": "The total amount of steel type s produced",
+            "symbol": "SteelProduced",
+            "shape": [
+                "S"
+            ],
+            "status": "coded",
+            "code": "SteelProduced = model.addVars(S, vtype=gp.GRB.CONTINUOUS, name=\"SteelProduced\")"
+        },
+        {
+            "definition": "The amount of alloy a used in the production of steel type s",
+            "symbol": "AlloyUsedForSteel",
+            "shape": [
+                "A",
+                "S"
+            ],
+            "status": "coded",
+            "code": "AlloyUsedForSteel = model.addVars(A, S, vtype=gp.GRB.CONTINUOUS, name=\"AlloyUsedForSteel\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize profit by considering revenue from sold steel types and subtracting the cost of used alloys.",
+            "status": "coded",
+            "formulation": "\\sum_{s=1}^{S} \\textup{SteelPrice}_{s} \\times \\textup{SteelProduced}_{s} - \\sum_{a=1}^{A} \\textup{AlloyPrice}_{a} \\times \\textup{AlloyUsed}_{a}",
+            "related_variables": [
+                "SteelProduced",
+                "AlloyUsed"
+            ],
+            "related_parameters": [
+                "SteelPrice",
+                "AlloyPrice"
+            ],
+            "code": "# Set objective\nmodel.setObjective(\n    gp.quicksum(SteelPrice[s] * SteelProduced[s] for s in range(S)) - \n    gp.quicksum(AlloyPrice[a] * AlloyUsed[a] for a in range(A)), \n    gp.GRB.MAXIMIZE\n)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413172435_nlp4lp_49/",
+    "problem_path": "data/nlp4lp/49/"
+}

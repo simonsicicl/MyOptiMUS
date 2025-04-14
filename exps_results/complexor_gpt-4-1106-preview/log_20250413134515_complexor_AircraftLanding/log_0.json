@@ -1,0 +1,159 @@
+{
+    "background": "The Aircraft Landing Problem involves scheduling aircraft to land on runways within specified time windows while adhering to separation time criteria between consecutive landings to ensure safety.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "symbol": "TotalAircrafts",
+            "definition": "The total number of aircraft in the set",
+            "shape": [],
+            "code": "TotalAircrafts = data[\"TotalAircrafts\"] # scalar parameter"
+        },
+        {
+            "symbol": "EarliestLandingTime",
+            "definition": "The earliest landing time for each aircraft",
+            "shape": [
+                "TotalAircrafts"
+            ],
+            "code": "EarliestLandingTime = np.array(data[\"EarliestLandingTime\"]) # ['TotalAircrafts']"
+        },
+        {
+            "symbol": "LatestLandingTime",
+            "definition": "The latest landing time for each aircraft",
+            "shape": [
+                "TotalAircrafts"
+            ],
+            "code": "LatestLandingTime = np.array(data[\"LatestLandingTime\"]) # ['TotalAircrafts']"
+        },
+        {
+            "symbol": "TargetLandingTime",
+            "definition": "The target landing time for each aircraft",
+            "shape": [
+                "TotalAircrafts"
+            ],
+            "code": "TargetLandingTime = np.array(data[\"TargetLandingTime\"]) # ['TotalAircrafts']"
+        },
+        {
+            "symbol": "PenaltyTimeAfterTarget",
+            "definition": "The penalty incurred for each aircraft landing after the target time",
+            "shape": [
+                "TotalAircrafts"
+            ],
+            "code": "PenaltyTimeAfterTarget = np.array(data[\"PenaltyTimeAfterTarget\"]) # ['TotalAircrafts']"
+        },
+        {
+            "symbol": "PenaltyTimeBeforeTarget",
+            "definition": "The penalty incurred for each aircraft landing before the target time",
+            "shape": [
+                "TotalAircrafts"
+            ],
+            "code": "PenaltyTimeBeforeTarget = np.array(data[\"PenaltyTimeBeforeTarget\"]) # ['TotalAircrafts']"
+        },
+        {
+            "symbol": "SeparationTimeMatrix",
+            "definition": "The required separation time between the landing of aircraft i and aircraft j",
+            "shape": [
+                "TotalAircrafts",
+                "TotalAircrafts"
+            ],
+            "code": "SeparationTimeMatrix = np.array(data[\"SeparationTimeMatrix\"]) # ['TotalAircrafts', 'TotalAircrafts']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Each aircraft must land within its predetermined time window.",
+            "status": "formulated",
+            "formulation": "\\forall i \\in \\{1, \\ldots, \\textup{TotalAircrafts}\\}, \\quad \\textup{EarliestLandingTime}_i \\leq \\textup{LandingTime}_i \\leq \\textup{LatestLandingTime}_i",
+            "related_variables": [
+                "LandingTime"
+            ],
+            "related_parameters": [
+                "EarliestLandingTime",
+                "LatestLandingTime"
+            ]
+        },
+        {
+            "description": "Maintain sufficient separation time between consecutive aircraft landings.",
+            "status": "formulated",
+            "formulation": "\\forall i, j \\in \\{1, ..., \\textup{TotalAircrafts}\\}, i \\neq j:\\\\ \\textup{LandingTime}_i + \\textup{SeparationTimeMatrix}_{i,j} \\leq \\textup{LandingTime}_j + M \\cdot (1 - \\textup{SeparationMatrix}_{i,j}) \\\\ \\textup{LandingTime}_j + \\textup{SeparationTimeMatrix}_{j,i} \\leq \\textup{LandingTime}_i + M \\cdot \\textup{SeparationMatrix}_{i,j}",
+            "related_variables": [
+                "LandingTime",
+                "SeparationMatrix"
+            ],
+            "related_parameters": [
+                "TotalAircrafts",
+                "SeparationTimeMatrix"
+            ]
+        },
+        {
+            "description": "TimeBeforeTarget and TimeAfterTarget are non-negative and represent the time each aircraft lands before or after its TargetLandingTime",
+            "status": "formulated",
+            "formulation": "\\textup{TimeBeforeTarget}_i \\geq \\textup{max}(0, \\textup{TargetLandingTime}_i - \\textup{LandingTime}_i) \\quad \\textup{and} \\quad \\textup{TimeAfterTarget}_i \\geq \\textup{max}(0, \\textup{LandingTime}_i - \\textup{TargetLandingTime}_i), \\quad \\forall i \\in \\{1, ..., \\textup{TotalAircrafts}\\}",
+            "related_variables": [
+                "TimeBeforeTarget",
+                "TimeAfterTarget",
+                "LandingTime"
+            ],
+            "related_parameters": [
+                "TargetLandingTime",
+                "TotalAircrafts"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The actual landing time for each aircraft",
+            "symbol": "LandingTime",
+            "shape": [
+                "TotalAircrafts"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "Binary variable indicating if aircraft i lands before aircraft j",
+            "symbol": "SeparationMatrix",
+            "shape": [
+                "TotalAircrafts",
+                "TotalAircrafts"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "The time aircraft i lands before its TargetLandingTime",
+            "symbol": "TimeBeforeTarget",
+            "shape": [
+                "TotalAircrafts"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "The time aircraft i lands after its TargetLandingTime",
+            "symbol": "TimeAfterTarget",
+            "shape": [
+                "TotalAircrafts"
+            ],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the sum of penalties incurred for each aircraft landing before or after its TargetLandingTime",
+            "status": "formulated",
+            "formulation": "\\textup{Minimize} \\quad \\sum_{i=1}^{\\textup{TotalAircrafts}} (\\textup{PenaltyTimeBeforeTarget}_i \\times \\textup{TimeBeforeTarget}_i + \\textup{PenaltyTimeAfterTarget}_i \\times \\textup{TimeAfterTarget}_i)",
+            "related_variables": [
+                "TimeBeforeTarget",
+                "TimeAfterTarget"
+            ],
+            "related_parameters": [
+                "TotalAircrafts",
+                "PenaltyTimeBeforeTarget",
+                "PenaltyTimeAfterTarget"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413134515_complexor_AircraftLanding/",
+    "problem_path": "data/complexor/AircraftLanding/"
+}

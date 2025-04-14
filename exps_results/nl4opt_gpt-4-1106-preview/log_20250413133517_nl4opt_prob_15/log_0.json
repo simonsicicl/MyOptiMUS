@@ -1,0 +1,186 @@
+{
+    "background": "A store employs senior citizens and young adults, who have different wages.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Wage for senior citizens per week",
+            "symbol": "WageSenior",
+            "value": 500,
+            "shape": [],
+            "code": "WageSenior = data[\"WageSenior\"] # scalar parameter"
+        },
+        {
+            "definition": "Wage for young adults per week",
+            "symbol": "WageYoung",
+            "value": 750,
+            "shape": [],
+            "code": "WageYoung = data[\"WageYoung\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum weekly wage bill",
+            "symbol": "MaxWageBill",
+            "value": 30000,
+            "shape": [],
+            "code": "MaxWageBill = data[\"MaxWageBill\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of workers required per day",
+            "symbol": "MinWorkers",
+            "value": 50,
+            "shape": [],
+            "code": "MinWorkers = data[\"MinWorkers\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of young adults required per day",
+            "symbol": "MinYoung",
+            "value": 10,
+            "shape": [],
+            "code": "MinYoung = data[\"MinYoung\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum fraction of young adults relative to senior citizens",
+            "symbol": "YoungToSeniorRatio",
+            "value": 0.33,
+            "shape": [],
+            "code": "YoungToSeniorRatio = data[\"YoungToSeniorRatio\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Total weekly wage bill for all employees must not exceed the maximum allowed wage bill",
+            "status": "formulated",
+            "formulation": "\\textup{NumSeniors} \\times \\textup{WageSenior} + \\textup{NumYoungAdults} \\times \\textup{WageYoung} \\leq \\textup{MaxWageBill}",
+            "related_variables": [
+                "NumSeniors",
+                "NumYoungAdults"
+            ],
+            "related_parameters": [
+                "WageSenior",
+                "WageYoung",
+                "MaxWageBill"
+            ]
+        },
+        {
+            "description": "Each day at least MinWorkers must be on duty",
+            "status": "formulated",
+            "formulation": "\\sum_{d=1}^{7} (\\textup{SeniorsOnDutyDay}_{d} + \\textup{YoungAdultsOnDutyDay}_{d}) \\geq 7 \\times \\textup{MinWorkers}",
+            "related_variables": [
+                "SeniorsOnDutyDay",
+                "YoungAdultsOnDutyDay"
+            ],
+            "related_parameters": [
+                "MinWorkers"
+            ]
+        },
+        {
+            "description": "Each day there must be at least a minimum number of young adults on duty",
+            "status": "formulated",
+            "formulation": "\\textup{YoungAdultsOnDutyDay}_d \\geq \\textup{MinYoung} \\quad \\forall d",
+            "related_variables": [
+                "YoungAdultsOnDutyDay"
+            ],
+            "related_parameters": [
+                "MinYoung"
+            ]
+        },
+        {
+            "description": "Young adults must be at least YoungToSeniorRatio times the number of senior citizens",
+            "status": "formulated",
+            "formulation": "\\textup{NumYoungAdults} \\geq \\textup{YoungToSeniorRatio} \\times \\textup{NumSeniors}",
+            "related_variables": [
+                "NumYoungAdults",
+                "NumSeniors"
+            ],
+            "related_parameters": [
+                "YoungToSeniorRatio"
+            ]
+        },
+        {
+            "description": "The number of senior citizens employed per week must be non-negative",
+            "status": "formulated",
+            "formulation": "\\textup{NumSeniors} \\geq 0",
+            "related_variables": [
+                "NumSeniors"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "The number of young adults employed per week must be non-negative",
+            "status": "formulated",
+            "formulation": "\\textup{NumYoungAdults} \\geq 0",
+            "related_variables": [
+                "NumYoungAdults"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "The number of senior citizens employed per week must be an integer.",
+            "status": "formulated",
+            "formulation": "\\textup{NumSeniors} \\in \\mathbb{Z}",
+            "related_variables": [
+                "NumSeniors"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "The number of young adults employed per week must be an integer.",
+            "status": "formulated",
+            "formulation": "\\textup{NumYoungAdults} \\in \\mathbb{Z}",
+            "related_variables": [
+                "NumYoungAdults"
+            ],
+            "related_parameters": []
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of senior citizens employed per week",
+            "symbol": "NumSeniors",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "Number of young adults employed per week",
+            "symbol": "NumYoungAdults",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "Number of senior citizens on duty on day d",
+            "symbol": "SeniorsOnDutyDay",
+            "shape": [
+                "d"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "Number of young adults on duty on day d",
+            "symbol": "YoungAdultsOnDutyDay",
+            "shape": [
+                "d"
+            ],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the weekly wage bill for the store, based on the number of senior citizens and young adults employed per week and their respective wages.",
+            "status": "formulated",
+            "formulation": "Minimize: \\textup{WageSenior} \\times \\textup{NumSeniors} + \\textup{WageYoung} \\times \\textup{NumYoungAdults}",
+            "related_variables": [
+                "NumSeniors",
+                "NumYoungAdults"
+            ],
+            "related_parameters": [
+                "WageSenior",
+                "WageYoung"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413133517_nl4opt_prob_15/",
+    "problem_path": "data/nl4opt/prob_15/"
+}

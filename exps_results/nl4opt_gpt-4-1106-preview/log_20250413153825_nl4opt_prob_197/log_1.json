@@ -1,0 +1,147 @@
+{
+    "background": "A fishing boat requires transportation of fish to shore while adhering to environmental rules, using a mix of canoes and diesel boats.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Capacity of a canoe to carry fish",
+            "symbol": "CanoeCapacity",
+            "value": 10,
+            "shape": [],
+            "code": "CanoeCapacity = data[\"CanoeCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Capacity of a diesel boat to carry fish",
+            "symbol": "DieselBoatCapacity",
+            "value": 15,
+            "shape": [],
+            "code": "DieselBoatCapacity = data[\"DieselBoatCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of canoes for each diesel boat",
+            "symbol": "CanoesPerDieselBoat",
+            "value": 3,
+            "shape": [],
+            "code": "CanoesPerDieselBoat = data[\"CanoesPerDieselBoat\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of fish to transport to shore",
+            "symbol": "MinimumFishToTransport",
+            "value": 1000,
+            "shape": [],
+            "code": "MinimumFishToTransport = data[\"MinimumFishToTransport\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of canoes is non-negative",
+            "status": "coded",
+            "formulation": "NumberOfCanoes \\geq 0",
+            "related_variables": [
+                "NumberOfCanoes"
+            ],
+            "related_parameters": [],
+            "code": "# Add non-negativity constraint for the number of canoes\nmodel.addConstr(NumberOfCanoes >= 0, name=\"num_canoes_non_negative\")"
+        },
+        {
+            "description": "The number of diesel boats must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfDieselBoats} \\geq 0",
+            "related_variables": [
+                "NumberOfDieselBoats"
+            ],
+            "related_parameters": [],
+            "code": "# Constraint: The number of diesel boats must be non-negative\nmodel.addConstr(NumberOfDieselBoats >= 0, name=\"non_negative_diesel_boats\")"
+        },
+        {
+            "description": "The number of canoes must be at least CanoesPerDieselBoat times the number of diesel boats",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfCanoes} \\geq \\textup{CanoesPerDieselBoat} \\times \\textup{NumberOfDieselBoats}",
+            "related_variables": [
+                "NumberOfCanoes",
+                "NumberOfDieselBoats"
+            ],
+            "related_parameters": [
+                "CanoesPerDieselBoat"
+            ],
+            "code": "# Add canoe constraint: NumberOfCanoes >= CanoesPerDieselBoat * NumberOfDieselBoats\nmodel.addConstr(NumberOfCanoes >= CanoesPerDieselBoat * NumberOfDieselBoats, name=\"canoe_constraint\")"
+        },
+        {
+            "description": "Total fish transported must be at least the minimum required",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfCanoes} \\times \\textup{CanoeCapacity} + \\textup{NumberOfDieselBoats} \\times \\textup{DieselBoatCapacity} \\geq \\textup{MinimumFishToTransport}",
+            "related_variables": [
+                "NumberOfCanoes",
+                "NumberOfDieselBoats"
+            ],
+            "related_parameters": [
+                "CanoeCapacity",
+                "DieselBoatCapacity",
+                "MinimumFishToTransport"
+            ],
+            "code": "# Total fish transported must be at least the minimum required\nmodel.addConstr(\n    NumberOfCanoes * CanoeCapacity + NumberOfDieselBoats * DieselBoatCapacity >= MinimumFishToTransport,\n    name=\"minimum_fish_transportation\"\n)"
+        },
+        {
+            "description": "Ensure the total capacity of canoes and diesel boats meets the minimum number of fish to transport to shore",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfCanoes} \\times \\textup{CanoeCapacity} + \\textup{NumberOfDieselBoats} \\times \\textup{DieselBoatCapacity} \\geq \\textup{MinimumFishToTransport}",
+            "related_variables": [
+                "NumberOfCanoes",
+                "NumberOfDieselBoats"
+            ],
+            "related_parameters": [
+                "MinimumFishToTransport",
+                "CanoeCapacity",
+                "DieselBoatCapacity"
+            ],
+            "code": "# Ensure the total capacity of canoes and diesel boats meets the minimum number of fish to transport to shore\nmodel.addConstr((NumberOfCanoes * CanoeCapacity) + (NumberOfDieselBoats * DieselBoatCapacity) >= MinimumFishToTransport, name=\"transport_capacity\")"
+        },
+        {
+            "description": "Ensure the minimum number of canoes for each diesel boat according to environmental rules",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfCanoes} \\geq \\textup{CanoesPerDieselBoat} \\times \\textup{NumberOfDieselBoats}",
+            "related_variables": [
+                "NumberOfCanoes",
+                "NumberOfDieselBoats"
+            ],
+            "related_parameters": [
+                "CanoesPerDieselBoat"
+            ],
+            "code": "# Ensure the minimum number of canoes for each diesel boat according to environmental rules\nmodel.addConstr(NumberOfCanoes >= CanoesPerDieselBoat * NumberOfDieselBoats, name=\"min_canoes_per_diesel_boat\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of canoes used for transportation",
+            "symbol": "NumberOfCanoes",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfCanoes = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfCanoes\")"
+        },
+        {
+            "definition": "The number of diesel boats used for transportation",
+            "symbol": "NumberOfDieselBoats",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfDieselBoats = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfDieselBoats\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of canoes and diesel boats needed for transportation",
+            "status": "coded",
+            "formulation": "\\textup{Minimize } \\textup{NumberOfCanoes} + \\textup{NumberOfDieselBoats}",
+            "related_variables": [
+                "NumberOfCanoes",
+                "NumberOfDieselBoats"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(NumberOfCanoes + NumberOfDieselBoats, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413153825_nl4opt_prob_197/",
+    "problem_path": "data/nl4opt/prob_197/"
+}

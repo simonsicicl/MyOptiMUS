@@ -1,0 +1,362 @@
+{
+    "background": "Lot-sizing problems involve planning production across predefined periods with events such as orders or machine set-ups affecting costs and capacity where each item's demand, production capacity, and costs vary by period.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "symbol": "NumItems",
+            "definition": "The number of distinct items",
+            "shape": [],
+            "code": "NumItems = data[\"NumItems\"] # scalar parameter"
+        },
+        {
+            "symbol": "NumPeriods",
+            "definition": "The number of predefined periods",
+            "shape": [],
+            "code": "NumPeriods = data[\"NumPeriods\"] # scalar parameter"
+        },
+        {
+            "symbol": "Demand",
+            "definition": "The demand for each item across each period",
+            "shape": [
+                "NumItems",
+                "NumPeriods"
+            ],
+            "code": "Demand = np.array(data[\"Demand\"]) # ['NumItems', 'NumPeriods']"
+        },
+        {
+            "symbol": "TotalPeriodCapacity",
+            "definition": "The total production capacity available in each period",
+            "shape": [
+                "NumPeriods"
+            ],
+            "code": "TotalPeriodCapacity = np.array(data[\"TotalPeriodCapacity\"]) # ['NumPeriods']"
+        },
+        {
+            "symbol": "ItemCapacity",
+            "definition": "The specific production capacity of each item",
+            "shape": [
+                "NumItems",
+                "NumPeriods"
+            ],
+            "code": "ItemCapacity = np.array(data[\"ItemCapacity\"]) # ['NumItems', 'NumPeriods']"
+        },
+        {
+            "symbol": "HoldingCost",
+            "definition": "The holding cost for each item",
+            "shape": [
+                "NumItems"
+            ],
+            "code": "HoldingCost = np.array(data[\"HoldingCost\"]) # ['NumItems']"
+        },
+        {
+            "symbol": "BackorderCost",
+            "definition": "The backorder cost for each item",
+            "shape": [
+                "NumItems"
+            ],
+            "code": "BackorderCost = np.array(data[\"BackorderCost\"]) # ['NumItems']"
+        },
+        {
+            "symbol": "FixedCost",
+            "definition": "The fixed order cost for each item",
+            "shape": [
+                "NumItems"
+            ],
+            "code": "FixedCost = np.array(data[\"FixedCost\"]) # ['NumItems']"
+        },
+        {
+            "symbol": "InitialStock",
+            "definition": "The initial stock for each item",
+            "shape": [
+                "NumItems"
+            ],
+            "code": "InitialStock = np.array(data[\"InitialStock\"]) # ['NumItems']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of items produced in each period must meet the demand for each item while considering stock and backorders.",
+            "status": "coded",
+            "formulation": "\\textup{StockHolding}_{i,t-1} + \\textup{ItemsProduced}_{i,t} - \\textup{StockHolding}_{i,t} + \\textup{Backordered}_{i,t} = \\textup{Demand}_{i,t} \\quad \\forall \\ i \\in \\{1, \\dots, \\textup{NumItems}\\}, \\forall \\ t \\in \\{1, \\dots, \\textup{NumPeriods}\\}",
+            "related_variables": [
+                "ItemsProduced",
+                "StockHolding",
+                "Backordered"
+            ],
+            "related_parameters": [
+                "Demand",
+                "InitialStock"
+            ],
+            "code": "# Add constraint to ensure production, stock, and backorders meet demand\nfor i in range(NumItems):\n    for t in range(NumPeriods):\n        if t == 0:\n            # First period considers initial stock\n            model.addConstr(\n                InitialStock[i] + ItemsProduced[i, t] - StockHolding[i, t] + Backordered[i, t] == Demand[i, t],\n                name=f\"demand_balance_initial_{i}_{t}\"\n            )\n        else:\n            # Subsequent periods consider stock from previous period\n            model.addConstr(\n                StockHolding[i, t - 1] + ItemsProduced[i, t] - StockHolding[i, t] + Backordered[i, t] == Demand[i, t],\n                name=f\"demand_balance_{i}_{t}\"\n            )"
+        },
+        {
+            "description": "The total production across all items for any period must not exceed the total available production capacity in that period.",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{\\textup{NumItems}} \\textup{ItemsProduced}_{i,t} \\leq \\textup{TotalPeriodCapacity}_{t}, \\quad \\forall t \\in \\{1, \\dots, \\textup{NumPeriods}\\}",
+            "related_variables": [
+                "ItemsProduced"
+            ],
+            "related_parameters": [
+                "TotalPeriodCapacity",
+                "NumItems",
+                "NumPeriods"
+            ],
+            "code": "# Add total production capacity constraints per period\nfor t in range(NumPeriods):\n    model.addConstr(\n        gp.quicksum(ItemsProduced[i, t] for i in range(NumItems)) <= TotalPeriodCapacity[t],\n        name=f\"total_production_capacity_period_{t}\"\n    )"
+        },
+        {
+            "description": "Each item's production quantity in each period cannot exceed its specific period capacity.",
+            "status": "coded",
+            "formulation": "\\textup{ItemsProduced}_{i, t} \\leq \\textup{ItemCapacity}_{i, t}, \\quad \\forall i \\in [1, \\textup{NumItems}], \\; \\forall t \\in [1, \\textup{NumPeriods}]",
+            "related_variables": [
+                "ItemsProduced"
+            ],
+            "related_parameters": [
+                "ItemCapacity"
+            ],
+            "code": "# Add production quantity constraints\nfor i in range(NumItems):\n    for t in range(NumPeriods):\n        model.addConstr(ItemsProduced[i, t] <= ItemCapacity[i, t], name=f\"production_capacity_{i}_{t}\")"
+        },
+        {
+            "description": "Non-negativity constraints on production amounts and stock quantities for all items across all periods.",
+            "status": "coded",
+            "formulation": "\\textup{ItemsProduced}_{i, t} \\geq 0 \\quad \\forall \\, i \\in \\{1, 2, \\dots, \\textup{NumItems}\\}, \\, t \\in \\{1, 2, \\dots, \\textup{NumPeriods}\\} \\\\\n\\textup{StockHolding}_{i, t} \\geq 0 \\quad \\forall \\, i \\in \\{1, 2, \\dots, \\textup{NumItems}\\}, \\, t \\in \\{1, 2, \\dots, \\textup{NumPeriods}\\}",
+            "related_variables": [
+                "ItemsProduced",
+                "StockHolding"
+            ],
+            "related_parameters": [
+                "NumItems",
+                "NumPeriods"
+            ],
+            "code": "# Adding non-negativity constraints for production amounts and stock quantities\nfor i in range(NumItems):\n    for t in range(NumPeriods):\n        model.addConstr(ItemsProduced[i, t] >= 0, name=f\"nonneg_production_{i}_{t}\")\n        model.addConstr(StockHolding[i, t] >= 0, name=f\"nonneg_stock_{i}_{t}\")"
+        },
+        {
+            "description": "The backorder costs and fixed order costs for each item are non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{BackorderCost}_{i} \\geq 0, \\quad \\forall i \\in \\{1, 2, \\ldots, \\textup{NumItems}\\} \\\\ \\textup{FixedCost}_{i} \\geq 0, \\quad \\forall i \\in \\{1, 2, \\ldots, \\textup{NumItems}\\}",
+            "related_variables": [],
+            "related_parameters": [
+                "BackorderCost",
+                "FixedCost",
+                "NumItems"
+            ],
+            "code": "# BackorderCost and FixedCost non-negativity constraints\nfor i in range(NumItems):\n    model.addConstr(BackorderCost[i] >= 0, name=f\"non_negativity_backordercost_{i}\")\n    model.addConstr(FixedCost[i] >= 0, name=f\"non_negativity_fixedcost_{i}\")"
+        },
+        {
+            "description": "Ensure that stock-holding dynamics align with production, backorders, and demand fulfillment.",
+            "status": "coded",
+            "formulation": "\\textup{StockHolding}_{i,t} = \\textup{InitialStock}_{i} + \\sum_{k=1}^{t} (\\textup{ItemsProduced}_{i,k} - \\textup{Demand}_{i,k} + \\textup{Backordered}_{i,k}) \\quad \\forall i \\in \\{1, 2, \\dots, \\textup{NumItems}\\}, \\forall t \\in \\{1, 2, \\dots, \\textup{NumPeriods}\\}",
+            "related_variables": [
+                "ItemsProduced",
+                "StockHolding",
+                "Backordered"
+            ],
+            "related_parameters": [
+                "Demand",
+                "InitialStock"
+            ],
+            "code": "# Add stock-holding dynamics constraints\nfor i in range(NumItems):\n    for t in range(NumPeriods):\n        model.addConstr(\n            StockHolding[i, t] == InitialStock[i] +\n                               gp.quicksum(ItemsProduced[i, k] - Demand[i, k] + Backordered[i, k] \n                                           for k in range(t + 1)),\n            name=f\"stock_dynamics_{i}_{t}\"\n        )"
+        },
+        {
+            "description": "Balance constraint ensuring that demand is either met by production, inventory, or results in backorder for each item and each period.",
+            "status": "coded",
+            "formulation": "\\\\textup{ItemsProduced}_{i,t} + \\\\textup{StockHolding}_{i,t-1} - \\\\textup{StockHolding}_{i,t} + \\\\textup{Backordered}_{i,t-1} - \\\\textup{Backordered}_{i,t} = \\\\textup{Demand}_{i,t}, \\\\quad \\\\forall \\\\ i=1,...,\\\\textup{NumItems}, \\\\ t=1,...,\\\\textup{NumPeriods}",
+            "related_variables": [
+                "ItemsProduced",
+                "StockHolding",
+                "Backordered"
+            ],
+            "related_parameters": [
+                "Demand"
+            ],
+            "code": "# Add balance constraints for demand satisfaction\nfor i in range(NumItems):\n    for t in range(NumPeriods):\n        model.addConstr(\n            ItemsProduced[i, t] + \n            (StockHolding[i, t-1] if t > 0 else 0) - \n            StockHolding[i, t] + \n            (Backordered[i, t-1] if t > 0 else 0) - \n            Backordered[i, t] == \n            Demand[i, t],\n            name=f\"balance_constraint_{i}_{t}\"\n        )"
+        },
+        {
+            "description": "Ensure that the binary variable OrderPlaced indicates whether an order/setup occurs, and relates logically to ItemsProduced.",
+            "status": "coded",
+            "formulation": "\\textup{ItemsProduced}_{i,t} \\leq M \\cdot \\textup{OrderPlaced}_{i,t} \\quad \\forall i \\in [1, \\textup{NumItems}], \\forall t \\in [1, \\textup{NumPeriods}],",
+            "related_variables": [
+                "ItemsProduced",
+                "OrderPlaced"
+            ],
+            "related_parameters": [
+                "NumItems",
+                "NumPeriods"
+            ],
+            "code": "# Add constraints to link ItemsProduced and OrderPlaced\nfor i in range(NumItems):\n    for t in range(NumPeriods):\n        model.addConstr(ItemsProduced[i, t] <= M * OrderPlaced[i, t], name=f\"link_OrderPlaced_ItemsProduced_{i}_{t}\")"
+        },
+        {
+            "description": "The initial stock balance constraint in period 1 incorporating the initial stock levels.",
+            "status": "coded",
+            "formulation": "\\textup{InitialStock}_{i} + \\textup{ItemsProduced}_{i,1} - \\textup{StockHolding}_{i,1} + \\textup{Backordered}_{i,1} = \\textup{Demand}_{i,1} \\quad \\forall \\ i \\in \\{1, \\dots, \\textup{NumItems}\\}",
+            "related_variables": [
+                "ItemsProduced",
+                "StockHolding",
+                "Backordered"
+            ],
+            "related_parameters": [
+                "Demand",
+                "InitialStock"
+            ],
+            "code": "# Add initial stock balance constraints for period 1\nfor i in range(NumItems):\n    model.addConstr(\n        InitialStock[i] + ItemsProduced[i, 0] - StockHolding[i, 0] + Backordered[i, 0] == Demand[i, 0],\n        name=f\"InitialStockBalance_{i}_P1\"\n    )"
+        },
+        {
+            "description": "Maximum production per item in each period must not exceed the item's production capacity.",
+            "status": "coded",
+            "formulation": "\\textup{ItemsProduced}_{i,t} \\leq \\textup{ItemCapacity}_{i,t} \\quad \\forall \\ i \\in \\{1, \\dots, \\textup{NumItems}\\}, \\forall \\ t \\in \\{1, \\dots, \\textup{NumPeriods}\\}",
+            "related_variables": [
+                "ItemsProduced"
+            ],
+            "related_parameters": [
+                "ItemCapacity"
+            ],
+            "code": "# Add production capacity constraints\nfor i in range(NumItems):\n    for t in range(NumPeriods):\n        model.addConstr(ItemsProduced[i, t] <= ItemCapacity[i, t], name=f\"production_capacity_{i}_{t}\")"
+        },
+        {
+            "description": "The total production across all items in a period must not exceed the total production capacity of the machine in that period.",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{\\textup{NumItems}} \\textup{ItemsProduced}_{i,t} \\leq \\textup{TotalPeriodCapacity}_{t} \\quad \\forall \\ t \\in \\{1, \\dots, \\textup{NumPeriods}\\}",
+            "related_variables": [
+                "ItemsProduced"
+            ],
+            "related_parameters": [
+                "TotalPeriodCapacity"
+            ],
+            "code": "# Add production capacity constraints\nfor t in range(NumPeriods):\n    model.addConstr(\n        gp.quicksum(ItemsProduced[i, t] for i in range(NumItems)) <= TotalPeriodCapacity[t],\n        name=f\"production_capacity_period_{t}\"\n    )"
+        },
+        {
+            "description": "Backordered items cannot be negative.",
+            "status": "coded",
+            "formulation": "\\textup{Backordered}_{i,t} \\geq 0 \\quad \\forall \\ i \\in \\{1, \\dots, \\textup{NumItems}\\}, \\forall \\ t \\in \\{1, \\dots, \\textup{NumPeriods}\\}",
+            "related_variables": [
+                "Backordered"
+            ],
+            "related_parameters": [],
+            "code": "# Add non-negativity constraints for backordered items\nfor i in range(NumItems):\n    for t in range(NumPeriods):\n        model.addConstr(Backordered[i, t] >= 0, name=f\"backorder_nonnegative_{i}_{t}\")"
+        },
+        {
+            "description": "Stock holding for each item cannot be negative.",
+            "status": "coded",
+            "formulation": "\\textup{StockHolding}_{i,t} \\geq 0 \\quad \\forall \\ i \\in \\{1, \\dots, \\textup{NumItems}\\}, \\forall \\ t \\in \\{1, \\dots, \\textup{NumPeriods}\\}",
+            "related_variables": [
+                "StockHolding"
+            ],
+            "related_parameters": [],
+            "code": "# Add non-negativity constraints for stock holding\nfor i in range(NumItems):\n    for t in range(NumPeriods):\n        model.addConstr(StockHolding[i, t] >= 0, name=f\"stock_non_neg_{i}_{t}\")"
+        },
+        {
+            "description": "Ensure that stock levels are non-negative at the end of any period.",
+            "status": "coded",
+            "formulation": "\\textup{StockHolding}_{i,t} \\geq 0 \\quad \\forall i \\in \\{1, 2, \\dots, \\textup{NumItems}\\}, \\forall t \\in \\{1, 2, \\dots, \\textup{NumPeriods}\\}",
+            "related_variables": [
+                "StockHolding"
+            ],
+            "related_parameters": [],
+            "code": "# Ensure that stock levels are non-negative at the end of any period\nfor i in range(NumItems):\n    for t in range(NumPeriods):\n        model.addConstr(StockHolding[i, t] >= 0, name=f\"non_negative_stock_{i}_{t}\")"
+        },
+        {
+            "description": "Initial stock and zero backorder constraints for the first period.",
+            "status": "coded",
+            "formulation": "\\\\textup{StockHolding}_{i,0} = \\\\textup{InitialStock}_{i}, \\\\quad \\\\textup{Backordered}_{i,0} = 0, \\\\quad \\\\forall \\\\ i=1,...,\\\\textup{NumItems}",
+            "related_variables": [
+                "StockHolding",
+                "Backordered"
+            ],
+            "related_parameters": [
+                "InitialStock"
+            ],
+            "code": "# Add initial stock and zero backorder constraints for the first period\nfor i in range(NumItems):\n    model.addConstr(StockHolding[i, 0] == InitialStock[i], name=f\"initial_stock_{i}\")\n    model.addConstr(Backordered[i, 0] == 0, name=f\"zero_backorder_{i}\")"
+        },
+        {
+            "description": "Non-negativity constraints for StockHolding, ItemsProduced, and Backordered in all periods.",
+            "status": "coded",
+            "formulation": "\\\\textup{StockHolding}_{i,t} \\\\geq 0, \\\\quad \\\\textup{ItemsProduced}_{i,t} \\\\geq 0, \\\\quad \\\\textup{Backordered}_{i,t} \\\\geq 0, \\\\quad \\\\forall \\\\ i=1,...,\\\\textup{NumItems}, \\\\ t=1,...,\\\\textup{NumPeriods}",
+            "related_variables": [
+                "StockHolding",
+                "ItemsProduced",
+                "Backordered"
+            ],
+            "related_parameters": [],
+            "code": "# Add non-negativity constraints for StockHolding, ItemsProduced, and Backordered\nfor i in range(NumItems):\n    for t in range(NumPeriods):\n        model.addConstr(StockHolding[i, t] >= 0, name=f\"StockHolding_nonneg_{i}_{t}\")\n        model.addConstr(ItemsProduced[i, t] >= 0, name=f\"ItemsProduced_nonneg_{i}_{t}\")\n        model.addConstr(Backordered[i, t] >= 0, name=f\"Backordered_nonneg_{i}_{t}\")"
+        },
+        {
+            "description": "If \\textup{ItemsProduced}_{i,t} > 0, then \\textup{OrderPlaced}_{i,t} must be 1.",
+            "status": "coded",
+            "formulation": "\\textup{OrderPlaced}_{i,t} \\geq \\frac{\\textup{ItemsProduced}_{i,t}}{M} \\quad \\forall i \\in [1, \\textup{NumItems}], \\forall t \\in [1, \\textup{NumPeriods}],",
+            "related_variables": [
+                "ItemsProduced",
+                "OrderPlaced"
+            ],
+            "related_parameters": [
+                "NumItems",
+                "NumPeriods"
+            ],
+            "code": "# Add constraints to ensure OrderPlaced is 1 if ItemsProduced > 0\nfor i in range(NumItems):\n    for t in range(NumPeriods):\n        model.addConstr(OrderPlaced[i, t] >= ItemsProduced[i, t] / M, name=f\"OrderPlaced_logic_{i}_{t}\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The quantity of each item produced in each period.",
+            "symbol": "ItemsProduced",
+            "shape": [
+                "NumItems",
+                "NumPeriods"
+            ],
+            "status": "coded",
+            "code": "ItemsProduced = model.addVars(NumItems, NumPeriods, vtype=gp.GRB.CONTINUOUS, name=\"ItemsProduced\")"
+        },
+        {
+            "definition": "The quantity of each item in stock at the end of each period.",
+            "symbol": "StockHolding",
+            "shape": [
+                "NumItems",
+                "NumPeriods"
+            ],
+            "status": "coded",
+            "code": "StockHolding = model.addVars(NumItems, NumPeriods, vtype=gp.GRB.CONTINUOUS, name=\"StockHolding\")"
+        },
+        {
+            "definition": "The quantity of each item backordered in each period.",
+            "symbol": "Backordered",
+            "shape": [
+                "NumItems",
+                "NumPeriods"
+            ],
+            "status": "coded",
+            "code": "Backordered = model.addVars(NumItems, NumPeriods, vtype=gp.GRB.CONTINUOUS, name=\"Backordered\")"
+        },
+        {
+            "definition": "Binary variable indicating whether an order/setup occurs for item i in period t.",
+            "symbol": "OrderPlaced",
+            "shape": [
+                "NumItems",
+                "NumPeriods"
+            ],
+            "status": "coded",
+            "code": "OrderPlaced = model.addVars(NumItems, NumPeriods, vtype=gp.GRB.BINARY, name=\"OrderPlaced\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total cost of production, including holding costs, backorder costs, and fixed order costs, while satisfying the demand for each item across all periods.",
+            "status": "coded",
+            "formulation": "\\textup{Minimize:} \\quad \\sum_{i=1}^{\\textup{NumItems}} \\sum_{t=1}^{\\textup{NumPeriods}} \\textup{HoldingCost}_{i} \\\\cdot \\textup{StockHolding}_{i,t} + \\\\ \\quad \\sum_{i=1}^{\\textup{NumItems}} \\sum_{t=1}^{\\textup{NumPeriods}} \\textup{BackorderCost}_{i} \\\\cdot \\textup{Backordered}_{i,t} + \\\\ \\quad \\sum_{i=1}^{\\textup{NumItems}} \\sum_{t=1}^{\\textup{NumPeriods}} \\textup{FixedCost}_{i} \\\\cdot \\textup{OrderPlaced}_{i,t}",
+            "related_variables": [
+                "StockHolding",
+                "Backordered",
+                "OrderPlaced"
+            ],
+            "related_parameters": [
+                "HoldingCost",
+                "BackorderCost",
+                "FixedCost"
+            ],
+            "code": "# Set objective\nmodel.setObjective(\n    gp.quicksum(\n        HoldingCost[i] * StockHolding[i, t] \n        for i in range(NumItems) \n        for t in range(NumPeriods)\n    ) \n    + gp.quicksum(\n        BackorderCost[i] * Backordered[i, t] \n        for i in range(NumItems) \n        for t in range(NumPeriods)\n    )\n    + gp.quicksum(\n        FixedCost[i] * OrderPlaced[i, t] \n        for i in range(NumItems) \n        for t in range(NumPeriods)\n    ),\n    gp.GRB.MINIMIZE\n)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413150949_complexor_SingleLevelBigBucket/",
+    "problem_path": "data/complexor/SingleLevelBigBucket/"
+}

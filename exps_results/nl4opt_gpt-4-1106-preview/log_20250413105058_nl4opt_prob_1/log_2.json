@@ -1,0 +1,201 @@
+{
+    "background": "An office supply company makes two types of printers: color printers and black and white printers.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Maximum number of color printers that can be produced per day",
+            "symbol": "MaxColor",
+            "value": 20,
+            "shape": [],
+            "code": "MaxColor = data[\"MaxColor\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of black and white printers that can be produced per day",
+            "symbol": "MaxBW",
+            "value": 30,
+            "shape": [],
+            "code": "MaxBW = data[\"MaxBW\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of printers that the paper tray installing machine can equip per day",
+            "symbol": "MaxTotal",
+            "value": 35,
+            "shape": [],
+            "code": "MaxTotal = data[\"MaxTotal\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit generated per color printer",
+            "symbol": "ProfitColor",
+            "value": 200,
+            "shape": [],
+            "code": "ProfitColor = data[\"ProfitColor\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit generated per black and white printer",
+            "symbol": "ProfitBW",
+            "value": 70,
+            "shape": [],
+            "code": "ProfitBW = data[\"ProfitBW\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of color printers must be an integer value",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfColorPrinters} \\in \\mathbb{Z}",
+            "related_variables": [
+                "NumberOfColorPrinters"
+            ],
+            "related_parameters": [],
+            "code": "# Since the variable NumberOfColorPrinters is already defined as an integer variable, no additional constraint is required for integrality."
+        },
+        {
+            "description": "Each printer type should be produced in quantities that do not exceed their respective maximums, and the total should not exceed the combined maximum.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfColorPrinters} \\leq \\textup{MaxColor} \\quad \\textup{and} \\quad \\textup{NumberOfBlackAndWhitePrinters} \\leq \\textup{MaxBW} \\quad \\textup{and} \\quad \\textup{NumberOfColorPrinters} + \\textup{NumberOfBlackAndWhitePrinters} \\leq \\textup{MaxTotal}",
+            "related_variables": [
+                "NumberOfColorPrinters",
+                "NumberOfBlackAndWhitePrinters"
+            ],
+            "related_parameters": [
+                "MaxColor",
+                "MaxBW",
+                "MaxTotal"
+            ],
+            "code": "# Constraint to ensure color printers do not exceed their maximum\nmodel.addConstr(NumberOfColorPrinters <= MaxColor, name=\"MaxColorPrintersConstraint\")\n\n# Constraint to ensure black and white printers do not exceed their maximum\nmodel.addConstr(NumberOfBlackAndWhitePrinters <= MaxBW, name=\"MaxBWPrintersConstraint\")\n\n# Constraint to ensure the total number of printers does not exceed the combined maximum\nmodel.addConstr(NumberOfColorPrinters + NumberOfBlackAndWhitePrinters <= MaxTotal, name=\"MaxTotalPrintersConstraint\")"
+        },
+        {
+            "description": "The number of color printers produced per day must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfColorPrinters} \\geq 0",
+            "related_variables": [
+                "NumberOfColorPrinters"
+            ],
+            "related_parameters": [],
+            "code": "# Since NumberOfColorPrinters is already defined as a variable, we only need to add the non-negativity constraint\nmodel.addConstr(NumberOfColorPrinters >= 0, name=\"non_negativity_color_printers\")"
+        },
+        {
+            "description": "Number of black and white printers must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfBlackAndWhitePrinters} \\geq 0",
+            "related_variables": [
+                "NumberOfBlackAndWhitePrinters"
+            ],
+            "related_parameters": [],
+            "code": "# Since NumberOfBlackAndWhitePrinters is already declared as an integer variable, we just need to add the non-negativity constraint\nmodel.addConstr(NumberOfBlackAndWhitePrinters >= 0, \"NonNegativityConstraint\")"
+        },
+        {
+            "description": "The number of color printers produced per day should not exceed the maximum allowed",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfColorPrinters} \\leq \\textup{MaxColor}",
+            "related_variables": [
+                "NumberOfColorPrinters"
+            ],
+            "related_parameters": [
+                "MaxColor"
+            ],
+            "code": "model.addConstr(NumberOfColorPrinters <= MaxColor, name=\"max_color_printers_constraint\")"
+        },
+        {
+            "description": "The company can make at most MaxBW black and white printers per day",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfBlackAndWhitePrinters} \\leq \\textup{MaxBW}",
+            "related_variables": [
+                "NumberOfBlackAndWhitePrinters"
+            ],
+            "related_parameters": [
+                "MaxBW"
+            ],
+            "code": "# Add constraint for maximum number of black and white printers produced per day\nmodel.addConstr(NumberOfBlackAndWhitePrinters <= MaxBW, \"max_black_white_printers\")"
+        },
+        {
+            "description": "The total number of printers produced per day must not exceed the maximum capacity of the paper tray installing machine",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfColorPrinters} + \\textup{NumberOfBlackAndWhitePrinters} \\leq \\textup{MaxTotal}",
+            "related_variables": [
+                "NumberOfColorPrinters",
+                "NumberOfBlackAndWhitePrinters"
+            ],
+            "related_parameters": [
+                "MaxTotal"
+            ],
+            "code": "# Total number of printers produced per day must not exceed the maximum capacity\nmodel.addConstr(NumberOfColorPrinters + NumberOfBlackAndWhitePrinters <= MaxTotal, \"capacity_constraint\")"
+        },
+        {
+            "description": "The number of color printers produced per day cannot exceed the maximum production capacity for color printers",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfColorPrinters} \\leq \\textup{MaxColor}",
+            "related_variables": [
+                "NumberOfColorPrinters"
+            ],
+            "related_parameters": [
+                "MaxColor"
+            ],
+            "code": "# Constraint: Number of color printers produced per day cannot exceed the maximum production capacity for color printers\nmodel.addConstr(NumberOfColorPrinters <= MaxColor, name=\"max_color_printer_capacity\")"
+        },
+        {
+            "description": "The number of black and white printers produced per day cannot exceed the maximum production capacity for black and white printers",
+            "status": "runtime_error",
+            "formulation": "\\textup{NumberOfBlackAndWhitePrinters} \\leq \\textup{MaxBW}",
+            "related_variables": [
+                "NumberOfBlackAndWhitePrinters"
+            ],
+            "related_parameters": [
+                "MaxBW"
+            ],
+            "code": "```"
+        },
+        {
+            "description": "The total number of printers equipped with paper trays by the installing machine per day cannot exceed its maximum capacity",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfColorPrinters} + \\textup{NumberOfBlackAndWhitePrinters} \\leq \\textup{MaxTotal}",
+            "related_variables": [
+                "NumberOfColorPrinters",
+                "NumberOfBlackAndWhitePrinters"
+            ],
+            "related_parameters": [
+                "MaxTotal"
+            ],
+            "code": "# Total number of printers equipped with paper trays per day constraint\nmodel.addConstr(NumberOfColorPrinters + NumberOfBlackAndWhitePrinters <= MaxTotal, name=\"capacity_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of color printers produced per day",
+            "symbol": "NumberOfColorPrinters",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfColorPrinters = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfColorPrinters\")"
+        },
+        {
+            "definition": "Number of black and white printers produced per day",
+            "symbol": "NumberOfBlackAndWhitePrinters",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfBlackAndWhitePrinters = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfBlackAndWhitePrinters\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total profit from the production of color and black and white printers",
+            "status": "coded",
+            "formulation": "\\max (\\textup{ProfitColor} \\times \\textup{NumberOfColorPrinters} + \\textup{ProfitBW} \\times \\textup{NumberOfBlackAndWhitePrinters})",
+            "related_variables": [
+                "NumberOfColorPrinters",
+                "NumberOfBlackAndWhitePrinters"
+            ],
+            "related_parameters": [
+                "ProfitColor",
+                "ProfitBW"
+            ],
+            "code": "# Define the objective function\nmodel.setObjective(ProfitColor * NumberOfColorPrinters + ProfitBW * NumberOfBlackAndWhitePrinters, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "runtime_error",
+    "solver_output_status": "runtime_error",
+    "error_message": "Traceback (most recent call last):\n  File \"c:\\Users\\Simon\\Desktop\\Courses\\ECE 570\\ECE570_Project\\MyOptiMUS\\evaluator.py\", line 45, in run\n    exec(last_line, local_env, local_env)\n  File \"<string>\", line 1\n    ```\n    ^\nSyntaxError: invalid syntax\n",
+    "obj_val": null,
+    "log_path": "logs/log_20250413105058_nl4opt_prob_1/",
+    "problem_path": "data/nl4opt/prob_1/",
+    "prep_code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_1/data.json\", \"r\") as f:\n    data = json.load(f)\n"
+}

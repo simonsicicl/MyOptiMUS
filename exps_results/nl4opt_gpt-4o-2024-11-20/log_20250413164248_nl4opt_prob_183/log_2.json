@@ -1,0 +1,163 @@
+{
+    "background": "A tourist spot offers transportation to the top of the mountains via hot-air balloons and gondola lifts, both of which have different capacities and pollution levels.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Capacity of one hot air balloon ride",
+            "symbol": "BalloonCapacity",
+            "value": 4,
+            "shape": [],
+            "code": "BalloonCapacity = data[\"BalloonCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Capacity of one gondola lift",
+            "symbol": "GondolaCapacity",
+            "value": 6,
+            "shape": [],
+            "code": "GondolaCapacity = data[\"GondolaCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Pollution produced by one hot air balloon ride",
+            "symbol": "BalloonPollution",
+            "value": 10,
+            "shape": [],
+            "code": "BalloonPollution = data[\"BalloonPollution\"] # scalar parameter"
+        },
+        {
+            "definition": "Pollution produced by one gondola lift",
+            "symbol": "GondolaPollution",
+            "value": 15,
+            "shape": [],
+            "code": "GondolaPollution = data[\"GondolaPollution\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of hot air balloon rides",
+            "symbol": "MaxBalloons",
+            "value": 10,
+            "shape": [],
+            "code": "MaxBalloons = data[\"MaxBalloons\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of visitors to be transported",
+            "symbol": "MinVisitors",
+            "value": 70,
+            "shape": [],
+            "code": "MinVisitors = data[\"MinVisitors\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of hot-air balloon rides must be non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{BalloonRides} \\\\geq 0",
+            "related_variables": [
+                "BalloonRides"
+            ],
+            "related_parameters": [],
+            "code": "# Ensure the number of hot-air balloon rides is non-negative\nmodel.addConstr(BalloonRides >= 0, name=\"non_negative_balloon_rides\")"
+        },
+        {
+            "description": "Number of gondola lift trips is non-negative",
+            "status": "coded",
+            "formulation": "\\textup{GondolaTrips} \\geq 0",
+            "related_variables": [
+                "GondolaTrips"
+            ],
+            "related_parameters": [],
+            "code": "# No additional code needed because Gurobi variables are non-negative by default unless explicitly defined with lower bounds less than zero."
+        },
+        {
+            "description": "The maximum number of hot-air balloon rides is limited by MaxBalloons.",
+            "status": "coded",
+            "formulation": "\\textup{BalloonRides} \\leq \\textup{MaxBalloons}",
+            "related_variables": [
+                "BalloonRides"
+            ],
+            "related_parameters": [
+                "MaxBalloons"
+            ],
+            "code": "# Add constraint to limit the number of hot-air balloon rides\nmodel.addConstr(BalloonRides <= MaxBalloons, name=\"max_balloon_rides\")"
+        },
+        {
+            "description": "Ensure that the total number of visitors transported using hot-air balloons and gondola lifts is at least MinVisitors.",
+            "status": "coded",
+            "formulation": "\\\\textup{BalloonRides} \\\\times \\\\textup{BalloonCapacity} + \\\\textup{GondolaTrips} \\\\times \\\\textup{GondolaCapacity} \\\\geq \\\\textup{MinVisitors}",
+            "related_variables": [
+                "BalloonRides",
+                "GondolaTrips"
+            ],
+            "related_parameters": [
+                "BalloonCapacity",
+                "GondolaCapacity",
+                "MinVisitors"
+            ],
+            "code": "# Add visitor transportation constraint\nmodel.addConstr(\n    BalloonRides * BalloonCapacity + GondolaTrips * GondolaCapacity >= MinVisitors,\n    name=\"visitor_transportation\"\n)"
+        },
+        {
+            "description": "Ensure the minimum number of visitors are transported",
+            "status": "coded",
+            "formulation": "\\textup{BalloonCapacity} \\times \\textup{BalloonRides} + \\textup{GondolaCapacity} \\times \\textup{GondolaTrips} \\geq \\textup{MinVisitors}",
+            "related_variables": [
+                "BalloonRides",
+                "GondolaTrips"
+            ],
+            "related_parameters": [
+                "BalloonCapacity",
+                "GondolaCapacity",
+                "MinVisitors"
+            ],
+            "code": "# Add constraint to ensure the minimum number of visitors are transported\nmodel.addConstr(\n    BalloonCapacity * BalloonRides + GondolaCapacity * GondolaTrips >= MinVisitors,\n    name=\"min_visitors_transport\"\n)"
+        },
+        {
+            "description": "Ensure that the number of hot-air balloon rides does not exceed the maximum allowed",
+            "status": "coded",
+            "formulation": "\\textup{BalloonRides} \\leq \\textup{MaxBalloons}",
+            "related_variables": [
+                "BalloonRides"
+            ],
+            "related_parameters": [
+                "MaxBalloons"
+            ],
+            "code": "# Add constraint to ensure the number of hot-air balloon rides does not exceed the maximum allowed\nmodel.addConstr(BalloonRides <= MaxBalloons, name=\"max_balloon_rides\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of hot-air balloon rides.",
+            "symbol": "BalloonRides",
+            "shape": [],
+            "status": "coded",
+            "code": "BalloonRides = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"BalloonRides\")"
+        },
+        {
+            "definition": "The number of gondola lift trips.",
+            "symbol": "GondolaTrips",
+            "shape": [],
+            "status": "coded",
+            "code": "GondolaTrips = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"GondolaTrips\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total pollution produced by hot-air balloons and gondola lifts.",
+            "status": "coded",
+            "formulation": "\\textup{Minimize: } \\quad \\textup{BalloonPollution} \\times \\textup{BalloonRides} + \\textup{GondolaPollution} \\times \\textup{GondolaTrips}",
+            "related_variables": [
+                "BalloonRides",
+                "GondolaTrips"
+            ],
+            "related_parameters": [
+                "BalloonPollution",
+                "GondolaPollution"
+            ],
+            "code": "# Set objective\nmodel.setObjective(BalloonPollution * BalloonRides + GondolaPollution * GondolaTrips, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 175.0,
+    "log_path": "logs/log_20250413164248_nl4opt_prob_183/",
+    "problem_path": "data/nl4opt/prob_183/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_183/data.json\", \"r\") as f:\n    data = json.load(f)\n\nBalloonCapacity = data[\"BalloonCapacity\"] # scalar parameter\nGondolaCapacity = data[\"GondolaCapacity\"] # scalar parameter\nBalloonPollution = data[\"BalloonPollution\"] # scalar parameter\nGondolaPollution = data[\"GondolaPollution\"] # scalar parameter\nMaxBalloons = data[\"MaxBalloons\"] # scalar parameter\nMinVisitors = data[\"MinVisitors\"] # scalar parameter\nBalloonRides = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"BalloonRides\")\nGondolaTrips = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"GondolaTrips\")\n\n# Ensure the number of hot-air balloon rides is non-negative\nmodel.addConstr(BalloonRides >= 0, name=\"non_negative_balloon_rides\")\n\n# No additional code needed because Gurobi variables are non-negative by default unless explicitly defined with lower bounds less than zero.\n\n# Add constraint to limit the number of hot-air balloon rides\nmodel.addConstr(BalloonRides <= MaxBalloons, name=\"max_balloon_rides\")\n\n# Add visitor transportation constraint\nmodel.addConstr(\n    BalloonRides * BalloonCapacity + GondolaTrips * GondolaCapacity >= MinVisitors,\n    name=\"visitor_transportation\"\n)\n\n# Add constraint to ensure the minimum number of visitors are transported\nmodel.addConstr(\n    BalloonCapacity * BalloonRides + GondolaCapacity * GondolaTrips >= MinVisitors,\n    name=\"min_visitors_transport\"\n)\n\n# Add constraint to ensure the number of hot-air balloon rides does not exceed the maximum allowed\nmodel.addConstr(BalloonRides <= MaxBalloons, name=\"max_balloon_rides\")\n\n# Set objective\nmodel.setObjective(BalloonPollution * BalloonRides + GondolaPollution * GondolaTrips, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

@@ -1,0 +1,201 @@
+{
+    "background": "A patient requires a combination of anxiety medication and anti-depressants with different effectiveness durations, subject to specific quantity requirements and ratio limits.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Time for anxiety medication to be effective",
+            "symbol": "TAnxiety",
+            "value": 3,
+            "shape": [],
+            "code": "TAnxiety = data[\"TAnxiety\"] # scalar parameter"
+        },
+        {
+            "definition": "Time for anti-depressant to be effective",
+            "symbol": "TAntiDepressant",
+            "value": 5,
+            "shape": [],
+            "code": "TAntiDepressant = data[\"TAntiDepressant\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum total units of medication required",
+            "symbol": "MinUnits",
+            "value": 100,
+            "shape": [],
+            "code": "MinUnits = data[\"MinUnits\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum units of anxiety medication required",
+            "symbol": "MinAnxiety",
+            "value": 30,
+            "shape": [],
+            "code": "MinAnxiety = data[\"MinAnxiety\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum ratio of anxiety medication units to anti-depressant units",
+            "symbol": "MaxAnxietyAntiDepressantRatio",
+            "value": 2,
+            "shape": [],
+            "code": "MaxAnxietyAntiDepressantRatio = data[\"MaxAnxietyAntiDepressantRatio\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The total units of medication (combination of anxiety medication and anti-depressants) must be at least MinUnits.",
+            "status": "coded",
+            "formulation": "\\\\textup{AnxietyMedication} + \\\\textup{AntiDepressantMedication} \\\\geq \\\\textup{MinUnits}",
+            "related_variables": [
+                "AnxietyMedication",
+                "AntiDepressantMedication"
+            ],
+            "related_parameters": [
+                "MinUnits"
+            ],
+            "code": "# Add constraint for the minimum total units of medication\nmodel.addConstr(AnxietyMedication + AntiDepressantMedication >= MinUnits, name=\"min_total_medication\")"
+        },
+        {
+            "description": "The number of anxiety medication units must be at least equal to the given minimum, MinAnxiety.",
+            "status": "coded",
+            "formulation": "\\textup{AnxietyMedication} \\geq \\textup{MinAnxiety}",
+            "related_variables": [
+                "AnxietyMedication"
+            ],
+            "related_parameters": [
+                "MinAnxiety"
+            ],
+            "code": "# Add constraint to ensure AnxietyMedication is at least MinAnxiety\nmodel.addConstr(AnxietyMedication >= MinAnxiety, name=\"min_anxiety_medication\")"
+        },
+        {
+            "description": "The quantity of anxiety medication units cannot exceed the maximum allowed ratio times the quantity of anti-depressant units.",
+            "status": "coded",
+            "formulation": "\\textup{AnxietyMedication} \\leq \\textup{MaxAnxietyAntiDepressantRatio} \\cdot \\textup{AntiDepressantMedication}",
+            "related_variables": [
+                "AnxietyMedication",
+                "AntiDepressantMedication"
+            ],
+            "related_parameters": [
+                "MaxAnxietyAntiDepressantRatio"
+            ],
+            "code": "# Add constraint linking AnxietyMedication and AntiDepressantMedication with the maximum ratio\nmodel.addConstr(AnxietyMedication <= MaxAnxietyAntiDepressantRatio * AntiDepressantMedication, name=\"max_anxiety_to_antidepressant_ratio\")"
+        },
+        {
+            "description": "The number of units of anxiety medication to be prescribed must be non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{AnxietyMedication} \\\\geq 0",
+            "related_variables": [
+                "AnxietyMedication"
+            ],
+            "related_parameters": [],
+            "code": "# No code needed, as non-negativity is inherent to the variable type (CONTINUOUS in gurobipy)"
+        },
+        {
+            "description": "The number of anti-depressant medication units prescribed must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{AntiDepressantMedication} \\geq 0",
+            "related_variables": [
+                "AntiDepressantMedication"
+            ],
+            "related_parameters": [],
+            "code": "# The non-negativity constraint is inherently satisfied as the variable AntiDepressantMedication is defined as continuous (non-negative by default)"
+        },
+        {
+            "description": "Ensure WeightedTime is calculated as the weighted average of effectiveness times based on the units of medication prescribed",
+            "status": "coded",
+            "formulation": "\\textup{WeightedTime} = \\frac{\\textup{AnxietyMedication} \\times \\textup{TAnxiety} + \\textup{AntiDepressantMedication} \\times \\textup{TAntiDepressant}}{\\textup{AnxietyMedication} + \\textup{AntiDepressantMedication}}",
+            "related_variables": [
+                "WeightedTime",
+                "AnxietyMedication",
+                "AntiDepressantMedication"
+            ],
+            "related_parameters": [
+                "TAnxiety",
+                "TAntiDepressant"
+            ],
+            "code": "# Add constraint for WeightedTime as a weighted average\nmodel.addConstr(\n    WeightedTime * (AnxietyMedication + AntiDepressantMedication) ==\n    AnxietyMedication * TAnxiety + AntiDepressantMedication * TAntiDepressant,\n    name=\"WeightedTime_calculation\"\n)"
+        },
+        {
+            "description": "Ensure the total number of medication units prescribed meets the minimum requirement",
+            "status": "coded",
+            "formulation": "\\textup{AnxietyMedication} + \\textup{AntiDepressantMedication} \\geq \\textup{MinUnits}",
+            "related_variables": [
+                "AnxietyMedication",
+                "AntiDepressantMedication"
+            ],
+            "related_parameters": [
+                "MinUnits"
+            ],
+            "code": "# Add constraint to ensure the total number of medication units prescribed meets the minimum requirement\nmodel.addConstr(AnxietyMedication + AntiDepressantMedication >= MinUnits, name=\"medication_min_requirement\")"
+        },
+        {
+            "description": "Ensure the minimum number of anxiety medication units is prescribed",
+            "status": "coded",
+            "formulation": "\\textup{AnxietyMedication} \\geq \\textup{MinAnxiety}",
+            "related_variables": [
+                "AnxietyMedication"
+            ],
+            "related_parameters": [
+                "MinAnxiety"
+            ],
+            "code": "# Add constraint to ensure minimum number of anxiety medication units are prescribed\nmodel.addConstr(AnxietyMedication >= MinAnxiety, name=\"min_anxiety_med_constraint\")"
+        },
+        {
+            "description": "Ensure the ratio of anxiety medication units to anti-depressant medication units does not exceed the maximum allowed limit",
+            "status": "coded",
+            "formulation": "\\textup{AnxietyMedication} \\leq \\textup{MaxAnxietyAntiDepressantRatio} \\times \\textup{AntiDepressantMedication}",
+            "related_variables": [
+                "AnxietyMedication",
+                "AntiDepressantMedication"
+            ],
+            "related_parameters": [
+                "MaxAnxietyAntiDepressantRatio"
+            ],
+            "code": "# Add constraint to ensure ratio of anxiety medication units to anti-depressant medication units does not exceed the maximum allowed limit\nmodel.addConstr(AnxietyMedication <= MaxAnxietyAntiDepressantRatio * AntiDepressantMedication, name=\"anxiety_to_antidepressant_ratio\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of units of anxiety medication to be prescribed.",
+            "symbol": "AnxietyMedication",
+            "shape": [],
+            "status": "coded",
+            "code": "AnxietyMedication = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"AnxietyMedication\")"
+        },
+        {
+            "definition": "The number of units of anti-depressant medication to be prescribed.",
+            "symbol": "AntiDepressantMedication",
+            "shape": [],
+            "status": "coded",
+            "code": "AntiDepressantMedication = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"AntiDepressantMedication\")"
+        },
+        {
+            "definition": "The total weighted average time for the medications to be effective",
+            "symbol": "WeightedTime",
+            "shape": [],
+            "status": "coded",
+            "code": "WeightedTime = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"WeightedTime\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total weighted time for the medication to be effective",
+            "status": "coded",
+            "formulation": "\\textup{Minimize} \\quad \\textup{WeightedTime}",
+            "related_variables": [
+                "WeightedTime",
+                "AnxietyMedication",
+                "AntiDepressantMedication"
+            ],
+            "related_parameters": [
+                "TAnxiety",
+                "TAntiDepressant"
+            ],
+            "code": "# Set objective\nmodel.setObjective(WeightedTime, gp.GRB.MINIMIZE)\n\n# Add WeightedTime expression\nmodel.addConstr(WeightedTime == TAnxiety * AnxietyMedication + TAntiDepressant * AntiDepressantMedication, \"WeightedTimeConstraint\")"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 3,
+    "error_message": null,
+    "obj_val": "infeasible",
+    "log_path": "logs/log_20250414065510_nl4opt_prob_125/",
+    "problem_path": "data/nl4opt/prob_125/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_125/data.json\", \"r\") as f:\n    data = json.load(f)\n\nTAnxiety = data[\"TAnxiety\"] # scalar parameter\nTAntiDepressant = data[\"TAntiDepressant\"] # scalar parameter\nMinUnits = data[\"MinUnits\"] # scalar parameter\nMinAnxiety = data[\"MinAnxiety\"] # scalar parameter\nMaxAnxietyAntiDepressantRatio = data[\"MaxAnxietyAntiDepressantRatio\"] # scalar parameter\nAnxietyMedication = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"AnxietyMedication\")\nAntiDepressantMedication = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"AntiDepressantMedication\")\nWeightedTime = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"WeightedTime\")\n\n# Add constraint for the minimum total units of medication\nmodel.addConstr(AnxietyMedication + AntiDepressantMedication >= MinUnits, name=\"min_total_medication\")\n\n# Add constraint to ensure AnxietyMedication is at least MinAnxiety\nmodel.addConstr(AnxietyMedication >= MinAnxiety, name=\"min_anxiety_medication\")\n\n# Add constraint linking AnxietyMedication and AntiDepressantMedication with the maximum ratio\nmodel.addConstr(AnxietyMedication <= MaxAnxietyAntiDepressantRatio * AntiDepressantMedication, name=\"max_anxiety_to_antidepressant_ratio\")\n\n# No code needed, as non-negativity is inherent to the variable type (CONTINUOUS in gurobipy)\n\n# The non-negativity constraint is inherently satisfied as the variable AntiDepressantMedication is defined as continuous (non-negative by default)\n\n# Add constraint for WeightedTime as a weighted average\nmodel.addConstr(\n    WeightedTime * (AnxietyMedication + AntiDepressantMedication) ==\n    AnxietyMedication * TAnxiety + AntiDepressantMedication * TAntiDepressant,\n    name=\"WeightedTime_calculation\"\n)\n\n# Add constraint to ensure the total number of medication units prescribed meets the minimum requirement\nmodel.addConstr(AnxietyMedication + AntiDepressantMedication >= MinUnits, name=\"medication_min_requirement\")\n\n# Add constraint to ensure minimum number of anxiety medication units are prescribed\nmodel.addConstr(AnxietyMedication >= MinAnxiety, name=\"min_anxiety_med_constraint\")\n\n# Add constraint to ensure ratio of anxiety medication units to anti-depressant medication units does not exceed the maximum allowed limit\nmodel.addConstr(AnxietyMedication <= MaxAnxietyAntiDepressantRatio * AntiDepressantMedication, name=\"anxiety_to_antidepressant_ratio\")\n\n# Set objective\nmodel.setObjective(WeightedTime, gp.GRB.MINIMIZE)\n\n# Add WeightedTime expression\nmodel.addConstr(WeightedTime == TAnxiety * AnxietyMedication + TAntiDepressant * AntiDepressantMedication, \"WeightedTimeConstraint\")\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

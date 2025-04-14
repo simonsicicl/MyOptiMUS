@@ -1,0 +1,255 @@
+{
+    "background": "A mining company needs to select which mines to operate and determine the production output to maximize profit, considering operational constraints and meeting clients' required material quality.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of mines",
+            "symbol": "K",
+            "value": 0,
+            "shape": [],
+            "code": "K = data[\"K\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of mines that can be operated in a year",
+            "symbol": "MaxWork",
+            "value": 0,
+            "shape": [],
+            "code": "MaxWork = data[\"MaxWork\"] # scalar parameter"
+        },
+        {
+            "definition": "Royalty cost for operating mine k",
+            "symbol": "Royalty",
+            "value": 0,
+            "shape": [
+                "K"
+            ],
+            "code": "Royalty = np.array(data[\"Royalty\"]) # ['K']"
+        },
+        {
+            "definition": "Production limit for mine k",
+            "symbol": "Limit",
+            "value": 0,
+            "shape": [
+                "K"
+            ],
+            "code": "Limit = np.array(data[\"Limit\"]) # ['K']"
+        },
+        {
+            "definition": "Quality of the material from mine k",
+            "symbol": "Quality",
+            "value": 0,
+            "shape": [
+                "K"
+            ],
+            "code": "Quality = np.array(data[\"Quality\"]) # ['K']"
+        },
+        {
+            "definition": "Required quality of the material for client i",
+            "symbol": "RequiredQuality",
+            "value": 0,
+            "shape": [
+                "I"
+            ],
+            "code": "RequiredQuality = np.array(data[\"RequiredQuality\"]) # ['I']"
+        },
+        {
+            "definition": "Price per unit of material sold",
+            "symbol": "Price",
+            "value": 0,
+            "shape": [],
+            "code": "Price = data[\"Price\"] # scalar parameter"
+        },
+        {
+            "definition": "Discount on the royalty cost per unit of material sold",
+            "symbol": "Discount",
+            "value": 0,
+            "shape": [],
+            "code": "Discount = data[\"Discount\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The total number of operated mines should not exceed \\textup{MaxWork}.",
+            "status": "formulated",
+            "formulation": "\\sum_{k=1}^{\\textup{K}} \\textup{OperateMine}_{k} \\leq \\textup{MaxWork}",
+            "related_variables": [
+                "OperateMine"
+            ],
+            "related_parameters": [
+                "MaxWork",
+                "K"
+            ]
+        },
+        {
+            "description": "Each mine k produces a non-negative amount of material, and production is limited to zero if the mine is not operated.",
+            "status": "formulated",
+            "formulation": "\\textup{MineProduction}_{k} \\geq 0, \\quad \\forall k \\in \\{1, 2, ..., \\textup{K}\\} \\\\ \\textup{MineProduction}_{k} \\leq \\textup{Limit}_{k} \\cdot \\textup{OperateMine}_{k}, \\quad \\forall k \\in \\{1, 2, ..., \\textup{K}\\}",
+            "related_variables": [
+                "OperateMine",
+                "MineProduction"
+            ],
+            "related_parameters": [
+                "Limit",
+                "K"
+            ]
+        },
+        {
+            "description": "Ensure that each mine's production does not exceed its production limit and is logically tied to its operation status.",
+            "status": "formulated",
+            "formulation": "\\textup{MineProduction}_{k} \\leq \\textup{Limit}_{k} \\cdot \\textup{OperateMine}_{k} \\quad \\forall \\, k \\in K",
+            "related_variables": [
+                "MineProduction",
+                "OperateMine"
+            ],
+            "related_parameters": [
+                "Limit",
+                "K"
+            ]
+        },
+        {
+            "description": "Ensure that the quality of material from each mine k assigned to a client i meets the RequiredQuality of the client.",
+            "status": "formulated",
+            "formulation": "\\textup{Quality}_{k} \\\\cdot \\\\textup{AssignMineToClient}_{k, i} \\\\geq \\\\textup{RequiredQuality}_{i} \\\\cdot \\\\textup{AssignMineToClient}_{k, i}, \\\\quad \\\\forall k, i",
+            "related_variables": [
+                "AssignMineToClient",
+                "OperateMine"
+            ],
+            "related_parameters": [
+                "Quality",
+                "RequiredQuality"
+            ]
+        },
+        {
+            "description": "Ensure that a mine can only be assigned to a client if it is operational.",
+            "status": "formulated",
+            "formulation": "\\textup{AssignMineToClient}_{k, i} \\\\leq \\\\textup{OperateMine}_{k}, \\\\quad \\\\forall k, i",
+            "related_variables": [
+                "AssignMineToClient",
+                "OperateMine"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Ensure each client is served by at least one mine.",
+            "status": "formulated",
+            "formulation": "\\\\sum_{k=1}^{K} \\\\textup{AssignMineToClient}_{k, i} \\\\geq 1, \\\\quad \\\\forall i",
+            "related_variables": [
+                "AssignMineToClient"
+            ],
+            "related_parameters": [
+                "K"
+            ]
+        },
+        {
+            "description": "The production from a mine cannot exceed its production limit.",
+            "status": "formulated",
+            "formulation": "\\textup{MineProduction}_{k} \\leq \\textup{Limit}_{k}, \\quad \\forall k \\in \\{1, ..., K\\}",
+            "related_variables": [
+                "MineProduction"
+            ],
+            "related_parameters": [
+                "Limit"
+            ]
+        },
+        {
+            "description": "A mine cannot produce material unless it is operated.",
+            "status": "formulated",
+            "formulation": "\\textup{MineProduction}_{k} \\leq \\textup{Limit}_{k} \\cdot \\textup{OperateMine}_{k}, \\quad \\forall k \\in \\{1, ..., K\\}",
+            "related_variables": [
+                "MineProduction",
+                "OperateMine"
+            ],
+            "related_parameters": [
+                "Limit"
+            ]
+        },
+        {
+            "description": "The total number of operated mines cannot exceed the maximum allowed.",
+            "status": "formulated",
+            "formulation": "\\sum_{k=1}^{K} \\textup{OperateMine}_{k} \\leq \\textup{MaxWork}",
+            "related_variables": [
+                "OperateMine"
+            ],
+            "related_parameters": [
+                "MaxWork"
+            ]
+        },
+        {
+            "description": "The quality of material from a mine assigned to a client must meet the client's required quality.",
+            "status": "formulated",
+            "formulation": "\\textup{Quality}_{k} \\cdot \\textup{AssignMineToClient}_{k,i} \\geq \\textup{RequiredQuality}_{i} \\cdot \\textup{AssignMineToClient}_{k,i}, \\quad \\forall k \\in \\{1,...,K\\}, \\forall i \\in \\{1,...,I\\}",
+            "related_variables": [
+                "AssignMineToClient"
+            ],
+            "related_parameters": [
+                "Quality",
+                "RequiredQuality",
+                "I",
+                "K"
+            ]
+        },
+        {
+            "description": "A mine can only be assigned to a client if it is operated.",
+            "status": "formulated",
+            "formulation": "\\sum_{i=1}^{I} \\textup{AssignMineToClient}_{k,i} \\leq \\textup{OperateMine}_{k}, \\quad \\forall k \\in \\{1, ..., K\\}",
+            "related_variables": [
+                "AssignMineToClient",
+                "OperateMine"
+            ],
+            "related_parameters": [
+                "I",
+                "K"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Binary variable indicating if mine k is operated (1 if operated; 0 otherwise).",
+            "symbol": "OperateMine",
+            "shape": [
+                "K"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "Continuous variable representing the amount of material produced by mine k.",
+            "symbol": "MineProduction",
+            "shape": [
+                "K"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "Binary variable indicating if mine k is assigned to client i (1 if assigned; 0 otherwise).",
+            "symbol": "AssignMineToClient",
+            "shape": [
+                "K",
+                "I"
+            ],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the company's profit from operating the mines and selling materials produced.",
+            "status": "formulated",
+            "formulation": "\\textup{Maximize Profit} = \\textup{Price} \\cdot (\\sum_{k=1}^{K} \\textup{MineProduction}_{k}) - \\sum_{k=1}^{K} \\left[ (\\textup{Royalty}_{k} - \\textup{Discount} \\cdot \\textup{MineProduction}_{k}) \\cdot \\textup{OperateMine}_{k} \\right]",
+            "related_variables": [
+                "MineProduction",
+                "OperateMine"
+            ],
+            "related_parameters": [
+                "Price",
+                "Royalty",
+                "Discount",
+                "K"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413173140_nlp4lp_25/",
+    "problem_path": "data/nlp4lp/25/"
+}

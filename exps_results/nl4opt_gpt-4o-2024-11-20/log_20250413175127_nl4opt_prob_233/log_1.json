@@ -1,0 +1,236 @@
+{
+    "background": "An oil and gas company operates two types of pipes, high-volume and low-volume, with differing capacities and technician monitoring requirements. They aim to meet daily gas demand while adhering to environmental regulations and staffing limitations.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Daily volume allowed by the high-volume pipe",
+            "symbol": "HighVolumeCapacity",
+            "value": 10000,
+            "shape": [],
+            "code": "HighVolumeCapacity = data[\"HighVolumeCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of technicians required to monitor one high-volume pipe",
+            "symbol": "HighVolumeTechs",
+            "value": 12,
+            "shape": [],
+            "code": "HighVolumeTechs = data[\"HighVolumeTechs\"] # scalar parameter"
+        },
+        {
+            "definition": "Daily volume allowed by the low-volume pipe",
+            "symbol": "LowVolumeCapacity",
+            "value": 5000,
+            "shape": [],
+            "code": "LowVolumeCapacity = data[\"LowVolumeCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of technicians required to monitor one low-volume pipe",
+            "symbol": "LowVolumeTechs",
+            "value": 5,
+            "shape": [],
+            "code": "LowVolumeTechs = data[\"LowVolumeTechs\"] # scalar parameter"
+        },
+        {
+            "definition": "Total daily gas volume demand",
+            "symbol": "Demand",
+            "value": 150000,
+            "shape": [],
+            "code": "Demand = data[\"Demand\"] # scalar parameter"
+        },
+        {
+            "definition": "Total number of technicians available",
+            "symbol": "TotalTechs",
+            "value": 160,
+            "shape": [],
+            "code": "TotalTechs = data[\"TotalTechs\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum percentage of high-volume pipes of the total number of pipes",
+            "symbol": "MaxHighVolumePercent",
+            "value": 0.35,
+            "shape": [],
+            "code": "MaxHighVolumePercent = data[\"MaxHighVolumePercent\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of low-volume pipes required",
+            "symbol": "MinLowVolumePipes",
+            "value": 8,
+            "shape": [],
+            "code": "MinLowVolumePipes = data[\"MinLowVolumePipes\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of high-volume pipes is non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumberHighVolumePipes} \\geq 0",
+            "related_variables": [
+                "NumberHighVolumePipes"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint to ensure the number of high-volume pipes is non-negative\nmodel.addConstr(NumberHighVolumePipes >= 0, name=\"non_negative_high_volume_pipes\")"
+        },
+        {
+            "description": "The number of low-volume pipes must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumberLowVolumePipes} \\geq 0",
+            "related_variables": [
+                "NumberLowVolumePipes"
+            ],
+            "related_parameters": [],
+            "code": "# Ensure the number of low-volume pipes is non-negative\nmodel.addConstr(NumberLowVolumePipes >= 0, name=\"non_negative_low_volume_pipes\")"
+        },
+        {
+            "description": "The total gas throughput must be at least the daily demand in US gallons.",
+            "status": "coded",
+            "formulation": "(\\textup{NumberHighVolumePipes} \\times \\textup{HighVolumeCapacity}) + (\\textup{NumberLowVolumePipes} \\times \\textup{LowVolumeCapacity}) \\geq \\textup{Demand}",
+            "related_variables": [
+                "NumberHighVolumePipes",
+                "NumberLowVolumePipes"
+            ],
+            "related_parameters": [
+                "HighVolumeCapacity",
+                "LowVolumeCapacity",
+                "Demand"
+            ],
+            "code": "# Add total gas throughput constraint\nmodel.addConstr(\n    (NumberHighVolumePipes * HighVolumeCapacity) + (NumberLowVolumePipes * LowVolumeCapacity) >= Demand,\n    name=\"total_gas_throughput_constraint\"\n)"
+        },
+        {
+            "description": "The total number of technicians required to monitor all pipes should not exceed the total available technicians.",
+            "status": "coded",
+            "formulation": "\\textup{NumberHighVolumePipes} \\cdot \\textup{HighVolumeTechs} + \\textup{NumberLowVolumePipes} \\cdot \\textup{LowVolumeTechs} \\leq \\textup{TotalTechs}",
+            "related_variables": [
+                "NumberHighVolumePipes",
+                "NumberLowVolumePipes"
+            ],
+            "related_parameters": [
+                "HighVolumeTechs",
+                "LowVolumeTechs",
+                "TotalTechs"
+            ],
+            "code": "# Add constraint on the total number of technicians required not exceeding the available technicians\nmodel.addConstr(NumberHighVolumePipes * HighVolumeTechs + NumberLowVolumePipes * LowVolumeTechs <= TotalTechs, name=\"technician_availability\")"
+        },
+        {
+            "description": "At most MaxHighVolumePercent percent of the total pipes can be high-volume pipes.",
+            "status": "coded",
+            "formulation": "(1 - \\textup{MaxHighVolumePercent}) \\cdot \\textup{NumberHighVolumePipes} \\leq \\textup{MaxHighVolumePercent} \\cdot \\textup{NumberLowVolumePipes}",
+            "related_variables": [
+                "NumberHighVolumePipes",
+                "NumberLowVolumePipes"
+            ],
+            "related_parameters": [
+                "MaxHighVolumePercent"
+            ],
+            "code": "# Add constraint ensuring at most MaxHighVolumePercent percent of total pipes are high-volume\nmodel.addConstr(\n    (1 - MaxHighVolumePercent) * NumberHighVolumePipes <= MaxHighVolumePercent * NumberLowVolumePipes,\n    name=\"high_volume_pipe_limit\"\n)"
+        },
+        {
+            "description": "The number of low-volume pipes used must be at least the minimum required amount.",
+            "status": "coded",
+            "formulation": "\\textup{NumberLowVolumePipes} \\\\geq \\textup{MinLowVolumePipes}",
+            "related_variables": [
+                "NumberLowVolumePipes"
+            ],
+            "related_parameters": [
+                "MinLowVolumePipes"
+            ],
+            "code": "# Add constraint ensuring the number of low-volume pipes used is at least the minimum required amount\nmodel.addConstr(NumberLowVolumePipes >= MinLowVolumePipes, name=\"min_low_volume_pipes\")"
+        },
+        {
+            "description": "Daily gas demand must be satisfied.",
+            "status": "coded",
+            "formulation": "\\textup{HighVolumeCapacity} \\cdot \\textup{NumberHighVolumePipes} + \\textup{LowVolumeCapacity} \\cdot \\textup{NumberLowVolumePipes} \\geq \\textup{Demand}",
+            "related_variables": [
+                "NumberHighVolumePipes",
+                "NumberLowVolumePipes"
+            ],
+            "related_parameters": [
+                "HighVolumeCapacity",
+                "LowVolumeCapacity",
+                "Demand"
+            ],
+            "code": "# Add constraint to ensure daily gas demand is satisfied\nmodel.addConstr(\n    HighVolumeCapacity * NumberHighVolumePipes + LowVolumeCapacity * NumberLowVolumePipes >= Demand, \n    name=\"daily_gas_demand\"\n)"
+        },
+        {
+            "description": "Technician availability constraint.",
+            "status": "coded",
+            "formulation": "\\textup{HighVolumeTechs} \\cdot \\textup{NumberHighVolumePipes} + \\textup{LowVolumeTechs} \\cdot \\textup{NumberLowVolumePipes} \\leq \\textup{TotalTechs}",
+            "related_variables": [
+                "NumberHighVolumePipes",
+                "NumberLowVolumePipes"
+            ],
+            "related_parameters": [
+                "HighVolumeTechs",
+                "LowVolumeTechs",
+                "TotalTechs"
+            ],
+            "code": "# Add technician availability constraint\nmodel.addConstr(\n    HighVolumeTechs * NumberHighVolumePipes + LowVolumeTechs * NumberLowVolumePipes <= TotalTechs,\n    name=\"technician_availability\"\n)"
+        },
+        {
+            "description": "High-volume pipes must not exceed the specified percentage of total pipes.",
+            "status": "coded",
+            "formulation": "\\textup{NumberHighVolumePipes} \\leq \\textup{MaxHighVolumePercent} \\cdot (\\textup{NumberHighVolumePipes} + \\textup{NumberLowVolumePipes})",
+            "related_variables": [
+                "NumberHighVolumePipes",
+                "NumberLowVolumePipes"
+            ],
+            "related_parameters": [
+                "MaxHighVolumePercent"
+            ],
+            "code": "# Add constraint for high-volume pipes percentage\nmodel.addConstr(\n    NumberHighVolumePipes <= MaxHighVolumePercent * (NumberHighVolumePipes + NumberLowVolumePipes),\n    name=\"high_volume_pipes_percentage\"\n)"
+        },
+        {
+            "description": "Minimum number of low-volume pipes required.",
+            "status": "coded",
+            "formulation": "\\textup{NumberLowVolumePipes} \\geq \\textup{MinLowVolumePipes}",
+            "related_variables": [
+                "NumberLowVolumePipes"
+            ],
+            "related_parameters": [
+                "MinLowVolumePipes"
+            ],
+            "code": "# Add minimum low-volume pipes constraint\nmodel.addConstr(NumberLowVolumePipes >= MinLowVolumePipes, name=\"min_low_volume_pipes\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of high-volume pipes used.",
+            "symbol": "NumberHighVolumePipes",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberHighVolumePipes = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberHighVolumePipes\")"
+        },
+        {
+            "definition": "The number of low-volume pipes used.",
+            "symbol": "NumberLowVolumePipes",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberLowVolumePipes = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberLowVolumePipes\")"
+        },
+        {
+            "definition": "The total number of pipes, combining both high-volume and low-volume pipes.",
+            "symbol": "TotalPipes",
+            "shape": [],
+            "status": "coded",
+            "code": "TotalPipes = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TotalPipes\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of pipes used to meet the daily gas demand.",
+            "status": "coded",
+            "formulation": "\\textup{Minimize} \\quad \\textup{NumberHighVolumePipes} + \\textup{NumberLowVolumePipes}",
+            "related_variables": [
+                "NumberHighVolumePipes",
+                "NumberLowVolumePipes"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(NumberHighVolumePipes + NumberLowVolumePipes, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413175127_nl4opt_prob_233/",
+    "problem_path": "data/nl4opt/prob_233/"
+}

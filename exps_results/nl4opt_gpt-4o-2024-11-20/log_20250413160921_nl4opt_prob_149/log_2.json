@@ -1,0 +1,185 @@
+{
+    "background": "A chocolate company can transport boxes of chocolate using vans or trucks. Vans, which also serve as advertising, have a certain capacity and cost, differing from trucks. Both transport methods are constrained by capacity and cost, with a minimum transport requirement and a total budget. The company aims to minimize the total number of trips.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "The capacity of a van",
+            "symbol": "VanCapacity",
+            "value": 50,
+            "shape": [],
+            "code": "VanCapacity = data[\"VanCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "The capacity of a truck",
+            "symbol": "TruckCapacity",
+            "value": 80,
+            "shape": [],
+            "code": "TruckCapacity = data[\"TruckCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost per van trip",
+            "symbol": "VanCost",
+            "value": 30,
+            "shape": [],
+            "code": "VanCost = data[\"VanCost\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost per truck trip",
+            "symbol": "TruckCost",
+            "value": 50,
+            "shape": [],
+            "code": "TruckCost = data[\"TruckCost\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of boxes to transport",
+            "symbol": "MinBoxes",
+            "value": 1500,
+            "shape": [],
+            "code": "MinBoxes = data[\"MinBoxes\"] # scalar parameter"
+        },
+        {
+            "definition": "Budget for transportation",
+            "symbol": "Budget",
+            "value": 1000,
+            "shape": [],
+            "code": "Budget = data[\"Budget\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of van trips must be non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{VanTrips} \\\\geq 0",
+            "related_variables": [
+                "VanTrips"
+            ],
+            "related_parameters": [],
+            "code": "# No code is needed: Gurobi variables by default satisfy non-negativity for continuous variables unless specified otherwise."
+        },
+        {
+            "description": "The constraints ensuring all transportation requirements are satisfied, including non-negativity, capacity, and budget constraints.",
+            "status": "coded",
+            "formulation": "\\textup{VanTrips} \\geq 0 \\quad \\textup{and} \\quad \\textup{TruckTrips} \\geq 0 \\\\ \\textup{VanCapacity} \\cdot \\textup{VanTrips} + \\textup{TruckCapacity} \\cdot \\textup{TruckTrips} \\geq \\textup{MinBoxes} \\\\ \\textup{VanCost} \\cdot \\textup{VanTrips} + \\textup{TruckCost} \\cdot \\textup{TruckTrips} \\leq \\textup{Budget}",
+            "related_variables": [
+                "VanTrips",
+                "TruckTrips"
+            ],
+            "related_parameters": [
+                "VanCapacity",
+                "TruckCapacity",
+                "VanCost",
+                "TruckCost",
+                "MinBoxes",
+                "Budget"
+            ],
+            "code": "# Add transportation constraints\nmodel.addConstr(VanTrips >= 0, name=\"nonnegativity_van\")\nmodel.addConstr(TruckTrips >= 0, name=\"nonnegativity_truck\")\nmodel.addConstr(VanCapacity * VanTrips + TruckCapacity * TruckTrips >= MinBoxes, name=\"capacity_requirement\")\nmodel.addConstr(VanCost * VanTrips + TruckCost * TruckTrips <= Budget, name=\"budget_constraint\")"
+        },
+        {
+            "description": "The total number of boxes transported via vans and trucks must be greater than or equal to the minimum required boxes (MinBoxes).",
+            "status": "coded",
+            "formulation": "\\\\textup{VanTrips} \\\\times \\\\textup{VanCapacity} + \\\\textup{TruckTrips} \\\\times \\\\textup{TruckCapacity} \\\\geq \\\\textup{MinBoxes}",
+            "related_variables": [
+                "VanTrips",
+                "TruckTrips"
+            ],
+            "related_parameters": [
+                "VanCapacity",
+                "TruckCapacity",
+                "MinBoxes"
+            ],
+            "code": "# Add constraint to ensure total boxes transported meets minimum required boxes\nmodel.addConstr(VanTrips * VanCapacity + TruckTrips * TruckCapacity >= MinBoxes, name=\"min_boxes_constraint\")"
+        },
+        {
+            "description": "The total cost of transportation for van trips and truck trips does not exceed the budget.",
+            "status": "coded",
+            "formulation": "\\\\textup{VanCost} \\\\cdot \\\\textup{VanTrips} + \\\\textup{TruckCost} \\\\cdot \\\\textup{TruckTrips} \\\\leq \\\\textup{Budget}",
+            "related_variables": [
+                "VanTrips",
+                "TruckTrips"
+            ],
+            "related_parameters": [
+                "VanCost",
+                "TruckCost",
+                "Budget"
+            ],
+            "code": "# Add transportation cost constraint\nmodel.addConstr(VanCost * VanTrips + TruckCost * TruckTrips <= Budget, name=\"transportation_cost\")"
+        },
+        {
+            "description": "The number of trips made using vans must be at least one greater than the number of trips made using trucks.",
+            "status": "coded",
+            "formulation": "\\\\textup{VanTrips} \\\\geq \\\\textup{TruckTrips} + 1",
+            "related_variables": [
+                "VanTrips",
+                "TruckTrips"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint: Trips made using vans must be at least one greater than trips made using trucks\nmodel.addConstr(VanTrips >= TruckTrips + 1, name=\"van_vs_truck_trips\")"
+        },
+        {
+            "description": "Ensure the total number of boxes transported meets at least the minimum required.",
+            "status": "coded",
+            "formulation": "\\\\textup{VanCapacity} \\\\cdot \\\\textup{VanTrips} + \\\\textup{TruckCapacity} \\\\cdot \\\\textup{TruckTrips} \\\\geq \\\\textup{MinBoxes}",
+            "related_variables": [
+                "VanTrips",
+                "TruckTrips"
+            ],
+            "related_parameters": [
+                "VanCapacity",
+                "TruckCapacity",
+                "MinBoxes"
+            ],
+            "code": "# Add constraint to ensure the total number of boxes transported meets at least the minimum required\nmodel.addConstr(\n    VanCapacity * VanTrips + TruckCapacity * TruckTrips >= MinBoxes,\n    name=\"min_boxes_constraint\"\n)"
+        },
+        {
+            "description": "Ensure the total transportation cost does not exceed the available budget.",
+            "status": "coded",
+            "formulation": "\\\\textup{VanCost} \\\\cdot \\\\textup{VanTrips} + \\\\textup{TruckCost} \\\\cdot \\\\textup{TruckTrips} \\\\leq \\\\textup{Budget}",
+            "related_variables": [
+                "VanTrips",
+                "TruckTrips"
+            ],
+            "related_parameters": [
+                "VanCost",
+                "TruckCost",
+                "Budget"
+            ],
+            "code": "# Add transportation cost budget constraint\nmodel.addConstr(VanCost * VanTrips + TruckCost * TruckTrips <= Budget, name=\"transportation_budget_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of trips made using vans.",
+            "symbol": "VanTrips",
+            "shape": [],
+            "status": "coded",
+            "code": "VanTrips = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"VanTrips\")"
+        },
+        {
+            "definition": "The number of trips made using trucks.",
+            "symbol": "TruckTrips",
+            "shape": [],
+            "status": "coded",
+            "code": "TruckTrips = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TruckTrips\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of van and truck trips.",
+            "status": "coded",
+            "formulation": "\\\\min \\\\textup{VanTrips} + \\\\textup{TruckTrips}",
+            "related_variables": [
+                "VanTrips",
+                "TruckTrips"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(VanTrips + TruckTrips, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 23.307692307692307,
+    "log_path": "logs/log_20250413160921_nl4opt_prob_149/",
+    "problem_path": "data/nl4opt/prob_149/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_149/data.json\", \"r\") as f:\n    data = json.load(f)\n\nVanCapacity = data[\"VanCapacity\"] # scalar parameter\nTruckCapacity = data[\"TruckCapacity\"] # scalar parameter\nVanCost = data[\"VanCost\"] # scalar parameter\nTruckCost = data[\"TruckCost\"] # scalar parameter\nMinBoxes = data[\"MinBoxes\"] # scalar parameter\nBudget = data[\"Budget\"] # scalar parameter\nVanTrips = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"VanTrips\")\nTruckTrips = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TruckTrips\")\n\n# No code is needed: Gurobi variables by default satisfy non-negativity for continuous variables unless specified otherwise.\n\n# Add transportation constraints\nmodel.addConstr(VanTrips >= 0, name=\"nonnegativity_van\")\nmodel.addConstr(TruckTrips >= 0, name=\"nonnegativity_truck\")\nmodel.addConstr(VanCapacity * VanTrips + TruckCapacity * TruckTrips >= MinBoxes, name=\"capacity_requirement\")\nmodel.addConstr(VanCost * VanTrips + TruckCost * TruckTrips <= Budget, name=\"budget_constraint\")\n\n# Add constraint to ensure total boxes transported meets minimum required boxes\nmodel.addConstr(VanTrips * VanCapacity + TruckTrips * TruckCapacity >= MinBoxes, name=\"min_boxes_constraint\")\n\n# Add transportation cost constraint\nmodel.addConstr(VanCost * VanTrips + TruckCost * TruckTrips <= Budget, name=\"transportation_cost\")\n\n# Add constraint: Trips made using vans must be at least one greater than trips made using trucks\nmodel.addConstr(VanTrips >= TruckTrips + 1, name=\"van_vs_truck_trips\")\n\n# Add constraint to ensure the total number of boxes transported meets at least the minimum required\nmodel.addConstr(\n    VanCapacity * VanTrips + TruckCapacity * TruckTrips >= MinBoxes,\n    name=\"min_boxes_constraint\"\n)\n\n# Add transportation cost budget constraint\nmodel.addConstr(VanCost * VanTrips + TruckCost * TruckTrips <= Budget, name=\"transportation_budget_constraint\")\n\n# Set objective\nmodel.setObjective(VanTrips + TruckTrips, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

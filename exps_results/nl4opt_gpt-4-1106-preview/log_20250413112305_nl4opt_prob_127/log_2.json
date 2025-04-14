@@ -1,0 +1,194 @@
+{
+    "background": "A woman requires a certain number of calories and protein in her diet, which she obtains from servings of almonds and cashews, each with known nutritional content.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Calories per serving of almonds",
+            "symbol": "CaloriesAlmonds",
+            "value": 200,
+            "shape": [],
+            "code": "CaloriesAlmonds = data[\"CaloriesAlmonds\"] # scalar parameter"
+        },
+        {
+            "definition": "Protein per serving of almonds",
+            "symbol": "ProteinAlmonds",
+            "value": 20,
+            "shape": [],
+            "code": "ProteinAlmonds = data[\"ProteinAlmonds\"] # scalar parameter"
+        },
+        {
+            "definition": "Calories per serving of cashews",
+            "symbol": "CaloriesCashews",
+            "value": 300,
+            "shape": [],
+            "code": "CaloriesCashews = data[\"CaloriesCashews\"] # scalar parameter"
+        },
+        {
+            "definition": "Protein per serving of cashews",
+            "symbol": "ProteinCashews",
+            "value": 25,
+            "shape": [],
+            "code": "ProteinCashews = data[\"ProteinCashews\"] # scalar parameter"
+        },
+        {
+            "definition": "Fat per serving of almonds",
+            "symbol": "FatAlmonds",
+            "value": 15,
+            "shape": [],
+            "code": "FatAlmonds = data[\"FatAlmonds\"] # scalar parameter"
+        },
+        {
+            "definition": "Fat per serving of cashews",
+            "symbol": "FatCashews",
+            "value": 12,
+            "shape": [],
+            "code": "FatCashews = data[\"FatCashews\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum total calories required",
+            "symbol": "MinCalories",
+            "value": 10000,
+            "shape": [],
+            "code": "MinCalories = data[\"MinCalories\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum total protein required",
+            "symbol": "MinProtein",
+            "value": 800,
+            "shape": [],
+            "code": "MinProtein = data[\"MinProtein\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of servings of almonds is non-negative",
+            "status": "coded",
+            "formulation": "\\textup{ServingsAlmonds} \\geq 0",
+            "related_variables": [
+                "ServingsAlmonds"
+            ],
+            "related_parameters": [],
+            "code": "# Add non-negativity constraint for servings of almonds\nmodel.addConstr(ServingsAlmonds >= 0, name=\"nonnegativity_servings_almonds\")"
+        },
+        {
+            "description": "Number of servings of cashews is non-negative",
+            "status": "coded",
+            "formulation": "\\textup{ServingsCashews} \\geq 0",
+            "related_variables": [
+                "ServingsCashews"
+            ],
+            "related_parameters": [],
+            "code": "# Since ServingsCashews has already been defined as a continuous variable, \n# we just need to add a constraint to ensure it is non-negative.\nmodel.addConstr(ServingsCashews >= 0, name=\"non_negativity_cashews\")"
+        },
+        {
+            "description": "Number of servings of almonds must be at least twice the number of servings of cashews",
+            "status": "coded",
+            "formulation": "\\textup{ServingsAlmonds} \\geq 2 \\times \\textup{ServingsCashews}",
+            "related_variables": [
+                "ServingsAlmonds",
+                "ServingsCashews"
+            ],
+            "related_parameters": [],
+            "code": "model.addConstr(ServingsAlmonds >= 2 * ServingsCashews, name=\"almonds_cashews_ratio\")"
+        },
+        {
+            "description": "Total calorie intake from almonds and cashews must be at least the minimum calorie requirement",
+            "status": "coded",
+            "formulation": "\\textup{ServingsAlmonds} \\times \\textup{CaloriesAlmonds} + \\textup{ServingsCashews} \\times \\textup{CaloriesCashews} \\geq \\textup{MinCalories}",
+            "related_variables": [
+                "ServingsAlmonds",
+                "ServingsCashews"
+            ],
+            "related_parameters": [
+                "CaloriesAlmonds",
+                "CaloriesCashews",
+                "MinCalories"
+            ],
+            "code": "# Add constraint for minimum total calorie intake from almonds and cashews\nmodel.addConstr(ServingsAlmonds * CaloriesAlmonds + ServingsCashews * CaloriesCashews >= MinCalories, name=\"min_calories_intake\")"
+        },
+        {
+            "description": "Total protein intake from almonds and cashews must be at least the minimum required protein intake",
+            "status": "coded",
+            "formulation": "\\textup{ProteinAlmonds} \\cdot \\textup{ServingsAlmonds} + \\textup{ProteinCashews} \\cdot \\textup{ServingsCashews} \\geq \\textup{MinProtein}",
+            "related_variables": [
+                "ServingsAlmonds",
+                "ServingsCashews"
+            ],
+            "related_parameters": [
+                "ProteinAlmonds",
+                "ProteinCashews",
+                "MinProtein"
+            ],
+            "code": "# Ensure total protein intake from almonds and cashews is at least the minimum required\nmodel.addConstr(ProteinAlmonds * ServingsAlmonds + ProteinCashews * ServingsCashews >= MinProtein, \"min_protein_intake\")"
+        },
+        {
+            "description": "Ensure the total calories from almonds and cashews meet the minimum requirement",
+            "status": "coded",
+            "formulation": "\\textup{CaloriesAlmonds} \\cdot \\textup{ServingsAlmonds} + \\textup{CaloriesCashews} \\cdot \\textup{ServingsCashews} \\geq \\textup{MinCalories}",
+            "related_variables": [
+                "ServingsAlmonds",
+                "ServingsCashews"
+            ],
+            "related_parameters": [
+                "CaloriesAlmonds",
+                "CaloriesCashews",
+                "MinCalories"
+            ],
+            "code": "# Ensure the total calories from almonds and cashews meet the minimum requirement\nmodel.addConstr(CaloriesAlmonds * ServingsAlmonds + CaloriesCashews * ServingsCashews >= MinCalories, \n                name=\"min_calories_constraint\")"
+        },
+        {
+            "description": "Ensure the total protein from almonds and cashews meet the minimum requirement",
+            "status": "coded",
+            "formulation": "\\textup{ProteinAlmonds} \\cdot \\textup{ServingsAlmonds} + \\textup{ProteinCashews} \\cdot \\textup{ServingsCashews} \\geq \\textup{MinProtein}",
+            "related_variables": [
+                "ServingsAlmonds",
+                "ServingsCashews"
+            ],
+            "related_parameters": [
+                "ProteinAlmonds",
+                "ProteinCashews",
+                "MinProtein"
+            ],
+            "code": "# Ensure the total protein from almonds and cashews meet the minimum requirement\nmodel.addConstr(ProteinAlmonds * ServingsAlmonds + ProteinCashews * ServingsCashews >= MinProtein, name=\"min_protein_requirement\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of servings of almonds the woman consumes",
+            "symbol": "ServingsAlmonds",
+            "shape": [],
+            "status": "coded",
+            "code": "ServingsAlmonds = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"ServingsAlmonds\")"
+        },
+        {
+            "definition": "Number of servings of cashews the woman consumes",
+            "symbol": "ServingsCashews",
+            "shape": [],
+            "status": "coded",
+            "code": "ServingsCashews = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"ServingsCashews\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total fat intake from servings of almonds and cashews",
+            "status": "coded",
+            "formulation": "\\min \\quad (\\textup{FatAlmonds} \\cdot \\textup{ServingsAlmonds} + \\textup{FatCashews} \\cdot \\textup{ServingsCashews})",
+            "related_variables": [
+                "ServingsAlmonds",
+                "ServingsCashews"
+            ],
+            "related_parameters": [
+                "FatAlmonds",
+                "FatCashews"
+            ],
+            "code": "# Define the objective function\nmodel.setObjective(FatAlmonds * ServingsAlmonds + FatCashews * ServingsCashews, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 600.0,
+    "log_path": "logs/log_20250413112305_nl4opt_prob_127/",
+    "problem_path": "data/nl4opt/prob_127/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_127/data.json\", \"r\") as f:\n    data = json.load(f)\n\nCaloriesAlmonds = data[\"CaloriesAlmonds\"] # scalar parameter\nProteinAlmonds = data[\"ProteinAlmonds\"] # scalar parameter\nCaloriesCashews = data[\"CaloriesCashews\"] # scalar parameter\nProteinCashews = data[\"ProteinCashews\"] # scalar parameter\nFatAlmonds = data[\"FatAlmonds\"] # scalar parameter\nFatCashews = data[\"FatCashews\"] # scalar parameter\nMinCalories = data[\"MinCalories\"] # scalar parameter\nMinProtein = data[\"MinProtein\"] # scalar parameter\nServingsAlmonds = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"ServingsAlmonds\")\nServingsCashews = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"ServingsCashews\")\n\n# Add non-negativity constraint for servings of almonds\nmodel.addConstr(ServingsAlmonds >= 0, name=\"nonnegativity_servings_almonds\")\n\n# Since ServingsCashews has already been defined as a continuous variable, \n# we just need to add a constraint to ensure it is non-negative.\nmodel.addConstr(ServingsCashews >= 0, name=\"non_negativity_cashews\")\n\nmodel.addConstr(ServingsAlmonds >= 2 * ServingsCashews, name=\"almonds_cashews_ratio\")\n\n# Add constraint for minimum total calorie intake from almonds and cashews\nmodel.addConstr(ServingsAlmonds * CaloriesAlmonds + ServingsCashews * CaloriesCashews >= MinCalories, name=\"min_calories_intake\")\n\n# Ensure total protein intake from almonds and cashews is at least the minimum required\nmodel.addConstr(ProteinAlmonds * ServingsAlmonds + ProteinCashews * ServingsCashews >= MinProtein, \"min_protein_intake\")\n\n# Ensure the total calories from almonds and cashews meet the minimum requirement\nmodel.addConstr(CaloriesAlmonds * ServingsAlmonds + CaloriesCashews * ServingsCashews >= MinCalories, \n                name=\"min_calories_constraint\")\n\n# Ensure the total protein from almonds and cashews meet the minimum requirement\nmodel.addConstr(ProteinAlmonds * ServingsAlmonds + ProteinCashews * ServingsCashews >= MinProtein, name=\"min_protein_requirement\")\n\n# Define the objective function\nmodel.setObjective(FatAlmonds * ServingsAlmonds + FatCashews * ServingsCashews, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

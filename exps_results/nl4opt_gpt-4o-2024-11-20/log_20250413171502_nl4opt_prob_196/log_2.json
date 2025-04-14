@@ -1,0 +1,126 @@
+{
+    "background": "An international shipping company needs to transport containers using a fleet of large and small ships with different capacities, subject to port size restrictions and contract obligations.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Capacity of a large ship",
+            "symbol": "LargeShipCapacity",
+            "value": 500,
+            "shape": [],
+            "code": "LargeShipCapacity = data[\"LargeShipCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Capacity of a small ship",
+            "symbol": "SmallShipCapacity",
+            "value": 200,
+            "shape": [],
+            "code": "SmallShipCapacity = data[\"SmallShipCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum total number of containers required to be transported",
+            "symbol": "MinContainers",
+            "value": 3000,
+            "shape": [],
+            "code": "MinContainers = data[\"MinContainers\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of large ships must be non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{NumberOfLargeShips} \\\\geq 0",
+            "related_variables": [
+                "NumberOfLargeShips"
+            ],
+            "related_parameters": [],
+            "code": "# No code is needed for this constraint since the variable `NumberOfLargeShips` is already defined as non-negative,\n# which is the default for continuous variables in Gurobi."
+        },
+        {
+            "description": "The number of small ships used by the shipping company must be non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{NumberOfSmallShips} \\\\geq 0",
+            "related_variables": [
+                "NumberOfSmallShips"
+            ],
+            "related_parameters": [],
+            "code": "# The non-negativity constraint is inherently satisfied as the variable \"NumberOfSmallShips\" is declared to be non-negative. No additional constraint is needed."
+        },
+        {
+            "description": "The number of large ships cannot exceed the number of small ships",
+            "status": "coded",
+            "formulation": "\\\\textup{NumberOfLargeShips} \\\\leq \\\\textup{NumberOfSmallShips}",
+            "related_variables": [
+                "NumberOfLargeShips",
+                "NumberOfSmallShips"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint: Number of large ships cannot exceed the number of small ships\nmodel.addConstr(NumberOfLargeShips <= NumberOfSmallShips, name=\"large_vs_small_ships\")"
+        },
+        {
+            "description": "The total number of containers transported by large and small ships must be at least MinContainers.",
+            "status": "coded",
+            "formulation": "\\\\textup{NumberOfLargeShips} \\\\cdot \\\\textup{LargeShipCapacity} + \\\\textup{NumberOfSmallShips} \\\\cdot \\\\textup{SmallShipCapacity} \\\\geq \\\\textup{MinContainers}",
+            "related_variables": [
+                "NumberOfLargeShips",
+                "NumberOfSmallShips"
+            ],
+            "related_parameters": [
+                "LargeShipCapacity",
+                "SmallShipCapacity",
+                "MinContainers"
+            ],
+            "code": "# Add constraint ensuring the total number of containers transported meets or exceeds the minimum required\nmodel.addConstr(NumberOfLargeShips * LargeShipCapacity + NumberOfSmallShips * SmallShipCapacity >= MinContainers, name=\"MinContainersConstraint\")"
+        },
+        {
+            "description": "Ensure the total shipping capacity meets or exceeds the minimum container requirement.",
+            "status": "coded",
+            "formulation": "\\\\textup{LargeShipCapacity} \\\\times \\\\textup{NumberOfLargeShips} + \\\\textup{SmallShipCapacity} \\\\times \\\\textup{NumberOfSmallShips} \\\\geq \\\\textup{MinContainers}",
+            "related_variables": [
+                "NumberOfLargeShips",
+                "NumberOfSmallShips"
+            ],
+            "related_parameters": [
+                "LargeShipCapacity",
+                "SmallShipCapacity",
+                "MinContainers"
+            ],
+            "code": "# Ensure the total shipping capacity meets or exceeds the minimum container requirement\nmodel.addConstr(\n    LargeShipCapacity * NumberOfLargeShips + SmallShipCapacity * NumberOfSmallShips >= MinContainers,\n    name=\"min_container_requirement\"\n)"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of large ships used by the shipping company.",
+            "symbol": "NumberOfLargeShips",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfLargeShips = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfLargeShips\")"
+        },
+        {
+            "definition": "The number of small ships used by the shipping company.",
+            "symbol": "NumberOfSmallShips",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfSmallShips = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfSmallShips\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of ships (large and small) used by the shipping company.",
+            "status": "coded",
+            "formulation": "\\\\textup{Minimize } \\\\quad \\\\textup{NumberOfLargeShips} + \\\\textup{NumberOfSmallShips}",
+            "related_variables": [
+                "NumberOfLargeShips",
+                "NumberOfSmallShips"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(NumberOfLargeShips + NumberOfSmallShips, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 8.571428571428571,
+    "log_path": "logs/log_20250413171502_nl4opt_prob_196/",
+    "problem_path": "data/nl4opt/prob_196/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_196/data.json\", \"r\") as f:\n    data = json.load(f)\n\nLargeShipCapacity = data[\"LargeShipCapacity\"] # scalar parameter\nSmallShipCapacity = data[\"SmallShipCapacity\"] # scalar parameter\nMinContainers = data[\"MinContainers\"] # scalar parameter\nNumberOfLargeShips = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfLargeShips\")\nNumberOfSmallShips = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfSmallShips\")\n\n# No code is needed for this constraint since the variable `NumberOfLargeShips` is already defined as non-negative,\n# which is the default for continuous variables in Gurobi.\n\n# The non-negativity constraint is inherently satisfied as the variable \"NumberOfSmallShips\" is declared to be non-negative. No additional constraint is needed.\n\n# Add constraint: Number of large ships cannot exceed the number of small ships\nmodel.addConstr(NumberOfLargeShips <= NumberOfSmallShips, name=\"large_vs_small_ships\")\n\n# Add constraint ensuring the total number of containers transported meets or exceeds the minimum required\nmodel.addConstr(NumberOfLargeShips * LargeShipCapacity + NumberOfSmallShips * SmallShipCapacity >= MinContainers, name=\"MinContainersConstraint\")\n\n# Ensure the total shipping capacity meets or exceeds the minimum container requirement\nmodel.addConstr(\n    LargeShipCapacity * NumberOfLargeShips + SmallShipCapacity * NumberOfSmallShips >= MinContainers,\n    name=\"min_container_requirement\"\n)\n\n# Set objective\nmodel.setObjective(NumberOfLargeShips + NumberOfSmallShips, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

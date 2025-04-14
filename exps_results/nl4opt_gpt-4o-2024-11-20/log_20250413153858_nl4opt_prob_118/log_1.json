@@ -1,0 +1,205 @@
+{
+    "background": "A clinic produces batches of vitamin shots and pills, which require units of vitamins C and D. They aim to maximize the number of people supplied while adhering to the availability of vitamins and batch production limits.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Units of vitamin C required for one batch of vitamin shots",
+            "symbol": "VitaminCShot",
+            "value": 30,
+            "shape": [],
+            "code": "VitaminCShot = data[\"VitaminCShot\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of vitamin D required for one batch of vitamin shots",
+            "symbol": "VitaminDShot",
+            "value": 40,
+            "shape": [],
+            "code": "VitaminDShot = data[\"VitaminDShot\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of vitamin C required for one batch of vitamin pills",
+            "symbol": "VitaminCPill",
+            "value": 50,
+            "shape": [],
+            "code": "VitaminCPill = data[\"VitaminCPill\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of vitamin D required for one batch of vitamin pills",
+            "symbol": "VitaminDPill",
+            "value": 30,
+            "shape": [],
+            "code": "VitaminDPill = data[\"VitaminDPill\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of vitamin shot batches the clinic can make",
+            "symbol": "MaxShotBatches",
+            "value": 10,
+            "shape": [],
+            "code": "MaxShotBatches = data[\"MaxShotBatches\"] # scalar parameter"
+        },
+        {
+            "definition": "Total available units of vitamin C",
+            "symbol": "TotalVitaminC",
+            "value": 1200,
+            "shape": [],
+            "code": "TotalVitaminC = data[\"TotalVitaminC\"] # scalar parameter"
+        },
+        {
+            "definition": "Total available units of vitamin D",
+            "symbol": "TotalVitaminD",
+            "value": 1500,
+            "shape": [],
+            "code": "TotalVitaminD = data[\"TotalVitaminD\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of people supplied by one batch of vitamin shots",
+            "symbol": "PeoplePerShot",
+            "value": 10,
+            "shape": [],
+            "code": "PeoplePerShot = data[\"PeoplePerShot\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of people supplied by one batch of vitamin pills",
+            "symbol": "PeoplePerPill",
+            "value": 7,
+            "shape": [],
+            "code": "PeoplePerPill = data[\"PeoplePerPill\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Number of vitamin shot batches is non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumShotBatches} \\geq 0",
+            "related_variables": [
+                "NumShotBatches"
+            ],
+            "related_parameters": [],
+            "code": "# No additional code needed since the variable \"NumShotBatches\" is defined with non-negativity by default in Gurobi (continuous variables have a lower bound of 0 unless specified otherwise)."
+        },
+        {
+            "description": "The number of vitamin pill batches must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumPillBatches} \\geq 0",
+            "related_variables": [
+                "NumPillBatches"
+            ],
+            "related_parameters": [],
+            "code": "# Since NumPillBatches is already defined with non-negativity (vtype=gp.GRB.CONTINUOUS), no additional constraint is required."
+        },
+        {
+            "description": "Number of vitamin pill batches must be at least 1 more than the number of vitamin shot batches",
+            "status": "coded",
+            "formulation": "\\textup{NumPillBatches} \\geq \\textup{NumShotBatches} + 1",
+            "related_variables": [
+                "NumPillBatches",
+                "NumShotBatches"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint: Number of vitamin pill batches must be at least 1 more than the number of vitamin shot batches\nmodel.addConstr(NumPillBatches >= NumShotBatches + 1, name=\"pill_vs_shot_batches\")"
+        },
+        {
+            "description": "The number of vitamin shot batches produced cannot exceed the maximum allowed value.",
+            "status": "coded",
+            "formulation": "\\textup{NumShotBatches} \\leq \\textup{MaxShotBatches}",
+            "related_variables": [
+                "NumShotBatches"
+            ],
+            "related_parameters": [
+                "MaxShotBatches"
+            ],
+            "code": "# Add constraint to ensure the number of vitamin shot batches produced does not exceed the maximum allowed  \nmodel.addConstr(NumShotBatches <= MaxShotBatches, name=\"max_vitamin_batches_constraint\")"
+        },
+        {
+            "description": "Vitamin C usage cannot exceed the total available units of vitamin C",
+            "status": "coded",
+            "formulation": "\\\\textup{VitaminCShot} \\\\cdot \\\\textup{NumShotBatches} + \\\\textup{VitaminCPill} \\\\cdot \\\\textup{NumPillBatches} \\\\leq \\\\textup{TotalVitaminC}",
+            "related_variables": [
+                "NumShotBatches",
+                "NumPillBatches"
+            ],
+            "related_parameters": [
+                "VitaminCShot",
+                "VitaminCPill",
+                "TotalVitaminC"
+            ],
+            "code": "# Add constraint: Vitamin C usage cannot exceed the total available units of vitamin C\nmodel.addConstr(\n    NumShotBatches * VitaminCShot + NumPillBatches * VitaminCPill <= TotalVitaminC,\n    name=\"VitaminC_Usage_Constraint\"\n)"
+        },
+        {
+            "description": "Vitamin D usage cannot exceed the total available units of vitamin D",
+            "status": "coded",
+            "formulation": "\\\\textup{VitaminDShot} \\\\cdot \\\\textup{NumShotBatches} + \\\\textup{VitaminDPill} \\\\cdot \\\\textup{NumPillBatches} \\\\leq \\\\textup{TotalVitaminD}",
+            "related_variables": [
+                "NumShotBatches",
+                "NumPillBatches"
+            ],
+            "related_parameters": [
+                "VitaminDShot",
+                "VitaminDPill",
+                "TotalVitaminD"
+            ],
+            "code": "# Add constraint: Vitamin D usage cannot exceed the total available units of vitamin D\nmodel.addConstr(\n    VitaminDShot * NumShotBatches + VitaminDPill * NumPillBatches <= TotalVitaminD,\n    name=\"VitaminD_usage_limit\"\n)"
+        },
+        {
+            "description": "The number of vitamin shot batches cannot exceed its maximum production limit",
+            "status": "coded",
+            "formulation": "\\\\textup{NumShotBatches} \\\\leq \\\\textup{MaxShotBatches}",
+            "related_variables": [
+                "NumShotBatches"
+            ],
+            "related_parameters": [
+                "MaxShotBatches"
+            ],
+            "code": "# Add constraint to ensure the number of vitamin shot batches does not exceed the maximum production limit\nmodel.addConstr(NumShotBatches <= MaxShotBatches, name=\"vitamin_shot_batch_limit\")"
+        },
+        {
+            "description": "Non-negativity constraint for vitamin shot and pill batches",
+            "status": "coded",
+            "formulation": "\\\\textup{NumShotBatches} \\\\geq 0, \\\\quad \\\\textup{NumPillBatches} \\\\geq 0",
+            "related_variables": [
+                "NumShotBatches",
+                "NumPillBatches"
+            ],
+            "related_parameters": [],
+            "code": "# No additional code is needed as the non-negativity constraint is automatically enforced by defining the decision variables as continuous (gp.GRB.CONTINUOUS) in Gurobi."
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of vitamin shot batches produced by the clinic",
+            "symbol": "NumShotBatches",
+            "shape": [],
+            "status": "coded",
+            "code": "NumShotBatches = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumShotBatches\")"
+        },
+        {
+            "definition": "The number of vitamin pill batches produced by the clinic",
+            "symbol": "NumPillBatches",
+            "shape": [],
+            "status": "coded",
+            "code": "NumPillBatches = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumPillBatches\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximizing the total number of people that can be supplied with vitamin shots and pills",
+            "status": "coded",
+            "formulation": "\\max \\\\ \\Big( \\\\textup{PeoplePerShot} \\\\cdot \\\\textup{NumShotBatches} + \\\\textup{PeoplePerPill} \\\\cdot \\\\textup{NumPillBatches} \\\\Big)",
+            "related_variables": [
+                "NumShotBatches",
+                "NumPillBatches"
+            ],
+            "related_parameters": [
+                "PeoplePerShot",
+                "PeoplePerPill"
+            ],
+            "code": "# Set objective\nmodel.setObjective(PeoplePerShot * NumShotBatches + PeoplePerPill * NumPillBatches, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413153858_nl4opt_prob_118/",
+    "problem_path": "data/nl4opt/prob_118/"
+}

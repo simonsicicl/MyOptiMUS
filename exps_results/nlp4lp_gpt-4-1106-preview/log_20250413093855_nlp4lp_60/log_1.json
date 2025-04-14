@@ -1,0 +1,132 @@
+{
+    "background": "A delivery person is required to determine the most time-efficient route for delivering a package within a grid of east-west and north-south streets.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of east-west streets",
+            "symbol": "N",
+            "value": "",
+            "shape": [],
+            "code": "N = data[\"N\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of north-south streets",
+            "symbol": "W",
+            "value": "",
+            "shape": [],
+            "code": "W = data[\"W\"] # scalar parameter"
+        },
+        {
+            "definition": "Time to cross street segment going west, for given street n and segment w",
+            "symbol": "WestTime",
+            "value": "",
+            "shape": [
+                "N",
+                "W-1"
+            ],
+            "code": "WestTime = np.array(data[\"WestTime\"]) # ['N', 'W-1']"
+        },
+        {
+            "definition": "Time to cross street segment going north, for given street n and segment w",
+            "symbol": "NorthTime",
+            "value": "",
+            "shape": [
+                "N-1",
+                "W"
+            ],
+            "code": "NorthTime = np.array(data[\"NorthTime\"]) # ['N-1', 'W']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The total number of east-west street segments used must not exceed N",
+            "status": "coded",
+            "formulation": "\\sum_{n=1}^{N} \\sum_{w=1}^{W-1} \\textup{EastWestUsage}_{n,w} \\leq N",
+            "related_variables": [
+                "EastWestUsage"
+            ],
+            "related_parameters": [
+                "N",
+                "W"
+            ],
+            "code": "# Constrain the total number of east-west street segments used to not exceed N\neast_west_usage_constraint = gp.quicksum(EastWestUsage[n, w] for n in range(N) for w in range(W-1))\nmodel.addConstr(east_west_usage_constraint <= N, name=\"east_west_usage_limit\")"
+        },
+        {
+            "description": "Total number of north-south street segments used cannot exceed W",
+            "status": "coded",
+            "formulation": "\\sum_{n=1}^{N-1} \\sum_{w=1}^{W} \\textup{NorthSouthUsage}_{n,w} \\leq \\textup{W}",
+            "related_variables": [
+                "NorthSouthUsage"
+            ],
+            "related_parameters": [
+                "N",
+                "W"
+            ],
+            "code": "# Constraint: Total number of north-south street segments used cannot exceed W\nmodel.addConstr(gp.quicksum(NorthSouthUsage[n, w] for n in range(N-1) for w in range(W)) <= W, name=\"north_south_usage_limit\")"
+        },
+        {
+            "description": "Ensure east-west street segments used are non-negative",
+            "status": "coded",
+            "formulation": "\\forall n \\in \\{1, \\dots, N\\}, \\quad \\forall w \\in \\{1, \\dots, W-1\\}, \\quad \\textup{EastWestUsage}_{n,w} \\geq 0",
+            "related_variables": [
+                "EastWestUsage"
+            ],
+            "related_parameters": [],
+            "code": "# Ensure east-west street segments used are non-negative (no need for an explicit constraint for a binary variable)\n# Since EastWestUsage is defined as a binary variable, it is inherently non-negative.\n# Hence, no additional code is necessary for this constraint."
+        },
+        {
+            "description": "North-south street segments are non-negative, which means that the binary variable NorthSouthUsage is either 0 or 1 indicating whether a north-south street segment is used or not",
+            "status": "coded",
+            "formulation": "\\forall n \\in \\{1, \\dots, N-1\\}, \\forall w \\in \\{1, \\dots, W\\}: 0 \\leq \\textup{NorthSouthUsage}_{n,w} \\leq 1",
+            "related_variables": [
+                "NorthSouthUsage"
+            ],
+            "related_parameters": [],
+            "code": "# Since NorthSouthUsage is already a binary variable, no further constraints are needed to ensure its values are between 0 and 1.\n# The binary nature of the variable inherently imposes this constraint.\n# Therefore, no code is required."
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Binary variable indicating if a east-west segment is used (1) or not (0)",
+            "symbol": "EastWestUsage",
+            "shape": [
+                "N",
+                "W-1"
+            ],
+            "status": "coded",
+            "code": "EastWestUsage = model.addVars(N, range(W-1), vtype=gp.GRB.BINARY, name=\"EastWestUsage\")"
+        },
+        {
+            "definition": "Binary variable indicating if a north-south segment is used (1) or not (0)",
+            "symbol": "NorthSouthUsage",
+            "shape": [
+                "N-1",
+                "W"
+            ],
+            "status": "coded",
+            "code": "NorthSouthUsage = model.addVars(N-1, W, vtype=gp.GRB.BINARY, name=\"NorthSouthUsage\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total amount of time to deliver the package by choosing the most time-efficient route",
+            "status": "coded",
+            "formulation": "\\min \\left(\\sum_{n=1}^{N} \\sum_{w=1}^{W-1} \\textup{EastWestUsage}_{n,w} \\cdot \\textup{WestTime}_{n,w} + \\sum_{n=1}^{N-1} \\sum_{w=1}^{W} \\textup{NorthSouthUsage}_{n,w} \\cdot \\textup{NorthTime}_{n,w} \\right)",
+            "related_variables": [
+                "EastWestUsage",
+                "NorthSouthUsage"
+            ],
+            "related_parameters": [
+                "WestTime",
+                "NorthTime"
+            ],
+            "code": "# Define the objective function\nobjective = gp.quicksum(EastWestUsage[n,w] * WestTime[n,w] for n in range(N) for w in range(W-1)) \\\n          + gp.quicksum(NorthSouthUsage[n,w] * NorthTime[n,w] for n in range(N-1) for w in range(W))\n\n# Set the objective\nmodel.setObjective(objective, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413093855_nlp4lp_60/",
+    "problem_path": "data/nlp4lp/60/"
+}

@@ -1,0 +1,223 @@
+{
+    "background": "Maple Oil processes different types of crude oil using compounds A and B to generate net revenue. The company aims to determine the quantity of each type of oil to process to maximize net revenue given the limitations of the available compounds.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Net revenue from processing a tank of light oil",
+            "symbol": "RevenueLight",
+            "value": 550,
+            "shape": [],
+            "code": "RevenueLight = data[\"RevenueLight\"] # scalar parameter"
+        },
+        {
+            "definition": "Net revenue from processing a tank of non-sticky oil",
+            "symbol": "RevenueNonSticky",
+            "value": 750,
+            "shape": [],
+            "code": "RevenueNonSticky = data[\"RevenueNonSticky\"] # scalar parameter"
+        },
+        {
+            "definition": "Net revenue from processing a tank of heavy oil",
+            "symbol": "RevenueHeavy",
+            "value": 950,
+            "shape": [],
+            "code": "RevenueHeavy = data[\"RevenueHeavy\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of compound A required to process a tank of light oil",
+            "symbol": "CompoundALight",
+            "value": 3,
+            "shape": [],
+            "code": "CompoundALight = data[\"CompoundALight\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of compound B required to process a tank of light oil",
+            "symbol": "CompoundBLight",
+            "value": 3,
+            "shape": [],
+            "code": "CompoundBLight = data[\"CompoundBLight\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of compound A required to process a tank of non-sticky oil",
+            "symbol": "CompoundANonSticky",
+            "value": 6,
+            "shape": [],
+            "code": "CompoundANonSticky = data[\"CompoundANonSticky\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of compound B required to process a tank of non-sticky oil",
+            "symbol": "CompoundBNonSticky",
+            "value": 2,
+            "shape": [],
+            "code": "CompoundBNonSticky = data[\"CompoundBNonSticky\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of compound A required to process a tank of heavy oil",
+            "symbol": "CompoundAHeavy",
+            "value": 9,
+            "shape": [],
+            "code": "CompoundAHeavy = data[\"CompoundAHeavy\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of compound B required to process a tank of heavy oil",
+            "symbol": "CompoundBHeavy",
+            "value": 3,
+            "shape": [],
+            "code": "CompoundBHeavy = data[\"CompoundBHeavy\"] # scalar parameter"
+        },
+        {
+            "definition": "Total units of compound A available for processing",
+            "symbol": "TotalCompoundA",
+            "value": 250,
+            "shape": [],
+            "code": "TotalCompoundA = data[\"TotalCompoundA\"] # scalar parameter"
+        },
+        {
+            "definition": "Total units of compound B available for processing",
+            "symbol": "TotalCompoundB",
+            "value": 150,
+            "shape": [],
+            "code": "TotalCompoundB = data[\"TotalCompoundB\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Number of light oil tanks processed must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumLightOilTanks} \\geq 0",
+            "related_variables": [
+                "NumLightOilTanks"
+            ],
+            "related_parameters": [],
+            "code": "# No code needed as the variable is already defined to be non-negative by setting its type to INTEGER.\n# The constraint \"NumLightOilTanks >= 0\" is implicitly handled by the variable type definition."
+        },
+        {
+            "description": "Number of non-sticky oil tanks processed must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumNonStickyOilTanks} \\geq 0",
+            "related_variables": [
+                "NumNonStickyOilTanks"
+            ],
+            "related_parameters": [],
+            "code": "# Constraint: Number of non-sticky oil tanks processed must be non-negative\nmodel.addConstr(NumNonStickyOilTanks >= 0, \"non_negative_tanks\")"
+        },
+        {
+            "description": "The number of heavy oil tanks processed must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumHeavyOilTanks} \\geq 0",
+            "related_variables": [
+                "NumHeavyOilTanks"
+            ],
+            "related_parameters": [],
+            "code": "# Constraint for non-negative number of heavy oil tanks processed\nmodel.addConstr(NumHeavyOilTanks >= 0, name=\"non_negative_heavy_oil_tanks\")"
+        },
+        {
+            "description": "Consumption of compound A for light oil does not exceed TotalCompoundA",
+            "status": "coded",
+            "formulation": "\\textup{NumLightOilTanks} \\times \\textup{CompoundALight} \\leq \\textup{TotalCompoundA}",
+            "related_variables": [
+                "NumLightOilTanks"
+            ],
+            "related_parameters": [
+                "CompoundALight",
+                "TotalCompoundA"
+            ],
+            "code": "# Constraint: Consumption of compound A for light oil does not exceed TotalCompoundA\nmodel.addConstr(NumLightOilTanks * CompoundALight <= TotalCompoundA, name=\"compound_A_consumption\")"
+        },
+        {
+            "description": "Consumption of compound B for light oil does not exceed TotalCompoundB",
+            "status": "coded",
+            "formulation": "\\textup{NumLightOilTanks} \\times \\textup{CompoundBLight} \\leq \\textup{TotalCompoundB}",
+            "related_variables": [
+                "NumLightOilTanks"
+            ],
+            "related_parameters": [
+                "CompoundBLight",
+                "TotalCompoundB"
+            ],
+            "code": "# Constraint: Consumption of compound B for light oil does not exceed TotalCompoundB\nmodel.addConstr(NumLightOilTanks * CompoundBLight <= TotalCompoundB, name=\"B_consumption_light_oil\")"
+        },
+        {
+            "description": "Total consumption of compound A for all oils does not exceed available compound A",
+            "status": "coded",
+            "formulation": "\\textup{CompoundALight} \\cdot \\textup{NumLightOilTanks} + \\textup{CompoundANonSticky} \\cdot \\textup{NumNonStickyOilTanks} + \\textup{CompoundAHeavy} \\cdot \\textup{NumHeavyOilTanks} \\leq \\textup{TotalCompoundA}",
+            "related_variables": [
+                "NumLightOilTanks",
+                "NumNonStickyOilTanks",
+                "NumHeavyOilTanks"
+            ],
+            "related_parameters": [
+                "CompoundALight",
+                "CompoundANonSticky",
+                "CompoundAHeavy",
+                "TotalCompoundA"
+            ],
+            "code": "# Total consumption of compound A for all oils does not exceed available compound A\nmodel.addConstr(CompoundALight * NumLightOilTanks + CompoundANonSticky * NumNonStickyOilTanks + CompoundAHeavy * NumHeavyOilTanks <= TotalCompoundA, name=\"TotalCompoundA_Constraint\")"
+        },
+        {
+            "description": "Total consumption of compound B for all oils does not exceed TotalCompoundB",
+            "status": "coded",
+            "formulation": "\\textup{CompoundBLight} \\cdot \\textup{NumLightOilTanks} + \\textup{CompoundBNonSticky} \\cdot \\textup{NumNonStickyOilTanks} + \\textup{CompoundBHeavy} \\cdot \\textup{NumHeavyOilTanks} \\leq \\textup{TotalCompoundB}",
+            "related_variables": [
+                "NumLightOilTanks",
+                "NumNonStickyOilTanks",
+                "NumHeavyOilTanks"
+            ],
+            "related_parameters": [
+                "CompoundBLight",
+                "CompoundBNonSticky",
+                "CompoundBHeavy",
+                "TotalCompoundB"
+            ],
+            "code": "# Total consumption of compound B for all oils does not exceed TotalCompoundB\nmodel.addConstr(CompoundBLight * NumLightOilTanks + CompoundBNonSticky * NumNonStickyOilTanks + CompoundBHeavy * NumHeavyOilTanks <= TotalCompoundB, name=\"B_consumption_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of light oil tanks to be processed",
+            "symbol": "NumLightOilTanks",
+            "shape": [],
+            "status": "coded",
+            "code": "NumLightOilTanks = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumLightOilTanks\")"
+        },
+        {
+            "definition": "Number of non-sticky oil tanks to be processed",
+            "symbol": "NumNonStickyOilTanks",
+            "shape": [],
+            "status": "coded",
+            "code": "NumNonStickyOilTanks = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumNonStickyOilTanks\")"
+        },
+        {
+            "definition": "Number of heavy oil tanks to be processed",
+            "symbol": "NumHeavyOilTanks",
+            "shape": [],
+            "status": "coded",
+            "code": "NumHeavyOilTanks = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumHeavyOilTanks\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total net revenue from processing different types of oil given the limitations of available compounds",
+            "status": "coded",
+            "formulation": "\\max \\left( \\textup{RevenueLight} \\cdot \\textup{NumLightOilTanks} + \\textup{RevenueNonSticky} \\cdot \\textup{NumNonStickyOilTanks} + \\textup{RevenueHeavy} \\cdot \\textup{NumHeavyOilTanks} \\right)",
+            "related_variables": [
+                "NumLightOilTanks",
+                "NumNonStickyOilTanks",
+                "NumHeavyOilTanks"
+            ],
+            "related_parameters": [
+                "RevenueLight",
+                "RevenueNonSticky",
+                "RevenueHeavy"
+            ],
+            "code": "# Objective function\nmodel.setObjective(RevenueLight * NumLightOilTanks + RevenueNonSticky * NumNonStickyOilTanks + RevenueHeavy * NumHeavyOilTanks, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 36900.0,
+    "log_path": "logs/log_20250413155911_nl4opt_prob_210/",
+    "problem_path": "data/nl4opt/prob_210/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_210/data.json\", \"r\") as f:\n    data = json.load(f)\n\nRevenueLight = data[\"RevenueLight\"] # scalar parameter\nRevenueNonSticky = data[\"RevenueNonSticky\"] # scalar parameter\nRevenueHeavy = data[\"RevenueHeavy\"] # scalar parameter\nCompoundALight = data[\"CompoundALight\"] # scalar parameter\nCompoundBLight = data[\"CompoundBLight\"] # scalar parameter\nCompoundANonSticky = data[\"CompoundANonSticky\"] # scalar parameter\nCompoundBNonSticky = data[\"CompoundBNonSticky\"] # scalar parameter\nCompoundAHeavy = data[\"CompoundAHeavy\"] # scalar parameter\nCompoundBHeavy = data[\"CompoundBHeavy\"] # scalar parameter\nTotalCompoundA = data[\"TotalCompoundA\"] # scalar parameter\nTotalCompoundB = data[\"TotalCompoundB\"] # scalar parameter\nNumLightOilTanks = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumLightOilTanks\")\nNumNonStickyOilTanks = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumNonStickyOilTanks\")\nNumHeavyOilTanks = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumHeavyOilTanks\")\n\n# No code needed as the variable is already defined to be non-negative by setting its type to INTEGER.\n# The constraint \"NumLightOilTanks >= 0\" is implicitly handled by the variable type definition.\n\n# Constraint: Number of non-sticky oil tanks processed must be non-negative\nmodel.addConstr(NumNonStickyOilTanks >= 0, \"non_negative_tanks\")\n\n# Constraint for non-negative number of heavy oil tanks processed\nmodel.addConstr(NumHeavyOilTanks >= 0, name=\"non_negative_heavy_oil_tanks\")\n\n# Constraint: Consumption of compound A for light oil does not exceed TotalCompoundA\nmodel.addConstr(NumLightOilTanks * CompoundALight <= TotalCompoundA, name=\"compound_A_consumption\")\n\n# Constraint: Consumption of compound B for light oil does not exceed TotalCompoundB\nmodel.addConstr(NumLightOilTanks * CompoundBLight <= TotalCompoundB, name=\"B_consumption_light_oil\")\n\n# Total consumption of compound A for all oils does not exceed available compound A\nmodel.addConstr(CompoundALight * NumLightOilTanks + CompoundANonSticky * NumNonStickyOilTanks + CompoundAHeavy * NumHeavyOilTanks <= TotalCompoundA, name=\"TotalCompoundA_Constraint\")\n\n# Total consumption of compound B for all oils does not exceed TotalCompoundB\nmodel.addConstr(CompoundBLight * NumLightOilTanks + CompoundBNonSticky * NumNonStickyOilTanks + CompoundBHeavy * NumHeavyOilTanks <= TotalCompoundB, name=\"B_consumption_constraint\")\n\n# Objective function\nmodel.setObjective(RevenueLight * NumLightOilTanks + RevenueNonSticky * NumNonStickyOilTanks + RevenueHeavy * NumHeavyOilTanks, gp.GRB.MAXIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

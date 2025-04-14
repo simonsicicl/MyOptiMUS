@@ -1,0 +1,254 @@
+{
+    "background": "Due to an accident, locals must be moved across a lake either using kayaks or motorboats, each with different capacities and trip durations. Constraints on the number of motorboat trips and a minimum percentage of kayak trips apply.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Minimum number of locals to be moved",
+            "symbol": "MinLocals",
+            "value": 550,
+            "shape": [],
+            "code": "MinLocals = data[\"MinLocals\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of people per kayak trip",
+            "symbol": "PeoplePerKayak",
+            "value": 4,
+            "shape": [],
+            "code": "PeoplePerKayak = data[\"PeoplePerKayak\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of people per motorboat trip",
+            "symbol": "PeoplePerMotorboat",
+            "value": 5,
+            "shape": [],
+            "code": "PeoplePerMotorboat = data[\"PeoplePerMotorboat\"] # scalar parameter"
+        },
+        {
+            "definition": "Time per kayak trip in minutes",
+            "symbol": "TimePerKayak",
+            "value": 5,
+            "shape": [],
+            "code": "TimePerKayak = data[\"TimePerKayak\"] # scalar parameter"
+        },
+        {
+            "definition": "Time per motorboat trip in minutes",
+            "symbol": "TimePerMotorboat",
+            "value": 3,
+            "shape": [],
+            "code": "TimePerMotorboat = data[\"TimePerMotorboat\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum possible motorboat trips",
+            "symbol": "MaxMotorboatTrips",
+            "value": 25,
+            "shape": [],
+            "code": "MaxMotorboatTrips = data[\"MaxMotorboatTrips\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum percentage of trips that should be by kayak",
+            "symbol": "MinPercentKayakTrips",
+            "value": 0.75,
+            "shape": [],
+            "code": "MinPercentKayakTrips = data[\"MinPercentKayakTrips\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "At least \\textup{MinLocals} locals must be transported across the lake",
+            "status": "coded",
+            "formulation": "\\textup{PeoplePerKayak} \\cdot \\textup{NumKayakTrips} + \\textup{PeoplePerMotorboat} \\cdot \\textup{NumMotorboatTrips} \\geq \\textup{MinLocals}",
+            "related_variables": [
+                "NumKayakTrips",
+                "NumMotorboatTrips"
+            ],
+            "related_parameters": [
+                "MinLocals",
+                "PeoplePerKayak",
+                "PeoplePerMotorboat"
+            ],
+            "code": "# Transport a minimum number of locals across the lake\nmodel.addConstr(PeoplePerKayak * NumKayakTrips + PeoplePerMotorboat * NumMotorboatTrips >= MinLocals, name=\"min_locals_constraint\")"
+        },
+        {
+            "description": "Total number of people transported via kayak trips cannot exceed the product of the number of kayak trips and the number of people per kayak.",
+            "status": "coded",
+            "formulation": "\\textup{NumKayakTrips} \\times \\textup{PeoplePerKayak} \\leq \\textup{TotalPeopleKayak}",
+            "related_variables": [
+                "NumKayakTrips",
+                "TotalPeopleKayak"
+            ],
+            "related_parameters": [
+                "PeoplePerKayak"
+            ],
+            "code": "# Constraint: Total number of people transported via kayak cannot exceed the number of kayak trips times the number of people per kayak\nmodel.addConstr(NumKayakTrips * PeoplePerKayak >= TotalPeopleKayak, name=\"kayak_people_constraint\")"
+        },
+        {
+            "description": "The total number of people transported by motorboat trips cannot exceed the product of the number of motorboat trips and the number of people per motorboat trip",
+            "status": "coded",
+            "formulation": "\\textup{TotalPeopleMotorboat} \\leq \\textup{NumMotorboatTrips} \\times \\textup{PeoplePerMotorboat}",
+            "related_variables": [
+                "NumMotorboatTrips",
+                "TotalPeopleMotorboat"
+            ],
+            "related_parameters": [
+                "PeoplePerMotorboat"
+            ],
+            "code": "# Add constraint to limit the total number of people transported by motorboat to the product of the number of motorboat trips and the number of people per motorboat trip\nmodel.addConstr(TotalPeopleMotorboat <= NumMotorboatTrips * PeoplePerMotorboat, name=\"motorboat_people_limit\")"
+        },
+        {
+            "description": "Constraint on the maximum number of motorboat trips",
+            "status": "coded",
+            "formulation": "\\textup{NumMotorboatTrips} \\leq \\textup{MaxMotorboatTrips}",
+            "related_variables": [
+                "NumMotorboatTrips"
+            ],
+            "related_parameters": [
+                "MaxMotorboatTrips"
+            ],
+            "code": "# Add constraint on the maximum number of motorboat trips\nmodel.addConstr(NumMotorboatTrips <= MaxMotorboatTrips, name=\"max_motorboat_trips\")"
+        },
+        {
+            "description": "At least MinPercentKayakTrips% of the total trips must be by kayak",
+            "status": "coded",
+            "formulation": "\\textup{NumKayakTrips} \\geq \\textup{MinPercentKayakTrips} \\times (\\textup{NumKayakTrips} + \\textup{NumMotorboatTrips})",
+            "related_variables": [
+                "NumKayakTrips",
+                "NumMotorboatTrips"
+            ],
+            "related_parameters": [
+                "MinPercentKayakTrips"
+            ],
+            "code": "# At least MinPercentKayakTrips% of the total trips must be by kayak\nmodel.addConstr(NumKayakTrips >= MinPercentKayakTrips * (NumKayakTrips + NumMotorboatTrips), name=\"min_kayak_trips\")"
+        },
+        {
+            "description": "Linearized constraint to ensure that the percentage of kayak trips is at least the minimum required",
+            "status": "coded",
+            "formulation": "(1 - \\textup{MinPercentKayakTrips}) \\times \\textup{NumKayakTrips} \\geq \\textup{MinPercentKayakTrips} \\times \\textup{NumMotorboatTrips}",
+            "related_variables": [
+                "NumKayakTrips",
+                "NumMotorboatTrips"
+            ],
+            "related_parameters": [
+                "MinPercentKayakTrips"
+            ],
+            "code": "# Ensure that the percentage of kayak trips is at least the minimum required\nmodel.addConstr((1 - MinPercentKayakTrips) * NumKayakTrips >= MinPercentKayakTrips * NumMotorboatTrips, name=\"min_kayak_trips_percentage\")"
+        },
+        {
+            "description": "Ensure that the total number of people transported meets or exceeds the minimum required",
+            "status": "coded",
+            "formulation": "\\textup{TotalPeopleKayak} + \\textup{TotalPeopleMotorboat} \\geq \\textup{MinLocals}",
+            "related_variables": [
+                "TotalPeopleKayak",
+                "TotalPeopleMotorboat"
+            ],
+            "related_parameters": [
+                "MinLocals"
+            ],
+            "code": ""
+        },
+        {
+            "description": "Ensure that the number of trips by motorboat does not exceed the maximum allowed",
+            "status": "coded",
+            "formulation": "\\textup{NumMotorboatTrips} \\leq \\textup{MaxMotorboatTrips}",
+            "related_variables": [
+                "NumMotorboatTrips"
+            ],
+            "related_parameters": [
+                "MaxMotorboatTrips"
+            ],
+            "code": "# Ensure that the number of trips by motorboat does not exceed the maximum allowed\nmodel.addConstr(NumMotorboatTrips <= MaxMotorboatTrips, name=\"num_motorboat_trips_constraint\")"
+        },
+        {
+            "description": "Ensure that at least the minimum percentage of the trips are made by kayaks",
+            "status": "coded",
+            "formulation": "\\textup{NumKayakTrips} \\geq \\textup{MinPercentKayakTrips} \\times (\\textup{NumKayakTrips} + \\textup{NumMotorboatTrips})",
+            "related_variables": [
+                "NumKayakTrips",
+                "NumMotorboatTrips"
+            ],
+            "related_parameters": [
+                "MinPercentKayakTrips"
+            ],
+            "code": "# Ensure that at least the minimum percentage of the trips are made by kayaks\nmodel.addConstr((NumKayakTrips >= MinPercentKayakTrips * (NumKayakTrips + NumMotorboatTrips)), name=\"min_kayak_trips_percent\")"
+        },
+        {
+            "description": "Relate the total number of people transported by kayak to the number of kayak trips",
+            "status": "coded",
+            "formulation": "\\textup{TotalPeopleKayak} = \\textup{NumKayakTrips} \\times \\textup{PeoplePerKayak}",
+            "related_variables": [
+                "TotalPeopleKayak",
+                "NumKayakTrips"
+            ],
+            "related_parameters": [
+                "PeoplePerKayak"
+            ],
+            "code": "# Relate the total number of people transported by kayak to the number of kayak trips\nmodel.addConstr(TotalPeopleKayak == NumKayakTrips * PeoplePerKayak, name=\"kayak_people_relation\")"
+        },
+        {
+            "description": "Relate the total number of people transported by motorboat to the number of motorboat trips",
+            "status": "coded",
+            "formulation": "\\textup{TotalPeopleMotorboat} = \\textup{NumMotorboatTrips} \\times \\textup{PeoplePerMotorboat}",
+            "related_variables": [
+                "TotalPeopleMotorboat",
+                "NumMotorboatTrips"
+            ],
+            "related_parameters": [
+                "PeoplePerMotorboat"
+            ],
+            "code": "# Add constraint to relate the total number of people transported by motorboat to the number of motorboat trips\nTotalPeopleMotorboat_equation = (TotalPeopleMotorboat == NumMotorboatTrips * PeoplePerMotorboat)\nmodel.addConstr(TotalPeopleMotorboat_equation, name=\"total_people_motorboat\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of kayak trips",
+            "symbol": "NumKayakTrips",
+            "shape": [],
+            "status": "coded",
+            "code": "NumKayakTrips = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumKayakTrips\")"
+        },
+        {
+            "definition": "Number of motorboat trips",
+            "symbol": "NumMotorboatTrips",
+            "shape": [],
+            "status": "coded",
+            "code": "NumMotorboatTrips = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumMotorboatTrips\")"
+        },
+        {
+            "definition": "Total number of people transported by kayak trips",
+            "symbol": "TotalPeopleKayak",
+            "shape": [],
+            "status": "coded",
+            "code": "TotalPeopleKayak = model.addVar(vtype=gp.GRB.INTEGER, name=\"TotalPeopleKayak\")"
+        },
+        {
+            "definition": "Total number of people transported by motorboat trips",
+            "symbol": "TotalPeopleMotorboat",
+            "shape": [],
+            "status": "coded",
+            "code": "TotalPeopleMotorboat = model.addVar(vtype=gp.GRB.INTEGER, name=\"TotalPeopleMotorboat\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total time needed to transport all the locals using kayaks and motorboats",
+            "status": "coded",
+            "formulation": "\\textup{Minimize} \\quad \\textup{TotalTime} = \\textup{NumKayakTrips} \\times \\textup{TimePerKayak} + \\textup{NumMotorboatTrips} \\times \\textup{TimePerMotorboat}",
+            "related_variables": [
+                "NumKayakTrips",
+                "NumMotorboatTrips"
+            ],
+            "related_parameters": [
+                "TimePerKayak",
+                "TimePerMotorboat"
+            ],
+            "code": "# Set objective\nmodel.setObjective(NumKayakTrips * TimePerKayak + NumMotorboatTrips * TimePerMotorboat, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": "Traceback (most recent call last):\n  File \"c:\\Users\\Simon\\Desktop\\Courses\\ECE 570\\ECE570_Project\\MyOptiMUS\\evaluator.py\", line 45, in run\n    exec(last_line, local_env, local_env)\n  File \"<string>\", line 1\n    ```\n    ^\nSyntaxError: invalid syntax\n",
+    "obj_val": 610.0,
+    "log_path": "logs/log_20250413173814_nl4opt_prob_262/",
+    "problem_path": "data/nl4opt/prob_262/",
+    "prep_code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_262/data.json\", \"r\") as f:\n    data = json.load(f)\n",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_262/data.json\", \"r\") as f:\n    data = json.load(f)\n\nMinLocals = data[\"MinLocals\"] # scalar parameter\nPeoplePerKayak = data[\"PeoplePerKayak\"] # scalar parameter\nPeoplePerMotorboat = data[\"PeoplePerMotorboat\"] # scalar parameter\nTimePerKayak = data[\"TimePerKayak\"] # scalar parameter\nTimePerMotorboat = data[\"TimePerMotorboat\"] # scalar parameter\nMaxMotorboatTrips = data[\"MaxMotorboatTrips\"] # scalar parameter\nMinPercentKayakTrips = data[\"MinPercentKayakTrips\"] # scalar parameter\nNumKayakTrips = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumKayakTrips\")\nNumMotorboatTrips = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumMotorboatTrips\")\nTotalPeopleKayak = model.addVar(vtype=gp.GRB.INTEGER, name=\"TotalPeopleKayak\")\nTotalPeopleMotorboat = model.addVar(vtype=gp.GRB.INTEGER, name=\"TotalPeopleMotorboat\")\n\n# Transport a minimum number of locals across the lake\nmodel.addConstr(PeoplePerKayak * NumKayakTrips + PeoplePerMotorboat * NumMotorboatTrips >= MinLocals, name=\"min_locals_constraint\")\n\n# Constraint: Total number of people transported via kayak cannot exceed the number of kayak trips times the number of people per kayak\nmodel.addConstr(NumKayakTrips * PeoplePerKayak >= TotalPeopleKayak, name=\"kayak_people_constraint\")\n\n# Add constraint to limit the total number of people transported by motorboat to the product of the number of motorboat trips and the number of people per motorboat trip\nmodel.addConstr(TotalPeopleMotorboat <= NumMotorboatTrips * PeoplePerMotorboat, name=\"motorboat_people_limit\")\n\n# Add constraint on the maximum number of motorboat trips\nmodel.addConstr(NumMotorboatTrips <= MaxMotorboatTrips, name=\"max_motorboat_trips\")\n\n# At least MinPercentKayakTrips% of the total trips must be by kayak\nmodel.addConstr(NumKayakTrips >= MinPercentKayakTrips * (NumKayakTrips + NumMotorboatTrips), name=\"min_kayak_trips\")\n\n# Ensure that the percentage of kayak trips is at least the minimum required\nmodel.addConstr((1 - MinPercentKayakTrips) * NumKayakTrips >= MinPercentKayakTrips * NumMotorboatTrips, name=\"min_kayak_trips_percentage\")\n\n\n\n# Ensure that the number of trips by motorboat does not exceed the maximum allowed\nmodel.addConstr(NumMotorboatTrips <= MaxMotorboatTrips, name=\"num_motorboat_trips_constraint\")\n\n# Ensure that at least the minimum percentage of the trips are made by kayaks\nmodel.addConstr((NumKayakTrips >= MinPercentKayakTrips * (NumKayakTrips + NumMotorboatTrips)), name=\"min_kayak_trips_percent\")\n\n# Relate the total number of people transported by kayak to the number of kayak trips\nmodel.addConstr(TotalPeopleKayak == NumKayakTrips * PeoplePerKayak, name=\"kayak_people_relation\")\n\n# Add constraint to relate the total number of people transported by motorboat to the number of motorboat trips\nTotalPeopleMotorboat_equation = (TotalPeopleMotorboat == NumMotorboatTrips * PeoplePerMotorboat)\nmodel.addConstr(TotalPeopleMotorboat_equation, name=\"total_people_motorboat\")\n\n# Set objective\nmodel.setObjective(NumKayakTrips * TimePerKayak + NumMotorboatTrips * TimePerMotorboat, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

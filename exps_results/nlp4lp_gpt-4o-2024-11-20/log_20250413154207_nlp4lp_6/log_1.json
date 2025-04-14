@@ -1,0 +1,109 @@
+{
+    "background": "The problem involves minimizing the total fuel, represented by the sum of absolute accelerations over time, for an object with given initial and final positions and velocities over a specified total time period.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Initial position of the object",
+            "symbol": "InitialPosition",
+            "value": "",
+            "shape": [],
+            "code": "InitialPosition = data[\"InitialPosition\"] # scalar parameter"
+        },
+        {
+            "definition": "Initial velocity of the object",
+            "symbol": "InitialVelocity",
+            "value": "",
+            "shape": [],
+            "code": "InitialVelocity = data[\"InitialVelocity\"] # scalar parameter"
+        },
+        {
+            "definition": "Final position of the object",
+            "symbol": "FinalPosition",
+            "value": "",
+            "shape": [],
+            "code": "FinalPosition = data[\"FinalPosition\"] # scalar parameter"
+        },
+        {
+            "definition": "Final velocity of the object",
+            "symbol": "FinalVelocity",
+            "value": "",
+            "shape": [],
+            "code": "FinalVelocity = data[\"FinalVelocity\"] # scalar parameter"
+        },
+        {
+            "definition": "Total time over which the object is moving",
+            "symbol": "TotalTime",
+            "value": "",
+            "shape": [],
+            "code": "TotalTime = data[\"TotalTime\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Constraints to define AbsAcceleration as the absolute value of Acceleration at each time step.",
+            "status": "coded",
+            "formulation": "\\textup{AbsAcceleration}_{t} \\geq \\textup{Acceleration}_{t} \\quad \\forall \\ t=1,...,\\textup{TotalTime}",
+            "related_variables": [
+                "AbsAcceleration",
+                "Acceleration"
+            ],
+            "related_parameters": [
+                "TotalTime"
+            ],
+            "code": "# Add constraints to ensure AbsAcceleration is the absolute value of Acceleration\nfor t in range(TotalTime):\n    model.addConstr(AbsAcceleration[t] >= Acceleration[t], name=f\"abs_acceleration_pos_{t}\")\n    model.addConstr(AbsAcceleration[t] >= -Acceleration[t], name=f\"abs_acceleration_neg_{t}\")"
+        },
+        {
+            "description": "Constraints to define AbsAcceleration as the absolute value of Acceleration at each time step (negative case).",
+            "status": "coded",
+            "formulation": "\\textup{AbsAcceleration}_{t} \\geq -\\textup{Acceleration}_{t} \\quad \\forall \\ t=1,...,\\textup{TotalTime}",
+            "related_variables": [
+                "AbsAcceleration",
+                "Acceleration"
+            ],
+            "related_parameters": [
+                "TotalTime"
+            ],
+            "code": "# Add constraints to define AbsAcceleration as the absolute value of Acceleration (negative case)\nfor t in range(TotalTime):\n    model.addConstr(AbsAcceleration[t] >= -Acceleration[t], name=f\"abs_accel_neg_{t}\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The acceleration of the object at each time step.",
+            "symbol": "Acceleration",
+            "shape": [
+                "TotalTime"
+            ],
+            "status": "coded",
+            "code": "Acceleration = model.addVars(TotalTime, vtype=gp.GRB.CONTINUOUS, name=\"Acceleration\")"
+        },
+        {
+            "definition": "The absolute value of the acceleration at each time step.",
+            "symbol": "AbsAcceleration",
+            "shape": [
+                "TotalTime"
+            ],
+            "status": "coded",
+            "code": "AbsAcceleration = model.addVars(TotalTime, vtype=gp.GRB.CONTINUOUS, name=\"AbsAcceleration\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total fuel, represented by the sum of absolute values of acceleration over time.",
+            "status": "coded",
+            "formulation": "\\textup{Minimize} \\quad \\sum_{t=1}^{\\textup{TotalTime}} \\textup{AbsAcceleration}_{t}",
+            "related_variables": [
+                "AbsAcceleration"
+            ],
+            "related_parameters": [
+                "TotalTime"
+            ],
+            "code": "# Set objective\nmodel.setObjective(gp.quicksum(AbsAcceleration[t] for t in range(TotalTime)), gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413154207_nlp4lp_6/",
+    "problem_path": "data/nlp4lp/6/"
+}

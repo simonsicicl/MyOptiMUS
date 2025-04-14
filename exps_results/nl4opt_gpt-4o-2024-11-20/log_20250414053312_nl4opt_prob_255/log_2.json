@@ -1,0 +1,192 @@
+{
+    "background": "An autobody shop is deciding on the purchase of two types of car jacks, an automatic electric one and a gas-powered one, to maximize the number of cars processed every hour while considering the limitations on power outlets, electricity, and gas.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of cars processed per hour by an automatic electric jack",
+            "symbol": "CarsPerHourElectric",
+            "value": 5,
+            "shape": [],
+            "code": "CarsPerHourElectric = data[\"CarsPerHourElectric\"] # scalar parameter"
+        },
+        {
+            "definition": "Electrical units used per hour by an automatic electric jack",
+            "symbol": "ElectricityPerJack",
+            "value": 6,
+            "shape": [],
+            "code": "ElectricityPerJack = data[\"ElectricityPerJack\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of cars processed per hour by a gas-powered jack",
+            "symbol": "CarsPerHourGas",
+            "value": 4,
+            "shape": [],
+            "code": "CarsPerHourGas = data[\"CarsPerHourGas\"] # scalar parameter"
+        },
+        {
+            "definition": "Gas units used per hour by a gas-powered jack",
+            "symbol": "GasPerJack",
+            "value": 7,
+            "shape": [],
+            "code": "GasPerJack = data[\"GasPerJack\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of automatic electric jacks due to limited power outlets",
+            "symbol": "MaxElectricJacks",
+            "value": 15,
+            "shape": [],
+            "code": "MaxElectricJacks = data[\"MaxElectricJacks\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum units of electricity available per hour",
+            "symbol": "MaxElectricity",
+            "value": 50,
+            "shape": [],
+            "code": "MaxElectricity = data[\"MaxElectricity\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum units of gas available per hour",
+            "symbol": "MaxGas",
+            "value": 80,
+            "shape": [],
+            "code": "MaxGas = data[\"MaxGas\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of automatic electric car jacks should not be negative.",
+            "status": "coded",
+            "formulation": "\\textup{ElectricJacks} \\geq 0",
+            "related_variables": [
+                "ElectricJacks"
+            ],
+            "related_parameters": [],
+            "code": "# No additional code needed since the variable \"ElectricJacks\" is already defined with a lower bound of 0 by default as it is continuous."
+        },
+        {
+            "description": "The number of gas-powered car jacks must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{GasPoweredJacks} \\geq 0",
+            "related_variables": [
+                "GasPoweredJacks"
+            ],
+            "related_parameters": [],
+            "code": "# No code is needed for this constraint since the variable `GasPoweredJacks` is already defined with non-negativity implicitly handled by default (continuous variables in Gurobi are non-negative unless specified otherwise)."
+        },
+        {
+            "description": "The number of automatic electric car jacks is less than or equal to the maximum allowable number of electric car jacks.",
+            "status": "coded",
+            "formulation": "\\textup{ElectricJacks} \\leq \\textup{MaxElectricJacks}",
+            "related_variables": [
+                "ElectricJacks"
+            ],
+            "related_parameters": [
+                "MaxElectricJacks"
+            ],
+            "code": "# Add constraint to ensure the number of electric jacks does not exceed the maximum allowed\nmodel.addConstr(ElectricJacks <= MaxElectricJacks, name=\"electric_jacks_limit\")"
+        },
+        {
+            "description": "The total electricity usage of automatic electric car jacks should not exceed the maximum available electricity.",
+            "status": "coded",
+            "formulation": "\\textup{ElectricJacks} \\times \\textup{ElectricityPerJack} \\leq \\textup{MaxElectricity}",
+            "related_variables": [
+                "ElectricJacks"
+            ],
+            "related_parameters": [
+                "ElectricityPerJack",
+                "MaxElectricity"
+            ],
+            "code": "# Add constraint for total electricity usage of automatic electric jacks\nmodel.addConstr(ElectricJacks * ElectricityPerJack <= MaxElectricity, name=\"electricity_usage_limit\")"
+        },
+        {
+            "description": "The total gas usage by gas-powered car jacks must not exceed the maximum gas capacity (MaxGas).",
+            "status": "coded",
+            "formulation": "\\\\textup{GasPoweredJacks} \\\\times \\\\textup{GasPerJack} \\\\leq \\\\textup{MaxGas}",
+            "related_variables": [
+                "GasPoweredJacks"
+            ],
+            "related_parameters": [
+                "GasPerJack",
+                "MaxGas"
+            ],
+            "code": "# Add constraint for gas usage by gas-powered car jacks\nmodel.addConstr(GasPoweredJacks * GasPerJack <= MaxGas, name=\"max_gas_usage\")"
+        },
+        {
+            "description": "The number of electric jacks cannot exceed the maximum allowable due to limited power outlets.",
+            "status": "coded",
+            "formulation": "\\textup{ElectricJacks} \\leq \\textup{MaxElectricJacks}",
+            "related_variables": [
+                "ElectricJacks"
+            ],
+            "related_parameters": [
+                "MaxElectricJacks"
+            ],
+            "code": "# Add constraint to limit the number of electric jacks\nmodel.addConstr(ElectricJacks <= MaxElectricJacks, name=\"limit_electric_jacks\")"
+        },
+        {
+            "description": "The total electricity used by all electric jacks cannot exceed the maximum available electricity per hour.",
+            "status": "coded",
+            "formulation": "\\textup{ElectricJacks} \\cdot \\textup{ElectricityPerJack} \\leq \\textup{MaxElectricity}",
+            "related_variables": [
+                "ElectricJacks"
+            ],
+            "related_parameters": [
+                "ElectricityPerJack",
+                "MaxElectricity"
+            ],
+            "code": "# Add constraint to ensure total electricity usage by electric jacks does not exceed the maximum available electricity\nmodel.addConstr(ElectricJacks * ElectricityPerJack <= MaxElectricity, name=\"electric_jack_constraint\")"
+        },
+        {
+            "description": "The total gas used by all gas-powered jacks cannot exceed the maximum available gas per hour.",
+            "status": "coded",
+            "formulation": "\\textup{GasPoweredJacks} \\cdot \\textup{GasPerJack} \\leq \\textup{MaxGas}",
+            "related_variables": [
+                "GasPoweredJacks"
+            ],
+            "related_parameters": [
+                "GasPerJack",
+                "MaxGas"
+            ],
+            "code": "# Add constraint to ensure the total gas used by gas-powered jacks does not exceed the maximum available gas\nmodel.addConstr(GasPoweredJacks * GasPerJack <= MaxGas, name=\"gas_limit_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of automatic electric jacks to be purchased",
+            "symbol": "ElectricJacks",
+            "shape": [],
+            "status": "coded",
+            "code": "ElectricJacks = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"ElectricJacks\")"
+        },
+        {
+            "definition": "The number of gas-powered jacks to be purchased",
+            "symbol": "GasPoweredJacks",
+            "shape": [],
+            "status": "coded",
+            "code": "GasPoweredJacks = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"GasPoweredJacks\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total number of cars processed every hour using the purchased jacks.",
+            "status": "coded",
+            "formulation": "\\max \\quad (\\textup{ElectricJacks} \\cdot \\textup{CarsPerHourElectric} + \\textup{GasPoweredJacks} \\cdot \\textup{CarsPerHourGas})",
+            "related_variables": [
+                "ElectricJacks",
+                "GasPoweredJacks"
+            ],
+            "related_parameters": [
+                "CarsPerHourElectric",
+                "CarsPerHourGas"
+            ],
+            "code": "# Set objective\nmodel.setObjective(ElectricJacks * CarsPerHourElectric + GasPoweredJacks * CarsPerHourGas, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 87.38095238095238,
+    "log_path": "logs/log_20250414053312_nl4opt_prob_255/",
+    "problem_path": "data/nl4opt/prob_255/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_255/data.json\", \"r\") as f:\n    data = json.load(f)\n\nCarsPerHourElectric = data[\"CarsPerHourElectric\"] # scalar parameter\nElectricityPerJack = data[\"ElectricityPerJack\"] # scalar parameter\nCarsPerHourGas = data[\"CarsPerHourGas\"] # scalar parameter\nGasPerJack = data[\"GasPerJack\"] # scalar parameter\nMaxElectricJacks = data[\"MaxElectricJacks\"] # scalar parameter\nMaxElectricity = data[\"MaxElectricity\"] # scalar parameter\nMaxGas = data[\"MaxGas\"] # scalar parameter\nElectricJacks = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"ElectricJacks\")\nGasPoweredJacks = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"GasPoweredJacks\")\n\n# No additional code needed since the variable \"ElectricJacks\" is already defined with a lower bound of 0 by default as it is continuous.\n\n# No code is needed for this constraint since the variable `GasPoweredJacks` is already defined with non-negativity implicitly handled by default (continuous variables in Gurobi are non-negative unless specified otherwise).\n\n# Add constraint to ensure the number of electric jacks does not exceed the maximum allowed\nmodel.addConstr(ElectricJacks <= MaxElectricJacks, name=\"electric_jacks_limit\")\n\n# Add constraint for total electricity usage of automatic electric jacks\nmodel.addConstr(ElectricJacks * ElectricityPerJack <= MaxElectricity, name=\"electricity_usage_limit\")\n\n# Add constraint for gas usage by gas-powered car jacks\nmodel.addConstr(GasPoweredJacks * GasPerJack <= MaxGas, name=\"max_gas_usage\")\n\n# Add constraint to limit the number of electric jacks\nmodel.addConstr(ElectricJacks <= MaxElectricJacks, name=\"limit_electric_jacks\")\n\n# Add constraint to ensure total electricity usage by electric jacks does not exceed the maximum available electricity\nmodel.addConstr(ElectricJacks * ElectricityPerJack <= MaxElectricity, name=\"electric_jack_constraint\")\n\n# Add constraint to ensure the total gas used by gas-powered jacks does not exceed the maximum available gas\nmodel.addConstr(GasPoweredJacks * GasPerJack <= MaxGas, name=\"gas_limit_constraint\")\n\n# Set objective\nmodel.setObjective(ElectricJacks * CarsPerHourElectric + GasPoweredJacks * CarsPerHourGas, gp.GRB.MAXIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

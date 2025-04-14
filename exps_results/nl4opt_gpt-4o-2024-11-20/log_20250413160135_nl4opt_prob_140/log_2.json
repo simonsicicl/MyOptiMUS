@@ -1,0 +1,183 @@
+{
+    "background": "A patient is undergoing radiation treatment with two beams aimed to deliver medicine doses to both a benign area and a tumor, with a goal to minimize radiation received by the pancreas while adhering to maximum and minimum dose limits for the skin and tumor respectively.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Dose of medicine delivered by Beam 1 per minute to the benign area of the pancreas",
+            "symbol": "DosePancreas1",
+            "value": 0.3,
+            "shape": [],
+            "code": "DosePancreas1 = data[\"DosePancreas1\"] # scalar parameter"
+        },
+        {
+            "definition": "Dose of medicine delivered by Beam 1 per minute to the benign area of the skin",
+            "symbol": "DoseSkin1",
+            "value": 0.2,
+            "shape": [],
+            "code": "DoseSkin1 = data[\"DoseSkin1\"] # scalar parameter"
+        },
+        {
+            "definition": "Dose of medicine delivered by Beam 2 per minute to the benign area of the pancreas",
+            "symbol": "DosePancreas2",
+            "value": 0.2,
+            "shape": [],
+            "code": "DosePancreas2 = data[\"DosePancreas2\"] # scalar parameter"
+        },
+        {
+            "definition": "Dose of medicine delivered by Beam 2 per minute to the benign area of the skin",
+            "symbol": "DoseSkin2",
+            "value": 0.1,
+            "shape": [],
+            "code": "DoseSkin2 = data[\"DoseSkin2\"] # scalar parameter"
+        },
+        {
+            "definition": "Dose of medicine delivered by Beam 1 per minute to the tumor",
+            "symbol": "DoseTumor1",
+            "value": 0.6,
+            "shape": [],
+            "code": "DoseTumor1 = data[\"DoseTumor1\"] # scalar parameter"
+        },
+        {
+            "definition": "Dose of medicine delivered by Beam 2 per minute to the tumor",
+            "symbol": "DoseTumor2",
+            "value": 0.4,
+            "shape": [],
+            "code": "DoseTumor2 = data[\"DoseTumor2\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum units of medicine the skin should receive",
+            "symbol": "MaxSkinDose",
+            "value": 4,
+            "shape": [],
+            "code": "MaxSkinDose = data[\"MaxSkinDose\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum units of medicine the tumor should receive",
+            "symbol": "MinTumorDose",
+            "value": 3,
+            "shape": [],
+            "code": "MinTumorDose = data[\"MinTumorDose\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Ensure that the minutes of Beam 1 used is non-negative",
+            "status": "coded",
+            "formulation": "\\\\textup{MinutesBeam1} \\\\geq 0",
+            "related_variables": [
+                "MinutesBeam1"
+            ],
+            "related_parameters": [],
+            "code": "# Ensure that the minutes of Beam 1 used is non-negative\nmodel.addConstr(MinutesBeam1 >= 0, name=\"non_negative_MinutesBeam1\")"
+        },
+        {
+            "description": "The number of minutes Beam 2 is used is non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{MinutesBeam2} \\\\geq 0",
+            "related_variables": [
+                "MinutesBeam2"
+            ],
+            "related_parameters": [],
+            "code": "# Since the variable \"MinutesBeam2\" is already coded as a non-negative continuous variable, no additional code is needed."
+        },
+        {
+            "description": "The total dose of medicine delivered to the skin from both beams must not exceed the maximum allowable dose (MaxSkinDose).",
+            "status": "coded",
+            "formulation": "\\textup{DoseSkin1} \\times \\textup{MinutesBeam1} + \\textup{DoseSkin2} \\times \\textup{MinutesBeam2} \\leq \\textup{MaxSkinDose}",
+            "related_variables": [
+                "MinutesBeam1",
+                "MinutesBeam2"
+            ],
+            "related_parameters": [
+                "DoseSkin1",
+                "DoseSkin2",
+                "MaxSkinDose"
+            ],
+            "code": "# Adding the constraint for maximum allowable skin dose\nmodel.addConstr(DoseSkin1 * MinutesBeam1 + DoseSkin2 * MinutesBeam2 <= MaxSkinDose, name=\"max_skin_dose_constraint\")"
+        },
+        {
+            "description": "The tumor receives at least MinTumorDose units of medicine from both beams combined.",
+            "status": "coded",
+            "formulation": "\\textup{DoseTumor1} \\cdot \\textup{MinutesBeam1} + \\textup{DoseTumor2} \\cdot \\textup{MinutesBeam2} \\geq \\textup{MinTumorDose}",
+            "related_variables": [
+                "MinutesBeam1",
+                "MinutesBeam2"
+            ],
+            "related_parameters": [
+                "DoseTumor1",
+                "DoseTumor2",
+                "MinTumorDose"
+            ],
+            "code": "# Add a constraint to ensure the tumor receives at least MinTumorDose units of medicine\nmodel.addConstr(DoseTumor1 * MinutesBeam1 + DoseTumor2 * MinutesBeam2 >= MinTumorDose, name=\"tumor_min_dose\")"
+        },
+        {
+            "description": "Ensure the tumor receives at least the minimum required dose.",
+            "status": "coded",
+            "formulation": "\\\\textup{DoseTumor1} \\\\cdot \\\\textup{MinutesBeam1} + \\\\textup{DoseTumor2} \\\\cdot \\\\textup{MinutesBeam2} \\\\geq \\\\textup{MinTumorDose}",
+            "related_variables": [
+                "MinutesBeam1",
+                "MinutesBeam2"
+            ],
+            "related_parameters": [
+                "DoseTumor1",
+                "DoseTumor2",
+                "MinTumorDose"
+            ],
+            "code": "# Ensure the tumor receives at least the minimum required dose\nmodel.addConstr(\n    DoseTumor1 * MinutesBeam1 + DoseTumor2 * MinutesBeam2 >= MinTumorDose, \n    name=\"min_tumor_dose\"\n)"
+        },
+        {
+            "description": "Ensure the skin does not receive more than the maximum allowed dose.",
+            "status": "coded",
+            "formulation": "\\\\textup{DoseSkin1} \\\\cdot \\\\textup{MinutesBeam1} + \\\\textup{DoseSkin2} \\\\cdot \\\\textup{MinutesBeam2} \\\\leq \\\\textup{MaxSkinDose}",
+            "related_variables": [
+                "MinutesBeam1",
+                "MinutesBeam2"
+            ],
+            "related_parameters": [
+                "DoseSkin1",
+                "DoseSkin2",
+                "MaxSkinDose"
+            ],
+            "code": "# Add skin dose constraint\nmodel.addConstr(\n    DoseSkin1 * MinutesBeam1 + DoseSkin2 * MinutesBeam2 <= MaxSkinDose,\n    name=\"skin_dose_constraint\"\n)"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of minutes Beam 1 is used in the radiation treatment",
+            "symbol": "MinutesBeam1",
+            "shape": [],
+            "status": "coded",
+            "code": "MinutesBeam1 = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"MinutesBeam1\")"
+        },
+        {
+            "definition": "The number of minutes Beam 2 is used in the radiation treatment",
+            "symbol": "MinutesBeam2",
+            "shape": [],
+            "status": "coded",
+            "code": "MinutesBeam2 = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"MinutesBeam2\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total medicine dose received by the pancreas.",
+            "status": "coded",
+            "formulation": "\\\\textup{Minimize:} \\\\quad \\\\textup{DosePancreas1} \\\\cdot \\\\textup{MinutesBeam1} + \\\\textup{DosePancreas2} \\\\cdot \\\\textup{MinutesBeam2}",
+            "related_variables": [
+                "MinutesBeam1",
+                "MinutesBeam2"
+            ],
+            "related_parameters": [
+                "DosePancreas1",
+                "DosePancreas2"
+            ],
+            "code": "# Set objective\nmodel.setObjective(DosePancreas1 * MinutesBeam1 + DosePancreas2 * MinutesBeam2, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 1.5,
+    "log_path": "logs/log_20250413160135_nl4opt_prob_140/",
+    "problem_path": "data/nl4opt/prob_140/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_140/data.json\", \"r\") as f:\n    data = json.load(f)\n\nDosePancreas1 = data[\"DosePancreas1\"] # scalar parameter\nDoseSkin1 = data[\"DoseSkin1\"] # scalar parameter\nDosePancreas2 = data[\"DosePancreas2\"] # scalar parameter\nDoseSkin2 = data[\"DoseSkin2\"] # scalar parameter\nDoseTumor1 = data[\"DoseTumor1\"] # scalar parameter\nDoseTumor2 = data[\"DoseTumor2\"] # scalar parameter\nMaxSkinDose = data[\"MaxSkinDose\"] # scalar parameter\nMinTumorDose = data[\"MinTumorDose\"] # scalar parameter\nMinutesBeam1 = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"MinutesBeam1\")\nMinutesBeam2 = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"MinutesBeam2\")\n\n# Ensure that the minutes of Beam 1 used is non-negative\nmodel.addConstr(MinutesBeam1 >= 0, name=\"non_negative_MinutesBeam1\")\n\n# Since the variable \"MinutesBeam2\" is already coded as a non-negative continuous variable, no additional code is needed.\n\n# Adding the constraint for maximum allowable skin dose\nmodel.addConstr(DoseSkin1 * MinutesBeam1 + DoseSkin2 * MinutesBeam2 <= MaxSkinDose, name=\"max_skin_dose_constraint\")\n\n# Add a constraint to ensure the tumor receives at least MinTumorDose units of medicine\nmodel.addConstr(DoseTumor1 * MinutesBeam1 + DoseTumor2 * MinutesBeam2 >= MinTumorDose, name=\"tumor_min_dose\")\n\n# Ensure the tumor receives at least the minimum required dose\nmodel.addConstr(\n    DoseTumor1 * MinutesBeam1 + DoseTumor2 * MinutesBeam2 >= MinTumorDose, \n    name=\"min_tumor_dose\"\n)\n\n# Add skin dose constraint\nmodel.addConstr(\n    DoseSkin1 * MinutesBeam1 + DoseSkin2 * MinutesBeam2 <= MaxSkinDose,\n    name=\"skin_dose_constraint\"\n)\n\n# Set objective\nmodel.setObjective(DosePancreas1 * MinutesBeam1 + DosePancreas2 * MinutesBeam2, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

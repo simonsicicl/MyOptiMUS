@@ -1,0 +1,256 @@
+{
+    "background": "The problem is to find the minimum number of employees needed to meet a certain coverage requirement where employees work for a set number of consecutive days followed by a mandatory rest period.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "The number of users on the nth day",
+            "symbol": "Num",
+            "value": "",
+            "shape": [
+                "N"
+            ],
+            "code": "Num = np.array(data[\"Num\"]) # ['N']"
+        },
+        {
+            "definition": "Number of consecutive working days before a resting period",
+            "symbol": "WorkingDays",
+            "value": "",
+            "shape": [],
+            "code": "WorkingDays = data[\"WorkingDays\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of consecutive resting days",
+            "symbol": "RestingDays",
+            "value": "",
+            "shape": [],
+            "code": "RestingDays = data[\"RestingDays\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Each day, the number of employees working must meet or exceed the daily demand (Num[n]).",
+            "status": "coded",
+            "formulation": "\\forall n \\in \\{1, \\\\dots, N\\}, \\\\quad \\sum_{e=1}^{\\\\textup{MinEmployees}} \\\\textup{EmployeeSchedule}_{e, n} \\\\geq \\\\textup{Num}[n]",
+            "related_variables": [
+                "EmployeeSchedule",
+                "MinEmployees"
+            ],
+            "related_parameters": [
+                "Num",
+                "WorkingDays",
+                "RestingDays"
+            ],
+            "code": "# Add constraints to ensure daily employee count meets or exceeds daily demand\nfor n in range(N):\n    model.addConstr(gp.quicksum(EmployeeSchedule[e, n] for e in range(MinEmployees)) >= Num[n], \n                    name=f\"demand_constraint_day_{n}\")"
+        },
+        {
+            "description": "Each employee must have at least RestingDays consecutive days of rest, and they cannot exceed WorkingDays consecutive working days.",
+            "status": "coded",
+            "formulation": "\\forall e \\in \\{1, \\dots, \\textup{MinEmployees}\\}, \\quad \\forall n \\in \\{1, \\dots, \\textup{N}\\}, \\\\ \\quad \\sum_{j=n}^{n+\\textup{WorkingDays}-1} \\textup{EmployeeSchedule}_{e, j} \\leq \\textup{WorkingDays} \\\\ \\quad + \\\\ \\textup{RestStart}_{e, n} = 1 \\implies \\sum_{j=n}^{n+\\textup{RestingDays}-1} (1 - \\textup{EmployeeSchedule}_{e, j}) = \\textup{RestingDays}, \\\\ \\textup{EmployeeSchedule}_{e, n+k} = 0 \\quad \\forall k \\in \\{0, \\dots, \\textup{RestingDays}-1\\}",
+            "related_variables": [
+                "EmployeeSchedule",
+                "RestStart"
+            ],
+            "related_parameters": [
+                "RestingDays",
+                "WorkingDays",
+                "N",
+                "MinEmployees"
+            ],
+            "code": "# Add constraints for limiting consecutive working days and enforcing resting period\n\n# Ensuring no employee works for more than `WorkingDays` consecutive days\nfor e in range(MinEmployees):\n    for n in range(N - WorkingDays + 1):  # To avoid indexing errors at the boundary\n        model.addConstr(\n            gp.quicksum(EmployeeSchedule[e, j] for j in range(n, n + WorkingDays)) <= WorkingDays,\n            name=f\"max_working_days_e{e}_n{n}\")\n\n# Enforcing `RestingDays` rest period if `RestStart` is activated\nfor e in range(MinEmployees):\n    for n in range(N - RestingDays + 1):  # To avoid indexing errors at the boundary\n        model.addConstr(\n            RestStart[e, n] * RestingDays == gp.quicksum(1 - EmployeeSchedule[e, j] for j in range(n, n + RestingDays)),\n            name=f\"enforce_resting_days_e{e}_n{n}\")\n        \n        for k in range(RestingDays):\n            model.addConstr(\n                RestStart[e, n] <= 1 - EmployeeSchedule[e, n + k], \n                name=f\"rest_period_restriction_e{e}_n{n}_k{k}\")"
+        },
+        {
+            "description": "Ensures that the total number of employees is a non-negative integer.",
+            "status": "coded",
+            "formulation": "\\textup{MinEmployees} \\geq 0, \\quad \\textup{MinEmployees} \\in \\mathbb{Z}",
+            "related_variables": [
+                "MinEmployees"
+            ],
+            "related_parameters": [],
+            "code": "# No additional code is needed as the non-negativity and integer constraints are already applied to MinEmployees during variable definition."
+        },
+        {
+            "description": "Ensure each employee follows a repeated schedule of WorkingDays consecutive days followed by RestingDays consecutive days off.",
+            "status": "coded",
+            "formulation": "\\forall e, \\\\quad \\sum_{t=n}^{n+\\\\textup{WorkingDays}-1} \\\\textup{EmployeeSchedule}_{e, t} = \\\\textup{WorkingDays} \\\\quad \\\\text{and}\\\\quad \\textup{EmployeeSchedule}_{e, t+\\\\textup{WorkingDays}} = 0, \\\\dots, \\\\textup{EmployeeSchedule}_{e, t+\\\\textup{WorkingDays}+\\\\textup{RestingDays}-1} = 0",
+            "related_variables": [
+                "EmployeeSchedule"
+            ],
+            "related_parameters": [
+                "WorkingDays",
+                "RestingDays"
+            ],
+            "code": "# Add constraints to enforce a repeated schedule for employees\nfor e in range(MinEmployees):\n    for start_day in range(N - (WorkingDays + RestingDays) + 1):\n        # Constraint for WorkingDays\n        model.addConstr(\n            gp.quicksum(EmployeeSchedule[e, t] for t in range(start_day, start_day + WorkingDays)) == WorkingDays,\n            name=f\"working_days_schedule_emp{e}_start{start_day}\"\n        )\n        # Constraints for RestingDays\n        for t in range(start_day + WorkingDays, start_day + WorkingDays + RestingDays):\n            model.addConstr(\n                EmployeeSchedule[e, t] == 0,\n                name=f\"resting_day_emp{e}_day{t}\"\n            )"
+        },
+        {
+            "description": "Ensure no employee works during their mandatory rest period.",
+            "status": "coded",
+            "formulation": "\\forall e \\in \\{1, \\dots, \\textup{MinEmployees}\\}, \\quad \\forall n \\in \\{1, \\dots, \\textup{N}\\} \\\\ \\quad \\textup{RestStart}_{e, n} = 1 \\implies \\sum_{j=n}^{n+\\textup{RestingDays}-1} \\textup{EmployeeSchedule}_{e, j} = 0",
+            "related_variables": [
+                "EmployeeSchedule",
+                "RestStart"
+            ],
+            "related_parameters": [
+                "RestingDays",
+                "N",
+                "MinEmployees"
+            ],
+            "code": "# Add constraints to ensure no employee works during their mandatory rest period\nfor e in range(MinEmployees):\n    for n in range(N - RestingDays + 1):\n        model.addConstr(\n            RestStart[e, n] == 1 >> gp.quicksum(EmployeeSchedule[e, j] for j in range(n, n + RestingDays)) == 0,\n            name=f\"mandatory_rest_e{e}_n{n}\"\n        )"
+        },
+        {
+            "description": "Ensure that resting blocks are enforced immediately after working blocks.",
+            "status": "coded",
+            "formulation": "\\forall e \\in \\{1, \\dots, \\textup{MinEmployees}\\}, \\quad \\forall n \\in \\{1, \\dots, \\textup{N}\\} \\\\ \\quad \\textup{RestStart}_{e, n} = 1 \\implies \\sum_{j=n-\\textup{WorkingDays}}^{n-1} \\textup{EmployeeSchedule}_{e, j} = \\textup{WorkingDays}",
+            "related_variables": [
+                "EmployeeSchedule",
+                "RestStart"
+            ],
+            "related_parameters": [
+                "WorkingDays",
+                "N",
+                "MinEmployees"
+            ],
+            "code": "# Add constraints to enforce resting blocks immediately after working blocks\nfor e in range(MinEmployees):\n    for n in range(WorkingDays, N):  # Start from WorkingDays to ensure valid range for sum\n        model.addConstr(RestStart[e, n] <= gp.quicksum(EmployeeSchedule[e, j] for j in range(n - WorkingDays, n)) / WorkingDays, name=f\"rest_after_work_{e}_{n}\")"
+        },
+        {
+            "description": "Ensures employees work exactly \\textup{WorkingDays} consecutive days before starting their resting period.",
+            "status": "coded",
+            "formulation": "\\sum_{n=i}^{i + \\textup{WorkingDays} - 1} \\textup{EmployeeSchedule}[e][n] = \\textup{WorkingDays} \\quad \\forall e, \\forall i : 1 \\leq i \\leq N - \\textup{WorkingDays} + 1",
+            "related_variables": [
+                "EmployeeSchedule"
+            ],
+            "related_parameters": [
+                "WorkingDays",
+                "N"
+            ],
+            "code": "# Add constraints to ensure employees work exactly WorkingDays consecutive days before starting their resting period\nfor e in range(MinEmployees):\n    for i in range(N - WorkingDays + 1):\n        model.addConstr(gp.quicksum(EmployeeSchedule[e, n] for n in range(i, i + WorkingDays)) == WorkingDays, name=f\"consecutive_work_{e}_{i}\")"
+        },
+        {
+            "description": "Enforces that after \\textup{RestStart}[e][n] is activated, employees must rest for \\textup{RestingDays} days.",
+            "status": "coded",
+            "formulation": "\\sum_{n=i}^{i + \\textup{RestingDays} - 1} (1 - \\textup{EmployeeSchedule}[e][n]) = \\textup{RestingDays} \\quad \\forall e, \\forall i : 1 \\leq i \\leq N - \\textup{RestingDays} + 1",
+            "related_variables": [
+                "EmployeeSchedule",
+                "RestStart"
+            ],
+            "related_parameters": [
+                "RestingDays",
+                "N"
+            ],
+            "code": "# Add constraints to enforce resting days after RestStart is activated\nfor e in range(MinEmployees):\n    for i in range(N - RestingDays + 1):\n        model.addConstr(\n            gp.quicksum(1 - EmployeeSchedule[e, n] for n in range(i, i + RestingDays)) == RestingDays * RestStart[e, i],\n            name=f\"resting_days_enforce_e{e}_i{i}\"\n        )"
+        },
+        {
+            "description": "Ensures every day's demand \\textup{Num}[n] is met by the sum of working employees.",
+            "status": "coded",
+            "formulation": "\\sum_{e=1}^{\\textup{MinEmployees}} \\textup{EmployeeSchedule}[e][n] \\geq \\textup{Num}[n] \\quad \\forall n",
+            "related_variables": [
+                "EmployeeSchedule",
+                "MinEmployees"
+            ],
+            "related_parameters": [
+                "Num",
+                "N"
+            ],
+            "code": "# Add constraints to ensure daily demand is met\nfor n in range(N):\n    model.addConstr(\n        gp.quicksum(EmployeeSchedule[e, n] for e in range(MinEmployees)) >= Num[n], \n        name=f\"demand_constraint_day_{n}\"\n    )"
+        },
+        {
+            "description": "Ensure that the number of employees hired is sufficient by linking it to the binary scheduling variable.",
+            "status": "coded",
+            "formulation": "\\sum_{e=1}^{\\textup{MinEmployees}} \\textup{EmployeeSchedule}_{e,n} \\geq \\textup{Num}_{n} \\quad \\forall \\, n \\in \\{1, \\ldots, N\\}",
+            "related_variables": [
+                "EmployeeSchedule",
+                "MinEmployees"
+            ],
+            "related_parameters": [
+                "Num"
+            ],
+            "code": "# Add employee scheduling constraints\nfor n in range(N):\n    model.addConstr(\n        gp.quicksum(EmployeeSchedule[e, n] for e in range(MinEmployees)) >= Num[n],\n        name=f\"employee_scheduling_day_{n}\"\n    )"
+        },
+        {
+            "description": "Enforce the work-rest schedule, so an employee cannot work beyond the allowed number of consecutive working days.",
+            "status": "coded",
+            "formulation": "\\sum_{n'=n}^{n+\\textup{WorkingDays}-1} \\textup{EmployeeSchedule}_{e,n'} \\leq \\textup{WorkingDays} - \\textup{RestStart}_{e,n} \\quad \\forall e \\in \\{1, \\ldots, \\textup{MinEmployees}\\}, \\forall n \\in \\{1, \\ldots, N\\}",
+            "related_variables": [
+                "EmployeeSchedule",
+                "RestStart",
+                "MinEmployees"
+            ],
+            "related_parameters": [
+                "WorkingDays"
+            ],
+            "code": "# Add work-rest schedule constraints to enforce consecutive working days limit\nfor e in range(MinEmployees):\n    for n in range(N - WorkingDays + 1):\n        model.addConstr(\n            gp.quicksum(EmployeeSchedule[e, n_prime] for n_prime in range(n, n + WorkingDays))\n            <= WorkingDays - RestStart[e, n],\n            name=f\"work_rest_schedule_{e}_{n}\"\n        )"
+        },
+        {
+            "description": "Ensure the rest period starts after exactly \\textup{WorkingDays} of consecutive work.",
+            "status": "coded",
+            "formulation": "\\sum_{n'=n-\\textup{RestingDays}+1}^{n} \\textup{RestStart}_{e,n'} \\geq \\textup{EmployeeSchedule}_{e,n} \\quad \\forall e \\in \\{1, \\ldots, \\textup{MinEmployees}\\}, \\forall n \\in \\{1, \\ldots, N\\}",
+            "related_variables": [
+                "EmployeeSchedule",
+                "RestStart",
+                "MinEmployees"
+            ],
+            "related_parameters": [
+                "RestingDays"
+            ],
+            "code": "# Add rest period constraints\nfor e in range(MinEmployees):\n    for n in range(N):\n        model.addConstr(\n            gp.quicksum(RestStart[e, n_prime] for n_prime in range(max(0, n - RestingDays + 1), n + 1)) \n            >= EmployeeSchedule[e, n], \n            name=f\"rest_period_employee{e}_day{n}\"\n        )"
+        },
+        {
+            "description": "Ensure that each employee cannot work if they are in a mandatory rest period.",
+            "status": "coded",
+            "formulation": "\\textup{EmployeeSchedule}_{e,n} + \\textup{RestStart}_{e,n} \\leq 1 \\quad \\forall e \\in \\{1, \\ldots, \\textup{MinEmployees}\\}, \\forall n \\in \\{1, \\ldots, N\\}",
+            "related_variables": [
+                "EmployeeSchedule",
+                "RestStart",
+                "MinEmployees"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraints to ensure employees cannot work during their mandatory rest period\nfor e in range(MinEmployees):\n    for n in range(N):\n        model.addConstr(EmployeeSchedule[e, n] + RestStart[e, n] <= 1, name=f\"mandatory_rest_{e}_{n}\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Binary variable indicating whether employee e works on day n.",
+            "symbol": "EmployeeSchedule",
+            "shape": [
+                "MinEmployees",
+                "N"
+            ],
+            "status": "coded",
+            "code": "EmployeeSchedule = model.addVars(MinEmployees, N, vtype=gp.GRB.BINARY, name=\"EmployeeSchedule\")"
+        },
+        {
+            "definition": "The minimum number of employees required to meet the demand.",
+            "symbol": "MinEmployees",
+            "shape": [],
+            "status": "coded",
+            "code": "MinEmployees = model.addVar(vtype=gp.GRB.INTEGER, name=\"MinEmployees\")"
+        },
+        {
+            "definition": "Binary variable indicating whether employee e starts a rest period on day n.",
+            "symbol": "RestStart",
+            "shape": [
+                "MinEmployees",
+                "N"
+            ],
+            "status": "coded",
+            "code": "RestStart = model.addVars(MinEmployees, N, vtype=gp.GRB.BINARY, name=\"RestStart\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of employees hired while meeting the coverage requirements.",
+            "status": "coded",
+            "formulation": "\\textup{Minimize } \\textup{MinEmployees}",
+            "related_variables": [
+                "MinEmployees"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(MinEmployees, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413154014_nlp4lp_42/",
+    "problem_path": "data/nlp4lp/42/"
+}

@@ -1,0 +1,220 @@
+{
+    "background": "Capacitated facility location problems focus on determining the optimal placement of a certain number of facilities to serve a set number of customers in a way that minimizes the total cost, considering fixed costs, capacities, customer demands, and transport costs.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "symbol": "NumberOfFacilities",
+            "definition": "The number of potential facilities that can be established",
+            "shape": [],
+            "code": "NumberOfFacilities = data[\"NumberOfFacilities\"] # scalar parameter"
+        },
+        {
+            "symbol": "NumberOfCustomers",
+            "definition": "The number of customer zones to be served",
+            "shape": [],
+            "code": "NumberOfCustomers = data[\"NumberOfCustomers\"] # scalar parameter"
+        },
+        {
+            "symbol": "FacilityFixedCost",
+            "definition": "The fixed cost associated with establishing a facility",
+            "shape": [
+                "NumberOfFacilities"
+            ],
+            "code": "FacilityFixedCost = np.array(data[\"FacilityFixedCost\"]) # ['NumberOfFacilities']"
+        },
+        {
+            "symbol": "FacilityToCustomerTransportCost",
+            "definition": "The cost of transporting goods from each facility to each customer zone",
+            "shape": [
+                "NumberOfFacilities",
+                "NumberOfCustomers"
+            ],
+            "code": "FacilityToCustomerTransportCost = np.array(data[\"FacilityToCustomerTransportCost\"]) # ['NumberOfFacilities', 'NumberOfCustomers']"
+        },
+        {
+            "symbol": "FacilityCapacity",
+            "definition": "The capacity of each facility, which limits the amount of goods the facility can handle or produce",
+            "shape": [
+                "NumberOfFacilities"
+            ],
+            "code": "FacilityCapacity = np.array(data[\"FacilityCapacity\"]) # ['NumberOfFacilities']"
+        },
+        {
+            "symbol": "CustomerDemand",
+            "definition": "The demand of each customer zone that must be met by the facilities",
+            "shape": [
+                "NumberOfCustomers"
+            ],
+            "code": "CustomerDemand = np.array(data[\"CustomerDemand\"]) # ['NumberOfCustomers']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Each facility cannot supply more than its maximum capacity to all customers",
+            "status": "formulated",
+            "formulation": "\\sum_{j=1}^{\\textup{NumberOfCustomers}} \\textup{AmountTransported}_{i,j} \\leq \\textup{FacilityCapacity}_{i}, \\quad \\forall i \\in \\{1, \\dots, \\textup{NumberOfFacilities}\\}",
+            "related_variables": [
+                "AmountTransported"
+            ],
+            "related_parameters": [
+                "FacilityCapacity",
+                "NumberOfCustomers",
+                "NumberOfFacilities"
+            ]
+        },
+        {
+            "description": "Constraint ensuring that the total number of facilities to be opened equals the parameter \\textup{NumberOfFacilities}.",
+            "status": "formulated",
+            "formulation": "\\sum_{i=1}^{\\textup{NumberOfFacilities}} \\textup{FacilityLocated}_{i} = \\textup{NumberOfFacilities}",
+            "related_variables": [
+                "FacilityLocated"
+            ],
+            "related_parameters": [
+                "NumberOfFacilities"
+            ]
+        },
+        {
+            "description": "Each customer zone is served by at least one facility, and their demand must be met.",
+            "status": "formulated",
+            "formulation": "\\sum_{i=1}^{\\textup{NumberOfFacilities}} \\textup{AmountTransported}_{i,j} = \\textup{CustomerDemand}_{j}, \\quad \\forall j \\in \\{1, 2, ..., \\textup{NumberOfCustomers}\\}",
+            "related_variables": [
+                "AmountTransported"
+            ],
+            "related_parameters": [
+                "NumberOfFacilities",
+                "NumberOfCustomers",
+                "CustomerDemand"
+            ]
+        },
+        {
+            "description": "Total output for each facility cannot exceed its capacity.",
+            "status": "formulated",
+            "formulation": "\\sum_{j=1}^{\\textup{NumberOfCustomers}} \\textup{AmountTransported}_{i,j} \\leq \\textup{FacilityCapacity}_{i} \\cdot \\textup{FacilityLocated}_{i} \\quad \\forall i \\in \\{1, 2, \\dots, \\textup{NumberOfFacilities}\\}",
+            "related_variables": [
+                "AmountTransported",
+                "FacilityLocated"
+            ],
+            "related_parameters": [
+                "FacilityCapacity",
+                "NumberOfFacilities",
+                "NumberOfCustomers"
+            ]
+        },
+        {
+            "description": "The number of facilities and customers is fixed and non-negative.",
+            "status": "formulated",
+            "formulation": "\\textup{NumberOfFacilities} \\geq 0 \\quad \\textup{and} \\quad \\textup{NumberOfCustomers} \\geq 0",
+            "related_variables": [],
+            "related_parameters": [
+                "NumberOfFacilities",
+                "NumberOfCustomers"
+            ]
+        },
+        {
+            "description": "If goods are transported to a customer from a facility, that facility must be operational.",
+            "status": "formulated",
+            "formulation": "\\textup{AmountTransported}_{i,j} \\leq \\textup{FacilityCapacity}_{i} \\cdot \\textup{FacilityLocated}_{i}, \\quad \\forall i \\in \\{1, ..., \\textup{NumberOfFacilities}\\}, \\quad \\forall j \\in \\{1, ..., \\textup{NumberOfCustomers}\\}",
+            "related_variables": [
+                "AmountTransported",
+                "FacilityLocated"
+            ],
+            "related_parameters": [
+                "FacilityCapacity",
+                "NumberOfFacilities",
+                "NumberOfCustomers"
+            ]
+        },
+        {
+            "description": "Ensure that the total goods transported from each facility does not exceed its capacity, and the facility can only operate if opened",
+            "status": "formulated",
+            "formulation": "\\sum_{j=1}^{\\textup{NumberOfCustomers}} \\textup{AmountTransported}_{i,j} \\leq \\textup{FacilityCapacity}_i \\cdot \\textup{FacilityLocated}_i, \\quad \\forall i = 1, \\dots, \\textup{NumberOfFacilities}",
+            "related_variables": [
+                "AmountTransported",
+                "FacilityLocated"
+            ],
+            "related_parameters": [
+                "FacilityCapacity",
+                "NumberOfCustomers",
+                "NumberOfFacilities"
+            ]
+        },
+        {
+            "description": "Ensure that the total customer demand is satisfied by the facilities",
+            "status": "formulated",
+            "formulation": "\\sum_{i=1}^{\\textup{NumberOfFacilities}} \\textup{AmountTransported}_{i,j} = \\textup{CustomerDemand}_j, \\quad \\forall j = 1, \\dots, \\textup{NumberOfCustomers}",
+            "related_variables": [
+                "AmountTransported"
+            ],
+            "related_parameters": [
+                "CustomerDemand",
+                "NumberOfFacilities",
+                "NumberOfCustomers"
+            ]
+        },
+        {
+            "description": "Ensure non-negativity of the transported goods from facilities to customer zones",
+            "status": "formulated",
+            "formulation": "\\textup{AmountTransported}_{i,j} \\geq 0, \\quad \\forall i, j",
+            "related_variables": [
+                "AmountTransported"
+            ],
+            "related_parameters": [
+                "NumberOfFacilities",
+                "NumberOfCustomers"
+            ]
+        },
+        {
+            "description": "Ensure the binary nature of the facility location decision variables",
+            "status": "formulated",
+            "formulation": "\\textup{FacilityLocated}_i \\in \\{0, 1\\}, \\quad \\forall i = 1, \\dots, \\textup{NumberOfFacilities}",
+            "related_variables": [
+                "FacilityLocated"
+            ],
+            "related_parameters": [
+                "NumberOfFacilities"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The amount of goods transported from facility i to customer j",
+            "symbol": "AmountTransported",
+            "shape": [
+                "NumberOfFacilities",
+                "NumberOfCustomers"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "Binary variable indicating whether facility i is opened (1 if opened, 0 otherwise).",
+            "symbol": "FacilityLocated",
+            "shape": [
+                "NumberOfFacilities"
+            ],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total cost of locating facilities and transporting goods to customer zones",
+            "status": "formulated",
+            "formulation": "\\sum_{i=1}^{\\textup{NumberOfFacilities}} \\textup{FacilityFixedCost}_i \\cdot \\textup{FacilityLocated}_i + \\sum_{i=1}^{\\textup{NumberOfFacilities}} \\sum_{j=1}^{\\textup{NumberOfCustomers}} \\textup{FacilityToCustomerTransportCost}_{i,j} \\cdot \\textup{AmountTransported}_{i,j}",
+            "related_variables": [
+                "FacilityLocated",
+                "AmountTransported"
+            ],
+            "related_parameters": [
+                "FacilityFixedCost",
+                "FacilityToCustomerTransportCost",
+                "NumberOfFacilities",
+                "NumberOfCustomers"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413145735_complexor_CFLP/",
+    "problem_path": "data/complexor/CFLP/"
+}

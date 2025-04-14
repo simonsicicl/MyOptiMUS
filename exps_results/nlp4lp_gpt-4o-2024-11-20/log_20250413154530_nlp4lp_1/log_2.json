@@ -1,0 +1,110 @@
+{
+    "background": "A firm produces multiple goods using different raw materials. Each good requires certain amounts of the raw materials and generates specific revenue.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of different goods produced by the firm",
+            "symbol": "M",
+            "value": "",
+            "shape": [],
+            "code": "M = data[\"M\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of different raw materials used by the firm",
+            "symbol": "N",
+            "value": "",
+            "shape": [],
+            "code": "N = data[\"N\"] # scalar parameter"
+        },
+        {
+            "definition": "Available amount of each raw material",
+            "symbol": "Available",
+            "value": "",
+            "shape": [
+                "N"
+            ],
+            "code": "Available = np.array(data[\"Available\"]) # ['N']"
+        },
+        {
+            "definition": "Requirement of material j for producing one unit of good i",
+            "symbol": "Requirements",
+            "value": "",
+            "shape": [
+                "M",
+                "N"
+            ],
+            "code": "Requirements = np.array(data[\"Requirements\"]) # ['M', 'N']"
+        },
+        {
+            "definition": "Revenue earned from selling one unit of good j",
+            "symbol": "Prices",
+            "value": "",
+            "shape": [
+                "M"
+            ],
+            "code": "Prices = np.array(data[\"Prices\"]) # ['M']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "All goods quantities must be non-negative (production quantities cannot be negative).",
+            "status": "coded",
+            "formulation": "\\textup{ProducedQuantities}_i \\geq 0, \\quad \\forall i = 1, 2, \\dots, M",
+            "related_variables": [
+                "ProducedQuantities"
+            ],
+            "related_parameters": [
+                "M"
+            ],
+            "code": "# Add non-negativity constraints for production quantities\nfor i in range(M):\n    model.addConstr(ProducedQuantities[i] >= 0, name=f\"non_negativity_{i}\")"
+        },
+        {
+            "description": "The total quantity of raw material j used cannot exceed the available amount for each raw material j.",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{\\textup{M}} \\textup{ProducedQuantities}_{i} \\cdot \\textup{Requirements}_{i,j} \\leq \\textup{Available}_{j}, \\quad \\forall \\quad j=1,2,\\ldots,\\textup{N}",
+            "related_variables": [
+                "ProducedQuantities"
+            ],
+            "related_parameters": [
+                "M",
+                "N",
+                "Requirements",
+                "Available"
+            ],
+            "code": "# Add raw material usage constraints\nfor j in range(N):\n    model.addConstr(\n        gp.quicksum(ProducedQuantities[i] * Requirements[i, j] for i in range(M)) <= Available[j],\n        name=f\"raw_material_usage_{j}\"\n    )"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The quantity of each good produced by the firm.",
+            "symbol": "ProducedQuantities",
+            "shape": [
+                "M"
+            ],
+            "status": "coded",
+            "code": "ProducedQuantities = model.addVars(M, vtype=gp.GRB.CONTINUOUS, name=\"ProducedQuantities\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the firm's total revenue from selling goods.",
+            "status": "coded",
+            "formulation": "\\max \\quad \\sum_{i=1}^{M} \\\\textup{ProducedQuantities}_{i} \\\\\\cdot \\\\textup{Prices}_{i}",
+            "related_variables": [
+                "ProducedQuantities"
+            ],
+            "related_parameters": [
+                "Prices",
+                "M"
+            ],
+            "code": "# Set objective\nmodel.setObjective(gp.quicksum(ProducedQuantities[i] * Prices[i] for i in range(M)), gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 78.6376021798365,
+    "log_path": "logs/log_20250413154530_nlp4lp_1/",
+    "problem_path": "data/nlp4lp/1/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nlp4lp/1/data.json\", \"r\") as f:\n    data = json.load(f)\n\nM = data[\"M\"] # scalar parameter\nN = data[\"N\"] # scalar parameter\nAvailable = np.array(data[\"Available\"]) # ['N']\nRequirements = np.array(data[\"Requirements\"]) # ['M', 'N']\nPrices = np.array(data[\"Prices\"]) # ['M']\nProducedQuantities = model.addVars(M, vtype=gp.GRB.CONTINUOUS, name=\"ProducedQuantities\")\n\n# Add non-negativity constraints for production quantities\nfor i in range(M):\n    model.addConstr(ProducedQuantities[i] >= 0, name=f\"non_negativity_{i}\")\n\n# Add raw material usage constraints\nfor j in range(N):\n    model.addConstr(\n        gp.quicksum(ProducedQuantities[i] * Requirements[i, j] for i in range(M)) <= Available[j],\n        name=f\"raw_material_usage_{j}\"\n    )\n\n# Set objective\nmodel.setObjective(gp.quicksum(ProducedQuantities[i] * Prices[i] for i in range(M)), gp.GRB.MAXIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

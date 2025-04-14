@@ -1,0 +1,307 @@
+{
+    "background": "A manufacturer needs to decide the optimum number of batches of parts to produce each month to maximize profit, taking into account various factors such as time requirement, costs, machine availability, pricing, minimum production batches, and overtime considerations.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of machines",
+            "symbol": "NumMachines",
+            "value": "",
+            "shape": [],
+            "code": "NumMachines = data[\"NumMachines\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of part types",
+            "symbol": "NumParts",
+            "value": "",
+            "shape": [],
+            "code": "NumParts = data[\"NumParts\"] # scalar parameter"
+        },
+        {
+            "definition": "Time required to produce one batch of part p on machine m",
+            "symbol": "TimeRequired",
+            "value": "",
+            "shape": [
+                "NumMachines",
+                "NumParts"
+            ],
+            "code": "TimeRequired = np.array(data[\"TimeRequired\"]) # ['NumMachines', 'NumParts']"
+        },
+        {
+            "definition": "Cost of operating machine m for one month",
+            "symbol": "MachineCosts",
+            "value": "",
+            "shape": [
+                "NumMachines"
+            ],
+            "code": "MachineCosts = np.array(data[\"MachineCosts\"]) # ['NumMachines']"
+        },
+        {
+            "definition": "Number of hours machine m is available each month without overtime",
+            "symbol": "Availability",
+            "value": "",
+            "shape": [
+                "NumMachines"
+            ],
+            "code": "Availability = np.array(data[\"Availability\"]) # ['NumMachines']"
+        },
+        {
+            "definition": "Price received for selling one batch of part p",
+            "symbol": "Prices",
+            "value": "",
+            "shape": [
+                "NumParts"
+            ],
+            "code": "Prices = np.array(data[\"Prices\"]) # ['NumParts']"
+        },
+        {
+            "definition": "Minimum number of batches of part p to be produced",
+            "symbol": "MinBatches",
+            "value": "",
+            "shape": [
+                "NumParts"
+            ],
+            "code": "MinBatches = np.array(data[\"MinBatches\"]) # ['NumParts']"
+        },
+        {
+            "definition": "Standard cost for operating all machines during normal operating hours",
+            "symbol": "StandardCost",
+            "value": "",
+            "shape": [],
+            "code": "StandardCost = data[\"StandardCost\"] # scalar parameter"
+        },
+        {
+            "definition": "Extra cost for operating a machine in overtime per hour",
+            "symbol": "OvertimeCost",
+            "value": "",
+            "shape": [],
+            "code": "OvertimeCost = data[\"OvertimeCost\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of overtime hours available for machine m",
+            "symbol": "OvertimeHour",
+            "value": "",
+            "shape": [
+                "NumMachines"
+            ],
+            "code": "OvertimeHour = np.array(data[\"OvertimeHour\"]) # ['NumMachines']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The total machine time used by all batches on each machine must not exceed the available operation time.",
+            "status": "formulated",
+            "formulation": "\\sum_{p=1}^{\\textup{NumParts}} \\textup{TimeRequired}_{m,p} \\cdot \\textup{BatchesProduced}_{p} \\leq \\textup{Availability}_{m} \\quad \\forall \\quad m \\in [1, \\textup{NumMachines}]",
+            "related_variables": [
+                "BatchesProduced"
+            ],
+            "related_parameters": [
+                "TimeRequired",
+                "Availability",
+                "NumParts",
+                "NumMachines"
+            ]
+        },
+        {
+            "description": "The total production time for all parts on each machine should not exceed its monthly availability.",
+            "status": "formulated",
+            "formulation": "\\sum_{p=1}^{\\textup{NumParts}} \\textup{TimeRequired}[m][p] \\cdot \\textup{BatchesProduced}[p] \\leq \\textup{Availability}[m], \\quad \\forall m \\in \\{1, \\dots, \\textup{NumMachines}\\}",
+            "related_variables": [
+                "BatchesProduced"
+            ],
+            "related_parameters": [
+                "TimeRequired",
+                "Availability",
+                "NumParts",
+                "NumMachines"
+            ]
+        },
+        {
+            "description": "At least MinBatches for p batches of each part p must be produced.",
+            "status": "formulated",
+            "formulation": "\\textup{BatchesProduced}_{p} \\geq \\textup{MinBatches}_{p}, \\quad \\forall p \\in \\{1, 2, \\dots, \\textup{NumParts}\\}",
+            "related_variables": [
+                "BatchesProduced"
+            ],
+            "related_parameters": [
+                "MinBatches"
+            ]
+        },
+        {
+            "description": "The total time used by each machine (including overtime) must not exceed its availability plus OvertimeHours.",
+            "status": "formulated",
+            "formulation": "\\sum_{p=1}^{\\textup{NumParts}} \\textup{TimeRequired}_{m,p} \\cdot \\textup{BatchesProduced}_{p} \\leq \\textup{Availability}_{m} + \\textup{OvertimeHour}_{m}, \\quad \\forall m \\in \\{1, \\ldots, \\textup{NumMachines}\\}",
+            "related_variables": [
+                "BatchesProduced"
+            ],
+            "related_parameters": [
+                "TimeRequired",
+                "Availability",
+                "OvertimeHour"
+            ]
+        },
+        {
+            "description": "The number of batches produced for any part must be non-negative.",
+            "status": "formulated",
+            "formulation": "\\textup{BatchesProduced}_p \\geq 0, \\quad \\forall p \\in \\{1, 2, \\dots, \\textup{NumParts}\\}",
+            "related_variables": [
+                "BatchesProduced"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Defines TotalTimeUsed for each machine based on batches produced and time requirement.",
+            "status": "formulated",
+            "formulation": "\\textup{TotalTimeUsed}_{m} = \\sum_{p=1}^{\\textup{NumParts}} \\textup{TimeRequired}_{m,p} \\cdot \\textup{BatchesProduced}_{p}, \\quad \\forall m \\in \\{1, \\ldots, \\textup{NumMachines}\\}",
+            "related_variables": [
+                "TotalTimeUsed",
+                "BatchesProduced"
+            ],
+            "related_parameters": [
+                "TimeRequired",
+                "NumMachines",
+                "NumParts"
+            ]
+        },
+        {
+            "description": "Defines OvertimeHoursUsed as the excess time beyond standard availability.",
+            "status": "formulated",
+            "formulation": "\\textup{OvertimeHoursUsed}_{m} \\geq \\textup{TotalTimeUsed}_{m} - \\textup{Availability}_{m}, \\quad \\forall m \\in \\{1, \\ldots, \\textup{NumMachines}\\}",
+            "related_variables": [
+                "OvertimeHoursUsed",
+                "TotalTimeUsed"
+            ],
+            "related_parameters": [
+                "Availability",
+                "NumMachines"
+            ]
+        },
+        {
+            "description": "Ensures OvertimeHoursUsed is non-negative.",
+            "status": "formulated",
+            "formulation": "\\textup{OvertimeHoursUsed}_{m} \\geq 0, \\quad \\forall m \\in \\{1, \\ldots, \\textup{NumMachines}\\}",
+            "related_variables": [
+                "OvertimeHoursUsed"
+            ],
+            "related_parameters": [
+                "NumMachines"
+            ]
+        },
+        {
+            "description": "Compute the total time used by machine m in terms of batches produced for all parts.",
+            "status": "formulated",
+            "formulation": "\\textup{TotalTimeUsed}_{m} = \\sum_{p=1}^{\\textup{NumParts}} \\textup{BatchesProduced}_{p} \\cdot \\textup{TimeRequired}_{m,p} \\quad \\forall m \\in \\{1, \\dots, \\textup{NumMachines}\\}",
+            "related_variables": [
+                "TotalTimeUsed",
+                "BatchesProduced"
+            ],
+            "related_parameters": [
+                "TimeRequired",
+                "NumParts",
+                "NumMachines"
+            ]
+        },
+        {
+            "description": "Define the overtime hours used by machine m as the excess of total time used over available time.",
+            "status": "formulated",
+            "formulation": "\\textup{OvertimeHoursUsed}_{m} = \\max(0, \\textup{TotalTimeUsed}_{m} - \\textup{Availability}_{m}) \\quad \\forall m \\in \\{1, \\dots, \\textup{NumMachines}\\}",
+            "related_variables": [
+                "OvertimeHoursUsed",
+                "TotalTimeUsed"
+            ],
+            "related_parameters": [
+                "Availability",
+                "NumMachines"
+            ]
+        },
+        {
+            "description": "Enforce that the number of batches produced for all parts respects minimum production requirements.",
+            "status": "formulated",
+            "formulation": "\\textup{BatchesProduced}_{p} \\geq \\textup{MinBatches}_{p} \\quad \\forall p \\in \\{1, \\dots, \\textup{NumParts}\\}",
+            "related_variables": [
+                "BatchesProduced"
+            ],
+            "related_parameters": [
+                "MinBatches",
+                "NumParts"
+            ]
+        },
+        {
+            "description": "Limit overtime hours to the maximum allowable hours for each machine.",
+            "status": "formulated",
+            "formulation": "\\textup{OvertimeHoursUsed}_{m} \\leq \\textup{OvertimeHour}_{m} \\quad \\forall m \\in \\{1, \\dots, \\textup{NumMachines}\\}",
+            "related_variables": [
+                "OvertimeHoursUsed"
+            ],
+            "related_parameters": [
+                "OvertimeHour",
+                "NumMachines"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of batches of part p produced in a month.",
+            "symbol": "BatchesProduced",
+            "shape": [
+                "NumParts"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "The total time used by machine m in a month, including batch production time.",
+            "symbol": "TotalTimeUsed",
+            "shape": [
+                "NumMachines"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "The overtime hours used by machine m in a month.",
+            "symbol": "OvertimeHoursUsed",
+            "shape": [
+                "NumMachines"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "The total time used by machine m in a month to produce batches.",
+            "symbol": "TotalTimeUsed",
+            "shape": [
+                "NumMachines"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "The overtime hours used by machine m in a month if total time exceeds availability.",
+            "symbol": "OvertimeHoursUsed",
+            "shape": [
+                "NumMachines"
+            ],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize profit from producing and selling parts, which is defined as total revenue minus total costs",
+            "status": "formulated",
+            "formulation": "\\textup{Profit} = \\sum_{p=1}^{\\textup{NumParts}} \\textup{Prices}_{p} \\cdot \\textup{BatchesProduced}_{p} - \\textup{StandardCost} - \\sum_{m=1}^{\\textup{NumMachines}} \\textup{OvertimeHoursUsed}_{m} \\cdot \\textup{OvertimeCost}",
+            "related_variables": [
+                "BatchesProduced",
+                "OvertimeHoursUsed"
+            ],
+            "related_parameters": [
+                "Prices",
+                "NumParts",
+                "StandardCost",
+                "OvertimeCost",
+                "NumMachines"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413152424_nlp4lp_57/",
+    "problem_path": "data/nlp4lp/57/"
+}

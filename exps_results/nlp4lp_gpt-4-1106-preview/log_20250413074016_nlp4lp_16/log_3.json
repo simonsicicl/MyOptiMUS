@@ -1,0 +1,258 @@
+{
+    "background": "The company seeks to maximize daily profit by determining an optimal production mix for N different products, considering assembly and testing time constraints, material costs, and the potential for overtime and discounts.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of different products",
+            "symbol": "N",
+            "value": "",
+            "shape": [],
+            "code": "N = data[\"N\"] # scalar parameter"
+        },
+        {
+            "definition": "Hours required to assemble product i",
+            "symbol": "AssemblyHour",
+            "value": "",
+            "shape": [
+                "N"
+            ],
+            "code": "AssemblyHour = np.array(data[\"AssemblyHour\"]) # ['N']"
+        },
+        {
+            "definition": "Hours required to test product i",
+            "symbol": "TestingHour",
+            "value": "",
+            "shape": [
+                "N"
+            ],
+            "code": "TestingHour = np.array(data[\"TestingHour\"]) # ['N']"
+        },
+        {
+            "definition": "Material cost for product i",
+            "symbol": "MaterialCost",
+            "value": "",
+            "shape": [
+                "N"
+            ],
+            "code": "MaterialCost = np.array(data[\"MaterialCost\"]) # ['N']"
+        },
+        {
+            "definition": "Maximum total hours available for assembly",
+            "symbol": "MaxAssembly",
+            "value": 0,
+            "shape": [],
+            "code": "MaxAssembly = data[\"MaxAssembly\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum total hours available for testing",
+            "symbol": "MaxTesting",
+            "value": 0,
+            "shape": [],
+            "code": "MaxTesting = data[\"MaxTesting\"] # scalar parameter"
+        },
+        {
+            "definition": "Selling price for product i",
+            "symbol": "Price",
+            "value": "",
+            "shape": [
+                "N"
+            ],
+            "code": "Price = np.array(data[\"Price\"]) # ['N']"
+        },
+        {
+            "definition": "Maximum overtime hours available for assembly",
+            "symbol": "MaxOvertimeAssembly",
+            "value": 0,
+            "shape": [],
+            "code": "MaxOvertimeAssembly = data[\"MaxOvertimeAssembly\"] # scalar parameter"
+        },
+        {
+            "definition": "Overtime cost for assembly per hour",
+            "symbol": "OvertimeAssemblyCost",
+            "value": 0,
+            "shape": [],
+            "code": "OvertimeAssemblyCost = data[\"OvertimeAssemblyCost\"] # scalar parameter"
+        },
+        {
+            "definition": "Discount on material cost when a certain threshold is reached",
+            "symbol": "MaterialDiscount",
+            "value": 0.0,
+            "shape": [],
+            "code": "MaterialDiscount = data[\"MaterialDiscount\"] # scalar parameter"
+        },
+        {
+            "definition": "Threshold for the quantity to reach to obtain the material discount",
+            "symbol": "DiscountThreshold",
+            "value": 0,
+            "shape": [],
+            "code": "DiscountThreshold = data[\"DiscountThreshold\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Total assembly hours must not exceed maximum available assembly hours",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{N} (\\textup{AssemblyHour}_{i} \\times \\textup{ProductionQuantity}_{i}) \\leq \\textup{MaxAssembly}",
+            "related_variables": [
+                "ProductionQuantity"
+            ],
+            "related_parameters": [
+                "AssemblyHour",
+                "MaxAssembly"
+            ],
+            "code": "N = len(AssemblyHour)\nProductionQuantity = model.addVars(N, vtype=gp.GRB.CONTINUOUS, name='ProductionQuantity')"
+        },
+        {
+            "description": "Total testing hours for all products must not exceed maximum available testing hours",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{N} (\\textup{ProductionQuantity}[i] \\cdot \\textup{TestingHour}[i]) \\leq \\textup{MaxTesting}",
+            "related_variables": [
+                "ProductionQuantity"
+            ],
+            "related_parameters": [
+                "N",
+                "TestingHour",
+                "MaxTesting"
+            ],
+            "code": "# Add constraint for total testing hours not exceeding maximum available testing hours\ntesting_hours_expr = gp.quicksum(ProductionQuantity[i] * TestingHour[i] for i in range(N))\nmodel.addConstr(testing_hours_expr <= MaxTesting, name=\"max_testing_hours\")"
+        },
+        {
+            "description": "All products produced must be non-negative quantities",
+            "status": "coded",
+            "formulation": "\\forall i \\in \\{1, ..., N\\}, \\quad \\textup{ProductionQuantity}_{i} \\geq 0",
+            "related_variables": [
+                "ProductionQuantity"
+            ],
+            "related_parameters": [
+                "N"
+            ],
+            "code": "# Add non-negativity constraints for production quantities\nfor i in range(N):\n    model.addConstr(ProductionQuantity[i] >= 0, name=f\"non_negativity_{i}\")"
+        },
+        {
+            "description": "The total overtime assembly hours must not exceed the maximum overtime assembly hours available",
+            "status": "coded",
+            "formulation": "\\text{OvertimeHoursUsed} \\leq \\text{MaxOvertimeAssembly}",
+            "related_variables": [
+                "ProductionQuantity",
+                "OvertimeHoursUsed"
+            ],
+            "related_parameters": [
+                "N",
+                "AssemblyHour",
+                "MaxAssembly",
+                "MaxOvertimeAssembly"
+            ],
+            "code": "# Ensure that the total overtime assembly hours do not exceed the maximum overtime assembly hours available\nOvertimeHoursUsed = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"OvertimeHoursUsed\")\nmodel.addConstr((gp.quicksum(ProductionQuantity[i] * AssemblyHour[i] for i in range(N)) - MaxAssembly) <= OvertimeHoursUsed, name=\"calc_overtime_hours_used\")\nmodel.addConstr(OvertimeHoursUsed <= MaxOvertimeAssembly, name=\"max_overtime_assembly\")"
+        },
+        {
+            "description": "Excess assembly hours must be greater than or equal to the difference between total assembly hours and the maximum assembly hours, if positive",
+            "status": "coded",
+            "formulation": "\\text{ExcessAssemblyHours} \\geq \\sum_{i=1}^{N} (\\text{AssemblyHour}[i] \\cdot \\text{ProductionQuantity}[i]) - \\text{MaxAssembly}",
+            "related_variables": [
+                "ProductionQuantity",
+                "ExcessAssemblyHours"
+            ],
+            "related_parameters": [
+                "N",
+                "AssemblyHour",
+                "MaxAssembly"
+            ],
+            "code": "# Constraint: Excess assembly hours must be greater than or equal to the difference between total assembly hours and the maximum assembly hours, if positive\ntotal_assembly_hours_expr = gp.quicksum(AssemblyHour[i] * ProductionQuantity[i] for i in range(N))\nmodel.addConstr(ExcessAssemblyHours >= total_assembly_hours_expr - MaxAssembly, name=\"excess_assembly_hours\")"
+        },
+        {
+            "description": "Excess assembly hours must be non-negative",
+            "status": "coded",
+            "formulation": "\\text{ExcessAssemblyHours} \\geq 0",
+            "related_variables": [
+                "ExcessAssemblyHours"
+            ],
+            "related_parameters": [],
+            "code": "# Excess assembly hours must be non-negative\nmodel.addConstr(ExcessAssemblyHours >= 0, name=\"excess_assembly_non_negative\")"
+        },
+        {
+            "description": "Constraint to calculate the TotalMaterialDiscount based on production quantity and the discount threshold",
+            "status": "coded",
+            "formulation": "\\textup{TotalMaterialDiscount} \\geq \\sum_{i=1}^{N} (\\textup{MaterialCost}_i \\cdot \\textup{ProductionQuantity}_i \\cdot \\textup{MaterialDiscount}) \\cdot \\left(\\textup{ProductionQuantity}_i \\geq \\textup{DiscountThreshold}\\right)",
+            "related_variables": [
+                "ProductionQuantity",
+                "TotalMaterialDiscount"
+            ],
+            "related_parameters": [
+                "MaterialCost",
+                "MaterialDiscount",
+                "DiscountThreshold"
+            ],
+            "code": "# Add TotalMaterialDiscount constraint\nTotalMaterialDiscount_expr = gp.quicksum(\n    MaterialCost[i] * ProductionQuantity[i] * MaterialDiscount \n    * (ProductionQuantity[i] >= DiscountThreshold) \n    for i in range(N)\n)\nmodel.addConstr(TotalMaterialDiscount >= TotalMaterialDiscount_expr, name=\"total_material_discount\")"
+        },
+        {
+            "description": "Overtime hours used must not exceed the maximum overtime hours available for assembly",
+            "status": "coded",
+            "formulation": "\\textup{OvertimeHoursUsed} \\leq \\textup{MaxOvertimeAssembly}",
+            "related_variables": [
+                "OvertimeHoursUsed"
+            ],
+            "related_parameters": [
+                "MaxOvertimeAssembly"
+            ],
+            "code": "# Constraint: Overtime hours used must not exceed the maximum overtime hours available for assembly\nmodel.addConstr(OvertimeHoursUsed <= MaxOvertimeAssembly, name=\"overtime_assembly_limit\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Quantity of product i to produce",
+            "symbol": "ProductionQuantity",
+            "shape": [
+                "N"
+            ],
+            "status": "coded",
+            "code": "ProductionQuantity = model.addVars(N, vtype=gp.GRB.CONTINUOUS, name=\"ProductionQuantity\")"
+        },
+        {
+            "definition": "Total overtime assembly hours used",
+            "symbol": "OvertimeHoursUsed",
+            "shape": [],
+            "status": "coded",
+            "code": "OvertimeHoursUsed = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"OvertimeHoursUsed\")"
+        },
+        {
+            "definition": "Excess assembly hours beyond the maximum assembly capacity",
+            "symbol": "ExcessAssemblyHours",
+            "shape": [],
+            "status": "coded",
+            "code": "ExcessAssemblyHours = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"ExcessAssemblyHours\")"
+        },
+        {
+            "definition": "Total discount received on material costs if a certain threshold is reached",
+            "symbol": "TotalMaterialDiscount",
+            "shape": [],
+            "status": "coded",
+            "code": "TotalMaterialDiscount = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TotalMaterialDiscount\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total daily profit, which is the total revenue minus the total cost including overtime costs, regular material costs, and considering material discounts",
+            "status": "coded",
+            "formulation": "\\max \\left(\\sum_{i=1}^{N} (\\textup{Price}_i \\cdot \\textup{ProductionQuantity}_i) - \\sum_{i=1}^{N} (\\textup{MaterialCost}_i \\cdot \\textup{ProductionQuantity}_i) - (\\textup{OvertimeHoursUsed} \\cdot \\textup{OvertimeAssemblyCost}) + \\textup{TotalMaterialDiscount} \\right)",
+            "related_variables": [
+                "ProductionQuantity",
+                "OvertimeHoursUsed",
+                "TotalMaterialDiscount"
+            ],
+            "related_parameters": [
+                "Price",
+                "MaterialCost",
+                "OvertimeAssemblyCost",
+                "MaterialDiscount"
+            ],
+            "code": "# Set objective\nobjective = gp.quicksum(Price[i] * ProductionQuantity[i] for i in range(N)) - gp.quicksum(MaterialCost[i] * ProductionQuantity[i] for i in range(N)) - OvertimeHoursUsed * OvertimeAssemblyCost + TotalMaterialDiscount\nmodel.setObjective(objective, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "runtime_error",
+    "solver_output_status": "runtime_error",
+    "error_message": "Traceback (most recent call last):\n  File \"c:\\Users\\Simon\\Desktop\\Courses\\ECE 570\\ECE570_Project\\MyOptiMUS\\evaluator.py\", line 45, in run\n    exec(last_line, local_env, local_env)\n  File \"<string>\", line 1\n    ```\n    ^\nSyntaxError: invalid syntax\n",
+    "obj_val": null,
+    "log_path": "logs/log_20250413074016_nlp4lp_16/",
+    "problem_path": "data/nlp4lp/16/",
+    "prep_code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nlp4lp/16/data.json\", \"r\") as f:\n    data = json.load(f)\n"
+}

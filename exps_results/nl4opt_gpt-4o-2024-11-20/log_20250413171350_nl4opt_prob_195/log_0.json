@@ -1,0 +1,184 @@
+{
+    "background": "A magic school sends letters using carrier pigeons and owls, which have different capacities and treat requirements for sending letters.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of letters a carrier pigeon can carry at a time",
+            "symbol": "CarrierCapacity",
+            "value": 2,
+            "shape": [],
+            "code": "CarrierCapacity = data[\"CarrierCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of letters an owl can carry at a time",
+            "symbol": "OwlCapacity",
+            "value": 5,
+            "shape": [],
+            "code": "OwlCapacity = data[\"OwlCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum percentage of birds that can be owls",
+            "symbol": "MaxOwlPercentage",
+            "value": 0.4,
+            "shape": [],
+            "code": "MaxOwlPercentage = data[\"MaxOwlPercentage\"] # scalar parameter"
+        },
+        {
+            "definition": "Total treats available for the birds",
+            "symbol": "TotalTreats",
+            "value": 1000,
+            "shape": [],
+            "code": "TotalTreats = data[\"TotalTreats\"] # scalar parameter"
+        },
+        {
+            "definition": "Treats required for one service by a carrier pigeon",
+            "symbol": "TreatsPerCarrier",
+            "value": 3,
+            "shape": [],
+            "code": "TreatsPerCarrier = data[\"TreatsPerCarrier\"] # scalar parameter"
+        },
+        {
+            "definition": "Treats required for one service by an owl",
+            "symbol": "TreatsPerOwl",
+            "value": 5,
+            "shape": [],
+            "code": "TreatsPerOwl = data[\"TreatsPerOwl\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of carrier pigeons that must be used",
+            "symbol": "MinCarrierPigeons",
+            "value": 20,
+            "shape": [],
+            "code": "MinCarrierPigeons = data[\"MinCarrierPigeons\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of carrier pigeons used must be non-negative.",
+            "status": "formulated",
+            "formulation": "\\\\textup{CarrierPigeons} \\\\geq 0",
+            "related_variables": [
+                "CarrierPigeons"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "The number of owls used must be non-negative.",
+            "status": "formulated",
+            "formulation": "\\\\textup{Owls} \\\\geq 0",
+            "related_variables": [
+                "Owls"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "At most MaxOwlPercentage percent of the total number of birds used can be owls.",
+            "status": "formulated",
+            "formulation": "\\textup{Owls} \\leq \\frac{\\textup{MaxOwlPercentage}}{1 - \\textup{MaxOwlPercentage}} \\cdot \\textup{CarrierPigeons}",
+            "related_variables": [
+                "CarrierPigeons",
+                "Owls"
+            ],
+            "related_parameters": [
+                "MaxOwlPercentage"
+            ]
+        },
+        {
+            "description": "The total treats used by carrier pigeons and owls cannot exceed the maximum number of treats available (TotalTreats).",
+            "status": "formulated",
+            "formulation": "\\textup{TreatsPerCarrier} \\cdot \\textup{CarrierPigeons} + \\textup{TreatsPerOwl} \\cdot \\textup{Owls} \\leq \\textup{TotalTreats}",
+            "related_variables": [
+                "CarrierPigeons",
+                "Owls"
+            ],
+            "related_parameters": [
+                "TreatsPerCarrier",
+                "TreatsPerOwl",
+                "TotalTreats"
+            ]
+        },
+        {
+            "description": "The number of carrier pigeons used must be at least MinCarrierPigeons.",
+            "status": "formulated",
+            "formulation": "\\textup{CarrierPigeons} \\geq \\textup{MinCarrierPigeons}",
+            "related_variables": [
+                "CarrierPigeons"
+            ],
+            "related_parameters": [
+                "MinCarrierPigeons"
+            ]
+        },
+        {
+            "description": "The total treats used by carrier pigeons and owls must not exceed the available treats.",
+            "status": "formulated",
+            "formulation": "\\textup{CarrierPigeons} \\cdot \\textup{TreatsPerCarrier} + \\textup{Owls} \\cdot \\textup{TreatsPerOwl} \\leq \\textup{TotalTreats}",
+            "related_variables": [
+                "CarrierPigeons",
+                "Owls"
+            ],
+            "related_parameters": [
+                "TreatsPerCarrier",
+                "TreatsPerOwl",
+                "TotalTreats"
+            ]
+        },
+        {
+            "description": "The proportion of owls cannot exceed their maximum allowed percentage of all birds.",
+            "status": "formulated",
+            "formulation": "\\textup{Owls} \\leq \\textup{MaxOwlPercentage} \\cdot (\\textup{CarrierPigeons} + \\textup{Owls})",
+            "related_variables": [
+                "CarrierPigeons",
+                "Owls"
+            ],
+            "related_parameters": [
+                "MaxOwlPercentage"
+            ]
+        },
+        {
+            "description": "A minimum number of carrier pigeons must be used.",
+            "status": "formulated",
+            "formulation": "\\textup{CarrierPigeons} \\geq \\textup{MinCarrierPigeons}",
+            "related_variables": [
+                "CarrierPigeons"
+            ],
+            "related_parameters": [
+                "MinCarrierPigeons"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of carrier pigeons used.",
+            "symbol": "CarrierPigeons",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "The number of owls used to send letters.",
+            "symbol": "Owls",
+            "shape": [],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total number of letters that can be sent by carrier pigeons and owls.",
+            "status": "formulated",
+            "formulation": "\\textup{CarrierPigeons} \\cdot \\textup{CarrierCapacity} + \\textup{Owls} \\cdot \\textup{OwlCapacity}",
+            "related_variables": [
+                "CarrierPigeons",
+                "Owls"
+            ],
+            "related_parameters": [
+                "CarrierCapacity",
+                "OwlCapacity"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413171350_nl4opt_prob_195/",
+    "problem_path": "data/nl4opt/prob_195/"
+}

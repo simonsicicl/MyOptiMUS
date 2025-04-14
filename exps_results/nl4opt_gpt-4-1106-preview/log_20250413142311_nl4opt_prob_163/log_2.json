@@ -1,0 +1,163 @@
+{
+    "background": "A farmer is transporting cows to a nearby farm and must decide on the mix of helicopters and trucks to use based on the capacity of each transport type and their associated pollution levels to minimize the total pollution produced.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of cows per helicopter trip",
+            "symbol": "CowsPerHelicopter",
+            "value": 3,
+            "shape": [],
+            "code": "CowsPerHelicopter = data[\"CowsPerHelicopter\"] # scalar parameter"
+        },
+        {
+            "definition": "Pollution units created by one helicopter trip",
+            "symbol": "PollutionPerHelicopter",
+            "value": 5,
+            "shape": [],
+            "code": "PollutionPerHelicopter = data[\"PollutionPerHelicopter\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of cows per truck trip",
+            "symbol": "CowsPerTruck",
+            "value": 7,
+            "shape": [],
+            "code": "CowsPerTruck = data[\"CowsPerTruck\"] # scalar parameter"
+        },
+        {
+            "definition": "Pollution units created by one truck trip",
+            "symbol": "PollutionPerTruck",
+            "value": 10,
+            "shape": [],
+            "code": "PollutionPerTruck = data[\"PollutionPerTruck\"] # scalar parameter"
+        },
+        {
+            "definition": "Total number of cows to transport",
+            "symbol": "TotalCows",
+            "value": 80,
+            "shape": [],
+            "code": "TotalCows = data[\"TotalCows\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of truck trips allowed",
+            "symbol": "MaxTruckTrips",
+            "value": 8,
+            "shape": [],
+            "code": "MaxTruckTrips = data[\"MaxTruckTrips\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Number of helicopter trips must be non-negative",
+            "status": "coded",
+            "formulation": "HelicopterTrips \\geq 0",
+            "related_variables": [
+                "HelicopterTrips"
+            ],
+            "related_parameters": [],
+            "code": "# Since HelicopterTrips is already a non-negative integer variable by virtue of its type, no additional constraint is needed.\n# The Gurobi optimizer enforces the non-negativity condition implicitly."
+        },
+        {
+            "description": "Number of truck trips is non-negative",
+            "status": "coded",
+            "formulation": "\\textup{TruckTrips} \\geq 0",
+            "related_variables": [
+                "TruckTrips"
+            ],
+            "related_parameters": [],
+            "code": "# Constraint: Number of truck trips is non-negative\nmodel.addConstr(TruckTrips >= 0, name=\"non_negative_truck_trips\")"
+        },
+        {
+            "description": "Total number of cows transported must be at least the number specified by the TotalCows parameter",
+            "status": "coded",
+            "formulation": "\\textup{HelicopterTrips} \\times \\textup{CowsPerHelicopter} + \\textup{TruckTrips} \\times \\textup{CowsPerTruck} \\geq \\textup{TotalCows}",
+            "related_variables": [
+                "HelicopterTrips",
+                "TruckTrips"
+            ],
+            "related_parameters": [
+                "CowsPerHelicopter",
+                "CowsPerTruck",
+                "TotalCows"
+            ],
+            "code": "# Ensure total number of cows transported meets or exceeds the TotalCows parameter\nmodel.addConstr(HelicopterTrips * CowsPerHelicopter + TruckTrips * CowsPerTruck >= TotalCows, name=\"TotalCowsTransported\")"
+        },
+        {
+            "description": "The total number of truck trips is limited by the maximum number of truck trips allowed.",
+            "status": "coded",
+            "formulation": "\\textup{TruckTrips} \\leq \\textup{MaxTruckTrips}",
+            "related_variables": [
+                "TruckTrips"
+            ],
+            "related_parameters": [
+                "MaxTruckTrips"
+            ],
+            "code": "# Add constraint for the maximum number of truck trips allowed\nmodel.addConstr(TruckTrips <= MaxTruckTrips, name=\"max_truck_trips_constraint\")"
+        },
+        {
+            "description": "Ensure that the total number of cows transported meets or exceeds the required amount",
+            "status": "coded",
+            "formulation": "\\textup{CowsPerHelicopter} \\cdot \\textup{HelicopterTrips} + \\textup{CowsPerTruck} \\cdot \\textup{TruckTrips} \\geq \\textup{TotalCows}",
+            "related_variables": [
+                "HelicopterTrips",
+                "TruckTrips"
+            ],
+            "related_parameters": [
+                "CowsPerHelicopter",
+                "CowsPerTruck",
+                "TotalCows"
+            ],
+            "code": "# Ensure that the total number of cows transported meets or exceeds the required amount\nmodel.addConstr(CowsPerHelicopter * HelicopterTrips + CowsPerTruck * TruckTrips >= TotalCows, name=\"total_cows_transported\")"
+        },
+        {
+            "description": "Ensure that the number of truck trips does not exceed the maximum number allowed",
+            "status": "coded",
+            "formulation": "\\textup{TruckTrips} \\leq \\textup{MaxTruckTrips}",
+            "related_variables": [
+                "TruckTrips"
+            ],
+            "related_parameters": [
+                "MaxTruckTrips"
+            ],
+            "code": "# Ensure that the number of truck trips does not exceed the maximum number allowed\nmodel.addConstr(TruckTrips <= MaxTruckTrips, name=\"max_truck_trips\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of helicopter trips needed to transport the cows",
+            "symbol": "HelicopterTrips",
+            "shape": [],
+            "status": "coded",
+            "code": "HelicopterTrips = model.addVar(vtype=gp.GRB.INTEGER, name=\"HelicopterTrips\")"
+        },
+        {
+            "definition": "Number of truck trips needed to transport the cows",
+            "symbol": "TruckTrips",
+            "shape": [],
+            "status": "coded",
+            "code": "TruckTrips = model.addVar(vtype=gp.GRB.INTEGER, name=\"TruckTrips\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total amount of pollution produced by the transportation of cows using helicopters and trucks",
+            "status": "coded",
+            "formulation": "\\textup{TotalPollution} = \\textup{PollutionPerHelicopter} \\cdot \\textup{HelicopterTrips} + \\textup{PollutionPerTruck} \\cdot \\textup{TruckTrips}",
+            "related_variables": [
+                "HelicopterTrips",
+                "TruckTrips"
+            ],
+            "related_parameters": [
+                "PollutionPerHelicopter",
+                "PollutionPerTruck"
+            ],
+            "code": "# Define the objective function\nmodel.setObjective(PollutionPerHelicopter * HelicopterTrips + PollutionPerTruck * TruckTrips, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 120.0,
+    "log_path": "logs/log_20250413142311_nl4opt_prob_163/",
+    "problem_path": "data/nl4opt/prob_163/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_163/data.json\", \"r\") as f:\n    data = json.load(f)\n\nCowsPerHelicopter = data[\"CowsPerHelicopter\"] # scalar parameter\nPollutionPerHelicopter = data[\"PollutionPerHelicopter\"] # scalar parameter\nCowsPerTruck = data[\"CowsPerTruck\"] # scalar parameter\nPollutionPerTruck = data[\"PollutionPerTruck\"] # scalar parameter\nTotalCows = data[\"TotalCows\"] # scalar parameter\nMaxTruckTrips = data[\"MaxTruckTrips\"] # scalar parameter\nHelicopterTrips = model.addVar(vtype=gp.GRB.INTEGER, name=\"HelicopterTrips\")\nTruckTrips = model.addVar(vtype=gp.GRB.INTEGER, name=\"TruckTrips\")\n\n# Since HelicopterTrips is already a non-negative integer variable by virtue of its type, no additional constraint is needed.\n# The Gurobi optimizer enforces the non-negativity condition implicitly.\n\n# Constraint: Number of truck trips is non-negative\nmodel.addConstr(TruckTrips >= 0, name=\"non_negative_truck_trips\")\n\n# Ensure total number of cows transported meets or exceeds the TotalCows parameter\nmodel.addConstr(HelicopterTrips * CowsPerHelicopter + TruckTrips * CowsPerTruck >= TotalCows, name=\"TotalCowsTransported\")\n\n# Add constraint for the maximum number of truck trips allowed\nmodel.addConstr(TruckTrips <= MaxTruckTrips, name=\"max_truck_trips_constraint\")\n\n# Ensure that the total number of cows transported meets or exceeds the required amount\nmodel.addConstr(CowsPerHelicopter * HelicopterTrips + CowsPerTruck * TruckTrips >= TotalCows, name=\"total_cows_transported\")\n\n# Ensure that the number of truck trips does not exceed the maximum number allowed\nmodel.addConstr(TruckTrips <= MaxTruckTrips, name=\"max_truck_trips\")\n\n# Define the objective function\nmodel.setObjective(PollutionPerHelicopter * HelicopterTrips + PollutionPerTruck * TruckTrips, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

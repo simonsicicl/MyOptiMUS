@@ -1,0 +1,222 @@
+{
+    "background": "An artisan makes two types of terracotta jars: a thin jar and a stubby jar.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Minutes required to shape one thin jar",
+            "symbol": "ThinShapingTime",
+            "value": 50,
+            "shape": [],
+            "code": "ThinShapingTime = data[\"ThinShapingTime\"] # scalar parameter"
+        },
+        {
+            "definition": "Minutes required to bake one thin jar",
+            "symbol": "ThinBakingTime",
+            "value": 90,
+            "shape": [],
+            "code": "ThinBakingTime = data[\"ThinBakingTime\"] # scalar parameter"
+        },
+        {
+            "definition": "Minutes required to shape one stubby jar",
+            "symbol": "StubbyShapingTime",
+            "value": 30,
+            "shape": [],
+            "code": "StubbyShapingTime = data[\"StubbyShapingTime\"] # scalar parameter"
+        },
+        {
+            "definition": "Minutes required to bake one stubby jar",
+            "symbol": "StubbyBakingTime",
+            "value": 150,
+            "shape": [],
+            "code": "StubbyBakingTime = data[\"StubbyBakingTime\"] # scalar parameter"
+        },
+        {
+            "definition": "Total available shaping minutes per week",
+            "symbol": "TotalShapingTime",
+            "value": 3000,
+            "shape": [],
+            "code": "TotalShapingTime = data[\"TotalShapingTime\"] # scalar parameter"
+        },
+        {
+            "definition": "Total available baking minutes per week",
+            "symbol": "TotalBakingTime",
+            "value": 4000,
+            "shape": [],
+            "code": "TotalBakingTime = data[\"TotalBakingTime\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit per thin jar",
+            "symbol": "ProfitThin",
+            "value": 5,
+            "shape": [],
+            "code": "ProfitThin = data[\"ProfitThin\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit per stubby jar",
+            "symbol": "ProfitStubby",
+            "value": 9,
+            "shape": [],
+            "code": "ProfitStubby = data[\"ProfitStubby\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of thin jars produced must be an integer.",
+            "status": "coded",
+            "formulation": "\\textup{ThinJarCount} \\in \\mathbb{Z}",
+            "related_variables": [
+                "ThinJarCount"
+            ],
+            "related_parameters": [],
+            "code": "# Update variable ThinJarCount to integer type\nThinJarCount.vtype = gp.GRB.INTEGER"
+        },
+        {
+            "description": "The number of stubby jars is an integer.",
+            "status": "coded",
+            "formulation": "\\textup{StubbyJarCount} \\in \\mathbb{Z}",
+            "related_variables": [
+                "StubbyJarCount"
+            ],
+            "related_parameters": [],
+            "code": "# Change StubbyJarCount's variable type from continuous to integer\nStubbyJarCount.vtype = gp.GRB.INTEGER"
+        },
+        {
+            "description": "The number of thin jars is non-negative",
+            "status": "coded",
+            "formulation": "\\textup{ThinJarCount} \\geq 0",
+            "related_variables": [
+                "ThinJarCount"
+            ],
+            "related_parameters": [],
+            "code": "# The variable ThinJarCount is already defined as non-negative. No additional code is required."
+        },
+        {
+            "description": "Ensure the number of stubby jars produced is non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{StubbyJarCount} \\\\geq 0",
+            "related_variables": [
+                "StubbyJarCount"
+            ],
+            "related_parameters": [],
+            "code": "# Ensure the number of stubby jars produced is non-negative\nmodel.addConstr(StubbyJarCount >= 0, name=\"non_negative_stubby_jars\")"
+        },
+        {
+            "description": "The total shaping time for thin and stubby jars cannot exceed the available total shaping time per week.",
+            "status": "coded",
+            "formulation": "\\\\textup{ThinShapingTime} \\\\times \\\\textup{ThinJarCount} + \\\\textup{StubbyShapingTime} \\\\times \\\\textup{StubbyJarCount} \\\\leq \\\\textup{TotalShapingTime}",
+            "related_variables": [
+                "ThinJarCount",
+                "StubbyJarCount"
+            ],
+            "related_parameters": [
+                "ThinShapingTime",
+                "StubbyShapingTime",
+                "TotalShapingTime"
+            ],
+            "code": "# Add total shaping time constraint for thin and stubby jars\nmodel.addConstr(\n    ThinShapingTime * ThinJarCount + StubbyShapingTime * StubbyJarCount <= TotalShapingTime,\n    name=\"total_shaping_time\"\n)"
+        },
+        {
+            "description": "The total baking time of thin and stubby jars cannot exceed TotalBakingTime minutes per week.",
+            "status": "coded",
+            "formulation": "\\textup{ThinBakingTime} \\cdot \\textup{ThinJarCount} + \\textup{StubbyBakingTime} \\cdot \\textup{StubbyJarCount} \\leq \\textup{TotalBakingTime}",
+            "related_variables": [
+                "ThinJarCount",
+                "StubbyJarCount"
+            ],
+            "related_parameters": [
+                "ThinBakingTime",
+                "StubbyBakingTime",
+                "TotalBakingTime"
+            ],
+            "code": "# Add total baking time constraint for thin and stubby jars\nmodel.addConstr(\n    ThinBakingTime * ThinJarCount + StubbyBakingTime * StubbyJarCount <= TotalBakingTime,\n    name=\"total_baking_time_constraint\"\n)"
+        },
+        {
+            "description": "The total shaping time cannot exceed the available shaping time per week.",
+            "status": "coded",
+            "formulation": "\\textup{ThinShapingTime} \\times \\textup{ThinJarCount} + \\textup{StubbyShapingTime} \\times \\textup{StubbyJarCount} \\leq \\textup{TotalShapingTime}",
+            "related_variables": [
+                "ThinJarCount",
+                "StubbyJarCount"
+            ],
+            "related_parameters": [
+                "ThinShapingTime",
+                "StubbyShapingTime",
+                "TotalShapingTime"
+            ],
+            "code": "# Add shaping time constraint\nmodel.addConstr(\n    ThinShapingTime * ThinJarCount + StubbyShapingTime * StubbyJarCount <= TotalShapingTime,\n    name=\"shaping_time_limit\"\n)"
+        },
+        {
+            "description": "The total baking time cannot exceed the available baking time per week.",
+            "status": "coded",
+            "formulation": "\\textup{ThinBakingTime} \\times \\textup{ThinJarCount} + \\textup{StubbyBakingTime} \\times \\textup{StubbyJarCount} \\leq \\textup{TotalBakingTime}",
+            "related_variables": [
+                "ThinJarCount",
+                "StubbyJarCount"
+            ],
+            "related_parameters": [
+                "ThinBakingTime",
+                "StubbyBakingTime",
+                "TotalBakingTime"
+            ],
+            "code": "# Add constraint to ensure total baking time does not exceed available baking time\nmodel.addConstr(ThinBakingTime * ThinJarCount + StubbyBakingTime * StubbyJarCount <= TotalBakingTime, name=\"baking_time_limit\")"
+        },
+        {
+            "description": "The number of thin jars produced must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{ThinJarCount} \\geq 0",
+            "related_variables": [
+                "ThinJarCount"
+            ],
+            "related_parameters": [],
+            "code": "# The non-negativity of ThinJarCount is enforced by Gurobi's default non-negative domain for continuous variables. No additional constraint code is needed."
+        },
+        {
+            "description": "The number of stubby jars produced must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{StubbyJarCount} \\geq 0",
+            "related_variables": [
+                "StubbyJarCount"
+            ],
+            "related_parameters": [],
+            "code": "# No additional code needed since the variable \"StubbyJarCount\" is defined with non-negativity by default in Gurobi (continuous variables have a lower bound of 0 unless specified otherwise)."
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of thin jars produced.",
+            "symbol": "ThinJarCount",
+            "shape": [],
+            "status": "coded",
+            "code": "ThinJarCount = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"ThinJarCount\")"
+        },
+        {
+            "definition": "The number of stubby jars produced.",
+            "symbol": "StubbyJarCount",
+            "shape": [],
+            "status": "coded",
+            "code": "StubbyJarCount = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"StubbyJarCount\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the artisan's weekly profit from the jars",
+            "status": "coded",
+            "formulation": "\\textup{Maximize:} \\quad \\textup{ProfitThin} \\times \\textup{ThinJarCount} + \\textup{ProfitStubby} \\times \\textup{StubbyJarCount}",
+            "related_variables": [
+                "ThinJarCount",
+                "StubbyJarCount"
+            ],
+            "related_parameters": [
+                "ProfitThin",
+                "ProfitStubby"
+            ],
+            "code": "# Set objective\nmodel.setObjective(ProfitThin * ThinJarCount + ProfitStubby * StubbyJarCount, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413170722_nl4opt_prob_19/",
+    "problem_path": "data/nl4opt/prob_19/"
+}

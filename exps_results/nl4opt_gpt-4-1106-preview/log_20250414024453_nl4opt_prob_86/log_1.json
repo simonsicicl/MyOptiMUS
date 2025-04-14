@@ -1,0 +1,172 @@
+{
+    "background": "A coffee shop aims to determine the quantity of mochas and regular coffees to make, utilizing limited resources of coffee powder and milk, while adhering to a popularity constraint that demands a minimum ratio of mochas to regular coffees.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Units of coffee powder required to make one mocha",
+            "symbol": "CoffeePowderPerMocha",
+            "value": 3,
+            "shape": [],
+            "code": "CoffeePowderPerMocha = data[\"CoffeePowderPerMocha\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of milk required to make one mocha",
+            "symbol": "MilkPerMocha",
+            "value": 6,
+            "shape": [],
+            "code": "MilkPerMocha = data[\"MilkPerMocha\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of coffee powder required to make one regular coffee",
+            "symbol": "CoffeePowderPerRegular",
+            "value": 6,
+            "shape": [],
+            "code": "CoffeePowderPerRegular = data[\"CoffeePowderPerRegular\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of milk required to make one regular coffee",
+            "symbol": "MilkPerRegular",
+            "value": 2,
+            "shape": [],
+            "code": "MilkPerRegular = data[\"MilkPerRegular\"] # scalar parameter"
+        },
+        {
+            "definition": "Total available units of coffee powder",
+            "symbol": "TotalCoffeePowder",
+            "value": 400,
+            "shape": [],
+            "code": "TotalCoffeePowder = data[\"TotalCoffeePowder\"] # scalar parameter"
+        },
+        {
+            "definition": "Total available units of milk",
+            "symbol": "TotalMilk",
+            "value": 500,
+            "shape": [],
+            "code": "TotalMilk = data[\"TotalMilk\"] # scalar parameter"
+        },
+        {
+            "definition": "Time required to make one mocha",
+            "symbol": "TimePerMocha",
+            "value": 5,
+            "shape": [],
+            "code": "TimePerMocha = data[\"TimePerMocha\"] # scalar parameter"
+        },
+        {
+            "definition": "Time required to make one regular coffee",
+            "symbol": "TimePerRegular",
+            "value": 3,
+            "shape": [],
+            "code": "TimePerRegular = data[\"TimePerRegular\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum ratio of the number of mochas to the number of regular coffees",
+            "symbol": "MochaToRegularRatio",
+            "value": 0.33,
+            "shape": [],
+            "code": "MochaToRegularRatio = data[\"MochaToRegularRatio\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of mochas must be non-negative",
+            "status": "coded",
+            "formulation": "Mochas \\geq 0",
+            "related_variables": [
+                "Mochas"
+            ],
+            "related_parameters": [],
+            "code": "# The number of mochas must be non-negative\nmodel.addConstr(Mochas >= 0, name=\"Mochas_non_negative\")"
+        },
+        {
+            "description": "The number of regular coffees should be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{RegularCoffees} \\geq 0",
+            "related_variables": [
+                "RegularCoffees"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint for non-negative number of regular coffees\nmodel.addConstr(RegularCoffees >= 0, name=\"non_negative_regular_coffees\")"
+        },
+        {
+            "description": "Total uses of coffee powder does not exceed TotalCoffeePowder",
+            "status": "coded",
+            "formulation": "\\textup{CoffeePowderPerMocha} \\times \\textup{Mochas} + \\textup{CoffeePowderPerRegular} \\times \\textup{RegularCoffees} \\leq \\textup{TotalCoffeePowder}",
+            "related_variables": [
+                "Mochas",
+                "RegularCoffees"
+            ],
+            "related_parameters": [
+                "CoffeePowderPerMocha",
+                "CoffeePowderPerRegular",
+                "TotalCoffeePowder"
+            ],
+            "code": "# Add constraint to ensure that total coffee powder used doesn't exceed the available amount\nmodel.addConstr(CoffeePowderPerMocha * Mochas + CoffeePowderPerRegular * RegularCoffees <= TotalCoffeePowder, \"total_coffee_powder_limit\")"
+        },
+        {
+            "description": "Total uses of milk does not exceed TotalMilk",
+            "status": "coded",
+            "formulation": "\\textup{MilkPerMocha} \\times \\textup{Mochas} + \\textup{MilkPerRegular} \\times \\textup{RegularCoffees} \\leq \\textup{TotalMilk}",
+            "related_variables": [
+                "Mochas",
+                "RegularCoffees"
+            ],
+            "related_parameters": [
+                "MilkPerMocha",
+                "MilkPerRegular",
+                "TotalMilk"
+            ],
+            "code": "# Add constraint for total uses of milk not to exceed TotalMilk\nmodel.addConstr(MilkPerMocha * Mochas + MilkPerRegular * RegularCoffees <= TotalMilk, name=\"milk_usage\")"
+        },
+        {
+            "description": "The number of mochas made must be at least the given ratio times the number of regular coffees made",
+            "status": "coded",
+            "formulation": "\\textup{Mochas} \\geq \\textup{MochaToRegularRatio} \\times \\textup{RegularCoffees}",
+            "related_variables": [
+                "Mochas",
+                "RegularCoffees"
+            ],
+            "related_parameters": [
+                "MochaToRegularRatio"
+            ],
+            "code": "# Add constraint: Number of mochas must be at least the given ratio times the number of regular coffees\nmodel.addConstr(Mochas >= MochaToRegularRatio * RegularCoffees, name=\"mocha_ratio_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of mochas to make",
+            "symbol": "Mochas",
+            "shape": [],
+            "status": "coded",
+            "code": "Mochas = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"Mochas\")"
+        },
+        {
+            "definition": "The number of regular coffees to make",
+            "symbol": "RegularCoffees",
+            "shape": [],
+            "status": "coded",
+            "code": "RegularCoffees = model.addVar(vtype=gp.GRB.INTEGER, name=\"RegularCoffees\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total production time for mochas and regular coffees",
+            "status": "coded",
+            "formulation": "\\textup{Minimize} \\quad \\textup{TimePerMocha} \\times \\textup{Mochas} + \\textup{TimePerRegular} \\times \\textup{RegularCoffees}",
+            "related_variables": [
+                "Mochas",
+                "RegularCoffees"
+            ],
+            "related_parameters": [
+                "TimePerMocha",
+                "TimePerRegular"
+            ],
+            "code": "# Set objective\nmodel.setObjective(TimePerMocha * Mochas + TimePerRegular * RegularCoffees, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250414024453_nl4opt_prob_86/",
+    "problem_path": "data/nl4opt/prob_86/"
+}

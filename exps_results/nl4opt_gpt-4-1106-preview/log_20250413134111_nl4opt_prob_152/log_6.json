@@ -1,0 +1,213 @@
+{
+    "background": "The problem involves the optimization of duck transportation to shore after an oil spill, considering different capacities and time requirements for boats and canoes, along with limits on boat trips and a minimum percentage requirement for canoe trips.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of ducks per boat trip",
+            "symbol": "DucksPerBoat",
+            "value": 10,
+            "shape": [],
+            "code": "DucksPerBoat = data[\"DucksPerBoat\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of ducks per canoe trip",
+            "symbol": "DucksPerCanoe",
+            "value": 8,
+            "shape": [],
+            "code": "DucksPerCanoe = data[\"DucksPerCanoe\"] # scalar parameter"
+        },
+        {
+            "definition": "Duration of a boat trip",
+            "symbol": "TimePerBoat",
+            "value": 20.0,
+            "shape": [],
+            "code": "TimePerBoat = data[\"TimePerBoat\"] # scalar parameter"
+        },
+        {
+            "definition": "Duration of a canoe trip",
+            "symbol": "TimePerCanoe",
+            "value": 40.0,
+            "shape": [],
+            "code": "TimePerCanoe = data[\"TimePerCanoe\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of boat trips",
+            "symbol": "MaxBoatTrips",
+            "value": 12,
+            "shape": [],
+            "code": "MaxBoatTrips = data[\"MaxBoatTrips\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum percentage of trips that should be by canoe",
+            "symbol": "MinCanoeTripsPercentage",
+            "value": 0.6,
+            "shape": [],
+            "code": "MinCanoeTripsPercentage = data[\"MinCanoeTripsPercentage\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of ducks to be taken to shore",
+            "symbol": "MinDucks",
+            "value": 300,
+            "shape": [],
+            "code": "MinDucks = data[\"MinDucks\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Number of boat trips must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{BoatTrips} \\geq 0",
+            "related_variables": [
+                "BoatTrips"
+            ],
+            "related_parameters": [],
+            "code": "# Since BoatTrips is already a non-negative integer variable, there is no need to add an additional constraint.\n# The definition of the variable enforces the non-negativity."
+        },
+        {
+            "description": "The number of canoes used must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{CanoeTrips} \\geq 0",
+            "related_variables": [
+                "CanoeTrips"
+            ],
+            "related_parameters": [],
+            "code": "# Since CanoeTrips is already an integer variable, no code is needed to ensure non-negativity\n# The Gurobi optimizer enforces that integer variables are non-negative by default, unless specified otherwise"
+        },
+        {
+            "description": "Total number of ducks transported by boats cannot exceed the capacity of the boat multiplied by the number of boat trips",
+            "status": "coded",
+            "formulation": "\\textup{DucksByBoat} \\leq \\textup{BoatTrips} \\times \\textup{DucksPerBoat}",
+            "related_variables": [
+                "DucksByBoat",
+                "BoatTrips"
+            ],
+            "related_parameters": [
+                "DucksPerBoat"
+            ],
+            "code": "# Constraint: Total number of ducks transported by boats cannot exceed the capacity of the boat multiplied by the number of boat trips\nmodel.addConstr(DucksByBoat <= BoatTrips * DucksPerBoat, name=\"DucksTransportationCapacity\")"
+        },
+        {
+            "description": "Each canoe trip can transport at most DucksPerCanoe ducks to the shore",
+            "status": "coded",
+            "formulation": "\\textup{DucksPerCanoeTrip} \\leq \\textup{DucksPerCanoe}",
+            "related_variables": [
+                "DucksPerCanoeTrip"
+            ],
+            "related_parameters": [
+                "DucksPerCanoe"
+            ],
+            "code": "# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_152/data.json\", \"r\") as f:\n    data = json.load(f)\nDucksPerCanoe = data[\"DucksPerCanoe\"] # scalar parameter\nDucksPerCanoeTrip = model.addVar(vtype=gp.GRB.INTEGER, name=\"DucksPerCanoeTrip\")"
+        },
+        {
+            "description": "A maximum of MaxBoatTrips boat trips are allowed",
+            "status": "coded",
+            "formulation": "\\textup{BoatTrips} \\leq \\textup{MaxBoatTrips}",
+            "related_variables": [
+                "BoatTrips"
+            ],
+            "related_parameters": [
+                "MaxBoatTrips"
+            ],
+            "code": "model.addConstr(BoatTrips <= MaxBoatTrips, name='max_boat_trips')"
+        },
+        {
+            "description": "At least MinCanoeTripsPercentage of the total trips must be by canoe",
+            "status": "coded",
+            "formulation": "\\textup{CanoeTrips} \\geq \\textup{MinCanoeTripsPercentage} \\times \\textup{TotalTrips}",
+            "related_variables": [
+                "CanoeTrips",
+                "TotalTrips"
+            ],
+            "related_parameters": [
+                "MinCanoeTripsPercentage"
+            ],
+            "code": "# Add constraint to ensure at least MinCanoeTripsPercentage of the trips are by canoe\nCanoeTrips_percentage_constraint = model.addConstr(CanoeTrips >= MinCanoeTripsPercentage * TotalTrips, name=\"MinCanoeTripsPercentage_Constraint\")"
+        },
+        {
+            "description": "At least \\textup{MinDucks} ducks must be transported to shore",
+            "status": "coded",
+            "formulation": "\\textup{DucksByBoat} + (\\textup{CanoeTrips} \\times \\textup{DucksPerCanoeTrip}) \\geq \\textup{MinDucks}",
+            "related_variables": [
+                "DucksByBoat",
+                "CanoeTrips",
+                "DucksPerCanoeTrip"
+            ],
+            "related_parameters": [
+                "MinDucks"
+            ],
+            "code": "# Add constraint to ensure at least MinDucks ducks are transported to the shore\nmodel.addConstr(DucksByBoat + (CanoeTrips * DucksPerCanoeTrip) >= MinDucks, name=\"min_ducks_constraint\")"
+        },
+        {
+            "description": "Definition of the total number of trips",
+            "status": "coded",
+            "formulation": "\\textup{TotalTrips} = \\textup{BoatTrips} + \\textup{CanoeTrips}",
+            "related_variables": [
+                "TotalTrips",
+                "BoatTrips",
+                "CanoeTrips"
+            ],
+            "related_parameters": [],
+            "code": "# Define the total number of trips constraint\nmodel.addConstr(TotalTrips == BoatTrips + CanoeTrips, name=\"total_trips_definition\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of boat trips taken",
+            "symbol": "BoatTrips",
+            "shape": [],
+            "status": "coded",
+            "code": "BoatTrips = model.addVar(vtype=gp.GRB.INTEGER, name=\"BoatTrips\")"
+        },
+        {
+            "definition": "Number of canoe trips taken",
+            "symbol": "CanoeTrips",
+            "shape": [],
+            "status": "coded",
+            "code": "CanoeTrips = model.addVar(vtype=gp.GRB.INTEGER, name=\"CanoeTrips\")"
+        },
+        {
+            "definition": "Total number of ducks transported by boats",
+            "symbol": "DucksByBoat",
+            "shape": [],
+            "status": "coded",
+            "code": "DucksByBoat = model.addVar(vtype=gp.GRB.INTEGER, name=\"DucksByBoat\")"
+        },
+        {
+            "definition": "Total number of ducks transported by canoes per trip",
+            "symbol": "DucksPerCanoeTrip",
+            "shape": [],
+            "status": "coded",
+            "code": "DucksPerCanoeTrip = model.addVar(vtype=gp.GRB.INTEGER, name=\"DucksPerCanoeTrip\")"
+        },
+        {
+            "definition": "Total number of trips taken",
+            "symbol": "TotalTrips",
+            "shape": [],
+            "status": "coded",
+            "code": "TotalTrips = model.addVar(vtype=gp.GRB.INTEGER, name=\"TotalTrips\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total time needed to transport all ducks to shore",
+            "status": "coded",
+            "formulation": "\\textup{TimePerBoat} \\times \\textup{BoatTrips} + \\textup{TimePerCanoe} \\times \\textup{CanoeTrips}",
+            "related_variables": [
+                "BoatTrips",
+                "CanoeTrips"
+            ],
+            "related_parameters": [
+                "TimePerBoat",
+                "TimePerCanoe"
+            ],
+            "code": "# Define objective function\nmodel.setObjective(TimePerBoat * BoatTrips + TimePerCanoe * CanoeTrips, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "runtime_error",
+    "solver_output_status": "runtime_error",
+    "error_message": "Traceback (most recent call last):\n  File \"c:\\Users\\Simon\\Desktop\\Courses\\ECE 570\\ECE570_Project\\MyOptiMUS\\evaluator.py\", line 45, in run\n    exec(last_line, local_env, local_env)\n  File \"<string>\", line 2, in <module>\n  File \"src\\\\gurobipy\\\\_model.pyx\", line 4004, in gurobipy._model.Model.addConstr\n  File \"src\\\\gurobipy\\\\_model.pyx\", line 3667, in gurobipy._model.Model._addConstr\ngurobipy._exception.GurobiError: Variable not in model\n",
+    "obj_val": null,
+    "log_path": "logs/log_20250413134111_nl4opt_prob_152/",
+    "problem_path": "data/nl4opt/prob_152/",
+    "prep_code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_152/data.json\", \"r\") as f:\n    data = json.load(f)\n"
+}

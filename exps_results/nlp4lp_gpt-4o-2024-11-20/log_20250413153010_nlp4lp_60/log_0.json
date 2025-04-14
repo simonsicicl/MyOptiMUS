@@ -1,0 +1,202 @@
+{
+    "background": "A delivery person is required to determine the most time-efficient route for delivering a package within a grid of east-west and north-south streets.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of east-west streets",
+            "symbol": "N",
+            "value": "",
+            "shape": [],
+            "code": "N = data[\"N\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of north-south streets",
+            "symbol": "W",
+            "value": "",
+            "shape": [],
+            "code": "W = data[\"W\"] # scalar parameter"
+        },
+        {
+            "definition": "Time to cross street segment going west, for given street n and segment w",
+            "symbol": "WestTime",
+            "value": "",
+            "shape": [
+                "N",
+                "W-1"
+            ],
+            "code": "WestTime = np.array(data[\"WestTime\"]) # ['N', 'W-1']"
+        },
+        {
+            "definition": "Time to cross street segment going north, for given street n and segment w",
+            "symbol": "NorthTime",
+            "value": "",
+            "shape": [
+                "N-1",
+                "W"
+            ],
+            "code": "NorthTime = np.array(data[\"NorthTime\"]) # ['N-1', 'W']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The total number of east-west street segments used cannot exceed N.",
+            "status": "formulated",
+            "formulation": "\\sum_{n=1}^{\\textup{N}} \\sum_{w=1}^{\\textup{W}-1} \\textup{EastWestUsed}_{n,w} \\leq \\textup{N}",
+            "related_variables": [
+                "EastWestUsed"
+            ],
+            "related_parameters": [
+                "N",
+                "W"
+            ]
+        },
+        {
+            "description": "The number of north-south street segments used cannot exceed W",
+            "status": "formulated",
+            "formulation": "\\sum_{n=1}^{\\textup{N}-1} \\sum_{w=1}^{\\textup{W}} \\textup{NorthSouthUsed}_{n,w} \\leq \\textup{W}",
+            "related_variables": [
+                "NorthSouthUsed"
+            ],
+            "related_parameters": [
+                "W",
+                "N"
+            ]
+        },
+        {
+            "description": "Enforce that east-west street segments are non-negative, aligning with their binary nature.",
+            "status": "formulated",
+            "formulation": "\\textup{EastWestUsed}_{n,w} \\geq 0 \\quad \\forall \\quad n \\in \\{1, \\dots, \\textup{N}\\}, \\quad w \\in \\{1, \\dots, \\textup{W}-1\\}",
+            "related_variables": [
+                "EastWestUsed"
+            ],
+            "related_parameters": [
+                "N",
+                "W"
+            ]
+        },
+        {
+            "description": "The north-south street segments are non-negative, ensuring that the binary variable \\textup{NorthSouthUsed}[n, w] is valid.",
+            "status": "formulated",
+            "formulation": "\\textup{NorthSouthUsed}_{n,w} \\geq 0 \\quad \\forall n \\in \\{1, \\dots, N-1\\}, \\quad \\forall w \\in \\{1, \\dots, W\\}",
+            "related_variables": [
+                "NorthSouthUsed"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "If an east-west segment is used in the route, it is marked as used.",
+            "status": "formulated",
+            "formulation": "\\textup{EastWestUsed}_{n,w} \\geq \\textup{RouteDecision}_{n,w}^{\\textup{West}} \\quad \\forall \\quad n \\in [1, \\textup{N}], \\quad w \\in [1, \\textup{W}-1]",
+            "related_variables": [
+                "EastWestUsed",
+                "RouteDecision"
+            ],
+            "related_parameters": [
+                "N",
+                "W"
+            ]
+        },
+        {
+            "description": "If an east-west segment is not taken, it is not marked as used.",
+            "status": "formulated",
+            "formulation": "\\textup{EastWestUsed}_{n,w} \\leq \\textup{RouteDecision}_{n,w}^{\\textup{West}} \\quad \\forall \\quad n \\in [1, \\textup{N}], \\quad w \\in [1, \\textup{W}-1]",
+            "related_variables": [
+                "EastWestUsed",
+                "RouteDecision"
+            ],
+            "related_parameters": [
+                "N",
+                "W"
+            ]
+        },
+        {
+            "description": "Activation constraint linking the NorthSouthUsed variable with the RouteDecision variable.",
+            "status": "formulated",
+            "formulation": "\\textup{NorthSouthUsed}_{n,w} \\geq \\textup{RouteDecision}_{n,w} + \\textup{RouteDecision}_{n+1,w} - 1",
+            "related_variables": [
+                "NorthSouthUsed",
+                "RouteDecision"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Flow conservation constraint to ensure the package enters and exits segments properly (one-to-one connectivity).",
+            "status": "formulated",
+            "formulation": "\\sum_{w=1}^{\\textup{W-1}} \\textup{EastWestUsed}_{n, w} + \\sum_{w=1}^{\\textup{W}} \\textup{NorthSouthUsed}_{n, w} \\leq 1 \\quad \\forall \\quad n \\in [1, \\textup{N}], w \\in [1, \\textup{W}]",
+            "related_variables": [
+                "EastWestUsed",
+                "NorthSouthUsed"
+            ],
+            "related_parameters": [
+                "N",
+                "W"
+            ]
+        },
+        {
+            "description": "Ensure that segments used in the route align with the overall route decision plan.",
+            "status": "formulated",
+            "formulation": "\\textup{RouteDecision}_{n, w} \\geq \\textup{EastWestUsed}_{n, w} + \\textup{NorthSouthUsed}_{n, w} \\quad \\forall \\quad n \\in [1, \\textup{N}], w \\in [1, \\textup{W}]",
+            "related_variables": [
+                "EastWestUsed",
+                "NorthSouthUsed",
+                "RouteDecision"
+            ],
+            "related_parameters": [
+                "N",
+                "W"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Binary variable indicating whether an east-west street segment (n, w) is used in the delivery route.",
+            "symbol": "EastWestUsed",
+            "shape": [
+                "N",
+                "W-1"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "Binary variable indicating whether the route passes through east-west segment (n, w).",
+            "symbol": "RouteDecision",
+            "shape": [
+                "N",
+                "W-1"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "Binary variable indicating whether a north-south street segment (n, w) is used in the delivery route.",
+            "symbol": "NorthSouthUsed",
+            "shape": [
+                "N-1",
+                "W"
+            ],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total travel time for the delivery route using east-west and north-south street segments.",
+            "status": "formulated",
+            "formulation": "\\min \\quad \\sum_{n=1}^{\\textup{N}} \\sum_{w=1}^{\\textup{W-1}} \\textup{WestTime}_{n, w} \\cdot \\textup{EastWestUsed}_{n, w} + \\sum_{n=1}^{\\textup{N-1}} \\sum_{w=1}^{\\textup{W}} \\textup{NorthTime}_{n, w} \\cdot \\textup{NorthSouthUsed}_{n, w}",
+            "related_variables": [
+                "EastWestUsed",
+                "NorthSouthUsed"
+            ],
+            "related_parameters": [
+                "WestTime",
+                "NorthTime",
+                "N",
+                "W"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413153010_nlp4lp_60/",
+    "problem_path": "data/nlp4lp/60/"
+}

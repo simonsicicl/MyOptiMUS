@@ -1,0 +1,213 @@
+{
+    "background": "A dietician instructs a client on dietary choices involving blueberries and strawberries to meet nutritional goals for anti-oxidants and minerals while minimizing sugar intake.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Units of anti-oxidants in a pack of blueberries",
+            "symbol": "BlueberryAntioxidants",
+            "value": 3,
+            "shape": [],
+            "code": "BlueberryAntioxidants = data[\"BlueberryAntioxidants\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of minerals in a pack of blueberries",
+            "symbol": "BlueberryMinerals",
+            "value": 5,
+            "shape": [],
+            "code": "BlueberryMinerals = data[\"BlueberryMinerals\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of anti-oxidants in a pack of strawberries",
+            "symbol": "StrawberryAntioxidants",
+            "value": 1,
+            "shape": [],
+            "code": "StrawberryAntioxidants = data[\"StrawberryAntioxidants\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of minerals in a pack of strawberries",
+            "symbol": "StrawberryMinerals",
+            "value": 7,
+            "shape": [],
+            "code": "StrawberryMinerals = data[\"StrawberryMinerals\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum required units of anti-oxidants",
+            "symbol": "MinAntioxidants",
+            "value": 90,
+            "shape": [],
+            "code": "MinAntioxidants = data[\"MinAntioxidants\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum required units of minerals",
+            "symbol": "MinMinerals",
+            "value": 100,
+            "shape": [],
+            "code": "MinMinerals = data[\"MinMinerals\"] # scalar parameter"
+        },
+        {
+            "definition": "Ratio of packs of strawberries to blueberries",
+            "symbol": "StrawberryBlueberryRatio",
+            "value": 0.33,
+            "shape": [],
+            "code": "StrawberryBlueberryRatio = data[\"StrawberryBlueberryRatio\"] # scalar parameter"
+        },
+        {
+            "definition": "Grams of sugar in a pack of blueberries",
+            "symbol": "BlueberrySugar",
+            "value": 5,
+            "shape": [],
+            "code": "BlueberrySugar = data[\"BlueberrySugar\"] # scalar parameter"
+        },
+        {
+            "definition": "Grams of sugar in a pack of strawberries",
+            "symbol": "StrawberrySugar",
+            "value": 7,
+            "shape": [],
+            "code": "StrawberrySugar = data[\"StrawberrySugar\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of blueberry packs must be non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{BlueberryPacks} \\\\geq 0",
+            "related_variables": [
+                "BlueberryPacks"
+            ],
+            "related_parameters": [],
+            "code": "# The non-negativity of BlueberryPacks is defined inherently by its lower bound.\n# No additional constraints are needed as Gurobi variables are non-negative by default unless explicitly modified."
+        },
+        {
+            "description": "The number of strawberry packs must be non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{StrawberryPacks} \\\\geq 0",
+            "related_variables": [
+                "StrawberryPacks"
+            ],
+            "related_parameters": [],
+            "code": "# The variable StrawberryPacks is defined with non-negativity (vtype=gp.GRB.CONTINUOUS), so no constraint is needed."
+        },
+        {
+            "description": "The total antioxidants contributed by the chosen packs of blueberries and strawberries must be at least the minimum required antioxidants.",
+            "status": "coded",
+            "formulation": "\\textup{BlueberryPacks} \\times \\textup{BlueberryAntioxidants} + \\textup{StrawberryPacks} \\times \\textup{StrawberryAntioxidants} \\geq \\textup{MinAntioxidants}",
+            "related_variables": [
+                "BlueberryPacks",
+                "StrawberryPacks"
+            ],
+            "related_parameters": [
+                "BlueberryAntioxidants",
+                "StrawberryAntioxidants",
+                "MinAntioxidants"
+            ],
+            "code": "# Add antioxidant requirement constraint\nmodel.addConstr(\n    BlueberryPacks * BlueberryAntioxidants + StrawberryPacks * StrawberryAntioxidants >= MinAntioxidants, \n    name=\"antioxidant_requirement\"\n)"
+        },
+        {
+            "description": "The total minerals from blueberries and strawberries must be at least MinMinerals.",
+            "status": "coded",
+            "formulation": "\\textup{BlueberryPacks} \\cdot \\textup{BlueberryMinerals} + \\textup{StrawberryPacks} \\cdot \\textup{StrawberryMinerals} \\geq \\textup{MinMinerals}",
+            "related_variables": [
+                "BlueberryPacks",
+                "StrawberryPacks"
+            ],
+            "related_parameters": [
+                "BlueberryMinerals",
+                "StrawberryMinerals",
+                "MinMinerals"
+            ],
+            "code": "# Add constraint to ensure total minerals from blueberries and strawberries meet the minimum requirement\nmodel.addConstr(\n    BlueberryPacks * BlueberryMinerals + StrawberryPacks * StrawberryMinerals >= MinMinerals,\n    name=\"min_minerals_constraint\"\n)"
+        },
+        {
+            "description": "The number of strawberry packs must be at least 3 times the number of blueberry packs.",
+            "status": "coded",
+            "formulation": "\\textup{StrawberryPacks} \\geq 3 \\times \\textup{BlueberryPacks}",
+            "related_variables": [
+                "BlueberryPacks",
+                "StrawberryPacks"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint ensuring the number of strawberry packs is at least 3 times the number of blueberry packs\nmodel.addConstr(StrawberryPacks >= 3 * BlueberryPacks, name=\"strawberry_blueberry_ratio\")"
+        },
+        {
+            "description": "Ensure the total anti-oxidant intake meets the minimum requirement.",
+            "status": "coded",
+            "formulation": "\\textup{BlueberryAntioxidants} \\cdot \\textup{BlueberryPacks} + \\textup{StrawberryAntioxidants} \\cdot \\textup{StrawberryPacks} \\geq \\textup{MinAntioxidants}",
+            "related_variables": [
+                "BlueberryPacks",
+                "StrawberryPacks"
+            ],
+            "related_parameters": [
+                "BlueberryAntioxidants",
+                "StrawberryAntioxidants",
+                "MinAntioxidants"
+            ],
+            "code": "# Add constraint for minimum anti-oxidant intake\nmodel.addConstr(\n    BlueberryAntioxidants * BlueberryPacks + StrawberryAntioxidants * StrawberryPacks >= MinAntioxidants,\n    name=\"min_antioxidants_requirement\"\n)"
+        },
+        {
+            "description": "Ensure the total mineral intake meets the minimum requirement.",
+            "status": "coded",
+            "formulation": "\\textup{BlueberryMinerals} \\cdot \\textup{BlueberryPacks} + \\textup{StrawberryMinerals} \\cdot \\textup{StrawberryPacks} \\geq \\textup{MinMinerals}",
+            "related_variables": [
+                "BlueberryPacks",
+                "StrawberryPacks"
+            ],
+            "related_parameters": [
+                "BlueberryMinerals",
+                "StrawberryMinerals",
+                "MinMinerals"
+            ],
+            "code": "# Ensure the total mineral intake meets the minimum requirement\nmodel.addConstr(\n    BlueberryMinerals * BlueberryPacks + StrawberryMinerals * StrawberryPacks >= MinMinerals,\n    name=\"mineral_requirement\"\n)"
+        },
+        {
+            "description": "Ensure the number of strawberry packs satisfies the strawberry-to-blueberry pack ratio constraint.",
+            "status": "coded",
+            "formulation": "\\textup{StrawberryPacks} \\geq \\textup{StrawberryBlueberryRatio} \\cdot \\textup{BlueberryPacks}",
+            "related_variables": [
+                "BlueberryPacks",
+                "StrawberryPacks"
+            ],
+            "related_parameters": [
+                "StrawberryBlueberryRatio"
+            ],
+            "code": "# Add strawberry-to-blueberry pack ratio constraint\nmodel.addConstr(StrawberryPacks >= StrawberryBlueberryRatio * BlueberryPacks, name=\"strawberry_blueberry_ratio\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of blueberry packs chosen in the diet plan.",
+            "symbol": "BlueberryPacks",
+            "shape": [],
+            "status": "coded",
+            "code": "BlueberryPacks = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"BlueberryPacks\")"
+        },
+        {
+            "definition": "The number of strawberry packs chosen in the diet plan.",
+            "symbol": "StrawberryPacks",
+            "shape": [],
+            "status": "coded",
+            "code": "StrawberryPacks = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"StrawberryPacks\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total sugar intake from consuming packs of blueberries and strawberries.",
+            "status": "coded",
+            "formulation": "\\textup{Objective:} \\quad \\min \\quad \\textup{BlueberrySugar} \\cdot \\textup{BlueberryPacks} + \\textup{StrawberrySugar} \\cdot \\textup{StrawberryPacks}",
+            "related_variables": [
+                "BlueberryPacks",
+                "StrawberryPacks"
+            ],
+            "related_parameters": [
+                "BlueberrySugar",
+                "StrawberrySugar"
+            ],
+            "code": "# Set objective\nmodel.setObjective(BlueberrySugar * BlueberryPacks + StrawberrySugar * StrawberryPacks, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413160657_nl4opt_prob_146/",
+    "problem_path": "data/nl4opt/prob_146/"
+}

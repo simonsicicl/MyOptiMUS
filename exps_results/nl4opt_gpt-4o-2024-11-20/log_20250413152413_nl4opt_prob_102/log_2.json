@@ -1,0 +1,234 @@
+{
+    "background": "A summer camp conducts science experiments creating slime using two different beakers, each with its own recipe of flour and special liquid and generating waste. The camp has limited supplies of flour, liquid, and waste capacity.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Units of flour used by beaker 1",
+            "symbol": "FlourBeaker1",
+            "value": 4,
+            "shape": [],
+            "code": "FlourBeaker1 = data[\"FlourBeaker1\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of special liquid used by beaker 1",
+            "symbol": "LiquidBeaker1",
+            "value": 6,
+            "shape": [],
+            "code": "LiquidBeaker1 = data[\"LiquidBeaker1\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of slime produced by beaker 1",
+            "symbol": "SlimeBeaker1",
+            "value": 5,
+            "shape": [],
+            "code": "SlimeBeaker1 = data[\"SlimeBeaker1\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of waste produced by beaker 1",
+            "symbol": "WasteBeaker1",
+            "value": 4,
+            "shape": [],
+            "code": "WasteBeaker1 = data[\"WasteBeaker1\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of flour used by beaker 2",
+            "symbol": "FlourBeaker2",
+            "value": 6,
+            "shape": [],
+            "code": "FlourBeaker2 = data[\"FlourBeaker2\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of special liquid used by beaker 2",
+            "symbol": "LiquidBeaker2",
+            "value": 3,
+            "shape": [],
+            "code": "LiquidBeaker2 = data[\"LiquidBeaker2\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of slime produced by beaker 2",
+            "symbol": "SlimeBeaker2",
+            "value": 3,
+            "shape": [],
+            "code": "SlimeBeaker2 = data[\"SlimeBeaker2\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of waste produced by beaker 2",
+            "symbol": "WasteBeaker2",
+            "value": 2,
+            "shape": [],
+            "code": "WasteBeaker2 = data[\"WasteBeaker2\"] # scalar parameter"
+        },
+        {
+            "definition": "Total available units of flour",
+            "symbol": "TotalFlour",
+            "value": 150,
+            "shape": [],
+            "code": "TotalFlour = data[\"TotalFlour\"] # scalar parameter"
+        },
+        {
+            "definition": "Total available units of special liquid",
+            "symbol": "TotalLiquid",
+            "value": 100,
+            "shape": [],
+            "code": "TotalLiquid = data[\"TotalLiquid\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum units of waste allowed",
+            "symbol": "MaxWaste",
+            "value": 30,
+            "shape": [],
+            "code": "MaxWaste = data[\"MaxWaste\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of Beaker 1 used should be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumberBeaker1Used} \\geq 0",
+            "related_variables": [
+                "NumberBeaker1Used"
+            ],
+            "related_parameters": [],
+            "code": "# The non-negativity constraint is inherently satisfied as the variable `NumberBeaker1Used` is continuous (Gurobi's CONTINUOUS type allows non-negative values by default)."
+        },
+        {
+            "description": "The number of Beaker 2 used must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberBeaker2Used} \\geq 0",
+            "related_variables": [
+                "NumberBeaker2Used"
+            ],
+            "related_parameters": [],
+            "code": "# The non-negativity constraint is inherently satisfied as the variable `NumberBeaker2Used` is defined as continuous (non-negative by default), no extra constraint needs to be added."
+        },
+        {
+            "description": "The total flour used by Beaker 1 and Beaker 2 must be less than or equal to the total available flour.",
+            "status": "coded",
+            "formulation": "\\textup{FlourBeaker1} \\cdot \\textup{NumberBeaker1Used} + \\textup{FlourBeaker2} \\cdot \\textup{NumberBeaker2Used} \\leq \\textup{TotalFlour}",
+            "related_variables": [
+                "NumberBeaker1Used",
+                "NumberBeaker2Used"
+            ],
+            "related_parameters": [
+                "FlourBeaker1",
+                "FlourBeaker2",
+                "TotalFlour"
+            ],
+            "code": "# Add a constraint to ensure total flour used by Beaker 1 and Beaker 2 is within the available total flour\nmodel.addConstr(NumberBeaker1Used * FlourBeaker1 + NumberBeaker2Used * FlourBeaker2 <= TotalFlour, name=\"Flour_Constraint\")"
+        },
+        {
+            "description": "The total liquid used by Beaker 1 and Beaker 2 is less than or equal to TotalLiquid.",
+            "status": "coded",
+            "formulation": "6 \\\\cdot \\\\textup{NumberBeaker1Used} + 3 \\\\cdot \\\\textup{NumberBeaker2Used} \\\\leq \\\\textup{TotalLiquid}",
+            "related_variables": [
+                "NumberBeaker1Used",
+                "NumberBeaker2Used"
+            ],
+            "related_parameters": [
+                "LiquidBeaker1",
+                "LiquidBeaker2",
+                "TotalLiquid"
+            ],
+            "code": "# Add total liquid usage constraint\nmodel.addConstr(\n    6 * NumberBeaker1Used + 3 * NumberBeaker2Used <= TotalLiquid,\n    name=\"total_liquid_constraint\"\n)"
+        },
+        {
+            "description": "The total waste produced by using Beaker 1 and Beaker 2 must not exceed the maximum waste capacity (MaxWaste).",
+            "status": "coded",
+            "formulation": "\\\\textup{WasteBeaker1} \\\\times \\\\textup{NumberBeaker1Used} + \\\\textup{WasteBeaker2} \\\\times \\\\textup{NumberBeaker2Used} \\\\leq \\\\textup{MaxWaste}",
+            "related_variables": [
+                "NumberBeaker1Used",
+                "NumberBeaker2Used"
+            ],
+            "related_parameters": [
+                "WasteBeaker1",
+                "WasteBeaker2",
+                "MaxWaste"
+            ],
+            "code": "# Add waste production constraint\nmodel.addConstr(WasteBeaker1 * NumberBeaker1Used + WasteBeaker2 * NumberBeaker2Used <= MaxWaste, name=\"waste_limit\")"
+        },
+        {
+            "description": "Flour usage should not exceed the available total supply.",
+            "status": "coded",
+            "formulation": "\\textup{FlourBeaker1} \\cdot \\textup{NumberBeaker1Used} + \\textup{FlourBeaker2} \\cdot \\textup{NumberBeaker2Used} \\leq \\textup{TotalFlour}",
+            "related_variables": [
+                "NumberBeaker1Used",
+                "NumberBeaker2Used"
+            ],
+            "related_parameters": [
+                "FlourBeaker1",
+                "FlourBeaker2",
+                "TotalFlour"
+            ],
+            "code": "# Add constraint to ensure flour usage does not exceed the available total supply\nmodel.addConstr(\n    FlourBeaker1 * NumberBeaker1Used + FlourBeaker2 * NumberBeaker2Used <= TotalFlour,\n    name=\"flour_usage_limit\"\n)"
+        },
+        {
+            "description": "Special liquid usage should not exceed the available total supply.",
+            "status": "coded",
+            "formulation": "\\textup{LiquidBeaker1} \\cdot \\textup{NumberBeaker1Used} + \\textup{LiquidBeaker2} \\cdot \\textup{NumberBeaker2Used} \\leq \\textup{TotalLiquid}",
+            "related_variables": [
+                "NumberBeaker1Used",
+                "NumberBeaker2Used"
+            ],
+            "related_parameters": [
+                "LiquidBeaker1",
+                "LiquidBeaker2",
+                "TotalLiquid"
+            ],
+            "code": "# Add constraint to ensure liquid usage does not exceed total supply\nmodel.addConstr(LiquidBeaker1 * NumberBeaker1Used + LiquidBeaker2 * NumberBeaker2Used <= TotalLiquid, name=\"liquid_usage_limit\")"
+        },
+        {
+            "description": "Total waste produced should not exceed the maximum allowed waste.",
+            "status": "coded",
+            "formulation": "\\textup{WasteBeaker1} \\cdot \\textup{NumberBeaker1Used} + \\textup{WasteBeaker2} \\cdot \\textup{NumberBeaker2Used} \\leq \\textup{MaxWaste}",
+            "related_variables": [
+                "NumberBeaker1Used",
+                "NumberBeaker2Used"
+            ],
+            "related_parameters": [
+                "WasteBeaker1",
+                "WasteBeaker2",
+                "MaxWaste"
+            ],
+            "code": "# Adding constraint to ensure total waste does not exceed the maximum allowed waste.\nmodel.addConstr(\n    WasteBeaker1 * NumberBeaker1Used + WasteBeaker2 * NumberBeaker2Used <= MaxWaste,\n    name=\"waste_limit\"\n)"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of Beaker 1 used in the process.",
+            "symbol": "NumberBeaker1Used",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberBeaker1Used = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberBeaker1Used\")"
+        },
+        {
+            "definition": "The number of Beaker 2 used in the process.",
+            "symbol": "NumberBeaker2Used",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberBeaker2Used = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberBeaker2Used\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total units of slime produced using Beaker 1 and Beaker 2.",
+            "status": "coded",
+            "formulation": "\\textup{Maximize } \\quad \\textup{SlimeBeaker1} \\cdot \\textup{NumberBeaker1Used} + \\textup{SlimeBeaker2} \\cdot \\textup{NumberBeaker2Used}",
+            "related_variables": [
+                "NumberBeaker1Used",
+                "NumberBeaker2Used"
+            ],
+            "related_parameters": [
+                "SlimeBeaker1",
+                "SlimeBeaker2"
+            ],
+            "code": "# Set objective\nmodel.setObjective(SlimeBeaker1 * NumberBeaker1Used + SlimeBeaker2 * NumberBeaker2Used, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 45.0,
+    "log_path": "logs/log_20250413152413_nl4opt_prob_102/",
+    "problem_path": "data/nl4opt/prob_102/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_102/data.json\", \"r\") as f:\n    data = json.load(f)\n\nFlourBeaker1 = data[\"FlourBeaker1\"] # scalar parameter\nLiquidBeaker1 = data[\"LiquidBeaker1\"] # scalar parameter\nSlimeBeaker1 = data[\"SlimeBeaker1\"] # scalar parameter\nWasteBeaker1 = data[\"WasteBeaker1\"] # scalar parameter\nFlourBeaker2 = data[\"FlourBeaker2\"] # scalar parameter\nLiquidBeaker2 = data[\"LiquidBeaker2\"] # scalar parameter\nSlimeBeaker2 = data[\"SlimeBeaker2\"] # scalar parameter\nWasteBeaker2 = data[\"WasteBeaker2\"] # scalar parameter\nTotalFlour = data[\"TotalFlour\"] # scalar parameter\nTotalLiquid = data[\"TotalLiquid\"] # scalar parameter\nMaxWaste = data[\"MaxWaste\"] # scalar parameter\nNumberBeaker1Used = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberBeaker1Used\")\nNumberBeaker2Used = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberBeaker2Used\")\n\n# The non-negativity constraint is inherently satisfied as the variable `NumberBeaker1Used` is continuous (Gurobi's CONTINUOUS type allows non-negative values by default).\n\n# The non-negativity constraint is inherently satisfied as the variable `NumberBeaker2Used` is defined as continuous (non-negative by default), no extra constraint needs to be added.\n\n# Add a constraint to ensure total flour used by Beaker 1 and Beaker 2 is within the available total flour\nmodel.addConstr(NumberBeaker1Used * FlourBeaker1 + NumberBeaker2Used * FlourBeaker2 <= TotalFlour, name=\"Flour_Constraint\")\n\n# Add total liquid usage constraint\nmodel.addConstr(\n    6 * NumberBeaker1Used + 3 * NumberBeaker2Used <= TotalLiquid,\n    name=\"total_liquid_constraint\"\n)\n\n# Add waste production constraint\nmodel.addConstr(WasteBeaker1 * NumberBeaker1Used + WasteBeaker2 * NumberBeaker2Used <= MaxWaste, name=\"waste_limit\")\n\n# Add constraint to ensure flour usage does not exceed the available total supply\nmodel.addConstr(\n    FlourBeaker1 * NumberBeaker1Used + FlourBeaker2 * NumberBeaker2Used <= TotalFlour,\n    name=\"flour_usage_limit\"\n)\n\n# Add constraint to ensure liquid usage does not exceed total supply\nmodel.addConstr(LiquidBeaker1 * NumberBeaker1Used + LiquidBeaker2 * NumberBeaker2Used <= TotalLiquid, name=\"liquid_usage_limit\")\n\n# Adding constraint to ensure total waste does not exceed the maximum allowed waste.\nmodel.addConstr(\n    WasteBeaker1 * NumberBeaker1Used + WasteBeaker2 * NumberBeaker2Used <= MaxWaste,\n    name=\"waste_limit\"\n)\n\n# Set objective\nmodel.setObjective(SlimeBeaker1 * NumberBeaker1Used + SlimeBeaker2 * NumberBeaker2Used, gp.GRB.MAXIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

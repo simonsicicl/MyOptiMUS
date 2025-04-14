@@ -1,0 +1,184 @@
+{
+    "background": "A sports company produces multiple products using various raw materials. The amount of each raw material and the requirements for each product are known. Each product has an associated selling price, production cost, and market demand. The company aims to determine the number of each product to produce to maximize profit within the material limitations and market demand constraints.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of different raw materials",
+            "symbol": "N",
+            "value": "",
+            "shape": [],
+            "code": "N = data[\"N\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of different products",
+            "symbol": "M",
+            "value": "",
+            "shape": [],
+            "code": "M = data[\"M\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of raw material i available",
+            "symbol": "Available",
+            "value": "",
+            "shape": [
+                "N"
+            ],
+            "code": "Available = np.array(data[\"Available\"]) # ['N']"
+        },
+        {
+            "definition": "Amount of raw material i required to produce one unit of product j",
+            "symbol": "Requirements",
+            "value": "",
+            "shape": [
+                "N",
+                "M"
+            ],
+            "code": "Requirements = np.array(data[\"Requirements\"]) # ['N', 'M']"
+        },
+        {
+            "definition": "Price at which product j can be sold",
+            "symbol": "Prices",
+            "value": "",
+            "shape": [
+                "M"
+            ],
+            "code": "Prices = np.array(data[\"Prices\"]) # ['M']"
+        },
+        {
+            "definition": "Cost of producing one unit of product j",
+            "symbol": "Costs",
+            "value": "",
+            "shape": [
+                "M"
+            ],
+            "code": "Costs = np.array(data[\"Costs\"]) # ['M']"
+        },
+        {
+            "definition": "Demand for product j",
+            "symbol": "Demands",
+            "value": "",
+            "shape": [
+                "M"
+            ],
+            "code": "Demands = np.array(data[\"Demands\"]) # ['M']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The total raw material usage for each type of raw material must not exceed its available supply.",
+            "status": "formulated",
+            "formulation": "\\sum_{j=1}^{M} \\textup{Requirements}[i, j] \\cdot \\textup{ProductsProduced}[j] \\leq \\textup{Available}[i], \\quad \\forall i \\in \\{1, 2, \\dots, N\\}",
+            "related_variables": [
+                "ProductsProduced"
+            ],
+            "related_parameters": [
+                "Requirements",
+                "Available",
+                "N",
+                "M"
+            ]
+        },
+        {
+            "description": "Each product's production must meet its raw material requirements per unit. The total raw material consumed across all products cannot exceed the available amount for each raw material.",
+            "status": "formulated",
+            "formulation": "\\sum_{j=1}^{\\textup{M}} \\textup{Requirements}_{i,j} \\cdot \\textup{ProductsProduced}_{j} \\leq \\textup{Available}_{i} \\quad \\forall \\, i \\in \\{1, ..., \\textup{N}\\}",
+            "related_variables": [
+                "ProductsProduced"
+            ],
+            "related_parameters": [
+                "Requirements",
+                "Available"
+            ]
+        },
+        {
+            "description": "The production of each product should not exceed its market demand.",
+            "status": "formulated",
+            "formulation": "\\textup{ProductsProduced}_{j} \\leq \\textup{Demands}_{j}, \\quad \\forall j \\in \\{1, 2, \\ldots, M\\}",
+            "related_variables": [
+                "ProductsProduced"
+            ],
+            "related_parameters": [
+                "Demands"
+            ]
+        },
+        {
+            "description": "The number of units produced of each product must be non-negative.",
+            "status": "formulated",
+            "formulation": "\\textup{ProductsProduced}_{j} \\geq 0 \\quad \\forall \\, j \\in \\{1, 2, \\dots, M\\}",
+            "related_variables": [
+                "ProductsProduced"
+            ],
+            "related_parameters": [
+                "M"
+            ]
+        },
+        {
+            "description": "Ensure the total raw material consumption for all products does not exceed the available raw material quantity for each type.",
+            "status": "formulated",
+            "formulation": "\\sum_{j=1}^{M} \\textup{Requirements}_{i, j} \\cdot \\textup{ProductsProduced}_{j} \\leq \\textup{Available}_{i}, \\quad \\forall i = 1, \\ldots, N",
+            "related_variables": [
+                "ProductsProduced"
+            ],
+            "related_parameters": [
+                "Requirements",
+                "Available",
+                "M",
+                "N"
+            ]
+        },
+        {
+            "description": "Ensure the number of each product produced does not exceed its respective market demand.",
+            "status": "formulated",
+            "formulation": "\\textup{ProductsProduced}_{j} \\leq \\textup{Demands}_{j}, \\quad \\forall j = 1, \\ldots, M",
+            "related_variables": [
+                "ProductsProduced"
+            ],
+            "related_parameters": [
+                "Demands",
+                "M"
+            ]
+        },
+        {
+            "description": "Ensure the production quantities are non-negative for all products.",
+            "status": "formulated",
+            "formulation": "\\textup{ProductsProduced}_{j} \\geq 0, \\quad \\forall j = 1, \\ldots, M",
+            "related_variables": [
+                "ProductsProduced"
+            ],
+            "related_parameters": [
+                "M"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of units of product j to produce",
+            "symbol": "ProductsProduced",
+            "shape": [
+                "M"
+            ],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the profit for the month by determining the number of each product to produce.",
+            "status": "formulated",
+            "formulation": "\\sum_{j=1}^{M} \\textup{ProductsProduced}_{j} \\cdot (\\textup{Prices}_{j} - \\textup{Costs}_{j})",
+            "related_variables": [
+                "ProductsProduced"
+            ],
+            "related_parameters": [
+                "Prices",
+                "Costs",
+                "M"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413171504_nlp4lp_46/",
+    "problem_path": "data/nlp4lp/46/"
+}

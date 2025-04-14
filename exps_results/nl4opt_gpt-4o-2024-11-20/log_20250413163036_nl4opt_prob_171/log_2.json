@@ -1,0 +1,263 @@
+{
+    "background": "A mail delivery service must deliver mail using regular and speed boats, each having different capacities and fuel usage, with a constraint on the number of regular boat trips and a minimum proportion of trips that must be speed boats.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Maximum number of mail pieces a regular boat can carry per trip",
+            "symbol": "RegularCapacity",
+            "value": 20,
+            "shape": [],
+            "code": "RegularCapacity = data[\"RegularCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Fuel usage of a regular boat per trip",
+            "symbol": "RegularFuel",
+            "value": 10,
+            "shape": [],
+            "code": "RegularFuel = data[\"RegularFuel\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of mail pieces a speed boat can carry per trip",
+            "symbol": "SpeedCapacity",
+            "value": 30,
+            "shape": [],
+            "code": "SpeedCapacity = data[\"SpeedCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Fuel usage of a speed boat per trip",
+            "symbol": "SpeedFuel",
+            "value": 20,
+            "shape": [],
+            "code": "SpeedFuel = data[\"SpeedFuel\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of regular boat trips allowed",
+            "symbol": "MaxRegularTrips",
+            "value": 20,
+            "shape": [],
+            "code": "MaxRegularTrips = data[\"MaxRegularTrips\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum percentage of trips that must be made by speed boats",
+            "symbol": "MinSpeedPercentage",
+            "value": 0.5,
+            "shape": [],
+            "code": "MinSpeedPercentage = data[\"MinSpeedPercentage\"] # scalar parameter"
+        },
+        {
+            "definition": "Total number of pieces of mail to be delivered",
+            "symbol": "TotalMail",
+            "value": 1000,
+            "shape": [],
+            "code": "TotalMail = data[\"TotalMail\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of regular boat trips is non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{RegularTrips} \\geq 0",
+            "related_variables": [
+                "RegularTrips"
+            ],
+            "related_parameters": [],
+            "code": "# The non-negativity constraint for RegularTrips is implicitly satisfied by Gurobi's default lower bound of zero for continuous variables."
+        },
+        {
+            "description": "The number of speed boat trips is constrained to be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{SpeedTrips} \\geq 0",
+            "related_variables": [
+                "SpeedTrips"
+            ],
+            "related_parameters": [],
+            "code": "# The non-negativity constraint for SpeedTrips is inherently satisfied as it is defined as a continuous variable in Gurobi, which is non-negative by default."
+        },
+        {
+            "description": "The number of regular boat trips is constrained to be at most the maximum number of regular trips allowed.",
+            "status": "coded",
+            "formulation": "\\textup{RegularTrips} \\leq \\textup{MaxRegularTrips}",
+            "related_variables": [
+                "RegularTrips"
+            ],
+            "related_parameters": [
+                "MaxRegularTrips"
+            ],
+            "code": "# Add the constraint that the number of regular trips cannot exceed the maximum allowed\nmodel.addConstr(RegularTrips <= MaxRegularTrips, name=\"regular_trips_limit\")"
+        },
+        {
+            "description": "At least MinSpeedPercentage of the total number of trips are made by speed boats.",
+            "status": "coded",
+            "formulation": "(1 - \\textup{MinSpeedPercentage}) \\cdot \\textup{SpeedTrips} \\geq \\textup{MinSpeedPercentage} \\cdot \\textup{RegularTrips}",
+            "related_variables": [
+                "RegularTrips",
+                "SpeedTrips"
+            ],
+            "related_parameters": [
+                "MinSpeedPercentage"
+            ],
+            "code": "# Add constraint for minimum speed boats percentage\nmodel.addConstr((1 - MinSpeedPercentage) * SpeedTrips >= MinSpeedPercentage * RegularTrips, name=\"min_speed_boats_percentage\")"
+        },
+        {
+            "description": "The total pieces of mail delivered must be at least \\textup{TotalMail}",
+            "status": "coded",
+            "formulation": "\\textup{RegularTrips} \\\\times \\textup{RegularCapacity} + \\textup{SpeedTrips} \\\\times \\textup{SpeedCapacity} \\\\geq \\textup{TotalMail}",
+            "related_variables": [
+                "RegularTrips",
+                "SpeedTrips"
+            ],
+            "related_parameters": [
+                "RegularCapacity",
+                "SpeedCapacity",
+                "TotalMail"
+            ],
+            "code": "# Add constraint to ensure total mail delivered is at least TotalMail\nmodel.addConstr(RegularTrips * RegularCapacity + SpeedTrips * SpeedCapacity >= TotalMail, name=\"mail_delivery_constraint\")"
+        },
+        {
+            "description": "The maximum number of regular trips must not exceed the given limit.",
+            "status": "coded",
+            "formulation": "\\textup{RegularTrips} \\leq \\textup{MaxRegularTrips}",
+            "related_variables": [
+                "RegularTrips"
+            ],
+            "related_parameters": [
+                "MaxRegularTrips"
+            ],
+            "code": "# Add constraint to ensure RegularTrips does not exceed MaxRegularTrips\nmodel.addConstr(RegularTrips <= MaxRegularTrips, name=\"max_regular_trips\")"
+        },
+        {
+            "description": "At least a minimum percentage of trips must be made by speed boats.",
+            "status": "coded",
+            "formulation": "\\textup{SpeedTrips} \\geq \\textup{MinSpeedPercentage} \\cdot (\\textup{RegularTrips} + \\textup{SpeedTrips})",
+            "related_variables": [
+                "SpeedTrips",
+                "RegularTrips"
+            ],
+            "related_parameters": [
+                "MinSpeedPercentage"
+            ],
+            "code": "# Add constraint ensuring at least a minimum percentage of trips must be made by speed boats\nmodel.addConstr(SpeedTrips >= MinSpeedPercentage * (RegularTrips + SpeedTrips), name=\"speed_trip_minimum_percentage\")"
+        },
+        {
+            "description": "The total number of trips is equal to the sum of regular and speed boat trips.",
+            "status": "coded",
+            "formulation": "\\textup{TotalTrips} = \\textup{RegularTrips} + \\textup{SpeedTrips}",
+            "related_variables": [
+                "RegularTrips",
+                "SpeedTrips"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint to ensure total trips is the sum of regular and speed boat trips\nmodel.addConstr(TotalTrips == RegularTrips + SpeedTrips, name=\"total_trips_constraint\")"
+        },
+        {
+            "description": "The total number of trips is the sum of regular boat trips and speed boat trips",
+            "status": "coded",
+            "formulation": "\\textup{TotalTrips} = \\textup{RegularTrips} + \\textup{SpeedTrips}",
+            "related_variables": [
+                "TotalTrips",
+                "RegularTrips",
+                "SpeedTrips"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint ensuring total trips is the sum of regular boat trips and speed boat trips\nmodel.addConstr(TotalTrips == RegularTrips + SpeedTrips, name=\"total_trips_constraint\")"
+        },
+        {
+            "description": "The total number of trips made is the sum of trips made by regular and speed boats",
+            "status": "coded",
+            "formulation": "\\textup{TotalTrips} = \\textup{RegularTrips} + \\textup{SpeedTrips}",
+            "related_variables": [
+                "RegularTrips",
+                "SpeedTrips",
+                "TotalTrips"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint to relate TotalTrips, RegularTrips, and SpeedTrips\nmodel.addConstr(TotalTrips == RegularTrips + SpeedTrips, name=\"trips_sum_constraint\")"
+        },
+        {
+            "description": "The total mail demand must be met by the capacity of all trips",
+            "status": "coded",
+            "formulation": "\\textup{RegularTrips} \\cdot \\textup{RegularCapacity} + \\textup{SpeedTrips} \\cdot \\textup{SpeedCapacity} \\geq \\textup{TotalMail}",
+            "related_variables": [
+                "RegularTrips",
+                "SpeedTrips"
+            ],
+            "related_parameters": [
+                "RegularCapacity",
+                "SpeedCapacity",
+                "TotalMail"
+            ],
+            "code": "# Add constraint to ensure total mail demand is met by the combined capacity of regular and speed trips\nmodel.addConstr(RegularTrips * RegularCapacity + SpeedTrips * SpeedCapacity >= TotalMail, name=\"mail_demand_constraint\")"
+        },
+        {
+            "description": "The total number of trips by regular boats must not exceed the maximum allowed",
+            "status": "coded",
+            "formulation": "\\textup{RegularTrips} \\leq \\textup{MaxRegularTrips}",
+            "related_variables": [
+                "RegularTrips"
+            ],
+            "related_parameters": [
+                "MaxRegularTrips"
+            ],
+            "code": "# Add constraint to ensure the total number of trips by regular boats does not exceed the maximum allowed\nmodel.addConstr(RegularTrips <= MaxRegularTrips, name=\"max_regular_trips_constraint\")"
+        },
+        {
+            "description": "A minimum percentage of trips must be completed using speed boats",
+            "status": "coded",
+            "formulation": "\\textup{SpeedTrips} \\geq \\textup{MinSpeedPercentage} \\cdot \\textup{TotalTrips}",
+            "related_variables": [
+                "SpeedTrips",
+                "TotalTrips"
+            ],
+            "related_parameters": [
+                "MinSpeedPercentage"
+            ],
+            "code": "# Add constraint to ensure a minimum percentage of trips are completed using speed boats\nmodel.addConstr(SpeedTrips >= MinSpeedPercentage * TotalTrips, name=\"min_speed_boat_trips\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of trips performed by regular boats.",
+            "symbol": "RegularTrips",
+            "shape": [],
+            "status": "coded",
+            "code": "RegularTrips = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"RegularTrips\")"
+        },
+        {
+            "definition": "The number of trips performed by speed boats.",
+            "symbol": "SpeedTrips",
+            "shape": [],
+            "status": "coded",
+            "code": "SpeedTrips = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"SpeedTrips\")"
+        },
+        {
+            "definition": "The total number of trips made by both regular and speed boats.",
+            "symbol": "TotalTrips",
+            "shape": [],
+            "status": "coded",
+            "code": "TotalTrips = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TotalTrips\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total amount of gas consumed for delivering all the mail",
+            "status": "coded",
+            "formulation": "\\textup{Minimize} \\quad \\textup{RegularFuel} \\cdot \\textup{RegularTrips} + \\textup{SpeedFuel} \\cdot \\textup{SpeedTrips}",
+            "related_variables": [
+                "RegularTrips",
+                "SpeedTrips"
+            ],
+            "related_parameters": [
+                "RegularFuel",
+                "SpeedFuel"
+            ],
+            "code": "# Set objective\nmodel.setObjective(RegularFuel * RegularTrips + SpeedFuel * SpeedTrips, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 600.0,
+    "log_path": "logs/log_20250413163036_nl4opt_prob_171/",
+    "problem_path": "data/nl4opt/prob_171/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_171/data.json\", \"r\") as f:\n    data = json.load(f)\n\nRegularCapacity = data[\"RegularCapacity\"] # scalar parameter\nRegularFuel = data[\"RegularFuel\"] # scalar parameter\nSpeedCapacity = data[\"SpeedCapacity\"] # scalar parameter\nSpeedFuel = data[\"SpeedFuel\"] # scalar parameter\nMaxRegularTrips = data[\"MaxRegularTrips\"] # scalar parameter\nMinSpeedPercentage = data[\"MinSpeedPercentage\"] # scalar parameter\nTotalMail = data[\"TotalMail\"] # scalar parameter\nRegularTrips = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"RegularTrips\")\nSpeedTrips = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"SpeedTrips\")\nTotalTrips = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TotalTrips\")\n\n# The non-negativity constraint for RegularTrips is implicitly satisfied by Gurobi's default lower bound of zero for continuous variables.\n\n# The non-negativity constraint for SpeedTrips is inherently satisfied as it is defined as a continuous variable in Gurobi, which is non-negative by default.\n\n# Add the constraint that the number of regular trips cannot exceed the maximum allowed\nmodel.addConstr(RegularTrips <= MaxRegularTrips, name=\"regular_trips_limit\")\n\n# Add constraint for minimum speed boats percentage\nmodel.addConstr((1 - MinSpeedPercentage) * SpeedTrips >= MinSpeedPercentage * RegularTrips, name=\"min_speed_boats_percentage\")\n\n# Add constraint to ensure total mail delivered is at least TotalMail\nmodel.addConstr(RegularTrips * RegularCapacity + SpeedTrips * SpeedCapacity >= TotalMail, name=\"mail_delivery_constraint\")\n\n# Add constraint to ensure RegularTrips does not exceed MaxRegularTrips\nmodel.addConstr(RegularTrips <= MaxRegularTrips, name=\"max_regular_trips\")\n\n# Add constraint ensuring at least a minimum percentage of trips must be made by speed boats\nmodel.addConstr(SpeedTrips >= MinSpeedPercentage * (RegularTrips + SpeedTrips), name=\"speed_trip_minimum_percentage\")\n\n# Add constraint to ensure total trips is the sum of regular and speed boat trips\nmodel.addConstr(TotalTrips == RegularTrips + SpeedTrips, name=\"total_trips_constraint\")\n\n# Add constraint ensuring total trips is the sum of regular boat trips and speed boat trips\nmodel.addConstr(TotalTrips == RegularTrips + SpeedTrips, name=\"total_trips_constraint\")\n\n# Add constraint to relate TotalTrips, RegularTrips, and SpeedTrips\nmodel.addConstr(TotalTrips == RegularTrips + SpeedTrips, name=\"trips_sum_constraint\")\n\n# Add constraint to ensure total mail demand is met by the combined capacity of regular and speed trips\nmodel.addConstr(RegularTrips * RegularCapacity + SpeedTrips * SpeedCapacity >= TotalMail, name=\"mail_demand_constraint\")\n\n# Add constraint to ensure the total number of trips by regular boats does not exceed the maximum allowed\nmodel.addConstr(RegularTrips <= MaxRegularTrips, name=\"max_regular_trips_constraint\")\n\n# Add constraint to ensure a minimum percentage of trips are completed using speed boats\nmodel.addConstr(SpeedTrips >= MinSpeedPercentage * TotalTrips, name=\"min_speed_boat_trips\")\n\n# Set objective\nmodel.setObjective(RegularFuel * RegularTrips + SpeedFuel * SpeedTrips, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

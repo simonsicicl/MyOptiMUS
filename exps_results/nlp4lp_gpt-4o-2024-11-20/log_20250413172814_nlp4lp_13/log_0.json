@@ -1,0 +1,130 @@
+{
+    "background": "The goal is to maximize the total units of currency through transactions with starting quantities, transaction limits for each currency, and defined exchange rates.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of different currencies",
+            "symbol": "N",
+            "value": "",
+            "shape": [],
+            "code": "N = data[\"N\"] # scalar parameter"
+        },
+        {
+            "definition": "Initial amount of currency i",
+            "symbol": "Start",
+            "value": "",
+            "shape": [
+                "N"
+            ],
+            "code": "Start = np.array(data[\"Start\"]) # ['N']"
+        },
+        {
+            "definition": "Limit for the number of transactions for currency i",
+            "symbol": "Limit",
+            "value": "",
+            "shape": [
+                "N"
+            ],
+            "code": "Limit = np.array(data[\"Limit\"]) # ['N']"
+        },
+        {
+            "definition": "Exchange rate from currency i to currency j",
+            "symbol": "Rate",
+            "value": "",
+            "shape": [
+                "N",
+                "N"
+            ],
+            "code": "Rate = np.array(data[\"Rate\"]) # ['N', 'N']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Ensures that the number of transactions for each currency is non-negative.",
+            "status": "formulated",
+            "formulation": "\\textup{Transactions}_{i} \\geq 0, \\quad \\forall i \\in \\{1, 2, \\dots, \\textup{N}\\}",
+            "related_variables": [
+                "Transactions"
+            ],
+            "related_parameters": [
+                "N"
+            ]
+        },
+        {
+            "description": "Number of transactions for each currency i does not exceed the specified Limit",
+            "status": "formulated",
+            "formulation": "\\textup{Transactions}_i \\leq \\textup{Limit}_i, \\quad \\forall i = 1, 2, \\dots, N",
+            "related_variables": [
+                "Transactions"
+            ],
+            "related_parameters": [
+                "Limit"
+            ]
+        },
+        {
+            "description": "Ensure the total transactions originating from each currency i do not exceed the transaction limits.",
+            "status": "formulated",
+            "formulation": "\\sum_{j=1}^{N} \\textup{TransactionsFromTo}_{i,j} \\leq \\textup{Limit}_{i} \\quad \\forall \\ i \\in \\{1, \\dots, N\\}",
+            "related_variables": [
+                "TransactionsFromTo"
+            ],
+            "related_parameters": [
+                "Limit",
+                "N"
+            ]
+        },
+        {
+            "description": "Ensure the total outgoing transactions from currency i do not exceed the available amount in that currency, after accounting for incoming exchanges.",
+            "status": "formulated",
+            "formulation": "\\sum_{j=1}^{N} \\textup{TransactionsFromTo}_{i,j} \\leq \\textup{Start}_{i} + \\sum_{j=1}^{N} \\textup{Rate}_{j,i} \\cdot \\textup{TransactionsFromTo}_{j,i} \\quad \\forall \\ i \\in \\{1, \\dots, N\\}",
+            "related_variables": [
+                "TransactionsFromTo"
+            ],
+            "related_parameters": [
+                "Start",
+                "Rate",
+                "N"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of transactions for each currency i",
+            "symbol": "Transactions",
+            "shape": [
+                "N"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "The number of transactions from currency i to currency j",
+            "symbol": "TransactionsFromTo",
+            "shape": [
+                "N",
+                "N"
+            ],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total number of units of currency after all transactions.",
+            "status": "formulated",
+            "formulation": "\\max \\sum_{i=1}^{N} \\left( \\textup{Start}_{i} + \\sum_{j=1}^{N} \\textup{Rate}_{j,i} \\cdot \\textup{TransactionsFromTo}_{j,i} - \\sum_{j=1}^{N} \\textup{TransactionsFromTo}_{i,j} \\right)",
+            "related_variables": [
+                "TransactionsFromTo"
+            ],
+            "related_parameters": [
+                "Start",
+                "Rate",
+                "N"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413172814_nlp4lp_13/",
+    "problem_path": "data/nlp4lp/13/"
+}

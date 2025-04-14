@@ -1,0 +1,281 @@
+{
+    "background": "The problem involves finding an optimal combination of interventions to prevent an intruder's progress in a network, considering processing times and costs of interventions at both central and distributed systems, within given maximum hours of operation.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of interventions",
+            "symbol": "N",
+            "value": "",
+            "shape": [],
+            "code": "N = data[\"N\"] # scalar parameter"
+        },
+        {
+            "definition": "Processing time for isolating at the central system for each intervention",
+            "symbol": "IsolateCentral",
+            "value": "",
+            "shape": [
+                "N"
+            ],
+            "code": "IsolateCentral = np.array(data[\"IsolateCentral\"]) # ['N']"
+        },
+        {
+            "definition": "Processing time for scanning at the central system for each intervention",
+            "symbol": "ScanCentral",
+            "value": "",
+            "shape": [
+                "N"
+            ],
+            "code": "ScanCentral = np.array(data[\"ScanCentral\"]) # ['N']"
+        },
+        {
+            "definition": "Processing time for isolating at the distributed system for each intervention",
+            "symbol": "IsolateDistributed",
+            "value": "",
+            "shape": [
+                "N"
+            ],
+            "code": "IsolateDistributed = np.array(data[\"IsolateDistributed\"]) # ['N']"
+        },
+        {
+            "definition": "Processing time for scanning at the distributed system for each intervention",
+            "symbol": "ScanDistributed",
+            "value": "",
+            "shape": [
+                "N"
+            ],
+            "code": "ScanDistributed = np.array(data[\"ScanDistributed\"]) # ['N']"
+        },
+        {
+            "definition": "Cost for central system intervention",
+            "symbol": "CentralCost",
+            "value": "",
+            "shape": [],
+            "code": "CentralCost = data[\"CentralCost\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost for distributed system intervention",
+            "symbol": "DistributedCost",
+            "value": "",
+            "shape": [],
+            "code": "DistributedCost = data[\"DistributedCost\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum hours of operation for the central system",
+            "symbol": "CentralMaxHours",
+            "value": "",
+            "shape": [],
+            "code": "CentralMaxHours = data[\"CentralMaxHours\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum hours of operation for the distributed system",
+            "symbol": "DistributedMaxHours",
+            "value": "",
+            "shape": [],
+            "code": "DistributedMaxHours = data[\"DistributedMaxHours\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The total processing time for isolation interventions at the central system must not exceed the maximum available hours",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{N} (\\textup{IsolateCentral}_i \\times \\textup{IsolateCentralDecision}_i) \\leq \\textup{CentralMaxHours}",
+            "related_variables": [
+                "IsolateCentralDecision"
+            ],
+            "related_parameters": [
+                "N",
+                "IsolateCentral",
+                "CentralMaxHours"
+            ],
+            "code": "# Add constraint for maximum processing hours at the central system\ncentral_system_constraint = gp.quicksum(IsolateCentralDecision[i] * IsolateCentral[i] for i in range(N))\nmodel.addConstr(central_system_constraint <= CentralMaxHours, name=\"central_max_hours\")"
+        },
+        {
+            "description": "The total processing time of scanning interventions in the central system should not exceed CentralMaxHours",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{N} (\\textup{ScanCentral}_{i} \\times \\textup{IsolateCentralDecision}_{i}) \\leq \\textup{CentralMaxHours}",
+            "related_variables": [
+                "IsolateCentralDecision"
+            ],
+            "related_parameters": [
+                "ScanCentral",
+                "CentralMaxHours"
+            ],
+            "code": "# Constraint for the total processing time of scanning interventions in the central system\nmodel.addConstr(gp.quicksum(IsolateCentralDecision[i] * ScanCentral[i] for i in range(N)) <= CentralMaxHours, name=\"central_system_capacity\")"
+        },
+        {
+            "description": "Total processing time for isolation in the distributed system must not exceed DistributedMaxHours",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{N} (\\textup{IsolateDistributed}_i \\times \\textup{IsolateDistributedDecision}_i) \\leq \\textup{DistributedMaxHours}",
+            "related_variables": [
+                "IsolateDistributedDecision"
+            ],
+            "related_parameters": [
+                "IsolateDistributed",
+                "DistributedMaxHours"
+            ],
+            "code": "# Add constraint for total processing time at the distributed system\ntotal_processing_time = gp.quicksum(IsolateDistributedDecision[i] * IsolateDistributed[i] for i in range(N))\nmodel.addConstr(total_processing_time <= DistributedMaxHours, name=\"distributed_processing_time\")"
+        },
+        {
+            "description": "Total processing time for scanning at the distributed system multiplied by the number of such interventions must not exceed the maximum hours of operation for the distributed system",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{N} (\\textup{ScanDistributed}_{i} \\cdot \\textup{IsolateDistributedDecision}_{i}) \\leq \\textup{DistributedMaxHours}",
+            "related_variables": [
+                "IsolateDistributedDecision"
+            ],
+            "related_parameters": [
+                "N",
+                "ScanDistributed",
+                "DistributedMaxHours"
+            ],
+            "code": "# Add constraint for the maximum hours of operation for the distributed system\nprocessing_time_constraint = gp.quicksum(IsolateDistributedDecision[i] * ScanDistributed[i] for i in range(N))\nmodel.addConstr(processing_time_constraint <= DistributedMaxHours, name=\"max_distributed_hours_operation\")"
+        },
+        {
+            "description": "The total number of interventions for both systems must be equal to N",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{N} (\\textup{IsolateCentralDecision}_i + \\textup{IsolateDistributedDecision}_i) = N",
+            "related_variables": [
+                "IsolateCentralDecision",
+                "IsolateDistributedDecision"
+            ],
+            "related_parameters": [
+                "N"
+            ],
+            "code": "# Add constraint for total number of interventions for both systems to be equal to N\ntotal_isolation_interventions = gp.quicksum(IsolateCentralDecision[i] + IsolateDistributedDecision[i] for i in range(N))\nmodel.addConstr(total_isolation_interventions == N, name=\"total_interventions_constraint\")"
+        },
+        {
+            "description": "The number of central system interventions is non-negative and integer-valued",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfCentralInterventions} \\geq 0 \\quad \\textup{and} \\quad \\textup{NumberOfCentralInterventions} \\in \\mathbb{Z}",
+            "related_variables": [
+                "IsolateCentralDecision"
+            ],
+            "related_parameters": [],
+            "code": "# No code needed because NumberOfCentralInterventions is derived from IsolateCentralDecision, which has already been defined as binary, thus it is non-negative and integer by definition.\n# However, if we want to create an explicit variable for NumberOfCentralInterventions, we could sum the binary variables and ensure it's non-negative.\n# Since NumberOfCentralInterventions is not explicitly defined yet, here is the code to define it and ensure it is non-negative and integer.\n\nNumberOfCentralInterventions = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfCentralInterventions\")\nmodel.addConstr(NumberOfCentralInterventions == gp.quicksum(IsolateCentralDecision[i] for i in range(N)), name=\"calculate_NumberOfCentralInterventions\")\nmodel.addConstr(NumberOfCentralInterventions >= 0, name=\"nonnegativity_NumberOfCentralInterventions\")"
+        },
+        {
+            "description": "The total number of distributed system interventions must be non-negative and integer-valued",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfDistributedInterventions} \\in \\{0, 1, 2, ..., \\textup{N}\\}",
+            "related_variables": [
+                "IsolateDistributedDecision"
+            ],
+            "related_parameters": [
+                "N"
+            ],
+            "code": "# Since the variable IsolateDistributedDecision is already defined as binary,\n# there is no need to explicitly add a constraint for non-negativity or integrality.\n# Integrality and non-negativity are inherent properties of binary variables.\n# However, if we need to count the number of interventions, we should create an auxiliary integer variable.\n\n# Define an auxiliary integer variable for the total number of interventions\nNumberOfDistributedInterventions = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfDistributedInterventions\")\n\n# Add a constraint that equates the auxiliary variable with the sum of the binary decision variables\nmodel.addConstr(NumberOfDistributedInterventions == gp.quicksum(IsolateDistributedDecision[n] for n in range(N)),\n                name=\"total_distributed_interventions\")"
+        },
+        {
+            "description": "The total number of central system interventions is the sum of isolation interventions at the central system",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfCentralInterventions} = \\sum_{i=1}^{\\textup{N}} \\textup{IsolateCentralDecision}_{i}",
+            "related_variables": [
+                "IsolateCentralDecision",
+                "NumberOfCentralInterventions"
+            ],
+            "related_parameters": [
+                "N"
+            ],
+            "code": "# Constraint for the total number of central system interventions\nmodel.addConstr(NumberOfCentralInterventions == gp.quicksum(IsolateCentralDecision[i] for i in range(N)), name=\"TotalNumberOfCentralInterventions\")"
+        },
+        {
+            "description": "The total number of distributed system interventions is the sum of the IsolateDistributedDecision variables",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfDistributedInterventions} = \\sum_{i=1}^{\\textup{N}} \\textup{IsolateDistributedDecision}_{i}",
+            "related_variables": [
+                "IsolateDistributedDecision",
+                "NumberOfDistributedInterventions"
+            ],
+            "related_parameters": [
+                "N"
+            ],
+            "code": "# Summation constraint for the total number of distributed system interventions\nmodel.addConstr(NumberOfDistributedInterventions == gp.quicksum(IsolateDistributedDecision[i] for i in range(N)), \n                name=\"total_distributed_interventions\")"
+        },
+        {
+            "description": "The sum of processing times for central interventions should not exceed the maximum hours of operation for the central system",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{N} (\\textup{IsolateCentralDecision}_i \\cdot \\textup{IsolateCentral}_i + \\textup{IsolateCentralDecision}_i \\cdot \\textup{ScanCentral}_i) \\leq \\textup{CentralMaxHours}",
+            "related_variables": [
+                "IsolateCentralDecision"
+            ],
+            "related_parameters": [
+                "IsolateCentral",
+                "ScanCentral",
+                "CentralMaxHours",
+                "N"
+            ],
+            "code": "# Add the constraint for maximum hours of operation for the central system\ncentral_system_constraint = gp.quicksum((IsolateCentralDecision[i] * IsolateCentral[i] +\n                                        IsolateCentralDecision[i] * ScanCentral[i])\n                                        for i in range(N)) <= CentralMaxHours\nmodel.addConstr(central_system_constraint, name=\"central_system_max_hours\")"
+        },
+        {
+            "description": "The sum of processing times for distributed interventions should not exceed the maximum hours of operation for the distributed system",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{N} (\\textup{IsolateDistributedDecision}_i \\cdot \\textup{IsolateDistributed}_i + \\textup{IsolateDistributedDecision}_i \\cdot \\textup{ScanDistributed}_i) \\leq \\textup{DistributedMaxHours}",
+            "related_variables": [
+                "IsolateDistributedDecision"
+            ],
+            "related_parameters": [
+                "IsolateDistributed",
+                "ScanDistributed",
+                "DistributedMaxHours",
+                "N"
+            ],
+            "code": "# Add a constraint for the sum of processing times in the distributed system\nmodel.addConstr(\n    gp.quicksum(IsolateDistributedDecision[i] * IsolateDistributed[i] + \n                IsolateDistributedDecision[i] * ScanDistributed[i]\n                for i in range(N)) \n    <= DistributedMaxHours, \n    name=\"max_distributed_operation_hours\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Binary decision variable indicating whether an isolation intervention is performed at the central system for each intervention",
+            "symbol": "IsolateCentralDecision",
+            "shape": [
+                "N"
+            ],
+            "status": "coded",
+            "code": "IsolateCentralDecision = model.addVars(N, vtype=gp.GRB.BINARY, name=\"IsolateCentralDecision\")"
+        },
+        {
+            "definition": "Binary decision variable indicating whether an isolation intervention is performed at the distributed system for each intervention",
+            "symbol": "IsolateDistributedDecision",
+            "shape": [
+                "N"
+            ],
+            "status": "coded",
+            "code": "IsolateDistributedDecision = model.addVars(N, vtype=gp.GRB.BINARY, name=\"IsolateDistributedDecision\")"
+        },
+        {
+            "definition": "Total number of central system interventions",
+            "symbol": "NumberOfCentralInterventions",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfCentralInterventions = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfCentralInterventions\")"
+        },
+        {
+            "definition": "Total number of distributed system interventions",
+            "symbol": "NumberOfDistributedInterventions",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfDistributedInterventions = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfDistributedInterventions\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total cost of interventions at the central and distributed systems",
+            "status": "coded",
+            "formulation": "\\min \\left( \\sum_{i=1}^{N} \\textup{IsolateCentralDecision}_i \\cdot \\textup{CentralCost} + \\sum_{i=1}^{N} \\textup{IsolateDistributedDecision}_i \\cdot \\textup{DistributedCost} \\right)",
+            "related_variables": [
+                "IsolateCentralDecision",
+                "IsolateDistributedDecision"
+            ],
+            "related_parameters": [
+                "CentralCost",
+                "DistributedCost",
+                "N"
+            ],
+            "code": "# Set objective\nmodel.setObjective(\n    gp.quicksum(IsolateCentralDecision[i] * CentralCost for i in range(N)) +\n    gp.quicksum(IsolateDistributedDecision[i] * DistributedCost for i in range(N)),\n    gp.GRB.MINIMIZE\n)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413094457_nlp4lp_65/",
+    "problem_path": "data/nlp4lp/65/"
+}

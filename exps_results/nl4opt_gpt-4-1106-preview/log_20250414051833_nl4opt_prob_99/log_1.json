@@ -1,0 +1,165 @@
+{
+    "background": "A candy company is producing peach and cherry flavored candies that require different amounts of flavoring and special syrup. There is a limited amount of peach and cherry flavoring available.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Units of peach flavoring required to produce one pack of peach flavored candy",
+            "symbol": "PeachRequirement",
+            "value": 3,
+            "shape": [],
+            "code": "PeachRequirement = data[\"PeachRequirement\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of special syrup required to produce one pack of peach flavored candy",
+            "symbol": "PeachSyrup",
+            "value": 5,
+            "shape": [],
+            "code": "PeachSyrup = data[\"PeachSyrup\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of cherry flavoring required to produce one pack of cherry flavored candy",
+            "symbol": "CherryRequirement",
+            "value": 5,
+            "shape": [],
+            "code": "CherryRequirement = data[\"CherryRequirement\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of special syrup required to produce one pack of cherry flavored candy",
+            "symbol": "CherrySyrup",
+            "value": 4,
+            "shape": [],
+            "code": "CherrySyrup = data[\"CherrySyrup\"] # scalar parameter"
+        },
+        {
+            "definition": "Total available units of peach flavoring",
+            "symbol": "TotalPeach",
+            "value": 3000,
+            "shape": [],
+            "code": "TotalPeach = data[\"TotalPeach\"] # scalar parameter"
+        },
+        {
+            "definition": "Total available units of cherry flavoring",
+            "symbol": "TotalCherry",
+            "value": 4000,
+            "shape": [],
+            "code": "TotalCherry = data[\"TotalCherry\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum percentage of the total packs that must be cherry flavored",
+            "symbol": "MinimumCherryPercentage",
+            "value": 0.33,
+            "shape": [],
+            "code": "MinimumCherryPercentage = data[\"MinimumCherryPercentage\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Number of peach flavored candy packs must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{PeachPacks} \\geq 0",
+            "related_variables": [
+                "PeachPacks"
+            ],
+            "related_parameters": [],
+            "code": "# Add non-negativity constraint for peach flavored candy packs\nmodel.addConstr(PeachPacks >= 0, name=\"peach_packs_nonnegativity\")"
+        },
+        {
+            "description": "Number of cherry flavored candy packs must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{CherryPacks} \\geq 0",
+            "related_variables": [
+                "CherryPacks"
+            ],
+            "related_parameters": [],
+            "code": "model.addConstr(CherryPacks >= 0, \"CherryPacks_nonnegativity\")"
+        },
+        {
+            "description": "Total used peach flavoring cannot exceed the total available units of peach flavoring",
+            "status": "coded",
+            "formulation": "\\textup{PeachRequirement} \\times \\textup{PeachPacks} \\leq \\textup{TotalPeach}",
+            "related_variables": [
+                "PeachPacks"
+            ],
+            "related_parameters": [
+                "PeachRequirement",
+                "TotalPeach"
+            ],
+            "code": "# Constraint: Total used peach flavoring cannot exceed the total available units of peach flavoring\nmodel.addConstr(PeachRequirement * PeachPacks <= TotalPeach, name=\"peach_flavoring_limit\")"
+        },
+        {
+            "description": "Total used cherry flavoring cannot exceed the total available units of cherry flavoring",
+            "status": "coded",
+            "formulation": "\\textup{CherryRequirement} \\times \\textup{CherryPacks} \\leq \\textup{TotalCherry}",
+            "related_variables": [
+                "CherryPacks"
+            ],
+            "related_parameters": [
+                "CherryRequirement",
+                "TotalCherry"
+            ],
+            "code": "# Constraint to ensure total used cherry flavoring does not exceed total available units\nmodel.addConstr(CherryRequirement * CherryPacks <= TotalCherry, name=\"cherry_flavoring_limit\")"
+        },
+        {
+            "description": "Number of peach candy packs must be greater than the number of cherry candy packs",
+            "status": "coded",
+            "formulation": "\\textup{PeachPacks} \\geq \\textup{CherryPacks} + 1",
+            "related_variables": [
+                "PeachPacks",
+                "CherryPacks"
+            ],
+            "related_parameters": [],
+            "code": "# Ensure the number of peach candy packs is greater than the number of cherry candy packs\nmodel.addConstr(PeachPacks >= CherryPacks + 1, name=\"peach_cherry_relation\")"
+        },
+        {
+            "description": "At least MinimumCherryPercentage of the packs must be cherry flavored",
+            "status": "coded",
+            "formulation": "\\frac{\\textup{CherryPacks}}{\\textup{PeachPacks} + \\textup{CherryPacks}} \\geq \\textup{MinimumCherryPercentage}",
+            "related_variables": [
+                "PeachPacks",
+                "CherryPacks"
+            ],
+            "related_parameters": [
+                "MinimumCherryPercentage"
+            ],
+            "code": "# At least MinimumCherryPercentage of the packs must be cherry flavored\nmodel.addConstr(CherryPacks >= MinimumCherryPercentage * (PeachPacks + CherryPacks), name=\"CherryPacks_Minimum_Percentage\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of peach flavored candy packs produced",
+            "symbol": "PeachPacks",
+            "shape": [],
+            "status": "coded",
+            "code": "PeachPacks = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"PeachPacks\")"
+        },
+        {
+            "definition": "Number of cherry flavored candy packs produced",
+            "symbol": "CherryPacks",
+            "shape": [],
+            "status": "coded",
+            "code": "CherryPacks = model.addVar(vtype=gp.GRB.INTEGER, name=\"CherryPacks\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total amount of special syrup used in producing the candy packs",
+            "status": "coded",
+            "formulation": "\\textup{PeachSyrup} \\times \\textup{PeachPacks} + \\textup{CherrySyrup} \\times \\textup{CherryPacks}",
+            "related_variables": [
+                "PeachPacks",
+                "CherryPacks"
+            ],
+            "related_parameters": [
+                "PeachSyrup",
+                "CherrySyrup"
+            ],
+            "code": "# Define the objective function\nmodel.setObjective(PeachSyrup * PeachPacks + CherrySyrup * CherryPacks, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250414051833_nl4opt_prob_99/",
+    "problem_path": "data/nl4opt/prob_99/"
+}

@@ -1,0 +1,178 @@
+{
+    "background": "A mask making company needs to ship masks to retail stores and aims to determine the optimal number of small and large boxes to use, adhering to specific capacity and ratio constraints.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of masks a small box can hold",
+            "symbol": "SmallBoxCapacity",
+            "value": 25,
+            "shape": [],
+            "code": "SmallBoxCapacity = data[\"SmallBoxCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of masks a large box can hold",
+            "symbol": "LargeBoxCapacity",
+            "value": 45,
+            "shape": [],
+            "code": "LargeBoxCapacity = data[\"LargeBoxCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum ratio of the number of small boxes to large boxes",
+            "symbol": "MinSmallToLargeRatio",
+            "value": 0.33,
+            "shape": [],
+            "code": "MinSmallToLargeRatio = data[\"MinSmallToLargeRatio\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of large boxes required",
+            "symbol": "MinLargeBoxes",
+            "value": 5,
+            "shape": [],
+            "code": "MinLargeBoxes = data[\"MinLargeBoxes\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of masks required to be distributed",
+            "symbol": "MinMasksRequired",
+            "value": 750,
+            "shape": [],
+            "code": "MinMasksRequired = data[\"MinMasksRequired\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of small boxes must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfSmallBoxes} \\geq 0",
+            "related_variables": [
+                "NumberOfSmallBoxes"
+            ],
+            "related_parameters": [],
+            "code": "# Since NumberOfSmallBoxes is already defined as an integer variable, we just need to add a non-negativity constraint\nmodel.addConstr(NumberOfSmallBoxes >= 0, name=\"non_negativity_small_boxes\")"
+        },
+        {
+            "description": "The number of large boxes used for shipping must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfLargeBoxes} \\geq 0",
+            "related_variables": [
+                "NumberOfLargeBoxes"
+            ],
+            "related_parameters": [],
+            "code": "# Constraint to ensure the number of large boxes used for shipping is non-negative\nmodel.addConstr(NumberOfLargeBoxes >= 0, name=\"nonnegativity_large_boxes\")"
+        },
+        {
+            "description": "The number of small boxes must be at least MinSmallToLargeRatio times the number of large boxes",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfSmallBoxes} \\geq \\textup{MinSmallToLargeRatio} \\times \\textup{NumberOfLargeBoxes}",
+            "related_variables": [
+                "NumberOfSmallBoxes",
+                "NumberOfLargeBoxes"
+            ],
+            "related_parameters": [
+                "MinSmallToLargeRatio"
+            ],
+            "code": "# Add constraint for the minimum ratio of the number of small boxes to large boxes\nmodel.addConstr(NumberOfSmallBoxes >= MinSmallToLargeRatio * NumberOfLargeBoxes, name=\"min_small_to_large_ratio_constraint\")"
+        },
+        {
+            "description": "At least a minimum number of large boxes must be used",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfLargeBoxes} \\geq \\textup{MinLargeBoxes}",
+            "related_variables": [
+                "NumberOfLargeBoxes"
+            ],
+            "related_parameters": [
+                "MinLargeBoxes"
+            ],
+            "code": "# Constraint for minimum number of large boxes\nmodel.addConstr(NumberOfLargeBoxes >= MinLargeBoxes, name=\"min_large_boxes\")"
+        },
+        {
+            "description": "At least \\textup{MinMasksRequired} masks must be distributed",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfSmallBoxes} \\times \\textup{SmallBoxCapacity} + \\textup{NumberOfLargeBoxes} \\times \\textup{LargeBoxCapacity} \\geq \\textup{MinMasksRequired}",
+            "related_variables": [
+                "NumberOfSmallBoxes",
+                "NumberOfLargeBoxes"
+            ],
+            "related_parameters": [
+                "SmallBoxCapacity",
+                "LargeBoxCapacity",
+                "MinMasksRequired"
+            ],
+            "code": "# Ensure at least MinMasksRequired masks are distributed\nmodel.addConstr(NumberOfSmallBoxes * SmallBoxCapacity + NumberOfLargeBoxes * LargeBoxCapacity >= MinMasksRequired, name=\"min_masks_required\")"
+        },
+        {
+            "description": "Ensure that the number of masks shipped meets or exceeds the minimum required",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfSmallBoxes} \\cdot \\textup{SmallBoxCapacity} + \\textup{NumberOfLargeBoxes} \\cdot \\textup{LargeBoxCapacity} \\geq \\textup{MinMasksRequired}",
+            "related_variables": [
+                "NumberOfSmallBoxes",
+                "NumberOfLargeBoxes"
+            ],
+            "related_parameters": [
+                "SmallBoxCapacity",
+                "LargeBoxCapacity",
+                "MinMasksRequired"
+            ],
+            "code": "# Ensure that the number of masks shipped meets or exceeds the minimum required\nmodel.addConstr(NumberOfSmallBoxes * SmallBoxCapacity + NumberOfLargeBoxes * LargeBoxCapacity >= MinMasksRequired, name=\"MinMasksRequirement\")"
+        },
+        {
+            "description": "Maintain the minimum required ratio of small boxes to large boxes",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfSmallBoxes} \\geq \\textup{MinSmallToLargeRatio} \\cdot \\textup{NumberOfLargeBoxes}",
+            "related_variables": [
+                "NumberOfSmallBoxes",
+                "NumberOfLargeBoxes"
+            ],
+            "related_parameters": [
+                "MinSmallToLargeRatio"
+            ],
+            "code": "# Maintain the minimum required ratio of small boxes to large boxes\nmodel.addConstr(NumberOfSmallBoxes >= MinSmallToLargeRatio * NumberOfLargeBoxes, name=\"min_small_to_large_ratio\")"
+        },
+        {
+            "description": "Ensure that the number of large boxes used is at least the minimum required",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfLargeBoxes} \\geq \\textup{MinLargeBoxes}",
+            "related_variables": [
+                "NumberOfLargeBoxes"
+            ],
+            "related_parameters": [
+                "MinLargeBoxes"
+            ],
+            "code": "# Ensure that the number of large boxes used is at least the minimum required\nmodel.addConstr(NumberOfLargeBoxes >= MinLargeBoxes, name=\"min_large_boxes_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of small boxes used for shipping",
+            "symbol": "NumberOfSmallBoxes",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfSmallBoxes = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfSmallBoxes\")"
+        },
+        {
+            "definition": "The number of large boxes used for shipping",
+            "symbol": "NumberOfLargeBoxes",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfLargeBoxes = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfLargeBoxes\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of boxes (small and large) needed to ship masks",
+            "status": "coded",
+            "formulation": "\\min \\quad \\textup{NumberOfSmallBoxes} + \\textup{NumberOfLargeBoxes}",
+            "related_variables": [
+                "NumberOfSmallBoxes",
+                "NumberOfLargeBoxes"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(NumberOfSmallBoxes + NumberOfLargeBoxes, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413171451_nl4opt_prob_253/",
+    "problem_path": "data/nl4opt/prob_253/"
+}

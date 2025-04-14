@@ -1,0 +1,210 @@
+{
+    "background": "The company is looking to minimize redundancy across various resources with specific strength requirements and differing costs associated with wastage, redundancy, overmanning, and short working.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Total number of different types of resources",
+            "symbol": "K",
+            "value": "",
+            "shape": [],
+            "code": "K = data[\"K\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of different requirements for each type of resource",
+            "symbol": "I",
+            "value": "",
+            "shape": [],
+            "code": "I = data[\"I\"] # scalar parameter"
+        },
+        {
+            "definition": "Strength of each type of resource",
+            "symbol": "Strength",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "Strength = np.array(data[\"Strength\"]) # ['K']"
+        },
+        {
+            "definition": "Value when wastage of resources is less than optimal",
+            "symbol": "LessOneWaste",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "LessOneWaste = np.array(data[\"LessOneWaste\"]) # ['K']"
+        },
+        {
+            "definition": "Value when wastage of resources is more than optimal",
+            "symbol": "MoreOneWaste",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "MoreOneWaste = np.array(data[\"MoreOneWaste\"]) # ['K']"
+        },
+        {
+            "definition": "Number of recruited resources of each type",
+            "symbol": "Recruit",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "Recruit = np.array(data[\"Recruit\"]) # ['K']"
+        },
+        {
+            "definition": "Cost of redundancy for each type of resource",
+            "symbol": "CostRedundancy",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "CostRedundancy = np.array(data[\"CostRedundancy\"]) # ['K']"
+        },
+        {
+            "definition": "Number of overmanned positions",
+            "symbol": "NumOverman",
+            "value": "",
+            "shape": [],
+            "code": "NumOverman = data[\"NumOverman\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost of overmanning for each type of resource",
+            "symbol": "CostOverman",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "CostOverman = np.array(data[\"CostOverman\"]) # ['K']"
+        },
+        {
+            "definition": "Number of shortworked positions",
+            "symbol": "NumShortwork",
+            "value": "",
+            "shape": [],
+            "code": "NumShortwork = data[\"NumShortwork\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost of short working for each type of resource",
+            "symbol": "CostShort",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "CostShort = np.array(data[\"CostShort\"]) # ['K']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Recruit, NumOverman, and NumShortwork variables must be non-negative for each type of resource.",
+            "status": "formulated",
+            "formulation": "\\forall k \\in \\{1, \\ldots, K\\}, \\quad \\textup{Recruit}_k \\geq 0 \\\\ \\textup{NumOverman} \\geq 0 \\\\ \\textup{NumShortwork} \\geq 0",
+            "related_variables": [
+                "Recruit",
+                "NumOverman",
+                "NumShortwork"
+            ],
+            "related_parameters": [
+                "K"
+            ]
+        },
+        {
+            "description": "Each resource usage must be at least equal to I minus LessOneWaste if wastage is less",
+            "status": "formulated",
+            "formulation": "\\forall k \\in \\{ 1, \\ldots, K \\}, \\quad \\textup{Recruit}_{k} \\geq I - \\textup{LessOneWaste}_{k}",
+            "related_variables": [
+                "Recruit"
+            ],
+            "related_parameters": [
+                "I",
+                "LessOneWaste"
+            ]
+        },
+        {
+            "description": "Amount of each resource used must not exceed I + MoreOneWaste if there is more wastage",
+            "status": "formulated",
+            "formulation": "\\forall k \\in \\{1,\\ldots,K\\}, \\\\ \\textup{Recruit}_k \\leq I + \\textup{AdditionalWastage}_k",
+            "related_variables": [
+                "Recruit",
+                "AdditionalWastage"
+            ],
+            "related_parameters": [
+                "I"
+            ]
+        },
+        {
+            "description": "Relation between IsMoreWastage and AdditionalWastage for each type of resource",
+            "status": "formulated",
+            "formulation": "\\forall k \\in \\{1,\\ldots,K\\}, \\\\ \\textup{AdditionalWastage}_k \\leq \\textup{IsMoreWastage}_k \\cdot \\textup{MoreOneWaste}_k",
+            "related_variables": [
+                "IsMoreWastage",
+                "AdditionalWastage"
+            ],
+            "related_parameters": [
+                "MoreOneWaste"
+            ]
+        },
+        {
+            "description": "Constraint to ensure that AdditionalWastage can only be positive when IsMoreWastage is activated (i.e., equal to 1) for the resource type k",
+            "status": "formulated",
+            "formulation": "\\textup{AdditionalWastage}_k \\leq \\textup{IsMoreWastage}_k \\cdot \\textup{BigM}, \\quad \\forall k \\in \\{1, ..., \\textup{K}\\}",
+            "related_variables": [
+                "AdditionalWastage",
+                "IsMoreWastage"
+            ],
+            "related_parameters": [
+                "BigM",
+                "K"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Binary variable that represents if there is more wastage for resource type k",
+            "symbol": "IsMoreWastage",
+            "shape": [
+                "K"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "Variable representing the additional wastage allowed for resource type k",
+            "symbol": "AdditionalWastage",
+            "shape": [
+                "K"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "Big-M value, a sufficiently large number to enable/disable AdditionalWastage",
+            "symbol": "BigM",
+            "shape": [],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total cost of redundancy, overmanning, and short working for the company",
+            "status": "formulated",
+            "formulation": "\\sum_{k=1}^{\\textup{K}} (\\textup{CostRedundancy}_k \\cdot \\textup{AdditionalWastage}_k + \\textup{CostOverman}_k \\cdot \\textup{IsMoreWastage}_k + \\textup{CostShort}_k \\cdot (\\textup{Recruit}_k - \\textup{Strength}_k))",
+            "related_variables": [
+                "AdditionalWastage",
+                "IsMoreWastage",
+                "Recruit"
+            ],
+            "related_parameters": [
+                "CostRedundancy",
+                "CostOverman",
+                "CostShort",
+                "Strength",
+                "K"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413085013_nlp4lp_23/",
+    "problem_path": "data/nlp4lp/23/"
+}

@@ -1,0 +1,205 @@
+{
+    "background": "The Aircraft Landing Problem involves scheduling aircraft to land on runways within specified time windows while adhering to separation time criteria between consecutive landings to ensure safety.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "symbol": "TotalAircrafts",
+            "definition": "The total number of aircraft in the set",
+            "shape": [],
+            "code": "TotalAircrafts = data[\"TotalAircrafts\"] # scalar parameter"
+        },
+        {
+            "symbol": "EarliestLandingTime",
+            "definition": "The earliest landing time for each aircraft",
+            "shape": [
+                "TotalAircrafts"
+            ],
+            "code": "EarliestLandingTime = np.array(data[\"EarliestLandingTime\"]) # ['TotalAircrafts']"
+        },
+        {
+            "symbol": "LatestLandingTime",
+            "definition": "The latest landing time for each aircraft",
+            "shape": [
+                "TotalAircrafts"
+            ],
+            "code": "LatestLandingTime = np.array(data[\"LatestLandingTime\"]) # ['TotalAircrafts']"
+        },
+        {
+            "symbol": "TargetLandingTime",
+            "definition": "The target landing time for each aircraft",
+            "shape": [
+                "TotalAircrafts"
+            ],
+            "code": "TargetLandingTime = np.array(data[\"TargetLandingTime\"]) # ['TotalAircrafts']"
+        },
+        {
+            "symbol": "PenaltyTimeAfterTarget",
+            "definition": "The penalty incurred for each aircraft landing after the target time",
+            "shape": [
+                "TotalAircrafts"
+            ],
+            "code": "PenaltyTimeAfterTarget = np.array(data[\"PenaltyTimeAfterTarget\"]) # ['TotalAircrafts']"
+        },
+        {
+            "symbol": "PenaltyTimeBeforeTarget",
+            "definition": "The penalty incurred for each aircraft landing before the target time",
+            "shape": [
+                "TotalAircrafts"
+            ],
+            "code": "PenaltyTimeBeforeTarget = np.array(data[\"PenaltyTimeBeforeTarget\"]) # ['TotalAircrafts']"
+        },
+        {
+            "symbol": "SeparationTimeMatrix",
+            "definition": "The required separation time between the landing of aircraft i and aircraft j",
+            "shape": [
+                "TotalAircrafts",
+                "TotalAircrafts"
+            ],
+            "code": "SeparationTimeMatrix = np.array(data[\"SeparationTimeMatrix\"]) # ['TotalAircrafts', 'TotalAircrafts']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Ensure each aircraft lands within its predetermined time window.",
+            "status": "coded",
+            "formulation": "\\textup{EarliestLandingTime}_{i} \\leq \\textup{LandingTime}_{i} \\leq \\textup{LatestLandingTime}_{i}, \\quad \\forall i \\in \\{1, \\ldots, \\textup{TotalAircrafts}\\}",
+            "related_variables": [
+                "LandingTime"
+            ],
+            "related_parameters": [
+                "EarliestLandingTime",
+                "LatestLandingTime",
+                "TotalAircrafts"
+            ],
+            "code": "# Add landing time window constraints\nfor i in range(TotalAircrafts):\n    model.addConstr(EarliestLandingTime[i] <= LandingTime[i], name=f\"earliest_landing_time_{i}\")\n    model.addConstr(LandingTime[i] <= LatestLandingTime[i], name=f\"latest_landing_time_{i}\")"
+        },
+        {
+            "description": "Sufficient separation time must be maintained between consecutive aircraft landings as specified in the SeparationTimeMatrix.",
+            "status": "coded",
+            "formulation": "\\forall i, j \\in \\{1, 2, \\dots, \\textup{TotalAircrafts}\\}, \\quad \\textup{LandingTime}[j] - \\textup{LandingTime}[i] \\geq \\textup{SeparationTimeMatrix}[i,j] \\cdot \\textup{OrderIndicator}[i,j] \\quad \\textup{and} \\quad \\textup{LandingTime}[i] - \\textup{LandingTime}[j] \\geq \\textup{SeparationTimeMatrix}[j,i] \\cdot (1 - \\textup{OrderIndicator}[i,j])",
+            "related_variables": [
+                "LandingTime",
+                "OrderIndicator"
+            ],
+            "related_parameters": [
+                "SeparationTimeMatrix",
+                "TotalAircrafts"
+            ],
+            "code": "# Add sufficient separation time constraints\nfor i in range(TotalAircrafts):\n    for j in range(TotalAircrafts):\n        if i != j:\n            model.addConstr(\n                LandingTime[j] - LandingTime[i] >= SeparationTimeMatrix[i, j] * OrderIndicator[i, j],\n                name=f\"separation_time_forward_{i}_{j}\"\n            )\n            model.addConstr(\n                LandingTime[i] - LandingTime[j] >= SeparationTimeMatrix[j, i] * (1 - OrderIndicator[i, j]),\n                name=f\"separation_time_backward_{i}_{j}\"\n            )"
+        },
+        {
+            "description": "Ensure that the OrderIndicator correctly represents the landing order between aircraft i and j.",
+            "status": "coded",
+            "formulation": "\\forall i, j \\in \\{1, 2, \\dots, \\textup{TotalAircrafts}\\}, \\quad \\textup{LandingTime}[i] - \\textup{LandingTime}[j] + M \\cdot (1 - \\textup{OrderIndicator}[i,j]) \\geq 0 \\quad \\textup{and} \\quad \\textup{LandingTime}[j] - \\textup{LandingTime}[i] + M \\cdot \\textup{OrderIndicator}[i,j] \\geq 0",
+            "related_variables": [
+                "LandingTime",
+                "OrderIndicator"
+            ],
+            "related_parameters": [
+                "TotalAircrafts"
+            ],
+            "code": "# Add constraints to ensure the OrderIndicator correctly represents the landing order between aircraft i and j\nfor i in range(TotalAircrafts):\n    for j in range(TotalAircrafts):\n        if i != j:  # No need to add constraints for the same aircraft\n            model.addConstr(\n                LandingTime[i] - LandingTime[j] + M * (1 - OrderIndicator[i, j]) >= 0,\n                name=f\"LandingOrder_1_{i}_{j}\"\n            )\n            model.addConstr(\n                LandingTime[j] - LandingTime[i] + M * OrderIndicator[i, j] >= 0,\n                name=f\"LandingOrder_2_{i}_{j}\"\n            )"
+        },
+        {
+            "description": "Ensure the relationship between LandingTime, deviations, and TargetLandingTime for each aircraft.",
+            "status": "coded",
+            "formulation": "\\textup{LandingTime}_i + \\textup{EarlyDeviation}_i - \\textup{LateDeviation}_i = \\textup{TargetLandingTime}_i, \\quad \\forall i \\in \\{1, \\dots, \\textup{TotalAircrafts}\\}",
+            "related_variables": [
+                "LandingTime",
+                "EarlyDeviation",
+                "LateDeviation"
+            ],
+            "related_parameters": [
+                "TargetLandingTime",
+                "TotalAircrafts"
+            ],
+            "code": "# Add constraints to ensure the relationship between LandingTime, EarlyDeviation, LateDeviation, and TargetLandingTime\nfor i in range(TotalAircrafts):\n    model.addConstr(\n        LandingTime[i] + EarlyDeviation[i] - LateDeviation[i] == TargetLandingTime[i],\n        name=f\"landing_time_relationship_{i}\"\n    )"
+        },
+        {
+            "description": "Ensure that EarlyDeviation for each aircraft is non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{EarlyDeviation}_i \\geq 0, \\quad \\forall i \\in \\{1, \\dots, \\textup{TotalAircrafts}\\}",
+            "related_variables": [
+                "EarlyDeviation"
+            ],
+            "related_parameters": [
+                "TotalAircrafts"
+            ],
+            "code": "# Add non-negativity constraint for EarlyDeviation\nfor i in range(TotalAircrafts):\n    model.addConstr(EarlyDeviation[i] >= 0, name=f\"non_negative_EarlyDeviation_{i}\")"
+        },
+        {
+            "description": "Ensure that LateDeviation for each aircraft is non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{LateDeviation}_i \\geq 0, \\quad \\forall i \\in \\{1, \\dots, \\textup{TotalAircrafts}\\}",
+            "related_variables": [
+                "LateDeviation"
+            ],
+            "related_parameters": [
+                "TotalAircrafts"
+            ],
+            "code": "# Add non-negativity constraint for LateDeviation\nfor i in range(TotalAircrafts):\n    model.addConstr(LateDeviation[i] >= 0, name=f\"non_negative_LateDeviation_{i}\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The landing time of each aircraft.",
+            "symbol": "LandingTime",
+            "shape": [
+                "TotalAircrafts"
+            ],
+            "status": "coded",
+            "code": "LandingTime = model.addVars(TotalAircrafts, vtype=gp.GRB.CONTINUOUS, name=\"LandingTime\")"
+        },
+        {
+            "definition": "A binary variable indicating whether aircraft i lands before aircraft j.",
+            "symbol": "OrderIndicator",
+            "shape": [
+                "TotalAircrafts",
+                "TotalAircrafts"
+            ],
+            "status": "coded",
+            "code": "OrderIndicator = model.addVars(TotalAircrafts, TotalAircrafts, vtype=gp.GRB.BINARY, name=\"OrderIndicator\")"
+        },
+        {
+            "definition": "The time by which each aircraft lands before its TargetLandingTime.",
+            "symbol": "EarlyDeviation",
+            "shape": [
+                "TotalAircrafts"
+            ],
+            "status": "coded",
+            "code": "EarlyDeviation = model.addVars(TotalAircrafts, vtype=gp.GRB.CONTINUOUS, name=\"EarlyDeviation\")"
+        },
+        {
+            "definition": "The time by which each aircraft lands after its TargetLandingTime.",
+            "symbol": "LateDeviation",
+            "shape": [
+                "TotalAircrafts"
+            ],
+            "status": "coded",
+            "code": "LateDeviation = model.addVars(TotalAircrafts, vtype=gp.GRB.CONTINUOUS, name=\"LateDeviation\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the sum of penalties incurred for each aircraft landing before or after its TargetLandingTime.",
+            "status": "coded",
+            "formulation": "\\min \\sum_{i=1}^{\\textup{TotalAircrafts}} \\left( \\textup{PenaltyTimeBeforeTarget}_i \\cdot \\textup{EarlyDeviation}_i + \\textup{PenaltyTimeAfterTarget}_i \\cdot \\textup{LateDeviation}_i \\right)",
+            "related_variables": [
+                "EarlyDeviation",
+                "LateDeviation"
+            ],
+            "related_parameters": [
+                "PenaltyTimeBeforeTarget",
+                "PenaltyTimeAfterTarget",
+                "TotalAircrafts"
+            ],
+            "code": "# Set objective\nmodel.setObjective(gp.quicksum(PenaltyTimeBeforeTarget[i] * EarlyDeviation[i] + PenaltyTimeAfterTarget[i] * LateDeviation[i] for i in range(TotalAircrafts)), gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413145351_complexor_AircraftLanding/",
+    "problem_path": "data/complexor/AircraftLanding/"
+}

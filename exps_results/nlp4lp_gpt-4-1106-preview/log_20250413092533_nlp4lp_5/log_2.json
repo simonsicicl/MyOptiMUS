@@ -1,0 +1,188 @@
+{
+    "background": "Paths must be established in a network of nodes where links have defined capacities and associated costs, ensuring data reach their intended destinations at specific rates.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "The number of links between nodes in the network.",
+            "symbol": "NumLinks",
+            "value": "",
+            "shape": [],
+            "code": "NumLinks = data[\"NumLinks\"] # scalar parameter"
+        },
+        {
+            "definition": "The starting node for link ij",
+            "symbol": "StartNode",
+            "value": "",
+            "shape": [
+                "NumLinks"
+            ],
+            "code": "StartNode = np.array(data[\"StartNode\"]) # ['NumLinks']"
+        },
+        {
+            "definition": "The ending node for link ij",
+            "symbol": "EndNode",
+            "value": "",
+            "shape": [
+                "NumLinks"
+            ],
+            "code": "EndNode = np.array(data[\"EndNode\"]) # ['NumLinks']"
+        },
+        {
+            "definition": "The maximum capacity for link ij",
+            "symbol": "Capacity",
+            "value": "",
+            "shape": [
+                "NumLinks"
+            ],
+            "code": "Capacity = np.array(data[\"Capacity\"]) # ['NumLinks']"
+        },
+        {
+            "definition": "The cost for transporting data through link ij",
+            "symbol": "Cost",
+            "value": "",
+            "shape": [
+                "NumLinks"
+            ],
+            "code": "Cost = np.array(data[\"Cost\"]) # ['NumLinks']"
+        },
+        {
+            "definition": "The number of data flow requirements.",
+            "symbol": "NumFlowReqs",
+            "value": "",
+            "shape": [],
+            "code": "NumFlowReqs = data[\"NumFlowReqs\"] # scalar parameter"
+        },
+        {
+            "definition": "The source node for data flow kl",
+            "symbol": "Source",
+            "value": "",
+            "shape": [
+                "NumFlowReqs"
+            ],
+            "code": "Source = np.array(data[\"Source\"]) # ['NumFlowReqs']"
+        },
+        {
+            "definition": "The destination node for data flow kl",
+            "symbol": "Destination",
+            "value": "",
+            "shape": [
+                "NumFlowReqs"
+            ],
+            "code": "Destination = np.array(data[\"Destination\"]) # ['NumFlowReqs']"
+        },
+        {
+            "definition": "The rate of data flow for flow kl",
+            "symbol": "DataRate",
+            "value": "",
+            "shape": [
+                "NumFlowReqs"
+            ],
+            "code": "DataRate = np.array(data[\"DataRate\"]) # ['NumFlowReqs']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The sum of data flows on each link cannot exceed its capacity",
+            "status": "runtime_error",
+            "formulation": "\\sum_{kl} \\textup{Flow}[ij][kl] \\leq \\textup{Capacity}[ij] \\quad \\forall ij \\in \\{1, \\ldots, \\textup{NumLinks}\\}",
+            "related_variables": [
+                "Flow"
+            ],
+            "related_parameters": [
+                "Capacity",
+                "NumLinks"
+            ],
+            "code": "```"
+        },
+        {
+            "description": "Each link's data flow must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{Flow}_{ij, kl} \\geq 0 \\quad \\forall ij \\in \\textup{NumLinks}, \\quad \\forall kl \\in \\textup{NumFlowReqs}",
+            "related_variables": [
+                "Flow"
+            ],
+            "related_parameters": [],
+            "code": "```"
+        },
+        {
+            "description": "Every source node must have outgoing links with data flows summing to at least the required data rate for that source",
+            "status": "coded",
+            "formulation": "\\forall k \\in \\{1, \\dots, \\textup{NumFlowReqs}\\}, \\quad \\sum_{ij | \\textup{StartNode}_{ij} = \\textup{Source}_k} \\textup{Flow}_{ij,k} \\geq \\textup{DataRate}_k",
+            "related_variables": [
+                "Flow"
+            ],
+            "related_parameters": [
+                "Source",
+                "StartNode",
+                "DataRate"
+            ],
+            "code": "# Add constraints for data flow from source nodes\nfor k in range(NumFlowReqs):\n    flow_from_source = gp.quicksum(Flow[ij,k] for ij in range(NumLinks) if StartNode[ij] == Source[k])\n    model.addConstr(flow_from_source >= DataRate[k], name=f\"flow_requirement_source_{k}\")"
+        },
+        {
+            "description": "The sum of data rates on all links to each destination node must be at least the required data rate for that destination",
+            "status": "coded",
+            "formulation": "\\sum_{\\substack{i=1 \\\\ \\textup{EndNode}_i=d}}^{\\textup{NumLinks}} \\textup{Flow}_{id} \\geq \\textup{DataRate}_d \\quad \\forall d \\in \\{1, 2, \\ldots, \\textup{NumFlowReqs}\\}",
+            "related_variables": [
+                "Flow"
+            ],
+            "related_parameters": [
+                "EndNode",
+                "DataRate",
+                "NumLinks",
+                "NumFlowReqs",
+                "Destination"
+            ],
+            "code": "# Add data rate constraint for each destination\nfor d in range(NumFlowReqs):\n    model.addConstr(gp.quicksum(Flow[i, d] for i in range(NumLinks) if EndNode[i] == Destination[d]) >= DataRate[d], name=\"data_rate_requirement_d{}\".format(d))"
+        },
+        {
+            "description": "Flow conservation at intermediate nodes for each flow requirement",
+            "status": "coded",
+            "formulation": "\\sum_{\\{i|(i,n) \\in \\textup{Links}\\}} \\textup{Flow}_{(i,n),k} = \\sum_{\\{j|(n,j) \\in \\textup{Links}\\}} \\textup{Flow}_{(n,j),k} \\quad \\forall n \\neq \\textup{Source}_k, n \\neq \\textup{Destination}_k, \\quad \\forall k",
+            "related_variables": [
+                "Flow"
+            ],
+            "related_parameters": [
+                "NumLinks",
+                "NumFlowReqs",
+                "StartNode",
+                "EndNode",
+                "Source",
+                "Destination"
+            ],
+            "code": "# Constraint: Flow conservation at intermediate nodes for each flow requirement\nfor k in range(NumFlowReqs):\n    for n, value in enumerate(EndNode):\n        # Check if n is not a source or destination for flow k\n        if n != Source[k] and n != Destination[k]:\n            incoming_flow = gp.quicksum(Flow[i, k] for i, j in enumerate(EndNode) if j == n)\n            outgoing_flow = gp.quicksum(Flow[l, k] for l, j in enumerate(StartNode) if j == n)\n            model.addConstr(incoming_flow == outgoing_flow, name=f\"flow_conservation_node_{n}_req_{k}\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The amount of data flow kl that is flowing through link ij",
+            "symbol": "Flow",
+            "shape": [
+                "NumLinks",
+                "NumFlowReqs"
+            ],
+            "status": "coded",
+            "code": "Flow = model.addVars(NumLinks, NumFlowReqs, vtype=gp.GRB.CONTINUOUS, name=\"Flow\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total cost of data transmission across all links for all data flow requirements.",
+            "status": "coded",
+            "formulation": "\\textup{Minimize}\\quad \\sum_{ij} \\sum_{kl} \\textup{Cost}_{ij} \\times \\textup{Flow}_{ij,kl}",
+            "related_variables": [
+                "Flow"
+            ],
+            "related_parameters": [
+                "Cost"
+            ],
+            "code": "# Set objective\nmodel.setObjective(gp.quicksum(Cost[ij] * Flow[ij, kl] for ij in range(NumLinks) for kl in range(NumFlowReqs)), gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "runtime_error",
+    "solver_output_status": "runtime_error",
+    "error_message": "Traceback (most recent call last):\n  File \"c:\\Users\\Simon\\Desktop\\Courses\\ECE 570\\ECE570_Project\\MyOptiMUS\\evaluator.py\", line 45, in run\n    exec(last_line, local_env, local_env)\n  File \"<string>\", line 1\n    ```\n    ^\nSyntaxError: invalid syntax\n",
+    "obj_val": null,
+    "log_path": "logs/log_20250413092533_nlp4lp_5/",
+    "problem_path": "data/nlp4lp/5/",
+    "prep_code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nlp4lp/5/data.json\", \"r\") as f:\n    data = json.load(f)\n"
+}

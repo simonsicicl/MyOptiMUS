@@ -1,0 +1,128 @@
+{
+    "background": "The problem involves minimizing the total fuel, represented by the sum of absolute accelerations over time, for an object with given initial and final positions and velocities over a specified total time period.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Initial position of the object",
+            "symbol": "InitialPosition",
+            "value": "",
+            "shape": [],
+            "code": "InitialPosition = data[\"InitialPosition\"] # scalar parameter"
+        },
+        {
+            "definition": "Initial velocity of the object",
+            "symbol": "InitialVelocity",
+            "value": "",
+            "shape": [],
+            "code": "InitialVelocity = data[\"InitialVelocity\"] # scalar parameter"
+        },
+        {
+            "definition": "Final position of the object",
+            "symbol": "FinalPosition",
+            "value": "",
+            "shape": [],
+            "code": "FinalPosition = data[\"FinalPosition\"] # scalar parameter"
+        },
+        {
+            "definition": "Final velocity of the object",
+            "symbol": "FinalVelocity",
+            "value": "",
+            "shape": [],
+            "code": "FinalVelocity = data[\"FinalVelocity\"] # scalar parameter"
+        },
+        {
+            "definition": "Total time over which the object is moving",
+            "symbol": "TotalTime",
+            "value": "",
+            "shape": [],
+            "code": "TotalTime = data[\"TotalTime\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "FuelAtTimeT represents the absolute value of the acceleration at time t",
+            "status": "coded",
+            "formulation": "\\textup{FuelAtTimeT}_{t} \\geq \\textup{AccelerationAtTimeT}_{t} \\quad \\textup{FuelAtTimeT}_{t} \\geq -\\textup{AccelerationAtTimeT}_{t} \\quad \\forall t \\in \\{1, \\ldots, T\\}",
+            "related_variables": [
+                "FuelAtTimeT",
+                "AccelerationAtTimeT"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraints for fuel usage based on the absolute value of acceleration\nfor t in range(TotalTime):\n    model.addConstr(FuelAtTimeT[t] >= AccelerationAtTimeT[t], name=f\"fuel_ge_accel_{t}\")\n    model.addConstr(FuelAtTimeT[t] >= -AccelerationAtTimeT[t], name=f\"fuel_ge_neg_accel_{t}\")"
+        },
+        {
+            "description": "Introduce constraints to ensure final position is met",
+            "status": "runtime_error",
+            "formulation": "\\textup{InitialPosition} + \\sum_{t=1}^{T} \\textup{VelocityAtTimeT}_{t} \\cdot \\Delta t = \\textup{FinalPosition}",
+            "related_variables": [
+                "VelocityAtTimeT"
+            ],
+            "related_parameters": [
+                "InitialPosition",
+                "FinalPosition"
+            ],
+            "code": "TotalTime = len(data[\"TimeSeriesData\"])  # Assuming TimeSeriesData exists in the JSON\nDeltaT = data[\"DeltaT\"]  # Assuming DeltaT value is provided in the JSON\n\n# Ensure the final position is met by summing initial position and the cumulative distance covered\nmodel.addConstr(gp.quicksum(VelocityAtTimeT[t] * DeltaT for t in range(TotalTime)) + InitialPosition == FinalPosition, name=\"final_position_constraint\")"
+        },
+        {
+            "description": "Introduce constraints to ensure final velocity is met",
+            "status": "coded",
+            "formulation": "\\textup{InitialVelocity} + \\sum_{t=1}^{T} \\textup{AccelerationAtTimeT}_{t} \\cdot \\Delta t = \\textup{FinalVelocity}",
+            "related_variables": [
+                "AccelerationAtTimeT"
+            ],
+            "related_parameters": [
+                "InitialVelocity",
+                "FinalVelocity"
+            ],
+            "code": "# Add constraints to ensure final velocity is met\nFinalVelocityConstr = model.addConstr(InitialVelocity + gp.quicksum(AccelerationAtTimeT[t] * Delta_t for t in range(TotalTime)) == FinalVelocity, name=\"FinalVelocityConstr\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The acceleration of the object at time t",
+            "symbol": "AccelerationAtTimeT",
+            "shape": [
+                "TotalTime"
+            ],
+            "status": "coded",
+            "code": "AccelerationAtTimeT = model.addVars(TotalTime, vtype=gp.GRB.CONTINUOUS, name=\"AccelerationAtTimeT\")"
+        },
+        {
+            "definition": "Auxiliary variable representing the fuel usage, which corresponds to the absolute value of the acceleration at time t",
+            "symbol": "FuelAtTimeT",
+            "shape": [
+                "TotalTime"
+            ],
+            "status": "coded",
+            "code": "FuelAtTimeT = model.addVars(TotalTime, lb=0.0, vtype=gp.GRB.CONTINUOUS, name=\"FuelAtTimeT\")"
+        },
+        {
+            "definition": "Discretized velocity of the object at time t, derived from the acceleration",
+            "symbol": "VelocityAtTimeT",
+            "shape": [
+                "TotalTime"
+            ],
+            "status": "coded",
+            "code": "VelocityAtTimeT = model.addVars(TotalTime, vtype=gp.GRB.CONTINUOUS, name=\"VelocityAtTimeT\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total fuel, which is the sum of the absolute values of acceleration over the discretized time intervals",
+            "status": "coded",
+            "formulation": "\\min \\sum_{t=1}^{T} \\textup{FuelAtTimeT}_{t}",
+            "related_variables": [
+                "FuelAtTimeT"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(gp.quicksum(FuelAtTimeT[t] for t in range(TotalTime)), gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "runtime_error",
+    "solver_output_status": "runtime_error",
+    "error_message": "Traceback (most recent call last):\n  File \"c:\\Users\\Simon\\Desktop\\Courses\\ECE 570\\ECE570_Project\\MyOptiMUS\\evaluator.py\", line 45, in run\n    exec(last_line, local_env, local_env)\n  File \"<string>\", line 1, in <module>\nKeyError: 'TimeSeriesData'\n",
+    "obj_val": null,
+    "log_path": "logs/log_20250413093719_nlp4lp_6/",
+    "problem_path": "data/nlp4lp/6/",
+    "prep_code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nlp4lp/6/data.json\", \"r\") as f:\n    data = json.load(f)\n"
+}

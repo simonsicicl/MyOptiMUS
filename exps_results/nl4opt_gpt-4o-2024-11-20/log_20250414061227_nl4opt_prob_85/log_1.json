@@ -1,0 +1,235 @@
+{
+    "background": "A man fishes in a lake and decides between using a net or fishing line for each acre of the lake, with the goal of maximizing his catch. Each method has specific yields, bait requirements, and causes different amounts of pain to the fisherman.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Total size of the lake in acres",
+            "symbol": "LakeSize",
+            "value": 250,
+            "shape": [],
+            "code": "LakeSize = data[\"LakeSize\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of fish caught per acre using a net",
+            "symbol": "FishNet",
+            "value": 8,
+            "shape": [],
+            "code": "FishNet = data[\"FishNet\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of fish caught per acre using a fishing line",
+            "symbol": "FishLine",
+            "value": 5,
+            "shape": [],
+            "code": "FishLine = data[\"FishLine\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of bait required per acre using a net",
+            "symbol": "BaitNet",
+            "value": 4,
+            "shape": [],
+            "code": "BaitNet = data[\"BaitNet\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of bait required per acre using a fishing line",
+            "symbol": "BaitLine",
+            "value": 3,
+            "shape": [],
+            "code": "BaitLine = data[\"BaitLine\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of pain caused to the fisherman per acre using a net",
+            "symbol": "PainNet",
+            "value": 2,
+            "shape": [],
+            "code": "PainNet = data[\"PainNet\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of pain caused to the fisherman per acre using a fishing line",
+            "symbol": "PainLine",
+            "value": 1,
+            "shape": [],
+            "code": "PainLine = data[\"PainLine\"] # scalar parameter"
+        },
+        {
+            "definition": "Total units of bait available",
+            "symbol": "TotalBait",
+            "value": 800,
+            "shape": [],
+            "code": "TotalBait = data[\"TotalBait\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum units of pain the fisherman can tolerate",
+            "symbol": "MaxPain",
+            "value": 350,
+            "shape": [],
+            "code": "MaxPain = data[\"MaxPain\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The total acres used for fishing with net and line cannot exceed the total lake size.",
+            "status": "coded",
+            "formulation": "\\textup{NetAcres} + \\textup{LineAcres} \\leq \\textup{LakeSize}",
+            "related_variables": [
+                "NetAcres",
+                "LineAcres"
+            ],
+            "related_parameters": [
+                "LakeSize"
+            ],
+            "code": "# Add constraint to ensure total acres used for net and line fishing do not exceed lake size\nmodel.addConstr(NetAcres + LineAcres <= LakeSize, name=\"fishing_acre_limit\")"
+        },
+        {
+            "description": "The number of acres fished with a net must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NetAcres} \\geq 0",
+            "related_variables": [
+                "NetAcres"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint to ensure the number of acres fished with a net is non-negative\nmodel.addConstr(NetAcres >= 0, name=\"non_negative_net_acres\")"
+        },
+        {
+            "description": "The number of acres fished with a line is non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{LineAcres} \\geq 0",
+            "related_variables": [
+                "LineAcres"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint to ensure the acres fished with a line is non-negative\nmodel.addConstr(LineAcres >= 0, name=\"non_negative_LineAcres\")"
+        },
+        {
+            "description": "The total amount of bait used cannot exceed TotalBait units.",
+            "status": "coded",
+            "formulation": "\\\\textup{BaitNet} \\\\times \\\\textup{NetAcres} + \\\\textup{BaitLine} \\\\times \\\\textup{LineAcres} \\\\leq \\\\textup{TotalBait}",
+            "related_variables": [
+                "NetAcres",
+                "LineAcres"
+            ],
+            "related_parameters": [
+                "BaitNet",
+                "BaitLine",
+                "TotalBait"
+            ],
+            "code": "# Add bait usage constraint\nmodel.addConstr(BaitNet * NetAcres + BaitLine * LineAcres <= TotalBait, name=\"bait_usage\")"
+        },
+        {
+            "description": "The total units of pain experienced by the fisherman cannot exceed the maximum allowable pain (MaxPain).",
+            "status": "coded",
+            "formulation": "\\textup{PainNet} \\times \\textup{NetAcres} + \\textup{PainLine} \\times \\textup{LineAcres} \\leq \\textup{MaxPain}",
+            "related_variables": [
+                "NetAcres",
+                "LineAcres"
+            ],
+            "related_parameters": [
+                "PainNet",
+                "PainLine",
+                "MaxPain"
+            ],
+            "code": "# Add pain tolerance constraint\nmodel.addConstr(PainNet * NetAcres + PainLine * LineAcres <= MaxPain, name=\"pain_tolerance\")"
+        },
+        {
+            "description": "Land area constraint ensuring the total acres used for fishing do not exceed the size of the lake.",
+            "status": "coded",
+            "formulation": "\\textup{NetAcres} + \\textup{LineAcres} \\leq \\textup{LakeSize}",
+            "related_variables": [
+                "NetAcres",
+                "LineAcres"
+            ],
+            "related_parameters": [
+                "LakeSize"
+            ],
+            "code": "# Add lake size constraint ensuring total acres used for fishing do not exceed the lake size\nmodel.addConstr(NetAcres + LineAcres <= LakeSize, name=\"lake_size_constraint\")"
+        },
+        {
+            "description": "Bait availability constraint ensuring the total bait used does not exceed the available bait.",
+            "status": "coded",
+            "formulation": "\\textup{BaitNet} \\cdot \\textup{NetAcres} + \\textup{BaitLine} \\cdot \\textup{LineAcres} \\leq \\textup{TotalBait}",
+            "related_variables": [
+                "NetAcres",
+                "LineAcres"
+            ],
+            "related_parameters": [
+                "BaitNet",
+                "BaitLine",
+                "TotalBait"
+            ],
+            "code": "# Add bait availability constraint\nmodel.addConstr(BaitNet * NetAcres + BaitLine * LineAcres <= TotalBait, name=\"bait_availability\")"
+        },
+        {
+            "description": "Pain tolerance constraint ensuring the total pain felt by the fisherman does not exceed his pain tolerance.",
+            "status": "coded",
+            "formulation": "\\textup{PainNet} \\cdot \\textup{NetAcres} + \\textup{PainLine} \\cdot \\textup{LineAcres} \\leq \\textup{MaxPain}",
+            "related_variables": [
+                "NetAcres",
+                "LineAcres"
+            ],
+            "related_parameters": [
+                "PainNet",
+                "PainLine",
+                "MaxPain"
+            ],
+            "code": "# Add pain tolerance constraint\nmodel.addConstr(PainNet * NetAcres + PainLine * LineAcres <= MaxPain, name=\"pain_tolerance\")"
+        },
+        {
+            "description": "Non-negativity constraint for \\textup{NetAcres}.",
+            "status": "coded",
+            "formulation": "\\textup{NetAcres} \\geq 0",
+            "related_variables": [
+                "NetAcres"
+            ],
+            "related_parameters": [],
+            "code": "# Non-negativity constraint for NetAcres\nmodel.addConstr(NetAcres >= 0, name=\"non_negativity_NetAcres\")"
+        },
+        {
+            "description": "Non-negativity constraint for \\textup{LineAcres}.",
+            "status": "coded",
+            "formulation": "\\textup{LineAcres} \\geq 0",
+            "related_variables": [
+                "LineAcres"
+            ],
+            "related_parameters": [],
+            "code": "# Ensure the non-negativity of LineAcres\nmodel.addConstr(LineAcres >= 0, name=\"non_negativity_LineAcres\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Acres of the lake used for fishing with a net.",
+            "symbol": "NetAcres",
+            "shape": [],
+            "status": "coded",
+            "code": "NetAcres = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NetAcres\")"
+        },
+        {
+            "definition": "Acres of the lake used for fishing with a fishing line.",
+            "symbol": "LineAcres",
+            "shape": [],
+            "status": "coded",
+            "code": "LineAcres = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"LineAcres\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximizing the total number of fish caught across all acres in the lake.",
+            "status": "coded",
+            "formulation": "\\textup{Maximize: } \\\\ \\quad \\textup{FishNet} \\cdot \\textup{NetAcres} + \\textup{FishLine} \\cdot \\textup{LineAcres}",
+            "related_variables": [
+                "NetAcres",
+                "LineAcres"
+            ],
+            "related_parameters": [
+                "FishNet",
+                "FishLine"
+            ],
+            "code": "# Set objective\nmodel.setObjective(FishNet * NetAcres + FishLine * LineAcres, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250414061227_nl4opt_prob_85/",
+    "problem_path": "data/nl4opt/prob_85/"
+}

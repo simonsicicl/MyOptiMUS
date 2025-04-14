@@ -1,0 +1,202 @@
+{
+    "background": "There are two chemical reactions (A and B) in a laboratory that produce a rare compound using rare inert gas and treated water. There is a limited supply of both inert gas and water available.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Amount of rare inert gas required for chemical reaction A",
+            "symbol": "InertGasA",
+            "value": 5,
+            "shape": [],
+            "code": "InertGasA = data[\"InertGasA\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of treated water required for chemical reaction A",
+            "symbol": "WaterA",
+            "value": 6,
+            "shape": [],
+            "code": "WaterA = data[\"WaterA\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of the rare compound produced by chemical reaction A",
+            "symbol": "CompoundA",
+            "value": 10,
+            "shape": [],
+            "code": "CompoundA = data[\"CompoundA\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of rare inert gas required for chemical reaction B",
+            "symbol": "InertGasB",
+            "value": 7,
+            "shape": [],
+            "code": "InertGasB = data[\"InertGasB\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of treated water required for chemical reaction B",
+            "symbol": "WaterB",
+            "value": 3,
+            "shape": [],
+            "code": "WaterB = data[\"WaterB\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of the rare compound produced by chemical reaction B",
+            "symbol": "CompoundB",
+            "value": 8,
+            "shape": [],
+            "code": "CompoundB = data[\"CompoundB\"] # scalar parameter"
+        },
+        {
+            "definition": "Total amount of rare inert gas available",
+            "symbol": "TotalInertGas",
+            "value": 1000,
+            "shape": [],
+            "code": "TotalInertGas = data[\"TotalInertGas\"] # scalar parameter"
+        },
+        {
+            "definition": "Total amount of treated water available",
+            "symbol": "TotalWater",
+            "value": 800,
+            "shape": [],
+            "code": "TotalWater = data[\"TotalWater\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of chemical reactions A is non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfReactionsA} \\geq 0",
+            "related_variables": [
+                "NumberOfReactionsA"
+            ],
+            "related_parameters": [],
+            "code": "# Ensure the number of chemical reactions A is non-negative\nmodel.addConstr(NumberOfReactionsA >= 0, name=\"non_negative_reactions_A\")"
+        },
+        {
+            "description": "The number of chemical reactions B should be non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{NumberOfReactionsB} \\\\geq 0",
+            "related_variables": [
+                "NumberOfReactionsB"
+            ],
+            "related_parameters": [],
+            "code": "# The variable NumberOfReactionsB is already defined as non-negative because it is continuous by default in Gurobi (vtype=gp.GRB.CONTINUOUS)."
+        },
+        {
+            "description": "The total use of inert gas by reaction A and reaction B must not exceed the total amount of rare inert gas available.",
+            "status": "coded",
+            "formulation": "\\\\textup{InertGasA} \\\\times \\\\textup{NumberOfReactionsA} + \\\\textup{InertGasB} \\\\times \\\\textup{NumberOfReactionsB} \\\\leq \\\\textup{TotalInertGas}",
+            "related_variables": [
+                "NumberOfReactionsA",
+                "NumberOfReactionsB"
+            ],
+            "related_parameters": [
+                "InertGasA",
+                "InertGasB",
+                "TotalInertGas"
+            ],
+            "code": "# Add constraint to ensure the total use of inert gas by reactions does not exceed the total available inert gas\nmodel.addConstr(InertGasA * NumberOfReactionsA + InertGasB * NumberOfReactionsB <= TotalInertGas, name=\"inert_gas_limit\")"
+        },
+        {
+            "description": "The total use of treated water by reaction A and B does not exceed the available treated water (TotalWater).",
+            "status": "coded",
+            "formulation": "\\textup{WaterA} \\times \\textup{NumberOfReactionsA} + \\textup{WaterB} \\times \\textup{NumberOfReactionsB} \\leq \\textup{TotalWater}",
+            "related_variables": [
+                "NumberOfReactionsA",
+                "NumberOfReactionsB"
+            ],
+            "related_parameters": [
+                "WaterA",
+                "WaterB",
+                "TotalWater"
+            ],
+            "code": "# Add constraint for total use of treated water\nmodel.addConstr(WaterA * NumberOfReactionsA + WaterB * NumberOfReactionsB <= TotalWater, name=\"treated_water_limit\")"
+        },
+        {
+            "description": "The total usage of inert gas for reactions A and B must not exceed the available inert gas supply.",
+            "status": "coded",
+            "formulation": "(\\textup{InertGasA} \\cdot \\textup{NumberOfReactionsA}) + (\\textup{InertGasB} \\cdot \\textup{NumberOfReactionsB}) \\leq \\textup{TotalInertGas}",
+            "related_variables": [
+                "NumberOfReactionsA",
+                "NumberOfReactionsB"
+            ],
+            "related_parameters": [
+                "InertGasA",
+                "InertGasB",
+                "TotalInertGas"
+            ],
+            "code": "# Add inert gas usage constraint for reactions A and B\nmodel.addConstr((NumberOfReactionsA * InertGasA) + (NumberOfReactionsB * InertGasB) <= TotalInertGas, name=\"inert_gas_usage\")"
+        },
+        {
+            "description": "The total usage of treated water for reactions A and B must not exceed the available treated water supply.",
+            "status": "coded",
+            "formulation": "(\\textup{WaterA} \\cdot \\textup{NumberOfReactionsA}) + (\\textup{WaterB} \\cdot \\textup{NumberOfReactionsB}) \\leq \\textup{TotalWater}",
+            "related_variables": [
+                "NumberOfReactionsA",
+                "NumberOfReactionsB"
+            ],
+            "related_parameters": [
+                "WaterA",
+                "WaterB",
+                "TotalWater"
+            ],
+            "code": "# Add treated water usage constraint\nmodel.addConstr(\n    (WaterA * NumberOfReactionsA) + (WaterB * NumberOfReactionsB) <= TotalWater,\n    name=\"treated_water_usage\"\n)"
+        },
+        {
+            "description": "The number of reactions A must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfReactionsA} \\geq 0",
+            "related_variables": [
+                "NumberOfReactionsA"
+            ],
+            "related_parameters": [],
+            "code": "# Ensure the number of reactions A is non-negative\nmodel.addConstr(NumberOfReactionsA >= 0, name=\"non_negative_reactions_A\")"
+        },
+        {
+            "description": "The number of reactions B must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfReactionsB} \\geq 0",
+            "related_variables": [
+                "NumberOfReactionsB"
+            ],
+            "related_parameters": [],
+            "code": "# Ensure the number of reactions B is non-negative\nmodel.addConstr(NumberOfReactionsB >= 0, name=\"non_negative_reactions_B\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of chemical reactions A in the laboratory.",
+            "symbol": "NumberOfReactionsA",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfReactionsA = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfReactionsA\")"
+        },
+        {
+            "definition": "The number of chemical reactions B in the laboratory.",
+            "symbol": "NumberOfReactionsB",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfReactionsB = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfReactionsB\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total amount of the rare compound produced from chemical reactions A and B.",
+            "status": "coded",
+            "formulation": "\\max \\quad (\\textup{CompoundA} \\cdot \\textup{NumberOfReactionsA}) + (\\textup{CompoundB} \\cdot \\textup{NumberOfReactionsB})",
+            "related_variables": [
+                "NumberOfReactionsA",
+                "NumberOfReactionsB"
+            ],
+            "related_parameters": [
+                "CompoundA",
+                "CompoundB"
+            ],
+            "code": "# Set objective\nmodel.setObjective((CompoundA * NumberOfReactionsA) + (CompoundB * NumberOfReactionsB), gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250414062202_nl4opt_prob_94/",
+    "problem_path": "data/nl4opt/prob_94/"
+}

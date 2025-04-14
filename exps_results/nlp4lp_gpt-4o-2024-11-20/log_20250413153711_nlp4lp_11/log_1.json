@@ -1,0 +1,205 @@
+{
+    "background": "The problem involves assigning student groups from various neighborhoods to different schools with the aim of minimizing the total distance traveled by all students, taking into consideration the capacity of the schools and distribution of student groups.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Total number of schools",
+            "symbol": "S",
+            "value": "",
+            "shape": [],
+            "code": "S = data[\"S\"] # scalar parameter"
+        },
+        {
+            "definition": "Total number of student groups",
+            "symbol": "G",
+            "value": "",
+            "shape": [],
+            "code": "G = data[\"G\"] # scalar parameter"
+        },
+        {
+            "definition": "Total number of neighborhoods",
+            "symbol": "N",
+            "value": "",
+            "shape": [],
+            "code": "N = data[\"N\"] # scalar parameter"
+        },
+        {
+            "definition": "Capacity of school s for student group g",
+            "symbol": "Capacity",
+            "value": "",
+            "shape": [
+                "S",
+                "G"
+            ],
+            "code": "Capacity = np.array(data[\"Capacity\"]) # ['S', 'G']"
+        },
+        {
+            "definition": "Population of student group g in neighborhood n",
+            "symbol": "Population",
+            "value": "",
+            "shape": [
+                "N",
+                "G"
+            ],
+            "code": "Population = np.array(data[\"Population\"]) # ['N', 'G']"
+        },
+        {
+            "definition": "Distance between neighborhood n and school s",
+            "symbol": "Distance",
+            "value": "",
+            "shape": [
+                "N",
+                "S"
+            ],
+            "code": "Distance = np.array(data[\"Distance\"]) # ['N', 'S']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Total number of students from each student group g assigned from neighborhood n to schools does not exceed the Population of group g in neighborhood n",
+            "status": "coded",
+            "formulation": "\\sum_{s=1}^{\\textup{S}} \\textup{AssignedStudents}_{n, g, s} \\leq \\textup{Population}_{n, g} \\quad \\forall n \\in \\{1, \\dots, \\textup{N}\\}, \\forall g \\in \\{1, \\dots, \\textup{G}\\}",
+            "related_variables": [
+                "AssignedStudents"
+            ],
+            "related_parameters": [
+                "Population",
+                "S",
+                "N",
+                "G"
+            ],
+            "code": "# Add constraints ensuring that total number of students from each group g in neighborhood n assigned to schools does not exceed the population of group g in neighborhood n\nfor n in range(N):\n    for g in range(G):\n        model.addConstr(gp.quicksum(AssignedStudents[n, g, s] for s in range(S)) <= Population[n, g], name=f\"population_constraint_n{n}_g{g}\")"
+        },
+        {
+            "description": "Total number of students from each student group g, assigned from all neighborhoods n to school s, does not exceed the capacity of the school s for student group g.",
+            "status": "coded",
+            "formulation": "\\sum_{n=1}^{\\textup{N}} \\textup{AssignedStudents}_{n,g,s} \\leq \\textup{Capacity}_{s,g} \\quad \\forall g \\in \\{1, ..., \\textup{G}\\}, \\forall s \\in \\{1, ..., \\textup{S}\\}",
+            "related_variables": [
+                "AssignedStudents"
+            ],
+            "related_parameters": [
+                "Capacity",
+                "N",
+                "G",
+                "S"
+            ],
+            "code": "# Add constraints on school capacity for each student group\nfor g in range(G):\n    for s in range(S):\n        model.addConstr(gp.quicksum(AssignedStudents[n, g, s] for n in range(N)) <= Capacity[s, g], name=f\"school_capacity_g{g}_s{s}\")"
+        },
+        {
+            "description": "Each student from group g in neighborhood n must be assigned to exactly one school s.",
+            "status": "coded",
+            "formulation": "\\sum_{s=1}^{\\textup{S}} \\textup{AssignedStudents}_{n,g,s} = \\textup{Population}_{n,g}, \\quad \\forall n \\in \\{1, ..., \\textup{N}\\}, \\forall g \\in \\{1, ..., \\textup{G}\\}",
+            "related_variables": [
+                "AssignedStudents"
+            ],
+            "related_parameters": [
+                "Population",
+                "S",
+                "N",
+                "G"
+            ],
+            "code": "# Add constraints to ensure each student from group g in neighborhood n is assigned to exactly one school\nfor n in range(N):\n    for g in range(G):\n        model.addConstr(\n            gp.quicksum(AssignedStudents[n, g, s] for s in range(S)) == Population[n, g],\n            name=f\"one_school_assignment_n{n}_g{g}\"\n        )"
+        },
+        {
+            "description": "All populations, capacities, and distances are non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{AssignedStudents}_{n,g,s} \\geq 0, \\quad \\forall \\ n \\in [1,\\textup{N}], \\ g \\in [1,\\textup{G}], \\ s \\in [1,\\textup{S}]",
+            "related_variables": [
+                "AssignedStudents"
+            ],
+            "related_parameters": [],
+            "code": "# No code needed because the variable \"AssignedStudents\" is already defined as non-negative (continuous type)."
+        },
+        {
+            "description": "The number of students assigned to school \\textup{s} from group \\textup{g} cannot exceed the capacity of that school for that group.",
+            "status": "coded",
+            "formulation": "\\sum_{n=1}^{\\textup{N}} \\textup{AssignedStudents}_{n,g,s} \\leq \\textup{Capacity}_{s,g}, \\quad \\forall \\ g \\in [1,\\textup{G}], \\ s \\in [1,\\textup{S}]",
+            "related_variables": [
+                "AssignedStudents"
+            ],
+            "related_parameters": [
+                "Capacity"
+            ],
+            "code": "# Add constraints to ensure the number of students assigned to school s from group g does not exceed the school's capacity for that group\nfor g in range(G):\n    for s in range(S):\n        model.addConstr(\n            gp.quicksum(AssignedStudents[n, g, s] for n in range(N)) <= Capacity[s, g],\n            name=f\"capacity_constraint_g{g}_s{s}\"\n        )"
+        },
+        {
+            "description": "All students from each group \\textup{g} in neighborhood \\textup{n} are fully assigned to schools without exceeding their population.",
+            "status": "coded",
+            "formulation": "\\sum_{s=1}^{\\textup{S}} \\textup{AssignedStudents}_{n,g,s} \\leq \\textup{Population}_{n,g}, \\quad \\forall \\ n \\in [1,\\textup{N}], \\ g \\in [1,\\textup{G}]",
+            "related_variables": [
+                "AssignedStudents"
+            ],
+            "related_parameters": [
+                "Population"
+            ],
+            "code": "# Add constraints to ensure all students from each group g in neighborhood n are assigned to schools without exceeding their population\nfor n in range(N):\n    for g in range(G):\n        model.addConstr(gp.quicksum(AssignedStudents[n, g, s] for s in range(S)) <= Population[n, g], name=f\"population_constraint_n{n}_g{g}\")"
+        },
+        {
+            "description": "All distances between neighborhoods and schools must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{Distance}_{n,s} \\geq 0, \\quad \\forall \\ n \\in [1,\\textup{N}], \\ s \\in [1,\\textup{S}]",
+            "related_variables": [],
+            "related_parameters": [
+                "Distance"
+            ],
+            "code": "# Add non-negativity constraints for distances\nfor n in range(N):\n    for s in range(S):\n        model.addConstr(Distance[n, s] >= 0, name=f\"non_negative_distance_{n}_{s}\")"
+        },
+        {
+            "description": "The total number of students assigned from a neighborhood and group must equal the population of that group in that neighborhood",
+            "status": "coded",
+            "formulation": "\\sum_{s=1}^S \\textup{AssignedStudents}_{n,g,s} = \\textup{Population}_{n,g}, \\quad \\forall n = 1, ..., N, \\quad \\forall g = 1, ..., G",
+            "related_variables": [
+                "AssignedStudents"
+            ],
+            "related_parameters": [
+                "Population"
+            ],
+            "code": "# Add constraints to ensure the total number of students assigned from a neighborhood and group equals the population of that group in the neighborhood\nfor n in range(N):\n    for g in range(G):\n        model.addConstr(gp.quicksum(AssignedStudents[n, g, s] for s in range(S)) == Population[n, g], name=f\"population_balance_n{n}_g{g}\")"
+        },
+        {
+            "description": "Ensure that the total assignment to each school's capacity by group does not exceed its capacity",
+            "status": "coded",
+            "formulation": "\\sum_{n=1}^N \\textup{AssignedStudents}_{n,g,s} \\leq \\textup{Capacity}_{s,g}, \\quad \\forall s = 1, ..., S, \\quad \\forall g = 1, ..., G",
+            "related_variables": [
+                "AssignedStudents"
+            ],
+            "related_parameters": [
+                "Capacity"
+            ],
+            "code": "# Add capacity constraints to ensure total assignment does not exceed school's capacity for each group\nfor s in range(S):\n    for g in range(G):\n        model.addConstr(gp.quicksum(AssignedStudents[n, g, s] for n in range(N)) <= Capacity[s, g], name=f\"capacity_constraint_school_{s}_group_{g}\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of students from group g in neighborhood n assigned to school s",
+            "symbol": "AssignedStudents",
+            "shape": [
+                "N",
+                "G",
+                "S"
+            ],
+            "status": "coded",
+            "code": "AssignedStudents = model.addVars(N, G, S, vtype=gp.GRB.CONTINUOUS, name=\"AssignedStudents\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total distance traveled by all students in their assignments to schools",
+            "status": "coded",
+            "formulation": "\\textup{Min } \\sum_{n=1}^N \\sum_{g=1}^G \\sum_{s=1}^S \\textup{Distance}_{n,s} \\cdot \\textup{AssignedStudents}_{n,g,s}",
+            "related_variables": [
+                "AssignedStudents"
+            ],
+            "related_parameters": [
+                "Distance"
+            ],
+            "code": "# Set objective\nmodel.setObjective(gp.quicksum(Distance[n, s] * AssignedStudents[n, g, s] for n in range(N) for g in range(G) for s in range(S)), gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413153711_nlp4lp_11/",
+    "problem_path": "data/nlp4lp/11/"
+}

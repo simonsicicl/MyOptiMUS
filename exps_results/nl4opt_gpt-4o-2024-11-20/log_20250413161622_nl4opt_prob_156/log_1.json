@@ -1,0 +1,125 @@
+{
+    "background": "A shoe company needs to supply shoes to stores using vans and trucks. There are capacity limits for each type of vehicle and a minimum delivery requirement. Furthermore, the number of trucks must not exceed the number of vans used.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Capacity of a van",
+            "symbol": "VanCapacity",
+            "value": 50,
+            "shape": [],
+            "code": "VanCapacity = data[\"VanCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Capacity of a truck",
+            "symbol": "TruckCapacity",
+            "value": 100,
+            "shape": [],
+            "code": "TruckCapacity = data[\"TruckCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum total pairs of shoes to be supplied",
+            "symbol": "MinPairs",
+            "value": 2000,
+            "shape": [],
+            "code": "MinPairs = data[\"MinPairs\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The total number of pairs of shoes delivered must be at least MinPairs.",
+            "status": "coded",
+            "formulation": "\\textup{NumVans} \\cdot \\textup{VanCapacity} + \\textup{NumTrucks} \\cdot \\textup{TruckCapacity} \\geq \\textup{MinPairs}",
+            "related_variables": [
+                "NumVans",
+                "NumTrucks"
+            ],
+            "related_parameters": [
+                "VanCapacity",
+                "TruckCapacity",
+                "MinPairs"
+            ],
+            "code": "# Add constraint for minimum total pairs of shoes delivered\nmodel.addConstr(\n    NumVans * VanCapacity + NumTrucks * TruckCapacity >= MinPairs,\n    name=\"min_total_pairs\"\n)"
+        },
+        {
+            "description": "The number of trucks used is less than or equal to the number of vans used.",
+            "status": "coded",
+            "formulation": "\\textup{NumTrucks} \\leq \\textup{NumVans}",
+            "related_variables": [
+                "NumTrucks",
+                "NumVans"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint: Number of trucks used is less than or equal to the number of vans used\nmodel.addConstr(NumTrucks <= NumVans, name=\"num_trucks_leq_num_vans\")"
+        },
+        {
+            "description": "The number of vans used in transportation must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumVans} \\geq 0",
+            "related_variables": [
+                "NumVans"
+            ],
+            "related_parameters": [],
+            "code": "# No additional code required because the variable \"NumVans\" is already non-negative due to its default lower bound (0) in Gurobi."
+        },
+        {
+            "description": "Ensure the total capacity of vans and trucks meets or exceeds the minimum shoe supply demands",
+            "status": "coded",
+            "formulation": "\\textup{NumVans} \\times \\textup{VanCapacity} + \\textup{NumTrucks} \\times \\textup{TruckCapacity} \\geq \\textup{MinPairs}",
+            "related_variables": [
+                "NumVans",
+                "NumTrucks"
+            ],
+            "related_parameters": [
+                "VanCapacity",
+                "TruckCapacity",
+                "MinPairs"
+            ],
+            "code": "# Add constraint to ensure total capacity of vans and trucks meets or exceeds minimum shoe supply demands\nmodel.addConstr(NumVans * VanCapacity + NumTrucks * TruckCapacity >= MinPairs, name=\"capacity_constraint\")"
+        },
+        {
+            "description": "Ensure the number of trucks does not exceed the number of vans",
+            "status": "coded",
+            "formulation": "\\textup{NumTrucks} \\leq \\textup{NumVans}",
+            "related_variables": [
+                "NumTrucks",
+                "NumVans"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint ensuring the number of trucks does not exceed the number of vans\nmodel.addConstr(NumTrucks <= NumVans, name=\"trucks_not_exceed_vans\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of vans used in transportation.",
+            "symbol": "NumVans",
+            "shape": [],
+            "status": "coded",
+            "code": "NumVans = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumVans\")"
+        },
+        {
+            "definition": "The number of trucks used in transportation.",
+            "symbol": "NumTrucks",
+            "shape": [],
+            "status": "coded",
+            "code": "NumTrucks = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumTrucks\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the number of vans used to meet the shoe supply demands",
+            "status": "coded",
+            "formulation": "\\textup{Minimize} \\quad \\textup{NumVans}",
+            "related_variables": [
+                "NumVans"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(NumVans, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413161622_nl4opt_prob_156/",
+    "problem_path": "data/nl4opt/prob_156/"
+}

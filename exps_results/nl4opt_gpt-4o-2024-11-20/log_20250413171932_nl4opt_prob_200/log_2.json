@@ -1,0 +1,176 @@
+{
+    "background": "A meat processing plant is allocating hours to its two machines for the production of hams and pork ribs, with the aim of maximizing profit from their batches.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Hours required on the meat slicer to produce one batch of hams",
+            "symbol": "HamSlicerHours",
+            "value": 4,
+            "shape": [],
+            "code": "HamSlicerHours = data[\"HamSlicerHours\"] # scalar parameter"
+        },
+        {
+            "definition": "Hours required on the meat packer to produce one batch of hams",
+            "symbol": "HamPackerHours",
+            "value": 2.5,
+            "shape": [],
+            "code": "HamPackerHours = data[\"HamPackerHours\"] # scalar parameter"
+        },
+        {
+            "definition": "Hours required on the meat slicer to produce one batch of pork ribs",
+            "symbol": "RibSlicerHours",
+            "value": 2,
+            "shape": [],
+            "code": "RibSlicerHours = data[\"RibSlicerHours\"] # scalar parameter"
+        },
+        {
+            "definition": "Hours required on the meat packer to produce one batch of pork ribs",
+            "symbol": "RibPackerHours",
+            "value": 3.5,
+            "shape": [],
+            "code": "RibPackerHours = data[\"RibPackerHours\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum operating hours per year for each machine",
+            "symbol": "MaxHours",
+            "value": 4000,
+            "shape": [],
+            "code": "MaxHours = data[\"MaxHours\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit per batch of hams",
+            "symbol": "HamProfit",
+            "value": 150,
+            "shape": [],
+            "code": "HamProfit = data[\"HamProfit\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit per batch of pork ribs",
+            "symbol": "RibProfit",
+            "value": 300,
+            "shape": [],
+            "code": "RibProfit = data[\"RibProfit\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of batches of hams produced must be non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{HamBatches} \\\\geq 0",
+            "related_variables": [
+                "HamBatches"
+            ],
+            "related_parameters": [],
+            "code": "# Ensure the number of batches of hams produced is non-negative\nmodel.addConstr(HamBatches >= 0, name=\"non_negative_ham_batches\")"
+        },
+        {
+            "description": "The number of pork rib batches must be non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{RibBatches} \\\\geq 0",
+            "related_variables": [
+                "RibBatches"
+            ],
+            "related_parameters": [],
+            "code": "# No code is needed because non-negativity is inherent to the variable type (CONTINUOUS), which is already defined."
+        },
+        {
+            "description": "Total slicer hours for hams and pork ribs is at most MaxHours.",
+            "status": "coded",
+            "formulation": "\\\\textup{HamSlicerHours} \\\\cdot \\\\textup{HamBatches} + \\\\textup{RibSlicerHours} \\\\cdot \\\\textup{RibBatches} \\\\leq \\\\textup{MaxHours}",
+            "related_variables": [
+                "HamBatches",
+                "RibBatches"
+            ],
+            "related_parameters": [
+                "HamSlicerHours",
+                "RibSlicerHours",
+                "MaxHours"
+            ],
+            "code": "# Add constraint for total slicer hours for hams and pork ribs\nmodel.addConstr(\n    HamBatches * HamSlicerHours + RibBatches * RibSlicerHours <= MaxHours, \n    name=\"slicer_hours_constraint\"\n)"
+        },
+        {
+            "description": "The total packer hours for producing hams and pork ribs must not exceed the maximum allowable hours (MaxHours).",
+            "status": "coded",
+            "formulation": "\\\\textup{HamPackerHours} \\\\cdot \\\\textup{HamBatches} + \\\\textup{RibPackerHours} \\\\cdot \\\\textup{RibBatches} \\\\leq \\\\textup{MaxHours}",
+            "related_variables": [
+                "HamBatches",
+                "RibBatches"
+            ],
+            "related_parameters": [
+                "HamPackerHours",
+                "RibPackerHours",
+                "MaxHours"
+            ],
+            "code": "# Add constraint for total packer hours\nmodel.addConstr(\n    HamPackerHours * HamBatches + RibPackerHours * RibBatches <= MaxHours,\n    name=\"packer_hours_constraint\"\n)"
+        },
+        {
+            "description": "The slicer time constraint ensuring the total slicer hours used across hams and pork ribs do not exceed the maximum available hours.",
+            "status": "coded",
+            "formulation": "\\textup{HamSlicerHours} \\times \\textup{HamBatches} + \\textup{RibSlicerHours} \\times \\textup{RibBatches} \\leq \\textup{MaxHours}",
+            "related_variables": [
+                "HamBatches",
+                "RibBatches"
+            ],
+            "related_parameters": [
+                "HamSlicerHours",
+                "RibSlicerHours",
+                "MaxHours"
+            ],
+            "code": "# Add slicer time constraint\nmodel.addConstr(HamSlicerHours * HamBatches + RibSlicerHours * RibBatches <= MaxHours, \n                name=\"slicer_time_constraint\")"
+        },
+        {
+            "description": "The packer time constraint ensuring the total packer hours used across hams and pork ribs do not exceed the maximum available hours.",
+            "status": "coded",
+            "formulation": "\\textup{HamPackerHours} \\times \\textup{HamBatches} + \\textup{RibPackerHours} \\times \\textup{RibBatches} \\leq \\textup{MaxHours}",
+            "related_variables": [
+                "HamBatches",
+                "RibBatches"
+            ],
+            "related_parameters": [
+                "HamPackerHours",
+                "RibPackerHours",
+                "MaxHours"
+            ],
+            "code": "# Add packer time constraints\nmodel.addConstr(\n    HamPackerHours * HamBatches + RibPackerHours * RibBatches <= MaxHours,\n    name=\"packer_time_constraint\"\n)"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Represents the number of batches of hams produced.",
+            "symbol": "HamBatches",
+            "shape": [],
+            "status": "coded",
+            "code": "HamBatches = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"HamBatches\")"
+        },
+        {
+            "definition": "Represents the number of batches of pork ribs produced.",
+            "symbol": "RibBatches",
+            "shape": [],
+            "status": "coded",
+            "code": "RibBatches = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"RibBatches\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the profit from the batches of hams and pork ribs produced.",
+            "status": "coded",
+            "formulation": "\\textup{Maximize} \\quad Z = \\textup{HamProfit} \\times \\textup{HamBatches} + \\textup{RibProfit} \\times \\textup{RibBatches}",
+            "related_variables": [
+                "HamBatches",
+                "RibBatches"
+            ],
+            "related_parameters": [
+                "HamProfit",
+                "RibProfit"
+            ],
+            "code": "# Set objective\nmodel.setObjective(HamProfit * HamBatches + RibProfit * RibBatches, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 342857.14285714284,
+    "log_path": "logs/log_20250413171932_nl4opt_prob_200/",
+    "problem_path": "data/nl4opt/prob_200/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_200/data.json\", \"r\") as f:\n    data = json.load(f)\n\nHamSlicerHours = data[\"HamSlicerHours\"] # scalar parameter\nHamPackerHours = data[\"HamPackerHours\"] # scalar parameter\nRibSlicerHours = data[\"RibSlicerHours\"] # scalar parameter\nRibPackerHours = data[\"RibPackerHours\"] # scalar parameter\nMaxHours = data[\"MaxHours\"] # scalar parameter\nHamProfit = data[\"HamProfit\"] # scalar parameter\nRibProfit = data[\"RibProfit\"] # scalar parameter\nHamBatches = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"HamBatches\")\nRibBatches = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"RibBatches\")\n\n# Ensure the number of batches of hams produced is non-negative\nmodel.addConstr(HamBatches >= 0, name=\"non_negative_ham_batches\")\n\n# No code is needed because non-negativity is inherent to the variable type (CONTINUOUS), which is already defined.\n\n# Add constraint for total slicer hours for hams and pork ribs\nmodel.addConstr(\n    HamBatches * HamSlicerHours + RibBatches * RibSlicerHours <= MaxHours, \n    name=\"slicer_hours_constraint\"\n)\n\n# Add constraint for total packer hours\nmodel.addConstr(\n    HamPackerHours * HamBatches + RibPackerHours * RibBatches <= MaxHours,\n    name=\"packer_hours_constraint\"\n)\n\n# Add slicer time constraint\nmodel.addConstr(HamSlicerHours * HamBatches + RibSlicerHours * RibBatches <= MaxHours, \n                name=\"slicer_time_constraint\")\n\n# Add packer time constraints\nmodel.addConstr(\n    HamPackerHours * HamBatches + RibPackerHours * RibBatches <= MaxHours,\n    name=\"packer_time_constraint\"\n)\n\n# Set objective\nmodel.setObjective(HamProfit * HamBatches + RibProfit * RibBatches, gp.GRB.MAXIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

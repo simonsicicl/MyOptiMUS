@@ -1,0 +1,233 @@
+{
+    "background": "The problem is to identify the parameters of a linear model that fits the observed x and y data points in such a way that the maximum deviation of the observed y values from the predicted y values is minimized.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of observed data points",
+            "symbol": "NumObs",
+            "value": "",
+            "shape": [],
+            "code": "NumObs = data[\"NumObs\"] # scalar parameter"
+        },
+        {
+            "definition": "Observed values of y",
+            "symbol": "Y",
+            "value": "",
+            "shape": [
+                "NumObs"
+            ],
+            "code": "Y = np.array(data[\"Y\"]) # ['NumObs']"
+        },
+        {
+            "definition": "Observed values of x",
+            "symbol": "X",
+            "value": "",
+            "shape": [
+                "NumObs"
+            ],
+            "code": "X = np.array(data[\"X\"]) # ['NumObs']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The constraints enforce the definition of the predicted values, their deviations from observed values, and the maximum deviation across all points.",
+            "status": "coded",
+            "formulation": "\\textup{YPred}_{i} = a \\cdot \\textup{X}_{i} + b \\\\ \\textup{AbsDeviation}_{i} \\geq \\textup{YPred}_{i} - \\textup{Y}_{i} \\quad \\forall \\; i \\\\ \\textup{AbsDeviation}_{i} \\geq \\textup{Y}_{i} - \\textup{YPred}_{i} \\quad \\forall \\; i \\\\ \\textup{MaxDeviation} \\geq \\textup{AbsDeviation}_{i} \\quad \\forall \\; i",
+            "related_variables": [
+                "AbsDeviation",
+                "MaxDeviation",
+                "YPred",
+                "a",
+                "b"
+            ],
+            "related_parameters": [
+                "Y",
+                "X",
+                "NumObs"
+            ],
+            "code": "# Add constraints for defining YPred values\nfor i in range(NumObs):\n    model.addConstr(YPred[i] == a * X[i] + b, name=f\"ypred_def_{i}\")\n\n# Add constraints for AbsDeviation lower bounds\nfor i in range(NumObs):\n    model.addConstr(AbsDeviation[i] >= YPred[i] - Y[i], name=f\"abs_dev_pos_{i}\")\n    model.addConstr(AbsDeviation[i] >= Y[i] - YPred[i], name=f\"abs_dev_neg_{i}\")\n\n# Add constraints for MaxDeviation\nfor i in range(NumObs):\n    model.addConstr(MaxDeviation >= AbsDeviation[i], name=f\"max_dev_{i}\")"
+        },
+        {
+            "description": "Minimize the maximum absolute deviation of observed values \\textup{Y} from predicted values \\textup{YPred}.",
+            "status": "coded",
+            "formulation": "\\textup{Minimize } \\quad \\textup{MaxDeviation}",
+            "related_variables": [
+                "MaxDeviation"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraints to minimize the maximum absolute deviation across all points\nfor i in range(len(Y)):  # Assuming Y and YPred are lists or arrays of the same length\n    model.addConstr(Y[i] - YPred[i] <= MaxDeviation, name=f\"deviation_upper_bound_{i}\")\n    model.addConstr(YPred[i] - Y[i] <= MaxDeviation, name=f\"deviation_lower_bound_{i}\")"
+        },
+        {
+            "description": "Define the absolute deviation as the positive difference between observed \\textup{Y}_k and predicted \\textup{YPred}_k values for each \\textup{k}.",
+            "status": "coded",
+            "formulation": "\\\\textup{AbsDeviation}_k \\geq \\textup{Y}_k - \\textup{YPred}_k, \\\\quad \\\\textup{AbsDeviation}_k \\geq \\textup{YPred}_k - \\textup{Y}_k \\quad \\\\forall k \\in \\\\{1, \\dots, \\textup{NumObs}\\\\}",
+            "related_variables": [
+                "AbsDeviation",
+                "YPred"
+            ],
+            "related_parameters": [
+                "Y",
+                "NumObs"
+            ],
+            "code": "# Add absolute deviation constraints\nfor k in range(NumObs):\n    model.addConstr(AbsDeviation[k] >= Y[k] - YPred[k], name=f\"abs_dev_pos_diff_{k}\")\n    model.addConstr(AbsDeviation[k] >= YPred[k] - Y[k], name=f\"abs_dev_neg_diff_{k}\")"
+        },
+        {
+            "description": "Ensure that MaxDeviation is greater than or equal to the absolute deviation for all data points.",
+            "status": "coded",
+            "formulation": "\\\\textup{MaxDeviation} \\geq \\textup{AbsDeviation}_k \\quad \\\\forall k \\in \\\\{1, \\dots, \\textup{NumObs}\\\\}",
+            "related_variables": [
+                "MaxDeviation",
+                "AbsDeviation"
+            ],
+            "related_parameters": [
+                "NumObs"
+            ],
+            "code": "# Add constraints to ensure MaxDeviation is greater than or equal to the absolute deviation for all points\nfor k in range(NumObs):\n    model.addConstr(MaxDeviation >= AbsDeviation[k], name=f\"max_deviation_constraint_{k}\")"
+        },
+        {
+            "description": "Define the linear relationship between predicted values \\textup{YPred}_k and observed inputs \\textup{X}_k using the linear model parameters \\textup{a} and \\textup{b}.",
+            "status": "coded",
+            "formulation": "\\\\textup{YPred}_k = a \\cdot \\textup{X}_k + b \\quad \\\\forall k \\in \\\\{1, \\dots, \\textup{NumObs}\\\\}",
+            "related_variables": [
+                "YPred"
+            ],
+            "related_parameters": [
+                "X",
+                "NumObs"
+            ],
+            "code": "# Add linear relationship constraints between YPred_k and X_k\nfor k in range(NumObs):\n    model.addConstr(YPred[k] == a * X[k] + b, name=f\"linear_relationship_{k}\")"
+        },
+        {
+            "description": "Define the predicted y values based on the linear model.",
+            "status": "coded",
+            "formulation": "\\textup{YPred}_{i} = a \\cdot \\textup{X}_{i} + b, \\quad \\forall i \\in [1, \\textup{NumObs}]",
+            "related_variables": [
+                "YPred",
+                "a",
+                "b"
+            ],
+            "related_parameters": [
+                "X",
+                "NumObs"
+            ],
+            "code": "# Add constraints to define the predicted y values based on the linear model\nfor i in range(NumObs):\n    model.addConstr(YPred[i] == a * X[i] + b, name=f\"linear_model_constraint_{i}\")"
+        },
+        {
+            "description": "Define the absolute deviation as the absolute difference between observed y and predicted y values.",
+            "status": "coded",
+            "formulation": "\\textup{AbsDeviation}_{i} \\geq \\textup{Y}_{i} - \\textup{YPred}_{i}, \\quad \\forall i \\in [1, \\textup{NumObs}]",
+            "related_variables": [
+                "AbsDeviation",
+                "YPred"
+            ],
+            "related_parameters": [
+                "Y",
+                "NumObs"
+            ],
+            "code": "# Add absolute deviation constraints\nfor i in range(NumObs):\n    model.addConstr(AbsDeviation[i] >= Y[i] - YPred[i], name=f\"abs_deviation_{i}\")"
+        },
+        {
+            "description": "Define the absolute deviation as the absolute difference between predicted y and observed y values (reverse direction).",
+            "status": "coded",
+            "formulation": "\\textup{AbsDeviation}_{i} \\geq \\textup{YPred}_{i} - \\textup{Y}_{i}, \\quad \\forall i \\in [1, \\textup{NumObs}]",
+            "related_variables": [
+                "AbsDeviation",
+                "YPred"
+            ],
+            "related_parameters": [
+                "Y",
+                "NumObs"
+            ],
+            "code": "# Add absolute deviation constraints\nfor i in range(NumObs):\n    model.addConstr(AbsDeviation[i] >= YPred[i] - Y[i], name=f\"AbsDeviation_constraint_{i}\")"
+        },
+        {
+            "description": "The maximum absolute deviation must be greater than or equal to every individual absolute deviation.",
+            "status": "coded",
+            "formulation": "\\textup{MaxDeviation} \\geq \\textup{AbsDeviation}_{i}, \\quad \\forall i \\in [1, \\textup{NumObs}]",
+            "related_variables": [
+                "MaxDeviation",
+                "AbsDeviation"
+            ],
+            "related_parameters": [
+                "NumObs"
+            ],
+            "code": "# Add maximum absolute deviation constraint\nfor i in range(NumObs):\n    model.addConstr(MaxDeviation >= AbsDeviation[i], name=f\"max_abs_deviation_{i}\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The absolute deviation between the predicted and observed values for each data point.",
+            "symbol": "AbsDeviation",
+            "shape": [
+                "NumObs"
+            ],
+            "status": "coded",
+            "code": "AbsDeviation = model.addVars(NumObs, vtype=gp.GRB.CONTINUOUS, name=\"AbsDeviation\")"
+        },
+        {
+            "definition": "The predicted y values based on the linear model.",
+            "symbol": "YPred",
+            "shape": [
+                "NumObs"
+            ],
+            "status": "coded",
+            "code": "YPred = model.addVars(NumObs, vtype=gp.GRB.CONTINUOUS, name=\"YPred\")"
+        },
+        {
+            "definition": "The maximum absolute deviation across all points.",
+            "symbol": "MaxDeviation",
+            "shape": [],
+            "status": "coded",
+            "code": "MaxDeviation = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"MaxDeviation\")"
+        },
+        {
+            "definition": "The slope of the linear regression model.",
+            "symbol": "a",
+            "shape": [],
+            "status": "coded",
+            "code": "a = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"a\")"
+        },
+        {
+            "definition": "The intercept of the linear regression model.",
+            "symbol": "b",
+            "shape": [],
+            "status": "coded",
+            "code": "b = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"b\")"
+        },
+        {
+            "definition": "The absolute deviation between the predicted and observed values for each data point.",
+            "symbol": "AbsDeviation",
+            "shape": [
+                "NumObs"
+            ],
+            "status": "coded",
+            "code": "AbsDeviation = model.addVars(NumObs, vtype=gp.GRB.CONTINUOUS, name=\"AbsDeviation\")"
+        },
+        {
+            "definition": "The maximum absolute deviation across all points.",
+            "symbol": "MaxDeviation",
+            "shape": [],
+            "status": "coded",
+            "code": "MaxDeviation = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"MaxDeviation\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the maximum absolute deviation between the observed y values and the predicted y values.",
+            "status": "coded",
+            "formulation": "\\min \\textup{MaxDeviation}",
+            "related_variables": [
+                "MaxDeviation"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(MaxDeviation, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 1.791666666666667,
+    "log_path": "logs/log_20250413152525_nlp4lp_32/",
+    "problem_path": "data/nlp4lp/32/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nlp4lp/32/data.json\", \"r\") as f:\n    data = json.load(f)\n\nNumObs = data[\"NumObs\"] # scalar parameter\nY = np.array(data[\"Y\"]) # ['NumObs']\nX = np.array(data[\"X\"]) # ['NumObs']\nAbsDeviation = model.addVars(NumObs, vtype=gp.GRB.CONTINUOUS, name=\"AbsDeviation\")\nYPred = model.addVars(NumObs, vtype=gp.GRB.CONTINUOUS, name=\"YPred\")\nMaxDeviation = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"MaxDeviation\")\na = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"a\")\nb = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"b\")\nAbsDeviation = model.addVars(NumObs, vtype=gp.GRB.CONTINUOUS, name=\"AbsDeviation\")\nMaxDeviation = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"MaxDeviation\")\n\n# Add constraints for defining YPred values\nfor i in range(NumObs):\n    model.addConstr(YPred[i] == a * X[i] + b, name=f\"ypred_def_{i}\")\n\n# Add constraints for AbsDeviation lower bounds\nfor i in range(NumObs):\n    model.addConstr(AbsDeviation[i] >= YPred[i] - Y[i], name=f\"abs_dev_pos_{i}\")\n    model.addConstr(AbsDeviation[i] >= Y[i] - YPred[i], name=f\"abs_dev_neg_{i}\")\n\n# Add constraints for MaxDeviation\nfor i in range(NumObs):\n    model.addConstr(MaxDeviation >= AbsDeviation[i], name=f\"max_dev_{i}\")\n\n# Add constraints to minimize the maximum absolute deviation across all points\nfor i in range(len(Y)):  # Assuming Y and YPred are lists or arrays of the same length\n    model.addConstr(Y[i] - YPred[i] <= MaxDeviation, name=f\"deviation_upper_bound_{i}\")\n    model.addConstr(YPred[i] - Y[i] <= MaxDeviation, name=f\"deviation_lower_bound_{i}\")\n\n# Add absolute deviation constraints\nfor k in range(NumObs):\n    model.addConstr(AbsDeviation[k] >= Y[k] - YPred[k], name=f\"abs_dev_pos_diff_{k}\")\n    model.addConstr(AbsDeviation[k] >= YPred[k] - Y[k], name=f\"abs_dev_neg_diff_{k}\")\n\n# Add constraints to ensure MaxDeviation is greater than or equal to the absolute deviation for all points\nfor k in range(NumObs):\n    model.addConstr(MaxDeviation >= AbsDeviation[k], name=f\"max_deviation_constraint_{k}\")\n\n# Add linear relationship constraints between YPred_k and X_k\nfor k in range(NumObs):\n    model.addConstr(YPred[k] == a * X[k] + b, name=f\"linear_relationship_{k}\")\n\n# Add constraints to define the predicted y values based on the linear model\nfor i in range(NumObs):\n    model.addConstr(YPred[i] == a * X[i] + b, name=f\"linear_model_constraint_{i}\")\n\n# Add absolute deviation constraints\nfor i in range(NumObs):\n    model.addConstr(AbsDeviation[i] >= Y[i] - YPred[i], name=f\"abs_deviation_{i}\")\n\n# Add absolute deviation constraints\nfor i in range(NumObs):\n    model.addConstr(AbsDeviation[i] >= YPred[i] - Y[i], name=f\"AbsDeviation_constraint_{i}\")\n\n# Add maximum absolute deviation constraint\nfor i in range(NumObs):\n    model.addConstr(MaxDeviation >= AbsDeviation[i], name=f\"max_abs_deviation_{i}\")\n\n# Set objective\nmodel.setObjective(MaxDeviation, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

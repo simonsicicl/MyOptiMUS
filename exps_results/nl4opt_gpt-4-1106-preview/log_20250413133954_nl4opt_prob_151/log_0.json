@@ -1,0 +1,184 @@
+{
+    "background": "An international goods exporter requires transportation of goods using ships and planes, each with distinct capacities and fuel consumptions.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Containers a ship can take",
+            "symbol": "ShipCapacity",
+            "value": 40,
+            "shape": [],
+            "code": "ShipCapacity = data[\"ShipCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Fuel used by a ship per trip",
+            "symbol": "ShipFuel",
+            "value": 500,
+            "shape": [],
+            "code": "ShipFuel = data[\"ShipFuel\"] # scalar parameter"
+        },
+        {
+            "definition": "Containers a plane can take",
+            "symbol": "PlaneCapacity",
+            "value": 20,
+            "shape": [],
+            "code": "PlaneCapacity = data[\"PlaneCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Fuel used by a plane per trip",
+            "symbol": "PlaneFuel",
+            "value": 300,
+            "shape": [],
+            "code": "PlaneFuel = data[\"PlaneFuel\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum total containers that need to be transported",
+            "symbol": "MinContainers",
+            "value": 500,
+            "shape": [],
+            "code": "MinContainers = data[\"MinContainers\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of plane trips",
+            "symbol": "MaxPlaneTrips",
+            "value": 10,
+            "shape": [],
+            "code": "MaxPlaneTrips = data[\"MaxPlaneTrips\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum percentage of trips that must be made by ship",
+            "symbol": "MinShipTripPercentage",
+            "value": 0.5,
+            "shape": [],
+            "code": "MinShipTripPercentage = data[\"MinShipTripPercentage\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of ship trips must be a non-negative value",
+            "status": "formulated",
+            "formulation": "\\textup{NumberOfShipTrips} \\geq 0",
+            "related_variables": [
+                "NumberOfShipTrips"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "The number of plane trips must be non-negative",
+            "status": "formulated",
+            "formulation": "\\textup{NumberOfPlaneTrips} \\geq 0",
+            "related_variables": [
+                "NumberOfPlaneTrips"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "At least MinContainers must be transported by ship and plane combined",
+            "status": "formulated",
+            "formulation": "\\textup{NumberOfShipTrips} \\times \\textup{ShipCapacity} + \\textup{NumberOfPlaneTrips} \\times \\textup{PlaneCapacity} \\geq \\textup{MinContainers}",
+            "related_variables": [
+                "NumberOfShipTrips",
+                "NumberOfPlaneTrips"
+            ],
+            "related_parameters": [
+                "ShipCapacity",
+                "PlaneCapacity",
+                "MinContainers"
+            ]
+        },
+        {
+            "description": "At most MaxPlaneTrips plane trips can be made",
+            "status": "formulated",
+            "formulation": "\\textup{NumberOfPlaneTrips} \\leq \\textup{MaxPlaneTrips}",
+            "related_variables": [
+                "NumberOfPlaneTrips"
+            ],
+            "related_parameters": [
+                "MaxPlaneTrips"
+            ]
+        },
+        {
+            "description": "At least MinShipTripPercentage% of all trips must be by ship",
+            "status": "formulated",
+            "formulation": "\\frac{\\textup{NumberOfShipTrips}}{\\textup{NumberOfShipTrips} + \\textup{NumberOfPlaneTrips}} \\geq \\textup{MinShipTripPercentage}",
+            "related_variables": [
+                "NumberOfShipTrips",
+                "NumberOfPlaneTrips"
+            ],
+            "related_parameters": [
+                "MinShipTripPercentage"
+            ]
+        },
+        {
+            "description": "Ensure at least the minimum number of containers are transported",
+            "status": "formulated",
+            "formulation": "\\textup{NumberOfShipTrips} \\times \\textup{ShipCapacity} + \\textup{NumberOfPlaneTrips} \\times \\textup{PlaneCapacity} \\geq \\textup{MinContainers}",
+            "related_variables": [
+                "NumberOfShipTrips",
+                "NumberOfPlaneTrips"
+            ],
+            "related_parameters": [
+                "ShipCapacity",
+                "PlaneCapacity",
+                "MinContainers"
+            ]
+        },
+        {
+            "description": "Ensure the number of plane trips does not exceed the maximum allowed",
+            "status": "formulated",
+            "formulation": "\\textup{NumberOfPlaneTrips} \\leq \\textup{MaxPlaneTrips}",
+            "related_variables": [
+                "NumberOfPlaneTrips"
+            ],
+            "related_parameters": [
+                "MaxPlaneTrips"
+            ]
+        },
+        {
+            "description": "Ensure that at least the minimum percentage of trips are made by ships",
+            "status": "formulated",
+            "formulation": "\\textup{NumberOfShipTrips} \\geq \\Bigg(\\dfrac{\\textup{MinShipTripPercentage} \\times (\\textup{NumberOfShipTrips} + \\textup{NumberOfPlaneTrips})}{1 - \\textup{MinShipTripPercentage}}\\Bigg)",
+            "related_variables": [
+                "NumberOfShipTrips",
+                "NumberOfPlaneTrips"
+            ],
+            "related_parameters": [
+                "MinShipTripPercentage"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of ship trips made",
+            "symbol": "NumberOfShipTrips",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "Number of plane trips made",
+            "symbol": "NumberOfPlaneTrips",
+            "shape": [],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total amount of fuel used for transporting containers using available ships and planes while satisfying the constraints",
+            "status": "formulated",
+            "formulation": "\\textup{TotalFuel} = \\textup{NumberOfShipTrips} \\times \\textup{ShipFuel} + \\textup{NumberOfPlaneTrips} \\times \\textup{PlaneFuel}",
+            "related_variables": [
+                "NumberOfShipTrips",
+                "NumberOfPlaneTrips"
+            ],
+            "related_parameters": [
+                "ShipFuel",
+                "PlaneFuel"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413133954_nl4opt_prob_151/",
+    "problem_path": "data/nl4opt/prob_151/"
+}

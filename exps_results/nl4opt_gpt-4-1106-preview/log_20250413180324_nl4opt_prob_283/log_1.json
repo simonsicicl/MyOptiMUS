@@ -1,0 +1,165 @@
+{
+    "background": "A municipality needs to plan the hiring of full-time and part-time mail staff within a certain budget and labor hour requirement, aiming to minimize the total number of staff.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of hours worked by a part-time staff member per week",
+            "symbol": "PartTimeHours",
+            "value": 15,
+            "shape": [],
+            "code": "PartTimeHours = data[\"PartTimeHours\"] # scalar parameter"
+        },
+        {
+            "definition": "Payment to a part-time staff member per week",
+            "symbol": "PartTimePayment",
+            "value": 450,
+            "shape": [],
+            "code": "PartTimePayment = data[\"PartTimePayment\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of hours worked by a full-time staff member per week",
+            "symbol": "FullTimeHours",
+            "value": 40,
+            "shape": [],
+            "code": "FullTimeHours = data[\"FullTimeHours\"] # scalar parameter"
+        },
+        {
+            "definition": "Payment to a full-time staff member per week",
+            "symbol": "FullTimePayment",
+            "value": 1280,
+            "shape": [],
+            "code": "FullTimePayment = data[\"FullTimePayment\"] # scalar parameter"
+        },
+        {
+            "definition": "Total number of hours of labor needed by the municipality for the week",
+            "symbol": "TotalLaborHours",
+            "value": 1000,
+            "shape": [],
+            "code": "TotalLaborHours = data[\"TotalLaborHours\"] # scalar parameter"
+        },
+        {
+            "definition": "Total budget available for mail delivery for the season",
+            "symbol": "TotalBudget",
+            "value": 31500,
+            "shape": [],
+            "code": "TotalBudget = data[\"TotalBudget\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of full-time staff must be non-negative",
+            "status": "coded",
+            "formulation": "FullTimeStaff \\geq 0",
+            "related_variables": [
+                "FullTimeStaff"
+            ],
+            "related_parameters": [],
+            "code": "model.addConstr(FullTimeStaff >= 0, name=\"non_negativity_full_time_staff\")"
+        },
+        {
+            "description": "Number of part-time staff must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{PartTimeStaff} \\geq 0",
+            "related_variables": [
+                "PartTimeStaff"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint to ensure the number of part-time staff is non-negative\nmodel.addConstr(PartTimeStaff >= 0, name=\"non_negativity_part_time_staff\")"
+        },
+        {
+            "description": "Total hours worked by part-time and full-time staff must equal the total labor hours required by the municipality",
+            "status": "coded",
+            "formulation": "\\textup{PartTimeStaff} \\times \\textup{PartTimeHours} + \\textup{FullTimeStaff} \\times \\textup{FullTimeHours} = \\textup{TotalLaborHours}",
+            "related_variables": [
+                "FullTimeStaff",
+                "PartTimeStaff"
+            ],
+            "related_parameters": [
+                "PartTimeHours",
+                "FullTimeHours",
+                "TotalLaborHours"
+            ],
+            "code": "# Constraint: Total hours worked by part-time and full-time staff must equal the total labor hours required\nmodel.addConstr(PartTimeStaff * PartTimeHours + FullTimeStaff * FullTimeHours == TotalLaborHours, \"total_labor_hours\")"
+        },
+        {
+            "description": "Total payment to part-time and full-time staff is at most TotalBudget",
+            "status": "coded",
+            "formulation": "\\textup{FullTimePayment} \\cdot \\textup{FullTimeStaff} + \\textup{PartTimePayment} \\cdot \\textup{PartTimeStaff} \\leq \\textup{TotalBudget}",
+            "related_variables": [
+                "FullTimeStaff",
+                "PartTimeStaff"
+            ],
+            "related_parameters": [
+                "FullTimePayment",
+                "PartTimePayment",
+                "TotalBudget"
+            ],
+            "code": "# Add constraint for total payment to part-time and full-time staff not exceeding the TotalBudget\nmodel.addConstr(FullTimePayment * FullTimeStaff + PartTimePayment * PartTimeStaff <= TotalBudget, name=\"budget_constraint\")"
+        },
+        {
+            "description": "Total labor hours must be met by the hired staff",
+            "status": "coded",
+            "formulation": "\\textup{FullTimeHours} \\cdot \\textup{FullTimeStaff} + \\textup{PartTimeHours} \\cdot \\textup{PartTimeStaff} \\geq \\textup{TotalLaborHours}",
+            "related_variables": [
+                "FullTimeStaff",
+                "PartTimeStaff"
+            ],
+            "related_parameters": [
+                "FullTimeHours",
+                "PartTimeHours",
+                "TotalLaborHours"
+            ],
+            "code": "# Define the total labor hours constraint\nmodel.addConstr(FullTimeHours * FullTimeStaff + PartTimeHours * PartTimeStaff >= TotalLaborHours, \"total_labor_hours\")"
+        },
+        {
+            "description": "Total payment to all staff must not exceed the total budget",
+            "status": "coded",
+            "formulation": "\\textup{FullTimePayment} \\cdot \\textup{FullTimeStaff} + \\textup{PartTimePayment} \\cdot \\textup{PartTimeStaff} \\leq \\textup{TotalBudget}",
+            "related_variables": [
+                "FullTimeStaff",
+                "PartTimeStaff"
+            ],
+            "related_parameters": [
+                "FullTimePayment",
+                "PartTimePayment",
+                "TotalBudget"
+            ],
+            "code": "# Define the total payment to all staff constraint\nmodel.addConstr(FullTimePayment * FullTimeStaff + PartTimePayment * PartTimeStaff <= TotalBudget, name=\"total_payment_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of full-time staff members",
+            "symbol": "FullTimeStaff",
+            "shape": [],
+            "status": "coded",
+            "code": "FullTimeStaff = model.addVar(vtype=gp.GRB.INTEGER, name=\"FullTimeStaff\")"
+        },
+        {
+            "definition": "Number of part-time staff members",
+            "symbol": "PartTimeStaff",
+            "shape": [],
+            "status": "coded",
+            "code": "PartTimeStaff = model.addVar(vtype=gp.GRB.INTEGER, name=\"PartTimeStaff\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of full-time and part-time staff hired",
+            "status": "coded",
+            "formulation": "\\textup{Minimize} \\quad \\textup{FullTimeStaff} + \\textup{PartTimeStaff}",
+            "related_variables": [
+                "FullTimeStaff",
+                "PartTimeStaff"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(FullTimeStaff + PartTimeStaff, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413180324_nl4opt_prob_283/",
+    "problem_path": "data/nl4opt/prob_283/"
+}

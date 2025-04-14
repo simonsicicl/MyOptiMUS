@@ -1,0 +1,256 @@
+{
+    "background": "A mining company has a fixed amount of mining sites and must decide on the proportion of land to allocate to two different mining techniques, considering production capacity, waste generation, and machine availability.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Total area of mining sites",
+            "symbol": "A",
+            "value": 100,
+            "shape": [],
+            "code": "A = data[\"A\"] # scalar parameter"
+        },
+        {
+            "definition": "Daily production of rare earth oxide per square mile using heap leaching technique",
+            "symbol": "HeapProduction",
+            "value": 3,
+            "shape": [],
+            "code": "HeapProduction = data[\"HeapProduction\"] # scalar parameter"
+        },
+        {
+            "definition": "Daily production of polluted wastewater per square mile using heap leaching technique",
+            "symbol": "HeapWaste",
+            "value": 8,
+            "shape": [],
+            "code": "HeapWaste = data[\"HeapWaste\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of extraction machines required per square mile using heap leaching technique",
+            "symbol": "HeapMachines",
+            "value": 10,
+            "shape": [],
+            "code": "HeapMachines = data[\"HeapMachines\"] # scalar parameter"
+        },
+        {
+            "definition": "Daily production of rare earth oxide per square mile using vat leaching technique",
+            "symbol": "VatProduction",
+            "value": 5,
+            "shape": [],
+            "code": "VatProduction = data[\"VatProduction\"] # scalar parameter"
+        },
+        {
+            "definition": "Daily production of polluted wastewater per square mile using vat leaching technique",
+            "symbol": "VatWaste",
+            "value": 17,
+            "shape": [],
+            "code": "VatWaste = data[\"VatWaste\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of extraction machines required per square mile using vat leaching technique",
+            "symbol": "VatMachines",
+            "value": 20,
+            "shape": [],
+            "code": "VatMachines = data[\"VatMachines\"] # scalar parameter"
+        },
+        {
+            "definition": "Total number of extraction machines available",
+            "symbol": "MachinesAvailable",
+            "value": 100,
+            "shape": [],
+            "code": "MachinesAvailable = data[\"MachinesAvailable\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum daily production of polluted wastewater allowed by environmental regulations",
+            "symbol": "WasteLimit",
+            "value": 90,
+            "shape": [],
+            "code": "WasteLimit = data[\"WasteLimit\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The total land allocated to heap leaching and vat leaching must not exceed the total available area A in square miles.",
+            "status": "coded",
+            "formulation": "\\textup{HeapLand} + \\textup{VatLand} \\leq \\textup{A}",
+            "related_variables": [
+                "HeapLand",
+                "VatLand"
+            ],
+            "related_parameters": [
+                "A"
+            ],
+            "code": "# Add constraint to ensure total land allocated does not exceed available area\nmodel.addConstr(HeapLand + VatLand <= A, name=\"land_allocation_limit\")"
+        },
+        {
+            "description": "The total number of machines used for heap leaching and vat leaching must not exceed the available number of machines.",
+            "status": "coded",
+            "formulation": "\\\\textup{HeapMachines} \\\\cdot \\\\textup{HeapLand} + \\\\textup{VatMachines} \\\\cdot \\\\textup{VatLand} \\\\leq \\\\textup{MachinesAvailable}",
+            "related_variables": [
+                "HeapLand",
+                "VatLand"
+            ],
+            "related_parameters": [
+                "HeapMachines",
+                "VatMachines",
+                "MachinesAvailable"
+            ],
+            "code": "# Add machine usage constraint\nmodel.addConstr(\n    HeapMachines * HeapLand + VatMachines * VatLand <= MachinesAvailable,\n    name=\"machine_usage\"\n)"
+        },
+        {
+            "description": "Total wastewater produced by both heap leaching and vat leaching techniques must not exceed the daily waste limit",
+            "status": "coded",
+            "formulation": "\\\\textup{HeapLand} \\\\times \\\\textup{HeapWaste} + \\\\textup{VatLand} \\\\times \\\\textup{VatWaste} \\\\leq \\\\textup{WasteLimit}",
+            "related_variables": [
+                "HeapLand",
+                "VatLand"
+            ],
+            "related_parameters": [
+                "HeapWaste",
+                "VatWaste",
+                "WasteLimit"
+            ],
+            "code": "# Adding the constraint to ensure total wastewater production does not exceed the daily waste limit\nmodel.addConstr(HeapLand * HeapWaste + VatLand * VatWaste <= WasteLimit, name=\"wastewater_limit\")"
+        },
+        {
+            "description": "The area allocated to heap leaching is non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{HeapLand} \\geq 0",
+            "related_variables": [
+                "HeapLand"
+            ],
+            "related_parameters": [],
+            "code": "# Add non-negativity constraint for HeapLand\nmodel.addConstr(HeapLand >= 0, name=\"HeapLand_nonnegativity\")"
+        },
+        {
+            "description": "The area allocated to vat leaching is non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{VatLand} \\geq 0",
+            "related_variables": [
+                "VatLand"
+            ],
+            "related_parameters": [],
+            "code": "# Add non-negativity constraint for VatLand\nmodel.addConstr(VatLand >= 0, name=\"non_negativity_VatLand\")"
+        },
+        {
+            "description": "Heap leaching land allocation must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{HeapLand} \\geq 0",
+            "related_variables": [
+                "HeapLand"
+            ],
+            "related_parameters": [],
+            "code": "# Adding constraint: Heap leaching land allocation must be non-negative\nmodel.addConstr(HeapLand >= 0, name=\"heap_land_nonnegativity\")"
+        },
+        {
+            "description": "Vat leaching land allocation must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{VatLand} \\geq 0",
+            "related_variables": [
+                "VatLand"
+            ],
+            "related_parameters": [],
+            "code": "# Vat leaching land allocation must be non-negative\nmodel.addConstr(VatLand >= 0, name=\"vat_leaching_nonnegativity\")"
+        },
+        {
+            "description": "The total land allocated to heap leaching and vat leaching cannot exceed the available mining site area.",
+            "status": "coded",
+            "formulation": "\\textup{HeapLand} + \\textup{VatLand} \\leq \\textup{A}",
+            "related_variables": [
+                "HeapLand",
+                "VatLand"
+            ],
+            "related_parameters": [
+                "A"
+            ],
+            "code": "# Add constraint to ensure land allocation doesn't exceed available mining site area\nmodel.addConstr(HeapLand + VatLand <= A, name=\"land_allocation_constraint\")"
+        },
+        {
+            "description": "The machines allocated to heap leaching and vat leaching cannot exceed the number of machines available.",
+            "status": "coded",
+            "formulation": "\\textup{HeapMachines} \\cdot \\textup{HeapLand} + \\textup{VatMachines} \\cdot \\textup{VatLand} \\leq \\textup{MachinesAvailable}",
+            "related_variables": [
+                "HeapLand",
+                "VatLand"
+            ],
+            "related_parameters": [
+                "HeapMachines",
+                "VatMachines",
+                "MachinesAvailable"
+            ],
+            "code": "# Add constraint to ensure the total machines allocated for heap and vat leaching does not exceed machines available\nmodel.addConstr(HeapMachines * HeapLand + VatMachines * VatLand <= MachinesAvailable, name=\"machine_allocation\")"
+        },
+        {
+            "description": "The total waste generated by heap leaching and vat leaching cannot exceed the maximum daily waste limit imposed by environmental regulations.",
+            "status": "coded",
+            "formulation": "\\textup{HeapWaste} \\cdot \\textup{HeapLand} + \\textup{VatWaste} \\cdot \\textup{VatLand} \\leq \\textup{WasteLimit}",
+            "related_variables": [
+                "HeapLand",
+                "VatLand"
+            ],
+            "related_parameters": [
+                "HeapWaste",
+                "VatWaste",
+                "WasteLimit"
+            ],
+            "code": "# Add the total waste generation constraint\nmodel.addConstr(HeapWaste * HeapLand + VatWaste * VatLand <= WasteLimit, name=\"total_waste_limit\")"
+        },
+        {
+            "description": "The land allocated to heap leaching must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{HeapLand} \\geq 0",
+            "related_variables": [
+                "HeapLand"
+            ],
+            "related_parameters": [],
+            "code": "# Non-negativity constraint for HeapLand\nmodel.addConstr(HeapLand >= 0, name=\"HeapLand_nonnegativity\")"
+        },
+        {
+            "description": "The land allocated to vat leaching must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{VatLand} \\geq 0",
+            "related_variables": [
+                "VatLand"
+            ],
+            "related_parameters": [],
+            "code": "# No additional code is required because the variable \"VatLand\" is already declared non-negative as it's defined with the default lower bound of 0 in gurobipy."
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Land allocated to heap leaching (in square miles)",
+            "symbol": "HeapLand",
+            "shape": [],
+            "status": "coded",
+            "code": "HeapLand = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"HeapLand\")"
+        },
+        {
+            "definition": "Land allocated to vat leaching (in square miles)",
+            "symbol": "VatLand",
+            "shape": [],
+            "status": "coded",
+            "code": "VatLand = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"VatLand\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the daily production of rare earth oxide by allocating land to heap leaching and vat leaching techniques.",
+            "status": "coded",
+            "formulation": "\\textup{Maximize:} \\quad \\textup{HeapProduction} \\cdot \\textup{HeapLand} + \\textup{VatProduction} \\cdot \\textup{VatLand}",
+            "related_variables": [
+                "HeapLand",
+                "VatLand"
+            ],
+            "related_parameters": [
+                "HeapProduction",
+                "VatProduction"
+            ],
+            "code": "# Set objective\nmodel.setObjective(HeapProduction * HeapLand + VatProduction * VatLand, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 30.0,
+    "log_path": "logs/log_20250414062252_nl4opt_prob_95/",
+    "problem_path": "data/nl4opt/prob_95/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_95/data.json\", \"r\") as f:\n    data = json.load(f)\n\nA = data[\"A\"] # scalar parameter\nHeapProduction = data[\"HeapProduction\"] # scalar parameter\nHeapWaste = data[\"HeapWaste\"] # scalar parameter\nHeapMachines = data[\"HeapMachines\"] # scalar parameter\nVatProduction = data[\"VatProduction\"] # scalar parameter\nVatWaste = data[\"VatWaste\"] # scalar parameter\nVatMachines = data[\"VatMachines\"] # scalar parameter\nMachinesAvailable = data[\"MachinesAvailable\"] # scalar parameter\nWasteLimit = data[\"WasteLimit\"] # scalar parameter\nHeapLand = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"HeapLand\")\nVatLand = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"VatLand\")\n\n# Add constraint to ensure total land allocated does not exceed available area\nmodel.addConstr(HeapLand + VatLand <= A, name=\"land_allocation_limit\")\n\n# Add machine usage constraint\nmodel.addConstr(\n    HeapMachines * HeapLand + VatMachines * VatLand <= MachinesAvailable,\n    name=\"machine_usage\"\n)\n\n# Adding the constraint to ensure total wastewater production does not exceed the daily waste limit\nmodel.addConstr(HeapLand * HeapWaste + VatLand * VatWaste <= WasteLimit, name=\"wastewater_limit\")\n\n# Add non-negativity constraint for HeapLand\nmodel.addConstr(HeapLand >= 0, name=\"HeapLand_nonnegativity\")\n\n# Add non-negativity constraint for VatLand\nmodel.addConstr(VatLand >= 0, name=\"non_negativity_VatLand\")\n\n# Adding constraint: Heap leaching land allocation must be non-negative\nmodel.addConstr(HeapLand >= 0, name=\"heap_land_nonnegativity\")\n\n# Vat leaching land allocation must be non-negative\nmodel.addConstr(VatLand >= 0, name=\"vat_leaching_nonnegativity\")\n\n# Add constraint to ensure land allocation doesn't exceed available mining site area\nmodel.addConstr(HeapLand + VatLand <= A, name=\"land_allocation_constraint\")\n\n# Add constraint to ensure the total machines allocated for heap and vat leaching does not exceed machines available\nmodel.addConstr(HeapMachines * HeapLand + VatMachines * VatLand <= MachinesAvailable, name=\"machine_allocation\")\n\n# Add the total waste generation constraint\nmodel.addConstr(HeapWaste * HeapLand + VatWaste * VatLand <= WasteLimit, name=\"total_waste_limit\")\n\n# Non-negativity constraint for HeapLand\nmodel.addConstr(HeapLand >= 0, name=\"HeapLand_nonnegativity\")\n\n# No additional code is required because the variable \"VatLand\" is already declared non-negative as it's defined with the default lower bound of 0 in gurobipy.\n\n# Set objective\nmodel.setObjective(HeapProduction * HeapLand + VatProduction * VatLand, gp.GRB.MAXIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

@@ -1,0 +1,132 @@
+{
+    "background": "The problem focuses on finding the optimal powers for a set of lamps such that the illumination provided by the lamps has the minimum absolute error compared to the desired illumination levels. The relationship between lamp powers and their resulting illumination at various points is quantified by given coefficients.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of different illuminations",
+            "symbol": "N",
+            "value": "",
+            "shape": [],
+            "code": "N = data[\"N\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of lamp powers",
+            "symbol": "M",
+            "value": "",
+            "shape": [],
+            "code": "M = data[\"M\"] # scalar parameter"
+        },
+        {
+            "definition": "Coefficients relating lamp powers to illumination",
+            "symbol": "Coefficients",
+            "value": "",
+            "shape": [
+                "N",
+                "M"
+            ],
+            "code": "Coefficients = np.array(data[\"Coefficients\"]) # ['N', 'M']"
+        },
+        {
+            "definition": "Desired level of illuminations",
+            "symbol": "DesiredIlluminations",
+            "value": "",
+            "shape": [
+                "N"
+            ],
+            "code": "DesiredIlluminations = np.array(data[\"DesiredIlluminations\"]) # ['N']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Lamp power values must be non-negative",
+            "status": "coded",
+            "formulation": "\\forall j \\in \\{1, \\ldots, M\\}, \\quad \\textup{LampPower}_j \\geq 0",
+            "related_variables": [
+                "LampPower"
+            ],
+            "related_parameters": [
+                "M"
+            ],
+            "code": "# Ensure lamp power values are non-negative\nfor j in range(M):\n    model.addConstr(LampPower[j] >= 0, name=f\"LampPower_nonneg_{j}\")"
+        },
+        {
+            "description": "Actual illumination at point i must be the sum of the lamp powers multiplied by their respective coefficients minus desired illumination",
+            "status": "coded",
+            "formulation": "\\forall i \\in \\{1,...,N\\}: \\quad \\textup{PositiveDeviation}_i - \\textup{NegativeDeviation}_i = \\sum_{j=1}^{M} \\textup{Coefficients}_{ij} \\textup{LampPower}_j - \\textup{DesiredIlluminations}_i",
+            "related_variables": [
+                "PositiveDeviation",
+                "NegativeDeviation",
+                "LampPower"
+            ],
+            "related_parameters": [
+                "Coefficients",
+                "DesiredIlluminations",
+                "N",
+                "M"
+            ],
+            "code": "# Actual illumination at point i constraints\nfor i in range(N):\n    model.addConstr(PositiveDeviation[i] - NegativeDeviation[i] == gp.quicksum(Coefficients[i, j] * LampPower[j] for j in range(M)) - DesiredIlluminations[i], name=\"illumination_balance\")"
+        },
+        {
+            "description": "Positive deviation and negative deviation must be non-negative to represent the absolute value",
+            "status": "coded",
+            "formulation": "\\forall i \\in \\{1,...,N\\}: \\quad \\textup{PositiveDeviation}_i \\geq 0 \\quad \\textup{and} \\quad \\textup{NegativeDeviation}_i \\geq 0",
+            "related_variables": [
+                "PositiveDeviation",
+                "NegativeDeviation"
+            ],
+            "related_parameters": [],
+            "code": "# Since PositiveDeviation and NegativeDeviation are already non-negative by their definition, no additional constraints are needed."
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Power of each lamp",
+            "symbol": "LampPower",
+            "shape": [
+                "M"
+            ],
+            "status": "coded",
+            "code": "LampPower = model.addVars(M, vtype=gp.GRB.CONTINUOUS, name=\"LampPower\")"
+        },
+        {
+            "definition": "The positive deviation of the actual illumination from the desired level for illumination point i",
+            "symbol": "PositiveDeviation",
+            "shape": [
+                "N"
+            ],
+            "status": "coded",
+            "code": "PositiveDeviation = model.addVars(N, vtype=gp.GRB.CONTINUOUS, lb=0.0, name=\"PositiveDeviation\")"
+        },
+        {
+            "definition": "The negative deviation of the actual illumination from the desired level for illumination point i",
+            "symbol": "NegativeDeviation",
+            "shape": [
+                "N"
+            ],
+            "status": "coded",
+            "code": "NegativeDeviation = model.addVars(N, vtype=gp.GRB.CONTINUOUS, lb=0.0, name=\"NegativeDeviation\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the sum of absolute errors between the actual illumination levels and the desired illumination levels across all points",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{N} (\\textup{PositiveDeviation}_i + \\textup{NegativeDeviation}_i)",
+            "related_variables": [
+                "PositiveDeviation",
+                "NegativeDeviation"
+            ],
+            "related_parameters": [
+                "N"
+            ],
+            "code": "# Define objective function\nmodel.setObjective(gp.quicksum(PositiveDeviation[i] + NegativeDeviation[i] for i in range(N)), gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 7.370370370370372,
+    "log_path": "logs/log_20250413073226_nlp4lp_10/",
+    "problem_path": "data/nlp4lp/10/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nlp4lp/10/data.json\", \"r\") as f:\n    data = json.load(f)\n\nN = data[\"N\"] # scalar parameter\nM = data[\"M\"] # scalar parameter\nCoefficients = np.array(data[\"Coefficients\"]) # ['N', 'M']\nDesiredIlluminations = np.array(data[\"DesiredIlluminations\"]) # ['N']\nLampPower = model.addVars(M, vtype=gp.GRB.CONTINUOUS, name=\"LampPower\")\nPositiveDeviation = model.addVars(N, vtype=gp.GRB.CONTINUOUS, lb=0.0, name=\"PositiveDeviation\")\nNegativeDeviation = model.addVars(N, vtype=gp.GRB.CONTINUOUS, lb=0.0, name=\"NegativeDeviation\")\n\n# Ensure lamp power values are non-negative\nfor j in range(M):\n    model.addConstr(LampPower[j] >= 0, name=f\"LampPower_nonneg_{j}\")\n\n# Actual illumination at point i constraints\nfor i in range(N):\n    model.addConstr(PositiveDeviation[i] - NegativeDeviation[i] == gp.quicksum(Coefficients[i, j] * LampPower[j] for j in range(M)) - DesiredIlluminations[i], name=\"illumination_balance\")\n\n# Since PositiveDeviation and NegativeDeviation are already non-negative by their definition, no additional constraints are needed.\n\n# Define objective function\nmodel.setObjective(gp.quicksum(PositiveDeviation[i] + NegativeDeviation[i] for i in range(N)), gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

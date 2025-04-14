@@ -1,0 +1,226 @@
+{
+    "background": "A lawn mowing service uses small and large teams to mow lawns, with different numbers of employees and capacities for each team size.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of employees required for a small team",
+            "symbol": "SmallTeamEmployees",
+            "value": 3,
+            "shape": [],
+            "code": "SmallTeamEmployees = data[\"SmallTeamEmployees\"] # scalar parameter"
+        },
+        {
+            "definition": "Lawn area mowed by a small team",
+            "symbol": "SmallTeamArea",
+            "value": 50,
+            "shape": [],
+            "code": "SmallTeamArea = data[\"SmallTeamArea\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of employees required for a large team",
+            "symbol": "LargeTeamEmployees",
+            "value": 5,
+            "shape": [],
+            "code": "LargeTeamEmployees = data[\"LargeTeamEmployees\"] # scalar parameter"
+        },
+        {
+            "definition": "Lawn area mowed by a large team",
+            "symbol": "LargeTeamArea",
+            "value": 80,
+            "shape": [],
+            "code": "LargeTeamArea = data[\"LargeTeamArea\"] # scalar parameter"
+        },
+        {
+            "definition": "Total number of employees available",
+            "symbol": "TotalEmployees",
+            "value": 150,
+            "shape": [],
+            "code": "TotalEmployees = data[\"TotalEmployees\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum ratio of the number of small teams to large teams",
+            "symbol": "MinRatioSmallToLarge",
+            "value": 0.33,
+            "shape": [],
+            "code": "MinRatioSmallToLarge = data[\"MinRatioSmallToLarge\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of large teams",
+            "symbol": "MinLargeTeams",
+            "value": 6,
+            "shape": [],
+            "code": "MinLargeTeams = data[\"MinLargeTeams\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of small teams",
+            "symbol": "MinSmallTeams",
+            "value": 10,
+            "shape": [],
+            "code": "MinSmallTeams = data[\"MinSmallTeams\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The total number of employees assigned to small and large teams must not exceed the total available employees.",
+            "status": "coded",
+            "formulation": "\\textup{SmallTeamEmployees} \\cdot \\textup{NumSmallTeams} + \\textup{LargeTeamEmployees} \\cdot \\textup{NumLargeTeams} \\leq \\textup{TotalEmployees}",
+            "related_variables": [
+                "NumSmallTeams",
+                "NumLargeTeams"
+            ],
+            "related_parameters": [
+                "SmallTeamEmployees",
+                "LargeTeamEmployees",
+                "TotalEmployees"
+            ],
+            "code": "# Add constraint for total employees assigned to small and large teams\nmodel.addConstr(SmallTeamEmployees * NumSmallTeams + LargeTeamEmployees * NumLargeTeams <= TotalEmployees, name=\"employee_allocation\")"
+        },
+        {
+            "description": "The number of small teams must be non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{NumSmallTeams} \\\\geq 0",
+            "related_variables": [
+                "NumSmallTeams"
+            ],
+            "related_parameters": [],
+            "code": "# Non-negativity of NumSmallTeams is enforced implicitly by the variable's default lower bound (0 in gurobipy)."
+        },
+        {
+            "description": "The number of large teams cannot be negative, ensuring non-negativity for \\textup{NumLargeTeams}.",
+            "status": "coded",
+            "formulation": "\\textup{NumLargeTeams} \\geq 0",
+            "related_variables": [
+                "NumLargeTeams"
+            ],
+            "related_parameters": [],
+            "code": "# The non-negativity is already ensured by defining NumLargeTeams as a continuous variable (default lower bound is 0)"
+        },
+        {
+            "description": "The number of small teams is at least MinRatioSmallToLarge times the number of large teams.",
+            "status": "coded",
+            "formulation": "\\textup{NumSmallTeams} \\geq \\textup{MinRatioSmallToLarge} \\cdot \\textup{NumLargeTeams}",
+            "related_variables": [
+                "NumSmallTeams",
+                "NumLargeTeams"
+            ],
+            "related_parameters": [
+                "MinRatioSmallToLarge"
+            ],
+            "code": "# Add constraint ensuring the number of small teams is at least MinRatioSmallToLarge times the number of large teams\nmodel.addConstr(NumSmallTeams >= MinRatioSmallToLarge * NumLargeTeams, name=\"small_to_large_team_ratio\")"
+        },
+        {
+            "description": "Ensure at least MinLargeTeams large teams are used for mowing lawns.",
+            "status": "coded",
+            "formulation": "\\textup{NumLargeTeams} \\geq \\textup{MinLargeTeams}",
+            "related_variables": [
+                "NumLargeTeams"
+            ],
+            "related_parameters": [
+                "MinLargeTeams"
+            ],
+            "code": "# Ensure at least MinLargeTeams large teams are used for mowing lawns\nmodel.addConstr(NumLargeTeams >= MinLargeTeams, name=\"min_large_teams\")"
+        },
+        {
+            "description": "The number of small teams must be at least the minimum specified by MinSmallTeams.",
+            "status": "coded",
+            "formulation": "\\textup{NumSmallTeams} \\geq \\textup{MinSmallTeams}",
+            "related_variables": [
+                "NumSmallTeams"
+            ],
+            "related_parameters": [
+                "MinSmallTeams"
+            ],
+            "code": "# Add the constraint that the number of small teams must be at least the minimum specified\nmodel.addConstr(NumSmallTeams >= MinSmallTeams, name=\"min_small_teams\")"
+        },
+        {
+            "description": "Total employees used by small and large teams cannot exceed the total available employees.",
+            "status": "coded",
+            "formulation": "\\textup{SmallTeamEmployees} \\times \\textup{NumSmallTeams} + \\textup{LargeTeamEmployees} \\times \\textup{NumLargeTeams} \\leq \\textup{TotalEmployees}",
+            "related_variables": [
+                "NumSmallTeams",
+                "NumLargeTeams"
+            ],
+            "related_parameters": [
+                "SmallTeamEmployees",
+                "LargeTeamEmployees",
+                "TotalEmployees"
+            ],
+            "code": "# Add constraint for total employees used by small and large teams\nmodel.addConstr(\n    SmallTeamEmployees * NumSmallTeams + LargeTeamEmployees * NumLargeTeams <= TotalEmployees,\n    name=\"total_employee_capacity\"\n)"
+        },
+        {
+            "description": "The number of small teams must be at least the minimum required.",
+            "status": "coded",
+            "formulation": "\\textup{NumSmallTeams} \\geq \\textup{MinSmallTeams}",
+            "related_variables": [
+                "NumSmallTeams"
+            ],
+            "related_parameters": [
+                "MinSmallTeams"
+            ],
+            "code": "# Add constraint ensuring the number of small teams meets the minimum required\nmodel.addConstr(NumSmallTeams >= MinSmallTeams, name=\"min_small_teams_constraint\")"
+        },
+        {
+            "description": "The number of large teams must be at least the minimum required.",
+            "status": "coded",
+            "formulation": "\\textup{NumLargeTeams} \\geq \\textup{MinLargeTeams}",
+            "related_variables": [
+                "NumLargeTeams"
+            ],
+            "related_parameters": [
+                "MinLargeTeams"
+            ],
+            "code": "# Add constraint ensuring the number of large teams meets the minimum required\nmodel.addConstr(NumLargeTeams >= MinLargeTeams, name=\"min_large_teams_constraint\")"
+        },
+        {
+            "description": "The ratio of small to large teams must meet or exceed the minimum ratio.",
+            "status": "coded",
+            "formulation": "\\textup{NumSmallTeams} \\geq \\textup{MinRatioSmallToLarge} \\times \\textup{NumLargeTeams}",
+            "related_variables": [
+                "NumSmallTeams",
+                "NumLargeTeams"
+            ],
+            "related_parameters": [
+                "MinRatioSmallToLarge"
+            ],
+            "code": "# Add constraint to ensure the ratio of small to large teams meets the minimum\nmodel.addConstr(NumSmallTeams >= MinRatioSmallToLarge * NumLargeTeams, name=\"min_small_to_large_ratio\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of small teams used for mowing lawns",
+            "symbol": "NumSmallTeams",
+            "shape": [],
+            "status": "coded",
+            "code": "NumSmallTeams = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumSmallTeams\")"
+        },
+        {
+            "definition": "The number of large teams used for mowing lawns",
+            "symbol": "NumLargeTeams",
+            "shape": [],
+            "status": "coded",
+            "code": "NumLargeTeams = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumLargeTeams\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total area of lawn mowed by small and large teams.",
+            "status": "coded",
+            "formulation": "\\textup{Maximize} \\quad (\\textup{SmallTeamArea} \\times \\textup{NumSmallTeams} + \\textup{LargeTeamArea} \\times \\textup{NumLargeTeams})",
+            "related_variables": [
+                "NumSmallTeams",
+                "NumLargeTeams"
+            ],
+            "related_parameters": [
+                "SmallTeamArea",
+                "LargeTeamArea"
+            ],
+            "code": "# Set objective\nmodel.setObjective(SmallTeamArea * NumSmallTeams + LargeTeamArea * NumLargeTeams, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413161441_nl4opt_prob_154/",
+    "problem_path": "data/nl4opt/prob_154/"
+}

@@ -1,0 +1,248 @@
+{
+    "background": "Patients need to be transported to a hospital following an accident. They can be transported by either helicopter or bus, each with different capacities and trip times.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of patients a helicopter can transport per trip",
+            "symbol": "HelicopterCapacity",
+            "value": 5,
+            "shape": [],
+            "code": "HelicopterCapacity = data[\"HelicopterCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Time taken for one trip by helicopter",
+            "symbol": "HelicopterTripTime",
+            "value": 1,
+            "shape": [],
+            "code": "HelicopterTripTime = data[\"HelicopterTripTime\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of patients a bus can transport per trip",
+            "symbol": "BusCapacity",
+            "value": 8,
+            "shape": [],
+            "code": "BusCapacity = data[\"BusCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Time taken for one trip by bus",
+            "symbol": "BusTripTime",
+            "value": 3,
+            "shape": [],
+            "code": "BusTripTime = data[\"BusTripTime\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of patients that need transportation",
+            "symbol": "MinPatients",
+            "value": 120,
+            "shape": [],
+            "code": "MinPatients = data[\"MinPatients\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum percentage of trips that must be by helicopter",
+            "symbol": "MinHelicopterTripsPercentage",
+            "value": 0.33,
+            "shape": [],
+            "code": "MinHelicopterTripsPercentage = data[\"MinHelicopterTripsPercentage\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of bus trips allowed",
+            "symbol": "MaxBusTrips",
+            "value": 10,
+            "shape": [],
+            "code": "MaxBusTrips = data[\"MaxBusTrips\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of patients transported by helicopter must be non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{PatientsTransportedByHelicopter} \\\\geq 0",
+            "related_variables": [
+                "PatientsTransportedByHelicopter"
+            ],
+            "related_parameters": [],
+            "code": "# Constraint not needed: non-negativity is automatically enforced by the variable type (CONTINUOUS)"
+        },
+        {
+            "description": "The number of patients transported by bus must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{PatientsTransportedByBus} \\geq 0",
+            "related_variables": [
+                "PatientsTransportedByBus"
+            ],
+            "related_parameters": [],
+            "code": "# The non-negativity of PatientsTransportedByBus is inherently ensured as it is defined as a continuous variable (default lower bound is 0)."
+        },
+        {
+            "description": "Ensure that at least \\textup{MinHelicopterTripsPercentage} of the total trips are made by helicopter.",
+            "status": "coded",
+            "formulation": "\\frac{\\textup{HelicopterTrips}}{\\textup{HelicopterTrips} + \\textup{BusTrips}} \\geq \\textup{MinHelicopterTripsPercentage}",
+            "related_variables": [
+                "PatientsTransportedByHelicopter",
+                "PatientsTransportedByBus",
+                "HelicopterTrips",
+                "BusTrips"
+            ],
+            "related_parameters": [
+                "MinHelicopterTripsPercentage",
+                "HelicopterCapacity",
+                "BusCapacity"
+            ],
+            "code": "# Ensure consistency with the percentage of helicopter trips\nmodel.addConstr(\n    HelicopterTrips >= MinHelicopterTripsPercentage * (HelicopterTrips + BusTrips),\n    name=\"min_helicopter_trips_percentage\"\n)"
+        },
+        {
+            "description": "The number of bus trips is non-negative and at most MaxBusTrips.",
+            "status": "coded",
+            "formulation": "\\textup{BusTrips} \\geq 0, \\quad \\textup{BusTrips} \\leq \\textup{MaxBusTrips}",
+            "related_variables": [
+                "BusTrips"
+            ],
+            "related_parameters": [
+                "MaxBusTrips"
+            ],
+            "code": "# Add constraints to ensure BusTrips is non-negative and does not exceed MaxBusTrips\nmodel.addConstr(BusTrips >= 0, name=\"min_bus_trips\")\nmodel.addConstr(BusTrips <= MaxBusTrips, name=\"max_bus_trips\")"
+        },
+        {
+            "description": "Define the number of helicopter trips as the total patients transported by helicopter divided by helicopter capacity.",
+            "status": "coded",
+            "formulation": "\\textup{HelicopterTrips} = \\frac{\\textup{PatientsTransportedByHelicopter}}{\\textup{HelicopterCapacity}}",
+            "related_variables": [
+                "HelicopterTrips",
+                "PatientsTransportedByHelicopter"
+            ],
+            "related_parameters": [
+                "HelicopterCapacity"
+            ],
+            "code": "model.addConstr(HelicopterTrips == PatientsTransportedByHelicopter / HelicopterCapacity, name=\"helicopter_trips_definition\")"
+        },
+        {
+            "description": "Define the number of bus trips as the total patients transported by bus divided by bus capacity.",
+            "status": "coded",
+            "formulation": "\\textup{BusTrips} = \\frac{\\textup{PatientsTransportedByBus}}{\\textup{BusCapacity}}",
+            "related_variables": [
+                "BusTrips",
+                "PatientsTransportedByBus"
+            ],
+            "related_parameters": [
+                "BusCapacity"
+            ],
+            "code": "# Add constraint to relate BusTrips and PatientsTransportedByBus based on BusCapacity\nmodel.addConstr(BusTrips == PatientsTransportedByBus / BusCapacity, name=\"bus_trips_calculation\")"
+        },
+        {
+            "description": "Patients transported by helicopter must equal the number of helicopter trips times the helicopter capacity.",
+            "status": "coded",
+            "formulation": "\\\\textup{PatientsTransportedByHelicopter} = \\\\textup{HelicopterTrips} \\\\times \\\\textup{HelicopterCapacity}",
+            "related_variables": [
+                "PatientsTransportedByHelicopter",
+                "HelicopterTrips"
+            ],
+            "related_parameters": [
+                "HelicopterCapacity"
+            ],
+            "code": "# Add constraint ensuring transported patients equal trips times capacity\nmodel.addConstr(PatientsTransportedByHelicopter == HelicopterTrips * HelicopterCapacity, name=\"helicopter_transport_constraint\")"
+        },
+        {
+            "description": "Patients transported by bus must equal the number of bus trips times the bus capacity.",
+            "status": "coded",
+            "formulation": "\\\\textup{PatientsTransportedByBus} = \\\\textup{BusTrips} \\\\times \\\\textup{BusCapacity}",
+            "related_variables": [
+                "PatientsTransportedByBus",
+                "BusTrips"
+            ],
+            "related_parameters": [
+                "BusCapacity"
+            ],
+            "code": "# Add constraint to link patients transported by bus, bus trips, and bus capacity\nmodel.addConstr(PatientsTransportedByBus == BusTrips * BusCapacity, name=\"patients_transportation_constraint\")"
+        },
+        {
+            "description": "The total number of patients transported must meet or exceed the minimum required patients.",
+            "status": "coded",
+            "formulation": "\\\\textup{PatientsTransportedByHelicopter} + \\\\textup{PatientsTransportedByBus} \\\\geq \\\\textup{MinPatients}",
+            "related_variables": [
+                "PatientsTransportedByHelicopter",
+                "PatientsTransportedByBus"
+            ],
+            "related_parameters": [
+                "MinPatients"
+            ],
+            "code": "# Add minimum patient transportation constraint\nmodel.addConstr(PatientsTransportedByHelicopter + PatientsTransportedByBus >= MinPatients, name=\"min_patient_transport\")"
+        },
+        {
+            "description": "The number of helicopter trips must meet the minimum proportion requirement.",
+            "status": "coded",
+            "formulation": "\\\\textup{HelicopterTrips} \\\\geq \\\\textup{MinHelicopterTripsPercentage} \\\\times (\\\\textup{HelicopterTrips} + \\\\textup{BusTrips})",
+            "related_variables": [
+                "HelicopterTrips",
+                "BusTrips"
+            ],
+            "related_parameters": [
+                "MinHelicopterTripsPercentage"
+            ],
+            "code": "# Add minimum helicopter trips proportion constraint\nmodel.addConstr(HelicopterTrips >= MinHelicopterTripsPercentage * (HelicopterTrips + BusTrips), name=\"min_helicopter_trips_percentage\")"
+        },
+        {
+            "description": "The total number of bus trips must not exceed the maximum allowed bus trips.",
+            "status": "coded",
+            "formulation": "\\\\textup{BusTrips} \\\\leq \\\\textup{MaxBusTrips}",
+            "related_variables": [
+                "BusTrips"
+            ],
+            "related_parameters": [
+                "MaxBusTrips"
+            ],
+            "code": "# Add constraint to enforce that the number of bus trips does not exceed the maximum allowed\nmodel.addConstr(BusTrips <= MaxBusTrips, name=\"bus_trip_limit\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of patients transported by helicopter.",
+            "symbol": "PatientsTransportedByHelicopter",
+            "shape": [],
+            "status": "coded",
+            "code": "PatientsTransportedByHelicopter = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"PatientsTransportedByHelicopter\")"
+        },
+        {
+            "definition": "The number of patients transported by bus.",
+            "symbol": "PatientsTransportedByBus",
+            "shape": [],
+            "status": "coded",
+            "code": "PatientsTransportedByBus = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"PatientsTransportedByBus\")"
+        },
+        {
+            "definition": "The number of trips made by helicopter.",
+            "symbol": "HelicopterTrips",
+            "shape": [],
+            "status": "coded",
+            "code": "HelicopterTrips = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"HelicopterTrips\")"
+        },
+        {
+            "definition": "The number of trips made by bus.",
+            "symbol": "BusTrips",
+            "shape": [],
+            "status": "coded",
+            "code": "BusTrips = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"BusTrips\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total time to transport all patients to the hospital.",
+            "status": "coded",
+            "formulation": "\\\\textup{Objective} = \\\\textup{HelicopterTrips} \\\\times \\\\textup{HelicopterTripTime} + \\\\textup{BusTrips} \\\\times \\\\textup{BusTripTime}",
+            "related_variables": [
+                "HelicopterTrips",
+                "BusTrips"
+            ],
+            "related_parameters": [
+                "HelicopterTripTime",
+                "BusTripTime"
+            ],
+            "code": "# Set objective\nmodel.setObjective(HelicopterTrips * HelicopterTripTime + BusTrips * BusTripTime, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413171050_nl4opt_prob_192/",
+    "problem_path": "data/nl4opt/prob_192/"
+}

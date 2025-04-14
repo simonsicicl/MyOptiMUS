@@ -1,0 +1,225 @@
+{
+    "background": "The problem is to maximize the total productive capacity considering multiple inputs and constraints over a five-year period.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Total number of years in the planning horizon",
+            "symbol": "K",
+            "value": 5,
+            "shape": [],
+            "code": "K = data[\"K\"] # scalar parameter"
+        },
+        {
+            "definition": "Input one coefficients matrix",
+            "symbol": "InputOne",
+            "value": "",
+            "shape": [
+                "K",
+                "K"
+            ],
+            "code": "InputOne = np.array(data[\"InputOne\"]) # ['K', 'K']"
+        },
+        {
+            "definition": "Manpower coefficients for input one",
+            "symbol": "ManpowerOne",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "ManpowerOne = np.array(data[\"ManpowerOne\"]) # ['K']"
+        },
+        {
+            "definition": "Input two coefficients matrix",
+            "symbol": "InputTwo",
+            "value": "",
+            "shape": [
+                "K",
+                "K"
+            ],
+            "code": "InputTwo = np.array(data[\"InputTwo\"]) # ['K', 'K']"
+        },
+        {
+            "definition": "Manpower coefficients for input two",
+            "symbol": "Manpowertwo",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "Manpowertwo = np.array(data[\"Manpowertwo\"]) # ['K']"
+        },
+        {
+            "definition": "Initial stock level for each of the productive units",
+            "symbol": "Stock",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "Stock = np.array(data[\"Stock\"]) # ['K']"
+        },
+        {
+            "definition": "Productive capacity for each productive unit",
+            "symbol": "Capacity",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "Capacity = np.array(data[\"Capacity\"]) # ['K']"
+        },
+        {
+            "definition": "Company-wide manpower limit",
+            "symbol": "ManpowerLimit",
+            "value": "",
+            "shape": [],
+            "code": "ManpowerLimit = data[\"ManpowerLimit\"] # scalar parameter"
+        },
+        {
+            "definition": "Demand for each of the productive units at the end of the planning horizon",
+            "symbol": "Demand",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "Demand = np.array(data[\"Demand\"]) # ['K']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The total manpower usage over the planning horizon should not exceed the company-wide manpower limit.",
+            "status": "formulated",
+            "formulation": "\\sum_{k=1}^{\\textup{K}} \\big( \\textup{ManpowerOne}_{k} \\cdot \\textup{InputOne}_{k,k} + \\textup{Manpowertwo}_{k} \\cdot \\textup{InputTwo}_{k,k} \\big) \\leq \\textup{ManpowerLimit}",
+            "related_variables": [],
+            "related_parameters": [
+                "ManpowerOne",
+                "Manpowertwo",
+                "InputOne",
+                "InputTwo",
+                "ManpowerLimit",
+                "K"
+            ]
+        },
+        {
+            "description": "The total production over the planning horizon must meet or exceed the demand for each productive unit.",
+            "status": "formulated",
+            "formulation": "\\sum_{t=1}^{K} \\textup{Production}[t,i] \\geq \\textup{Demand}[i], \\quad \\forall i \\in \\{1, 2, ..., K\\}",
+            "related_variables": [
+                "Production"
+            ],
+            "related_parameters": [
+                "Demand",
+                "K"
+            ]
+        },
+        {
+            "description": "Each input usage and productive capacity must be non-negative.",
+            "status": "formulated",
+            "formulation": "\\textup{Production}_{i,j} \\geq 0 \\quad \\forall \\ i,j \\ \\in \\ \\{1, \\dots, K\\}",
+            "related_variables": [
+                "Production"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Define FinalCapacity based on the production at the end of the planning horizon for each unit.",
+            "status": "formulated",
+            "formulation": "\\textup{FinalCapacity}_{i} = \\textup{Production}_{i, \\textup{K}}, \\quad \\forall i \\in \\{1, \\dots, \\textup{K}\\}",
+            "related_variables": [
+                "FinalCapacity",
+                "Production"
+            ],
+            "related_parameters": [
+                "K"
+            ]
+        },
+        {
+            "description": "Manpower constraint ensuring that total manpower usage across all units does not exceed the company-wide limit for each year.",
+            "status": "formulated",
+            "formulation": "\\sum_{i=1}^{\\textup{K}} \\left( \\textup{ManpowerOne}_{i} \\cdot \\textup{InputOne}_{i,t} + \\textup{Manpowertwo}_{i} \\cdot \\textup{InputTwo}_{i,t} \\right) \\leq \\textup{ManpowerLimit}, \\quad \\forall t \\in \\{1, \\dots, \\textup{K}\\}",
+            "related_variables": [
+                "Production"
+            ],
+            "related_parameters": [
+                "ManpowerOne",
+                "Manpowertwo",
+                "InputOne",
+                "InputTwo",
+                "ManpowerLimit",
+                "K"
+            ]
+        },
+        {
+            "description": "Ensure that production does not exceed productive capacity for each unit in each year.",
+            "status": "formulated",
+            "formulation": "\\textup{Production}_{i,t} \\leq \\textup{Capacity}_{i}, \\quad \\forall i \\in \\{1, \\dots, \\textup{K}\\}, \\forall t \\in \\{1, \\dots, \\textup{K}\\}",
+            "related_variables": [
+                "Production"
+            ],
+            "related_parameters": [
+                "Capacity",
+                "K"
+            ]
+        },
+        {
+            "description": "Ensure production satisfies demand at the end of the horizon.",
+            "status": "formulated",
+            "formulation": "\\textup{Production}_{i, \\textup{K}} \\geq \\textup{Demand}_{i}, \\quad \\forall i \\in \\{1, \\dots, \\textup{K}\\}",
+            "related_variables": [
+                "Production"
+            ],
+            "related_parameters": [
+                "Demand",
+                "K"
+            ]
+        },
+        {
+            "description": "Stock flow constraint ensuring production and stock levels are consistent year over year.",
+            "status": "formulated",
+            "formulation": "\\textup{Stock}_{i, t+1} = \\textup{Stock}_{i, t} + \\textup{Production}_{i,t}, \\quad \\forall i \\in \\{1, \\dots, \\textup{K}\\}, \\forall t \\in \\{1, \\dots, \\textup{K} - 1\\}",
+            "related_variables": [
+                "Production"
+            ],
+            "related_parameters": [
+                "Stock",
+                "K"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The production amount for each productive unit over the planning horizon.",
+            "symbol": "Production",
+            "shape": [
+                "K",
+                "K"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "Total productive capacity for each unit at the end of the five years.",
+            "symbol": "FinalCapacity",
+            "shape": [
+                "K"
+            ],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize total productive capacity at the end of the five-year planning horizon.",
+            "status": "formulated",
+            "formulation": "\\max \\sum_{i=1}^{\\textup{K}} \\textup{FinalCapacity}_{i}",
+            "related_variables": [
+                "FinalCapacity",
+                "Production"
+            ],
+            "related_parameters": [
+                "K"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413153537_nlp4lp_27/",
+    "problem_path": "data/nlp4lp/27/"
+}

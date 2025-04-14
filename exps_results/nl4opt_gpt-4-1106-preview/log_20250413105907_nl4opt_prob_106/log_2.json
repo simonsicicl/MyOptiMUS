@@ -1,0 +1,208 @@
+{
+    "background": "A drug company needs to determine the optimal number of hours to run two factories producing allergy pills and fever reducing pills, considering production rates and limited availability of a rare compound required by both factories.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Allergy pills produced per hour by factory 1",
+            "symbol": "AllergyPillsFactory1",
+            "value": 20,
+            "shape": [],
+            "code": "AllergyPillsFactory1 = data[\"AllergyPillsFactory1\"] # scalar parameter"
+        },
+        {
+            "definition": "Fever reducing pills produced per hour by factory 1",
+            "symbol": "FeverPillsFactory1",
+            "value": 15,
+            "shape": [],
+            "code": "FeverPillsFactory1 = data[\"FeverPillsFactory1\"] # scalar parameter"
+        },
+        {
+            "definition": "Allergy pills produced per hour by factory 2",
+            "symbol": "AllergyPillsFactory2",
+            "value": 10,
+            "shape": [],
+            "code": "AllergyPillsFactory2 = data[\"AllergyPillsFactory2\"] # scalar parameter"
+        },
+        {
+            "definition": "Fever reducing pills produced per hour by factory 2",
+            "symbol": "FeverPillsFactory2",
+            "value": 30,
+            "shape": [],
+            "code": "FeverPillsFactory2 = data[\"FeverPillsFactory2\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of rare compound required by factory 1",
+            "symbol": "CompoundFactory1",
+            "value": 20,
+            "shape": [],
+            "code": "CompoundFactory1 = data[\"CompoundFactory1\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of rare compound required by factory 2",
+            "symbol": "CompoundFactory2",
+            "value": 30,
+            "shape": [],
+            "code": "CompoundFactory2 = data[\"CompoundFactory2\"] # scalar parameter"
+        },
+        {
+            "definition": "Total units of the rare compound available",
+            "symbol": "TotalCompound",
+            "value": 1000,
+            "shape": [],
+            "code": "TotalCompound = data[\"TotalCompound\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum required allergy pills",
+            "symbol": "MinAllergyPills",
+            "value": 700,
+            "shape": [],
+            "code": "MinAllergyPills = data[\"MinAllergyPills\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum required fever reducing pills",
+            "symbol": "MinFeverPills",
+            "value": 600,
+            "shape": [],
+            "code": "MinFeverPills = data[\"MinFeverPills\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The total units of the rare compound used by both factories should not exceed the total available amount",
+            "status": "coded",
+            "formulation": "\\textup{CompoundFactory1} \\times \\textup{HoursFactory1} + \\textup{CompoundFactory2} \\times \\textup{HoursFactory2} \\leq \\textup{TotalCompound}",
+            "related_variables": [
+                "HoursFactory1",
+                "HoursFactory2"
+            ],
+            "related_parameters": [
+                "CompoundFactory1",
+                "CompoundFactory2",
+                "TotalCompound"
+            ],
+            "code": "# Constraint for the total use of rare compound by both factories\nmodel.addConstr(CompoundFactory1 * HoursFactory1 + CompoundFactory2 * HoursFactory2 <= TotalCompound, name=\"compound_usage\")"
+        },
+        {
+            "description": "At least the minimum required number of allergy pills must be produced by both factories combined",
+            "status": "coded",
+            "formulation": "\\textup{HoursFactory1} \\cdot \\textup{AllergyPillsFactory1} + \\textup{HoursFactory2} \\cdot \\textup{AllergyPillsFactory2} \\geq \\textup{MinAllergyPills}",
+            "related_variables": [
+                "HoursFactory1",
+                "HoursFactory2"
+            ],
+            "related_parameters": [
+                "AllergyPillsFactory1",
+                "AllergyPillsFactory2",
+                "MinAllergyPills"
+            ],
+            "code": "# Add constraint to ensure at least the minimum required number of allergy pills are produced by both factories combined\nmodel.addConstr(HoursFactory1 * AllergyPillsFactory1 + HoursFactory2 * AllergyPillsFactory2 >= MinAllergyPills, name=\"min_allergy_pills\")"
+        },
+        {
+            "description": "At least MinFeverPills fever reducing pills must be produced",
+            "status": "coded",
+            "formulation": "\\textup{FeverPillsFactory1} \\times \\textup{HoursFactory1} + \\textup{FeverPillsFactory2} \\times \\textup{HoursFactory2} \\geq \\textup{MinFeverPills}",
+            "related_variables": [
+                "HoursFactory1",
+                "HoursFactory2"
+            ],
+            "related_parameters": [
+                "FeverPillsFactory1",
+                "FeverPillsFactory2",
+                "MinFeverPills"
+            ],
+            "code": "# Add constraint to ensure at least MinFeverPills fever reducing pills are produced\nmodel.addConstr(FeverPillsFactory1 * HoursFactory1 + FeverPillsFactory2 * HoursFactory2 >= MinFeverPills, name=\"MinFeverPillsRequirement\")"
+        },
+        {
+            "description": "Factory operational hours must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{HoursFactory1} \\geq 0 \\quad \\textup{and} \\quad \\textup{HoursFactory2} \\geq 0",
+            "related_variables": [
+                "HoursFactory1",
+                "HoursFactory2"
+            ],
+            "related_parameters": [],
+            "code": "# Ensure factory operational hours are non-negative\nmodel.addConstr(HoursFactory1 >= 0, name=\"NonNegativityHoursFactory1\")\nmodel.addConstr(HoursFactory2 >= 0, name=\"NonNegativityHoursFactory2\")"
+        },
+        {
+            "description": "Ensure minimum required production of allergy pills is met",
+            "status": "coded",
+            "formulation": "\\textup{HoursFactory1} \\times \\textup{AllergyPillsFactory1} + \\textup{HoursFactory2} \\times \\textup{AllergyPillsFactory2} \\geq \\textup{MinAllergyPills}",
+            "related_variables": [
+                "HoursFactory1",
+                "HoursFactory2"
+            ],
+            "related_parameters": [
+                "AllergyPillsFactory1",
+                "AllergyPillsFactory2",
+                "MinAllergyPills"
+            ],
+            "code": "# Ensure minimum required production of allergy pills is met\nmodel.addConstr(HoursFactory1 * AllergyPillsFactory1 + HoursFactory2 * AllergyPillsFactory2 >= MinAllergyPills, name=\"min_allergy_pills_production\")"
+        },
+        {
+            "description": "Ensure minimum required production of fever reducing pills is met",
+            "status": "coded",
+            "formulation": "\\textup{HoursFactory1} \\times \\textup{FeverPillsFactory1} + \\textup{HoursFactory2} \\times \\textup{FeverPillsFactory2} \\geq \\textup{MinFeverPills}",
+            "related_variables": [
+                "HoursFactory1",
+                "HoursFactory2"
+            ],
+            "related_parameters": [
+                "FeverPillsFactory1",
+                "FeverPillsFactory2",
+                "MinFeverPills"
+            ],
+            "code": "# Ensure minimum required production of fever reducing pills is met\nmodel.addConstr(HoursFactory1 * FeverPillsFactory1 + HoursFactory2 * FeverPillsFactory2 >= MinFeverPills, \"min_fever_pills_production\")"
+        },
+        {
+            "description": "Ensure the use of the rare compound does not exceed its availability",
+            "status": "coded",
+            "formulation": "\\textup{HoursFactory1} \\times \\textup{CompoundFactory1} + \\textup{HoursFactory2} \\times \\textup{CompoundFactory2} \\leq \\textup{TotalCompound}",
+            "related_variables": [
+                "HoursFactory1",
+                "HoursFactory2"
+            ],
+            "related_parameters": [
+                "CompoundFactory1",
+                "CompoundFactory2",
+                "TotalCompound"
+            ],
+            "code": "# Ensure the use of the rare compound does not exceed its availability\nmodel.addConstr(HoursFactory1 * CompoundFactory1 + HoursFactory2 * CompoundFactory2 <= TotalCompound, \"rare_compound_availability\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of hours factory 1 runs",
+            "symbol": "HoursFactory1",
+            "shape": [],
+            "status": "coded",
+            "code": "HoursFactory1 = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"HoursFactory1\")"
+        },
+        {
+            "definition": "Number of hours factory 2 runs",
+            "symbol": "HoursFactory2",
+            "shape": [],
+            "status": "coded",
+            "code": "HoursFactory2 = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"HoursFactory2\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total operational time of the two factories",
+            "status": "coded",
+            "formulation": "\\min (\\textup{HoursFactory1} + \\textup{HoursFactory2})",
+            "related_variables": [
+                "HoursFactory1",
+                "HoursFactory2"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(HoursFactory1 + HoursFactory2, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 36.666666666666664,
+    "log_path": "logs/log_20250413105907_nl4opt_prob_106/",
+    "problem_path": "data/nl4opt/prob_106/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_106/data.json\", \"r\") as f:\n    data = json.load(f)\n\nAllergyPillsFactory1 = data[\"AllergyPillsFactory1\"] # scalar parameter\nFeverPillsFactory1 = data[\"FeverPillsFactory1\"] # scalar parameter\nAllergyPillsFactory2 = data[\"AllergyPillsFactory2\"] # scalar parameter\nFeverPillsFactory2 = data[\"FeverPillsFactory2\"] # scalar parameter\nCompoundFactory1 = data[\"CompoundFactory1\"] # scalar parameter\nCompoundFactory2 = data[\"CompoundFactory2\"] # scalar parameter\nTotalCompound = data[\"TotalCompound\"] # scalar parameter\nMinAllergyPills = data[\"MinAllergyPills\"] # scalar parameter\nMinFeverPills = data[\"MinFeverPills\"] # scalar parameter\nHoursFactory1 = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"HoursFactory1\")\nHoursFactory2 = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"HoursFactory2\")\n\n# Constraint for the total use of rare compound by both factories\nmodel.addConstr(CompoundFactory1 * HoursFactory1 + CompoundFactory2 * HoursFactory2 <= TotalCompound, name=\"compound_usage\")\n\n# Add constraint to ensure at least the minimum required number of allergy pills are produced by both factories combined\nmodel.addConstr(HoursFactory1 * AllergyPillsFactory1 + HoursFactory2 * AllergyPillsFactory2 >= MinAllergyPills, name=\"min_allergy_pills\")\n\n# Add constraint to ensure at least MinFeverPills fever reducing pills are produced\nmodel.addConstr(FeverPillsFactory1 * HoursFactory1 + FeverPillsFactory2 * HoursFactory2 >= MinFeverPills, name=\"MinFeverPillsRequirement\")\n\n# Ensure factory operational hours are non-negative\nmodel.addConstr(HoursFactory1 >= 0, name=\"NonNegativityHoursFactory1\")\nmodel.addConstr(HoursFactory2 >= 0, name=\"NonNegativityHoursFactory2\")\n\n# Ensure minimum required production of allergy pills is met\nmodel.addConstr(HoursFactory1 * AllergyPillsFactory1 + HoursFactory2 * AllergyPillsFactory2 >= MinAllergyPills, name=\"min_allergy_pills_production\")\n\n# Ensure minimum required production of fever reducing pills is met\nmodel.addConstr(HoursFactory1 * FeverPillsFactory1 + HoursFactory2 * FeverPillsFactory2 >= MinFeverPills, \"min_fever_pills_production\")\n\n# Ensure the use of the rare compound does not exceed its availability\nmodel.addConstr(HoursFactory1 * CompoundFactory1 + HoursFactory2 * CompoundFactory2 <= TotalCompound, \"rare_compound_availability\")\n\n# Set objective\nmodel.setObjective(HoursFactory1 + HoursFactory2, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

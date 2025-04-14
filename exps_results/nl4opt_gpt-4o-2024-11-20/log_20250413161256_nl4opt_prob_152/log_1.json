@@ -1,0 +1,293 @@
+{
+    "background": "The problem involves the optimization of duck transportation to shore after an oil spill, considering different capacities and time requirements for boats and canoes, along with limits on boat trips and a minimum percentage requirement for canoe trips.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of ducks per boat trip",
+            "symbol": "DucksPerBoat",
+            "value": 10,
+            "shape": [],
+            "code": "DucksPerBoat = data[\"DucksPerBoat\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of ducks per canoe trip",
+            "symbol": "DucksPerCanoe",
+            "value": 8,
+            "shape": [],
+            "code": "DucksPerCanoe = data[\"DucksPerCanoe\"] # scalar parameter"
+        },
+        {
+            "definition": "Duration of a boat trip",
+            "symbol": "TimePerBoat",
+            "value": 20.0,
+            "shape": [],
+            "code": "TimePerBoat = data[\"TimePerBoat\"] # scalar parameter"
+        },
+        {
+            "definition": "Duration of a canoe trip",
+            "symbol": "TimePerCanoe",
+            "value": 40.0,
+            "shape": [],
+            "code": "TimePerCanoe = data[\"TimePerCanoe\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of boat trips",
+            "symbol": "MaxBoatTrips",
+            "value": 12,
+            "shape": [],
+            "code": "MaxBoatTrips = data[\"MaxBoatTrips\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum percentage of trips that should be by canoe",
+            "symbol": "MinCanoeTripsPercentage",
+            "value": 0.6,
+            "shape": [],
+            "code": "MinCanoeTripsPercentage = data[\"MinCanoeTripsPercentage\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of ducks to be taken to shore",
+            "symbol": "MinDucks",
+            "value": 300,
+            "shape": [],
+            "code": "MinDucks = data[\"MinDucks\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of boat trips must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumBoatTrips} \\geq 0",
+            "related_variables": [
+                "NumBoatTrips"
+            ],
+            "related_parameters": [],
+            "code": "# The non-negativity constraint for NumBoatTrips is already enforced by the variable's default lower bound of 0. No additional code is required."
+        },
+        {
+            "description": "The number of canoe trips must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumCanoeTrips} \\geq 0",
+            "related_variables": [
+                "NumCanoeTrips"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint to ensure the number of canoe trips is non-negative\nmodel.addConstr(NumCanoeTrips >= 0, name=\"non_negative_canoe_trips\")"
+        },
+        {
+            "description": "The total number of ducks transported by boats must equal the product of the DucksPerBoat parameter and the number of boat trips.",
+            "status": "coded",
+            "formulation": "\\textup{TotalDucksByBoat} = \\textup{DucksPerBoat} \\times \\textup{NumBoatTrips}",
+            "related_variables": [
+                "TotalDucksByBoat",
+                "NumBoatTrips"
+            ],
+            "related_parameters": [
+                "DucksPerBoat"
+            ],
+            "code": "# Add constraint ensuring total ducks transported by boats equals ducks per boat multiplied by total boat trips\nmodel.addConstr(TotalDucksByBoat == DucksPerBoat * NumBoatTrips, name=\"ducks_transportation_consistency\")"
+        },
+        {
+            "description": "The total number of ducks transported by canoes cannot exceed the product of the number of canoe trips taken and the limit of ducks per canoe trip (DucksPerCanoe).",
+            "status": "coded",
+            "formulation": "\\\\textup{TotalDucksByCanoe} \\\\leq \\\\textup{NumCanoeTrips} \\\\times \\\\textup{DucksPerCanoe}",
+            "related_variables": [
+                "NumCanoeTrips",
+                "TotalDucksByCanoe"
+            ],
+            "related_parameters": [
+                "DucksPerCanoe"
+            ],
+            "code": "# Add constraint to ensure the total number of ducks transported by canoes does not exceed the product of canoe trips and ducks per canoe trip\nmodel.addConstr(TotalDucksByCanoe <= NumCanoeTrips * DucksPerCanoe, name=\"ducks_transport_limit\")"
+        },
+        {
+            "description": "The total number of boat trips, \\textup{NumBoatTrips}, is limited to a maximum of \\textup{MaxBoatTrips} trips.",
+            "status": "coded",
+            "formulation": "\\textup{NumBoatTrips} \\\\leq \\textup{MaxBoatTrips}",
+            "related_variables": [
+                "NumBoatTrips"
+            ],
+            "related_parameters": [
+                "MaxBoatTrips"
+            ],
+            "code": "# Add constraint to limit the total number of boat trips to a maximum value\nmodel.addConstr(NumBoatTrips <= MaxBoatTrips, name=\"max_boat_trips\")"
+        },
+        {
+            "description": "At least the minimum required percentage of trips must be by canoe.",
+            "status": "coded",
+            "formulation": "\\textup{NumCanoeTrips} \\geq \\frac{\\textup{MinCanoeTripsPercentage}}{1 - \\textup{MinCanoeTripsPercentage}} \\cdot \\textup{NumBoatTrips}",
+            "related_variables": [
+                "NumBoatTrips",
+                "NumCanoeTrips"
+            ],
+            "related_parameters": [
+                "MinCanoeTripsPercentage"
+            ],
+            "code": "# Add a constraint to ensure at least the minimum required percentage of trips are by canoe\nmodel.addConstr(\n    NumCanoeTrips >= (MinCanoeTripsPercentage / (1 - MinCanoeTripsPercentage)) * NumBoatTrips, \n    name=\"min_canoe_percentage\"\n)"
+        },
+        {
+            "description": "At least \\textup{MinDucks} ducks must be transported to shore.",
+            "status": "coded",
+            "formulation": "\\\\textup{TotalDucksByBoat} + \\\\textup{TotalDucksByCanoe} \\\\geq \\\\textup{MinDucks}",
+            "related_variables": [
+                "TotalDucksByBoat",
+                "TotalDucksByCanoe"
+            ],
+            "related_parameters": [
+                "MinDucks"
+            ],
+            "code": "# Add constraint to ensure at least MinDucks are transported to shore\nmodel.addConstr(TotalDucksByBoat + TotalDucksByCanoe >= MinDucks, name=\"min_duck_transport\")"
+        },
+        {
+            "description": "The total number of ducks transported by canoes must equal the product of the DucksPerCanoe parameter and the number of canoe trips.",
+            "status": "coded",
+            "formulation": "\\textup{TotalDucksByCanoe} = \\textup{DucksPerCanoe} \\times \\textup{NumCanoeTrips}",
+            "related_variables": [
+                "TotalDucksByCanoe",
+                "NumCanoeTrips"
+            ],
+            "related_parameters": [
+                "DucksPerCanoe"
+            ],
+            "code": "# Add constraint that total number of ducks transported by canoes equals DucksPerCanoe multiplied by NumCanoeTrips\nmodel.addConstr(TotalDucksByCanoe == DucksPerCanoe * NumCanoeTrips, name=\"ducks_transport_constraint\")"
+        },
+        {
+            "description": "Ensure all ducks are transported",
+            "status": "coded",
+            "formulation": "\\textup{TotalDucksByBoat} + \\textup{TotalDucksByCanoe} \\geq \\textup{MinDucks}",
+            "related_variables": [
+                "TotalDucksByBoat",
+                "TotalDucksByCanoe"
+            ],
+            "related_parameters": [
+                "MinDucks"
+            ],
+            "code": "# Add constraint to ensure all ducks are transported\nmodel.addConstr(TotalDucksByBoat + TotalDucksByCanoe >= MinDucks, name=\"ensure_ducks_transport\")"
+        },
+        {
+            "description": "Define total ducks transported by boats",
+            "status": "coded",
+            "formulation": "\\textup{TotalDucksByBoat} = \\textup{DucksPerBoat} \\cdot \\textup{NumBoatTrips}",
+            "related_variables": [
+                "TotalDucksByBoat",
+                "NumBoatTrips"
+            ],
+            "related_parameters": [
+                "DucksPerBoat"
+            ],
+            "code": "# Add constraint to define total ducks transported by boats\nmodel.addConstr(TotalDucksByBoat == DucksPerBoat * NumBoatTrips, name=\"TotalDucksByBoat_constraint\")"
+        },
+        {
+            "description": "Define total ducks transported by canoes",
+            "status": "coded",
+            "formulation": "\\textup{TotalDucksByCanoe} = \\textup{DucksPerCanoe} \\cdot \\textup{NumCanoeTrips}",
+            "related_variables": [
+                "TotalDucksByCanoe",
+                "NumCanoeTrips"
+            ],
+            "related_parameters": [
+                "DucksPerCanoe"
+            ],
+            "code": "# Add constraint for total ducks transported by canoes\nmodel.addConstr(TotalDucksByCanoe == DucksPerCanoe * NumCanoeTrips, name=\"ducks_transport_constraint\")"
+        },
+        {
+            "description": "Limit the number of boat trips to the maximum allowed",
+            "status": "coded",
+            "formulation": "\\textup{NumBoatTrips} \\leq \\textup{MaxBoatTrips}",
+            "related_variables": [
+                "NumBoatTrips"
+            ],
+            "related_parameters": [
+                "MaxBoatTrips"
+            ],
+            "code": "# Add constraint to limit the total number of boat trips\nmodel.addConstr(NumBoatTrips <= MaxBoatTrips, name=\"limit_boat_trips\")"
+        },
+        {
+            "description": "Canoe trips must meet the minimum percentage of total trips",
+            "status": "coded",
+            "formulation": "\\textup{NumCanoeTrips} \\geq \\textup{MinCanoeTripsPercentage} \\cdot (\\textup{NumBoatTrips} + \\textup{NumCanoeTrips})",
+            "related_variables": [
+                "NumCanoeTrips",
+                "NumBoatTrips"
+            ],
+            "related_parameters": [
+                "MinCanoeTripsPercentage"
+            ],
+            "code": "# Add constraint to ensure canoe trips meet the minimum percentage of total trips\nmodel.addConstr(NumCanoeTrips >= MinCanoeTripsPercentage * (NumBoatTrips + NumCanoeTrips), name=\"canoe_min_percentage\")"
+        },
+        {
+            "description": "Link TotalTime to the weighted sum of boat and canoe times",
+            "status": "coded",
+            "formulation": "\\textup{TotalTime} = \\textup{TimePerBoat} \\cdot \\textup{NumBoatTrips} + \\textup{TimePerCanoe} \\cdot \\textup{NumCanoeTrips}",
+            "related_variables": [
+                "TotalTime",
+                "NumBoatTrips",
+                "NumCanoeTrips"
+            ],
+            "related_parameters": [
+                "TimePerBoat",
+                "TimePerCanoe"
+            ],
+            "code": "# Add constraint linking TotalTime to the weighted sum of boat and canoe times\nmodel.addConstr(TotalTime == TimePerBoat * NumBoatTrips + TimePerCanoe * NumCanoeTrips, name=\"link_totaltime_weighted_sum\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The total number of boat trips taken.",
+            "symbol": "NumBoatTrips",
+            "shape": [],
+            "status": "coded",
+            "code": "NumBoatTrips = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumBoatTrips\")"
+        },
+        {
+            "definition": "The total number of canoe trips taken.",
+            "symbol": "NumCanoeTrips",
+            "shape": [],
+            "status": "coded",
+            "code": "NumCanoeTrips = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumCanoeTrips\")"
+        },
+        {
+            "definition": "The total number of ducks transported by boats.",
+            "symbol": "TotalDucksByBoat",
+            "shape": [],
+            "status": "coded",
+            "code": "TotalDucksByBoat = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TotalDucksByBoat\")"
+        },
+        {
+            "definition": "The total number of ducks transported by canoes.",
+            "symbol": "TotalDucksByCanoe",
+            "shape": [],
+            "status": "coded",
+            "code": "TotalDucksByCanoe = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TotalDucksByCanoe\")"
+        },
+        {
+            "definition": "The total time required for all transportation trips",
+            "symbol": "TotalTime",
+            "shape": [],
+            "status": "coded",
+            "code": "TotalTime = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TotalTime\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total time needed to transport all ducks to shore",
+            "status": "coded",
+            "formulation": "\\textup{Minimize: TotalTime}",
+            "related_variables": [
+                "TotalTime",
+                "NumBoatTrips",
+                "NumCanoeTrips"
+            ],
+            "related_parameters": [
+                "TimePerBoat",
+                "TimePerCanoe"
+            ],
+            "code": "# Set objective\nmodel.setObjective(TotalTime, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413161256_nl4opt_prob_152/",
+    "problem_path": "data/nl4opt/prob_152/"
+}

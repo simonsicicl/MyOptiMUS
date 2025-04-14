@@ -1,0 +1,182 @@
+{
+    "background": "A clinic conducts throat or nasal swabs on patients with limited time and specific requirements for the minimum number of nasal swabs and the ratio between throat and nasal swabs.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Time taken for one throat swab",
+            "symbol": "ThroatSwabTime",
+            "value": 5,
+            "shape": [],
+            "code": "ThroatSwabTime = data[\"ThroatSwabTime\"] # scalar parameter"
+        },
+        {
+            "definition": "Time taken for one nasal swab",
+            "symbol": "NasalSwabTime",
+            "value": 3,
+            "shape": [],
+            "code": "NasalSwabTime = data[\"NasalSwabTime\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of nasal swabs to be administered",
+            "symbol": "MinNasalSwabs",
+            "value": 30,
+            "shape": [],
+            "code": "MinNasalSwabs = data[\"MinNasalSwabs\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum ratio of throat swabs to nasal swabs",
+            "symbol": "ThroatNasalRatio",
+            "value": 4,
+            "shape": [],
+            "code": "ThroatNasalRatio = data[\"ThroatNasalRatio\"] # scalar parameter"
+        },
+        {
+            "definition": "Total operational time in minutes",
+            "symbol": "TotalTime",
+            "value": 20000,
+            "shape": [],
+            "code": "TotalTime = data[\"TotalTime\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The time spent on throat swabs must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{ThroatSwabTime} \\times \\textup{ThroatSwabsNumber} \\geq 0",
+            "related_variables": [
+                "ThroatSwabsNumber"
+            ],
+            "related_parameters": [
+                "ThroatSwabTime"
+            ],
+            "code": "# Since ThroatSwabTime is a non-negative scalar parameter and ThroatSwabsNumber is an integer variable,\n# the product of a non-negative scalar and a variable will always be non-negative by definition of the variable type.\n# Therefore, no explicit constraint needs to be added to the model."
+        },
+        {
+            "description": "Total time spent on nasal swabs must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NasalSwabsNumber} \\cdot \\textup{NasalSwabTime} \\geq 0",
+            "related_variables": [
+                "NasalSwabsNumber"
+            ],
+            "related_parameters": [
+                "NasalSwabTime"
+            ],
+            "code": "# Since the time taken for one nasal swab is a positive constant, the product with the number of nasal swabs will be non-negative by definition.\n# Therefore, no additional constraint is needed to guarantee non-negativity."
+        },
+        {
+            "description": "At least the minimum number of nasal swabs must be administered",
+            "status": "coded",
+            "formulation": "\\textup{NasalSwabsNumber} \\geq \\textup{MinNasalSwabs}",
+            "related_variables": [
+                "NasalSwabsNumber"
+            ],
+            "related_parameters": [
+                "MinNasalSwabs"
+            ],
+            "code": "# Add constraint to ensure the minimum number of nasal swabs is administered\nmodel.addConstr(NasalSwabsNumber >= MinNasalSwabs, name=\"min_nasal_swabs\")"
+        },
+        {
+            "description": "At least ThroatNasalRatio times as many throat swabs as nasal swabs must be done",
+            "status": "coded",
+            "formulation": "\\textup{ThroatSwabsNumber} \\geq \\textup{ThroatNasalRatio} \\times \\textup{NasalSwabsNumber}",
+            "related_variables": [
+                "ThroatSwabsNumber",
+                "NasalSwabsNumber"
+            ],
+            "related_parameters": [
+                "ThroatNasalRatio"
+            ],
+            "code": "# Add constraint for minimum throat to nasal swabs ratio\nmodel.addConstr(ThroatSwabsNumber >= ThroatNasalRatio * NasalSwabsNumber, name=\"throat_to_nasal_ratio\")"
+        },
+        {
+            "description": "The total time for administering both types of swabs cannot exceed the available total time",
+            "status": "coded",
+            "formulation": "\\textup{ThroatSwabTime} \\times \\textup{ThroatSwabsNumber} + \\textup{NasalSwabTime} \\times \\textup{NasalSwabsNumber} \\leq \\textup{TotalTime}",
+            "related_variables": [
+                "ThroatSwabsNumber",
+                "NasalSwabsNumber"
+            ],
+            "related_parameters": [
+                "ThroatSwabTime",
+                "NasalSwabTime",
+                "TotalTime"
+            ],
+            "code": "# Add constraint for the total time for administering both types of swabs not exceeding the available total time\nmodel.addConstr(ThroatSwabTime * ThroatSwabsNumber + NasalSwabTime * NasalSwabsNumber <= TotalTime, name=\"total_swab_time\")"
+        },
+        {
+            "description": "Total operational time constraint for throat and nasal swabs",
+            "status": "coded",
+            "formulation": "\\textup{ThroatSwabTime} \\times \\textup{ThroatSwabsNumber} + \\textup{NasalSwabTime} \\times \\textup{NasalSwabsNumber} \\leq \\textup{TotalTime}",
+            "related_variables": [
+                "ThroatSwabsNumber",
+                "NasalSwabsNumber"
+            ],
+            "related_parameters": [
+                "ThroatSwabTime",
+                "NasalSwabTime",
+                "TotalTime"
+            ],
+            "code": "# Total operational time constraint for throat and nasal swabs\nmodel.addConstr(ThroatSwabTime * ThroatSwabsNumber + NasalSwabTime * NasalSwabsNumber <= TotalTime, name=\"total_operational_time\")"
+        },
+        {
+            "description": "Minimum number of nasal swabs constraint",
+            "status": "coded",
+            "formulation": "\\textup{NasalSwabsNumber} \\geq \\textup{MinNasalSwabs}",
+            "related_variables": [
+                "NasalSwabsNumber"
+            ],
+            "related_parameters": [
+                "MinNasalSwabs"
+            ],
+            "code": "# Add a constraint to ensure the minimum number of nasal swabs is met\nmodel.addConstr(NasalSwabsNumber >= MinNasalSwabs, name=\"min_nasal_swabs\")"
+        },
+        {
+            "description": "The minimum ratio of throat to nasal swabs",
+            "status": "coded",
+            "formulation": "\\textup{ThroatSwabsNumber} \\geq \\textup{ThroatNasalRatio} \\times \\textup{NasalSwabsNumber}",
+            "related_variables": [
+                "ThroatSwabsNumber",
+                "NasalSwabsNumber"
+            ],
+            "related_parameters": [
+                "ThroatNasalRatio"
+            ],
+            "code": "# Add constraint for the minimum ratio of throat to nasal swabs\nmodel.addConstr(ThroatSwabsNumber >= ThroatNasalRatio * NasalSwabsNumber, name=\"min_ratio_throat_to_nasal_swabs\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of throat swabs administered",
+            "symbol": "ThroatSwabsNumber",
+            "shape": [],
+            "status": "coded",
+            "code": "ThroatSwabsNumber = model.addVar(vtype=gp.GRB.INTEGER, name=\"ThroatSwabsNumber\")"
+        },
+        {
+            "definition": "Number of nasal swabs administered",
+            "symbol": "NasalSwabsNumber",
+            "shape": [],
+            "status": "coded",
+            "code": "NasalSwabsNumber = model.addVar(vtype=gp.GRB.INTEGER, name=\"NasalSwabsNumber\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total number of swabs administered",
+            "status": "coded",
+            "formulation": "\\max (\\textup{ThroatSwabsNumber} + \\textup{NasalSwabsNumber})",
+            "related_variables": [
+                "ThroatSwabsNumber",
+                "NasalSwabsNumber"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(ThroatSwabsNumber + NasalSwabsNumber, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413112509_nl4opt_prob_129/",
+    "problem_path": "data/nl4opt/prob_129/"
+}

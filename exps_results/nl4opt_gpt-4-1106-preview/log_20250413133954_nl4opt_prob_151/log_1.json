@@ -1,0 +1,195 @@
+{
+    "background": "An international goods exporter requires transportation of goods using ships and planes, each with distinct capacities and fuel consumptions.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Containers a ship can take",
+            "symbol": "ShipCapacity",
+            "value": 40,
+            "shape": [],
+            "code": "ShipCapacity = data[\"ShipCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Fuel used by a ship per trip",
+            "symbol": "ShipFuel",
+            "value": 500,
+            "shape": [],
+            "code": "ShipFuel = data[\"ShipFuel\"] # scalar parameter"
+        },
+        {
+            "definition": "Containers a plane can take",
+            "symbol": "PlaneCapacity",
+            "value": 20,
+            "shape": [],
+            "code": "PlaneCapacity = data[\"PlaneCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Fuel used by a plane per trip",
+            "symbol": "PlaneFuel",
+            "value": 300,
+            "shape": [],
+            "code": "PlaneFuel = data[\"PlaneFuel\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum total containers that need to be transported",
+            "symbol": "MinContainers",
+            "value": 500,
+            "shape": [],
+            "code": "MinContainers = data[\"MinContainers\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of plane trips",
+            "symbol": "MaxPlaneTrips",
+            "value": 10,
+            "shape": [],
+            "code": "MaxPlaneTrips = data[\"MaxPlaneTrips\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum percentage of trips that must be made by ship",
+            "symbol": "MinShipTripPercentage",
+            "value": 0.5,
+            "shape": [],
+            "code": "MinShipTripPercentage = data[\"MinShipTripPercentage\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of ship trips must be a non-negative value",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfShipTrips} \\geq 0",
+            "related_variables": [
+                "NumberOfShipTrips"
+            ],
+            "related_parameters": [],
+            "code": "# Constraint to ensure the number of ship trips is non-negative\nmodel.addConstr(NumberOfShipTrips >= 0, name=\"non_negative_ship_trips\")"
+        },
+        {
+            "description": "The number of plane trips must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfPlaneTrips} \\geq 0",
+            "related_variables": [
+                "NumberOfPlaneTrips"
+            ],
+            "related_parameters": [],
+            "code": "# Since NumberOfPlaneTrips is already defined as an integer variable, we just need to add a constraint to ensure it is non-negative\nmodel.addConstr(NumberOfPlaneTrips >= 0, name=\"non_negative_trips\")"
+        },
+        {
+            "description": "At least MinContainers must be transported by ship and plane combined",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfShipTrips} \\times \\textup{ShipCapacity} + \\textup{NumberOfPlaneTrips} \\times \\textup{PlaneCapacity} \\geq \\textup{MinContainers}",
+            "related_variables": [
+                "NumberOfShipTrips",
+                "NumberOfPlaneTrips"
+            ],
+            "related_parameters": [
+                "ShipCapacity",
+                "PlaneCapacity",
+                "MinContainers"
+            ],
+            "code": "# Add constraint for the minimum number of containers transported by ship and plane combined\nmodel.addConstr(NumberOfShipTrips * ShipCapacity + NumberOfPlaneTrips * PlaneCapacity >= MinContainers, name=\"min_containers_ship_plane\")"
+        },
+        {
+            "description": "At most MaxPlaneTrips plane trips can be made",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfPlaneTrips} \\leq \\textup{MaxPlaneTrips}",
+            "related_variables": [
+                "NumberOfPlaneTrips"
+            ],
+            "related_parameters": [
+                "MaxPlaneTrips"
+            ],
+            "code": "# At most MaxPlaneTrips plane trips can be made\nmodel.addConstr(NumberOfPlaneTrips <= MaxPlaneTrips, name=\"max_plane_trips_constraint\")"
+        },
+        {
+            "description": "At least MinShipTripPercentage% of all trips must be by ship",
+            "status": "coded",
+            "formulation": "\\frac{\\textup{NumberOfShipTrips}}{\\textup{NumberOfShipTrips} + \\textup{NumberOfPlaneTrips}} \\geq \\textup{MinShipTripPercentage}",
+            "related_variables": [
+                "NumberOfShipTrips",
+                "NumberOfPlaneTrips"
+            ],
+            "related_parameters": [
+                "MinShipTripPercentage"
+            ],
+            "code": "# Ensure at least MinShipTripPercentage% of trips are by ship\nNumberOfTotalTrips = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfTotalTrips\")\n\nmodel.addConstr(NumberOfTotalTrips == NumberOfShipTrips + NumberOfPlaneTrips, name=\"calc_NumberOfTotalTrips\")\nmodel.addConstr(NumberOfShipTrips >= MinShipTripPercentage * NumberOfTotalTrips, name=\"min_ship_trip_percentage\")"
+        },
+        {
+            "description": "Ensure at least the minimum number of containers are transported",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfShipTrips} \\times \\textup{ShipCapacity} + \\textup{NumberOfPlaneTrips} \\times \\textup{PlaneCapacity} \\geq \\textup{MinContainers}",
+            "related_variables": [
+                "NumberOfShipTrips",
+                "NumberOfPlaneTrips"
+            ],
+            "related_parameters": [
+                "ShipCapacity",
+                "PlaneCapacity",
+                "MinContainers"
+            ],
+            "code": "# Ensure at least the minimum number of containers are transported\nmodel.addConstr(\n    NumberOfShipTrips * ShipCapacity + NumberOfPlaneTrips * PlaneCapacity >= MinContainers,\n    name=\"min_containers_requirement\"\n)"
+        },
+        {
+            "description": "Ensure the number of plane trips does not exceed the maximum allowed",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfPlaneTrips} \\leq \\textup{MaxPlaneTrips}",
+            "related_variables": [
+                "NumberOfPlaneTrips"
+            ],
+            "related_parameters": [
+                "MaxPlaneTrips"
+            ],
+            "code": "# Add constraint to ensure the number of plane trips does not exceed the maximum allowed\nmodel.addConstr(NumberOfPlaneTrips <= MaxPlaneTrips, name=\"max_plane_trips\")"
+        },
+        {
+            "description": "Ensure that at least the minimum percentage of trips are made by ships",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfShipTrips} \\geq \\Bigg(\\dfrac{\\textup{MinShipTripPercentage} \\times (\\textup{NumberOfShipTrips} + \\textup{NumberOfPlaneTrips})}{1 - \\textup{MinShipTripPercentage}}\\Bigg)",
+            "related_variables": [
+                "NumberOfShipTrips",
+                "NumberOfPlaneTrips"
+            ],
+            "related_parameters": [
+                "MinShipTripPercentage"
+            ],
+            "code": "# Ensure at least the minimum percentage of trips are made by ships\nNumberOfShipTrips = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfShipTrips\")\nNumberOfPlaneTrips = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfPlaneTrips\")\nMinShipTripPercentage = data[\"MinShipTripPercentage\"]  # scalar parameter\n\n# Add the constraint: NumberOfShipTrips >= (MinShipTripPercentage * (NumberOfShipTrips + NumberOfPlaneTrips)) / (1 - MinShipTripPercentage)\nmodel.addConstr(NumberOfShipTrips >= (MinShipTripPercentage * (NumberOfShipTrips + NumberOfPlaneTrips)) / (1 - MinShipTripPercentage), name=\"min_ship_trips\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of ship trips made",
+            "symbol": "NumberOfShipTrips",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfShipTrips = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfShipTrips\")"
+        },
+        {
+            "definition": "Number of plane trips made",
+            "symbol": "NumberOfPlaneTrips",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfPlaneTrips = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfPlaneTrips\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total amount of fuel used for transporting containers using available ships and planes while satisfying the constraints",
+            "status": "coded",
+            "formulation": "\\textup{TotalFuel} = \\textup{NumberOfShipTrips} \\times \\textup{ShipFuel} + \\textup{NumberOfPlaneTrips} \\times \\textup{PlaneFuel}",
+            "related_variables": [
+                "NumberOfShipTrips",
+                "NumberOfPlaneTrips"
+            ],
+            "related_parameters": [
+                "ShipFuel",
+                "PlaneFuel"
+            ],
+            "code": "# Define the objective function\nmodel.setObjective(NumberOfShipTrips * ShipFuel + NumberOfPlaneTrips * PlaneFuel, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413133954_nl4opt_prob_151/",
+    "problem_path": "data/nl4opt/prob_151/"
+}

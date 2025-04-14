@@ -1,0 +1,256 @@
+{
+    "background": "The problem involves scheduling generators to operate during different periods of the day in order to meet a specified electricity demand at minimum cost. Each generator has its own operational constraints and costs associated with running, producing extra power, and starting up.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Total number of periods",
+            "symbol": "T",
+            "value": "",
+            "shape": [],
+            "code": "T = data[\"T\"] # scalar parameter"
+        },
+        {
+            "definition": "Total number of generators",
+            "symbol": "K",
+            "value": "",
+            "shape": [],
+            "code": "K = data[\"K\"] # scalar parameter"
+        },
+        {
+            "definition": "Demand during period t",
+            "symbol": "Demand",
+            "value": "",
+            "shape": [
+                "T"
+            ],
+            "code": "Demand = np.array(data[\"Demand\"]) # ['T']"
+        },
+        {
+            "definition": "Number of generator k",
+            "symbol": "NumGenerator",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "NumGenerator = np.array(data[\"NumGenerator\"]) # ['K']"
+        },
+        {
+            "definition": "Minimum level of generator k",
+            "symbol": "MinLevel",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "MinLevel = np.array(data[\"MinLevel\"]) # ['K']"
+        },
+        {
+            "definition": "Maximum level of generator k",
+            "symbol": "MaxLevel",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "MaxLevel = np.array(data[\"MaxLevel\"]) # ['K']"
+        },
+        {
+            "definition": "Running cost of generator k",
+            "symbol": "RunCost",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "RunCost = np.array(data[\"RunCost\"]) # ['K']"
+        },
+        {
+            "definition": "Extra cost of generator k",
+            "symbol": "ExtraCost",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "ExtraCost = np.array(data[\"ExtraCost\"]) # ['K']"
+        },
+        {
+            "definition": "Start-up cost of generator k",
+            "symbol": "StartCost",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "StartCost = np.array(data[\"StartCost\"]) # ['K']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The sum of generator outputs must meet or exceed the electricity demand at each time period.",
+            "status": "formulated",
+            "formulation": "\\sum_{k=1}^{\\textup{K}} \\textup{PowerGenerated}_{k,t} \\geq \\textup{Demand}_{t}, \\quad \\forall t \\in \\{1, 2, \\dots, \\textup{T}\\}",
+            "related_variables": [
+                "PowerGenerated"
+            ],
+            "related_parameters": [
+                "Demand",
+                "T",
+                "K"
+            ]
+        },
+        {
+            "description": "Each generator can operate only within its minimum and maximum levels.",
+            "status": "formulated",
+            "formulation": "\\textup{MinLevel}_k \\leq \\textup{PowerGenerated}_{k,t} \\leq \\textup{MaxLevel}_k \\quad \\forall k \\in \\{1, \\dots, K\\}, \\forall t \\in \\{1, \\dots, T\\}",
+            "related_variables": [
+                "PowerGenerated"
+            ],
+            "related_parameters": [
+                "MinLevel",
+                "MaxLevel",
+                "K",
+                "T"
+            ]
+        },
+        {
+            "description": "The total number of generators used cannot exceed the available number of each generator.",
+            "status": "formulated",
+            "formulation": "\\sum_{t=1}^{\\textup{T}} \\textup{GeneratorUsed}_{k,t} \\leq \\textup{NumGenerator}_{k} \\quad \\forall k",
+            "related_variables": [
+                "GeneratorUsed"
+            ],
+            "related_parameters": [
+                "NumGenerator",
+                "T",
+                "K"
+            ]
+        },
+        {
+            "description": "Linking the generator usage variable with power generation: if a generator is not used, no power should be generated.",
+            "status": "formulated",
+            "formulation": "\\textup{PowerGenerated}_{k,t} \\leq \\textup{MaxLevel}_{k} \\cdot \\textup{GeneratorUsed}_{k,t} \\quad \\forall k, t",
+            "related_variables": [
+                "PowerGenerated",
+                "GeneratorUsed"
+            ],
+            "related_parameters": [
+                "MaxLevel",
+                "K",
+                "T"
+            ]
+        },
+        {
+            "description": "Ensuring that the minimum required power level is met when the generator is used.",
+            "status": "formulated",
+            "formulation": "\\textup{PowerGenerated}_{k,t} \\geq \\textup{MinLevel}_{k} \\cdot \\textup{GeneratorUsed}_{k,t} \\quad \\forall k, t",
+            "related_variables": [
+                "PowerGenerated",
+                "GeneratorUsed"
+            ],
+            "related_parameters": [
+                "MinLevel",
+                "K",
+                "T"
+            ]
+        },
+        {
+            "description": "Ensure ExcessPower represents the positive part of (PowerGenerated - MaxLevel).",
+            "status": "formulated",
+            "formulation": "\\textup{ExcessPower}_{k,t} \\geq \\textup{PowerGenerated}_{k,t} - \\textup{MaxLevel}_{k} \\quad \\forall k, \\forall t",
+            "related_variables": [
+                "ExcessPower",
+                "PowerGenerated"
+            ],
+            "related_parameters": [
+                "MaxLevel"
+            ]
+        },
+        {
+            "description": "Ensure ExcessPower is non-negative.",
+            "status": "formulated",
+            "formulation": "\\textup{ExcessPower}_{k,t} \\geq 0 \\quad \\forall k, \\forall t",
+            "related_variables": [
+                "ExcessPower"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Define Started variable to capture generator start-up decisions for t >= 2.",
+            "status": "formulated",
+            "formulation": "\\textup{Started}_{k,t} \\geq \\textup{GeneratorUsed}_{k,t} - \\textup{GeneratorUsed}_{k,t-1} \\quad \\forall k, \\forall t \\geq 2",
+            "related_variables": [
+                "Started",
+                "GeneratorUsed"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Define Started variable for the first period.",
+            "status": "formulated",
+            "formulation": "\\textup{Started}_{k,1} = \\textup{GeneratorUsed}_{k,1} \\quad \\forall k",
+            "related_variables": [
+                "Started",
+                "GeneratorUsed"
+            ],
+            "related_parameters": []
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The power generated by generator k during time period t",
+            "symbol": "PowerGenerated",
+            "shape": [
+                "K",
+                "T"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "Binary variable indicating whether at least one generator of type k is used during period t.",
+            "symbol": "GeneratorUsed",
+            "shape": [
+                "K",
+                "T"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "Excess power generated by generator k in period t (beyond its MaxLevel).",
+            "symbol": "ExcessPower",
+            "shape": [
+                "K",
+                "T"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "Binary variable indicating if generator k starts in period t.",
+            "symbol": "Started",
+            "shape": [
+                "K",
+                "T"
+            ],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total cost of running generators, including running costs, extra costs for exceeding thresholds, and start-up costs.",
+            "status": "formulated",
+            "formulation": "Minimize \\quad \\sum_{k=1}^{\\textup{K}} \\sum_{t=1}^{\\textup{T}} \\left( \\textup{RunCost}_{k} \\cdot \\textup{PowerGenerated}_{k,t} + \\textup{ExtraCost}_{k} \\cdot \\textup{ExcessPower}_{k,t} + \\textup{StartCost}_{k} \\cdot \\textup{Started}_{k,t} \\right)",
+            "related_variables": [
+                "PowerGenerated",
+                "ExcessPower",
+                "Started"
+            ],
+            "related_parameters": [
+                "RunCost",
+                "ExtraCost",
+                "StartCost",
+                "MaxLevel"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413153109_nlp4lp_34/",
+    "problem_path": "data/nlp4lp/34/"
+}

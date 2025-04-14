@@ -1,0 +1,211 @@
+{
+    "background": "An automotive company is evaluating two types of catalysts, palladium-heavy and platinum-heavy, for converting carbon monoxide into carbon dioxide using available amounts of platinum and palladium.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Units of platinum required for palladium-heavy catalyst",
+            "symbol": "PlatinumPalladiumHeavy",
+            "value": 15,
+            "shape": [],
+            "code": "PlatinumPalladiumHeavy = data[\"PlatinumPalladiumHeavy\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of palladium required for palladium-heavy catalyst",
+            "symbol": "PalladiumPalladiumHeavy",
+            "value": 25,
+            "shape": [],
+            "code": "PalladiumPalladiumHeavy = data[\"PalladiumPalladiumHeavy\"] # scalar parameter"
+        },
+        {
+            "definition": "Conversion rate of carbon dioxide for palladium-heavy catalyst in units per second",
+            "symbol": "ConversionRatePalladiumHeavy",
+            "value": 5,
+            "shape": [],
+            "code": "ConversionRatePalladiumHeavy = data[\"ConversionRatePalladiumHeavy\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of platinum required for platinum-heavy catalyst",
+            "symbol": "PlatinumPlatinumHeavy",
+            "value": 20,
+            "shape": [],
+            "code": "PlatinumPlatinumHeavy = data[\"PlatinumPlatinumHeavy\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of palladium required for platinum-heavy catalyst",
+            "symbol": "PalladiumPlatinumHeavy",
+            "value": 14,
+            "shape": [],
+            "code": "PalladiumPlatinumHeavy = data[\"PalladiumPlatinumHeavy\"] # scalar parameter"
+        },
+        {
+            "definition": "Conversion rate of carbon dioxide for platinum-heavy catalyst in units per second",
+            "symbol": "ConversionRatePlatinumHeavy",
+            "value": 4,
+            "shape": [],
+            "code": "ConversionRatePlatinumHeavy = data[\"ConversionRatePlatinumHeavy\"] # scalar parameter"
+        },
+        {
+            "definition": "Total available units of platinum",
+            "symbol": "TotalPlatinum",
+            "value": 450,
+            "shape": [],
+            "code": "TotalPlatinum = data[\"TotalPlatinum\"] # scalar parameter"
+        },
+        {
+            "definition": "Total available units of palladium",
+            "symbol": "TotalPalladium",
+            "value": 390,
+            "shape": [],
+            "code": "TotalPalladium = data[\"TotalPalladium\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Ensure that platinum used for palladium-heavy catalysts is non-negative",
+            "status": "coded",
+            "formulation": "\\textup{PlatinumPalladiumHeavy} \\\\times \\textup{PalladiumHeavyCatalystUnits} \\\\geq 0",
+            "related_variables": [
+                "PalladiumHeavyCatalystUnits"
+            ],
+            "related_parameters": [
+                "PlatinumPalladiumHeavy"
+            ],
+            "code": "# Platinum usage for palladium-heavy catalysts is non-negative  \nmodel.addConstr(PlatinumPalladiumHeavy * PalladiumHeavyCatalystUnits >= 0, name=\"non_negative_platinum_usage\")"
+        },
+        {
+            "description": "Palladium used for palladium-heavy catalysts is non-negative",
+            "status": "coded",
+            "formulation": "\\textup{PalladiumPalladiumHeavy} \\\\times \\textup{PalladiumHeavyCatalystUnits} \\geq 0",
+            "related_variables": [
+                "PalladiumHeavyCatalystUnits"
+            ],
+            "related_parameters": [
+                "PalladiumPalladiumHeavy"
+            ],
+            "code": "# No additional constraint needed as the non-negativity is inherently respected by the variable definition (gp.GRB.CONTINUOUS ensures the variable is non-negative by default)"
+        },
+        {
+            "description": "The platinum used for producing the platinum-heavy catalysts must be non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{PlatinumHeavyCatalystUnits} \\\\times \\\\textup{PlatinumPlatinumHeavy} \\\\geq 0",
+            "related_variables": [
+                "PlatinumHeavyCatalystUnits"
+            ],
+            "related_parameters": [
+                "PlatinumPlatinumHeavy"
+            ],
+            "code": "# No code needed: The constraint \\\\( \\textup{PlatinumHeavyCatalystUnits} \\times \\textup{PlatinumPlatinumHeavy} \\geq 0 \\\\) is always satisfied since both \\\\( \\textup{PlatinumHeavyCatalystUnits} \\\\) and \\\\( \\textup{PlatinumPlatinumHeavy} \\\\) are non-negative by definition."
+        },
+        {
+            "description": "Palladium used for platinum-heavy catalysts is non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{PalladiumPlatinumHeavy} \\times \\textup{PlatinumHeavyCatalystUnits} \\geq 0",
+            "related_variables": [
+                "PlatinumHeavyCatalystUnits"
+            ],
+            "related_parameters": [
+                "PalladiumPlatinumHeavy"
+            ],
+            "code": "# No additional code is needed as the constraint is inherently satisfied.\n# PalladiumPlatinumHeavy is a constant (14), and PlatinumHeavyCatalystUnits is a continuous variable initialized as non-negative in Gurobi by default."
+        },
+        {
+            "description": "The total platinum used cannot exceed the available TotalPlatinum units.",
+            "status": "coded",
+            "formulation": "\\\\textup{PalladiumHeavyCatalystUnits} \\\\cdot \\\\textup{PlatinumPalladiumHeavy} + \\\\textup{PlatinumHeavyCatalystUnits} \\\\cdot \\\\textup{PlatinumPlatinumHeavy} \\\\leq \\\\textup{TotalPlatinum}",
+            "related_variables": [
+                "PalladiumHeavyCatalystUnits",
+                "PlatinumHeavyCatalystUnits"
+            ],
+            "related_parameters": [
+                "PlatinumPalladiumHeavy",
+                "PlatinumPlatinumHeavy",
+                "TotalPlatinum"
+            ],
+            "code": "# Add platinum utilization constraint\nmodel.addConstr(\n    PalladiumHeavyCatalystUnits * PlatinumPalladiumHeavy + PlatinumHeavyCatalystUnits * PlatinumPlatinumHeavy <= TotalPlatinum,\n    name=\"platinum_utilization\"\n)"
+        },
+        {
+            "description": "The total amount of palladium used by the production of catalysts must not exceed the available palladium.",
+            "status": "coded",
+            "formulation": "\\textup{PalladiumHeavyCatalystUnits} \\times \\textup{PalladiumPalladiumHeavy} + \\textup{PlatinumHeavyCatalystUnits} \\times \\textup{PalladiumPlatinumHeavy} \\leq \\textup{TotalPalladium}",
+            "related_variables": [
+                "PalladiumHeavyCatalystUnits",
+                "PlatinumHeavyCatalystUnits"
+            ],
+            "related_parameters": [
+                "PalladiumPalladiumHeavy",
+                "PalladiumPlatinumHeavy",
+                "TotalPalladium"
+            ],
+            "code": "# Add constraint to ensure palladium usage does not exceed the available total palladium\nmodel.addConstr(\n    PalladiumHeavyCatalystUnits * PalladiumPalladiumHeavy + PlatinumHeavyCatalystUnits * PalladiumPlatinumHeavy <= TotalPalladium, \n    name=\"palladium_usage_limit\"\n)"
+        },
+        {
+            "description": "The total platinum consumed by the catalysts cannot exceed the available platinum units.",
+            "status": "coded",
+            "formulation": "\\textup{PlatinumPalladiumHeavy} \\times \\textup{PalladiumHeavyCatalystUnits} + \\textup{PlatinumPlatinumHeavy} \\times \\textup{PlatinumHeavyCatalystUnits} \\leq \\textup{TotalPlatinum}",
+            "related_variables": [
+                "PalladiumHeavyCatalystUnits",
+                "PlatinumHeavyCatalystUnits"
+            ],
+            "related_parameters": [
+                "PlatinumPalladiumHeavy",
+                "PlatinumPlatinumHeavy",
+                "TotalPlatinum"
+            ],
+            "code": "# Add constraint for platinum consumption\nmodel.addConstr(\n    PlatinumPalladiumHeavy * PalladiumHeavyCatalystUnits + \n    PlatinumPlatinumHeavy * PlatinumHeavyCatalystUnits <= \n    TotalPlatinum, \n    name=\"platinum_consumption_limit\"\n)"
+        },
+        {
+            "description": "The total palladium consumed by the catalysts cannot exceed the available palladium units.",
+            "status": "coded",
+            "formulation": "\\textup{PalladiumPalladiumHeavy} \\times \\textup{PalladiumHeavyCatalystUnits} + \\textup{PalladiumPlatinumHeavy} \\times \\textup{PlatinumHeavyCatalystUnits} \\leq \\textup{TotalPalladium}",
+            "related_variables": [
+                "PalladiumHeavyCatalystUnits",
+                "PlatinumHeavyCatalystUnits"
+            ],
+            "related_parameters": [
+                "PalladiumPalladiumHeavy",
+                "PalladiumPlatinumHeavy",
+                "TotalPalladium"
+            ],
+            "code": "# Add constraint to ensure palladium consumption does not exceed available palladium\nmodel.addConstr(\n    PalladiumPalladiumHeavy * PalladiumHeavyCatalystUnits + PalladiumPlatinumHeavy * PlatinumHeavyCatalystUnits <= TotalPalladium,\n    name=\"palladium_limit\"\n)"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of units of palladium-heavy catalyst produced",
+            "symbol": "PalladiumHeavyCatalystUnits",
+            "shape": [],
+            "status": "coded",
+            "code": "PalladiumHeavyCatalystUnits = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"PalladiumHeavyCatalystUnits\")"
+        },
+        {
+            "definition": "Number of units of platinum-heavy catalyst produced",
+            "symbol": "PlatinumHeavyCatalystUnits",
+            "shape": [],
+            "status": "coded",
+            "code": "PlatinumHeavyCatalystUnits = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"PlatinumHeavyCatalystUnits\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total amount of carbon monoxide converted into carbon dioxide",
+            "status": "coded",
+            "formulation": "\\max \\quad \\textup{ConversionRatePalladiumHeavy} \\times \\textup{PalladiumHeavyCatalystUnits} + \\textup{ConversionRatePlatinumHeavy} \\times \\textup{PlatinumHeavyCatalystUnits}",
+            "related_variables": [
+                "PalladiumHeavyCatalystUnits",
+                "PlatinumHeavyCatalystUnits"
+            ],
+            "related_parameters": [
+                "ConversionRatePalladiumHeavy",
+                "ConversionRatePlatinumHeavy"
+            ],
+            "code": "# Set objective\nmodel.setObjective(\n    ConversionRatePalladiumHeavy * PalladiumHeavyCatalystUnits + ConversionRatePlatinumHeavy * PlatinumHeavyCatalystUnits,\n    gp.GRB.MAXIMIZE\n)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 100.34482758620689,
+    "log_path": "logs/log_20250414053443_nl4opt_prob_257/",
+    "problem_path": "data/nl4opt/prob_257/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_257/data.json\", \"r\") as f:\n    data = json.load(f)\n\nPlatinumPalladiumHeavy = data[\"PlatinumPalladiumHeavy\"] # scalar parameter\nPalladiumPalladiumHeavy = data[\"PalladiumPalladiumHeavy\"] # scalar parameter\nConversionRatePalladiumHeavy = data[\"ConversionRatePalladiumHeavy\"] # scalar parameter\nPlatinumPlatinumHeavy = data[\"PlatinumPlatinumHeavy\"] # scalar parameter\nPalladiumPlatinumHeavy = data[\"PalladiumPlatinumHeavy\"] # scalar parameter\nConversionRatePlatinumHeavy = data[\"ConversionRatePlatinumHeavy\"] # scalar parameter\nTotalPlatinum = data[\"TotalPlatinum\"] # scalar parameter\nTotalPalladium = data[\"TotalPalladium\"] # scalar parameter\nPalladiumHeavyCatalystUnits = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"PalladiumHeavyCatalystUnits\")\nPlatinumHeavyCatalystUnits = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"PlatinumHeavyCatalystUnits\")\n\n# Platinum usage for palladium-heavy catalysts is non-negative  \nmodel.addConstr(PlatinumPalladiumHeavy * PalladiumHeavyCatalystUnits >= 0, name=\"non_negative_platinum_usage\")\n\n# No additional constraint needed as the non-negativity is inherently respected by the variable definition (gp.GRB.CONTINUOUS ensures the variable is non-negative by default)\n\n# No code needed: The constraint \\\\( \\textup{PlatinumHeavyCatalystUnits} \\times \\textup{PlatinumPlatinumHeavy} \\geq 0 \\\\) is always satisfied since both \\\\( \\textup{PlatinumHeavyCatalystUnits} \\\\) and \\\\( \\textup{PlatinumPlatinumHeavy} \\\\) are non-negative by definition.\n\n# No additional code is needed as the constraint is inherently satisfied.\n# PalladiumPlatinumHeavy is a constant (14), and PlatinumHeavyCatalystUnits is a continuous variable initialized as non-negative in Gurobi by default.\n\n# Add platinum utilization constraint\nmodel.addConstr(\n    PalladiumHeavyCatalystUnits * PlatinumPalladiumHeavy + PlatinumHeavyCatalystUnits * PlatinumPlatinumHeavy <= TotalPlatinum,\n    name=\"platinum_utilization\"\n)\n\n# Add constraint to ensure palladium usage does not exceed the available total palladium\nmodel.addConstr(\n    PalladiumHeavyCatalystUnits * PalladiumPalladiumHeavy + PlatinumHeavyCatalystUnits * PalladiumPlatinumHeavy <= TotalPalladium, \n    name=\"palladium_usage_limit\"\n)\n\n# Add constraint for platinum consumption\nmodel.addConstr(\n    PlatinumPalladiumHeavy * PalladiumHeavyCatalystUnits + \n    PlatinumPlatinumHeavy * PlatinumHeavyCatalystUnits <= \n    TotalPlatinum, \n    name=\"platinum_consumption_limit\"\n)\n\n# Add constraint to ensure palladium consumption does not exceed available palladium\nmodel.addConstr(\n    PalladiumPalladiumHeavy * PalladiumHeavyCatalystUnits + PalladiumPlatinumHeavy * PlatinumHeavyCatalystUnits <= TotalPalladium,\n    name=\"palladium_limit\"\n)\n\n# Set objective\nmodel.setObjective(\n    ConversionRatePalladiumHeavy * PalladiumHeavyCatalystUnits + ConversionRatePlatinumHeavy * PlatinumHeavyCatalystUnits,\n    gp.GRB.MAXIMIZE\n)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

@@ -1,0 +1,129 @@
+{
+    "background": "The Car Selection Problem seeks to assign a certain number of participants to different cars, based on participants' interests in specific cars, with the goal of maximizing the total number of assignments.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "symbol": "ParticipantNum",
+            "definition": "The total number of participants",
+            "shape": [],
+            "code": "ParticipantNum = data[\"ParticipantNum\"] # scalar parameter"
+        },
+        {
+            "symbol": "CarNum",
+            "definition": "The total number of available cars",
+            "shape": [],
+            "code": "CarNum = data[\"CarNum\"] # scalar parameter"
+        },
+        {
+            "symbol": "InterestMatrix",
+            "definition": "A binary matrix indicating whether a participant is interested in a particular car (1 for interested and 0 for not interested)",
+            "shape": [
+                "ParticipantNum",
+                "CarNum"
+            ],
+            "code": "InterestMatrix = np.array(data[\"InterestMatrix\"]) # ['ParticipantNum', 'CarNum']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Each participant is assigned to at most one car.",
+            "status": "coded",
+            "formulation": "\\sum_{c=1}^{\\textup{CarNum}} \\textup{AssignedMatrix}_{p,c} \\leq 1 \\quad \\forall \\quad p=1,\\dots,\\textup{ParticipantNum}",
+            "related_variables": [
+                "AssignedMatrix"
+            ],
+            "related_parameters": [
+                "ParticipantNum",
+                "CarNum"
+            ],
+            "code": "# Add constraint to ensure each participant is assigned to at most one car\nfor p in range(ParticipantNum):\n    model.addConstr(gp.quicksum(AssignedMatrix[p, c] for c in range(CarNum)) <= 1, name=f\"participant_assignment_{p}\")"
+        },
+        {
+            "description": "A participant can only be assigned to a car if they are interested in that car.",
+            "status": "coded",
+            "formulation": "\\textup{AssignedMatrix}_{\\textup{p,c}} \\leq \\textup{InterestMatrix}_{\\textup{p,c}}, \\quad \\forall \\textup{p} \\in \\{1, 2, \\dots, \\textup{ParticipantNum}\\}, \\forall \\textup{c} \\in \\{1, 2, \\dots, \\textup{CarNum}\\}",
+            "related_variables": [
+                "AssignedMatrix"
+            ],
+            "related_parameters": [
+                "InterestMatrix"
+            ],
+            "code": "# Add constraint: A participant can be assigned to a car only if they are interested in that car\nfor p in range(ParticipantNum):\n    for c in range(CarNum):\n        model.addConstr(AssignedMatrix[p, c] <= InterestMatrix[p, c], name=f\"assignment_interest_{p}_{c}\")"
+        },
+        {
+            "description": "The assignment decision for each participant to a car is binary (either 0 or 1). This enforces the integrity of the decision variables in the assignment matrix.",
+            "status": "coded",
+            "formulation": "\\textup{AssignedMatrix}_{p,c} \\geq 0, \\quad \\textup{AssignedMatrix}_{p,c} \\leq 1 \\quad \\forall p \\in \\{1, \\dots, \\textup{ParticipantNum}\\}, \\quad \\forall c \\in \\{1, \\dots, \\textup{CarNum}\\}",
+            "related_variables": [
+                "AssignedMatrix"
+            ],
+            "related_parameters": [
+                "ParticipantNum",
+                "CarNum"
+            ],
+            "code": "# No additional constraints are required as the integrality of AssignedMatrix is already determined as binary using gp.GRB.BINARY."
+        },
+        {
+            "description": "Participants can only be assigned to cars they are interested in.",
+            "status": "coded",
+            "formulation": "\\textup{AssignedMatrix}_{p,c} \\leq \\textup{InterestMatrix}_{p,c} \\quad \\forall \\quad p=1,\\dots,\\textup{ParticipantNum}, \\quad c=1,\\dots,\\textup{CarNum}",
+            "related_variables": [
+                "AssignedMatrix"
+            ],
+            "related_parameters": [
+                "InterestMatrix",
+                "ParticipantNum",
+                "CarNum"
+            ],
+            "code": "# Add constraints to ensure participants are only assigned to cars they are interested in\nfor p in range(ParticipantNum):\n    for c in range(CarNum):\n        model.addConstr(AssignedMatrix[p, c] <= InterestMatrix[p, c], name=f\"interest_constraint_p{p}_c{c}\")"
+        },
+        {
+            "description": "Ensure that participants are only assigned to cars they are interested in based on the InterestMatrix.",
+            "status": "coded",
+            "formulation": "\\textup{AssignedMatrix}_{i,j} \\leq \\textup{InterestMatrix}_{i,j}, \\quad \\forall i \\in [1, \\textup{ParticipantNum}], \\quad \\forall j \\in [1, \\textup{CarNum}]",
+            "related_variables": [
+                "AssignedMatrix"
+            ],
+            "related_parameters": [
+                "InterestMatrix",
+                "ParticipantNum",
+                "CarNum"
+            ],
+            "code": "# Ensure participants are assigned only to cars they are interested in\nfor i in range(ParticipantNum):\n    for j in range(CarNum):\n        model.addConstr(AssignedMatrix[i, j] <= InterestMatrix[i, j], name=f\"interest_constraint_{i}_{j}\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "A binary decision variable indicating if a participant is assigned to a specific car.",
+            "symbol": "AssignedMatrix",
+            "shape": [
+                "ParticipantNum",
+                "CarNum"
+            ],
+            "status": "coded",
+            "code": "AssignedMatrix = model.addVars(ParticipantNum, CarNum, vtype=gp.GRB.BINARY, name=\"AssignedMatrix\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total number of participant-to-car assignments, considering only valid assignments where participants are interested in cars.",
+            "status": "coded",
+            "formulation": "\\max \\sum_{i=1}^{\\textup{ParticipantNum}} \\sum_{j=1}^{\\textup{CarNum}} (\\textup{InterestMatrix}_{i,j} \\cdot \\textup{AssignedMatrix}_{i,j})",
+            "related_variables": [
+                "AssignedMatrix"
+            ],
+            "related_parameters": [
+                "InterestMatrix",
+                "ParticipantNum",
+                "CarNum"
+            ],
+            "code": "# Set objective\nmodel.setObjective(gp.quicksum(InterestMatrix[i, j] * AssignedMatrix[i, j] for i in range(ParticipantNum) for j in range(CarNum)), gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413145646_complexor_CarSelection/",
+    "problem_path": "data/complexor/CarSelection/"
+}

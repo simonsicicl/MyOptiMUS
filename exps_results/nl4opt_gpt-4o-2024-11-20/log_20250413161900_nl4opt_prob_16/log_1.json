@@ -1,0 +1,356 @@
+{
+    "background": "A company is deciding where to promote their product with options including z-tube, soorchle engine, and wassa advertisements.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Cost of an advertisement on z-tube",
+            "symbol": "CostZtube",
+            "value": 1000,
+            "shape": [],
+            "code": "CostZtube = data[\"CostZtube\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of viewers attracted by an advertisement on z-tube",
+            "symbol": "ViewersZtube",
+            "value": 400000,
+            "shape": [],
+            "code": "ViewersZtube = data[\"ViewersZtube\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost of an advertisement on soorchle",
+            "symbol": "CostSoorchle",
+            "value": 200,
+            "shape": [],
+            "code": "CostSoorchle = data[\"CostSoorchle\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of viewers attracted by an advertisement on soorchle",
+            "symbol": "ViewersSoorchle",
+            "value": 5000,
+            "shape": [],
+            "code": "ViewersSoorchle = data[\"ViewersSoorchle\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost of an advertisement on wassa",
+            "symbol": "CostWassa",
+            "value": 100,
+            "shape": [],
+            "code": "CostWassa = data[\"CostWassa\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of viewers attracted by an advertisement on wassa",
+            "symbol": "ViewersWassa",
+            "value": 3000,
+            "shape": [],
+            "code": "ViewersWassa = data[\"ViewersWassa\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of advertisements allowed on soorchle",
+            "symbol": "MaxAdsSoorchle",
+            "value": 15,
+            "shape": [],
+            "code": "MaxAdsSoorchle = data[\"MaxAdsSoorchle\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum proportion of the total number of advertisements that should occur on wassa",
+            "symbol": "MaxPropWassa",
+            "value": 0.33,
+            "shape": [],
+            "code": "MaxPropWassa = data[\"MaxPropWassa\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum proportion of the total number of advertisements that should occur on z-tube",
+            "symbol": "MinPropZtube",
+            "value": 0.05,
+            "shape": [],
+            "code": "MinPropZtube = data[\"MinPropZtube\"] # scalar parameter"
+        },
+        {
+            "definition": "Weekly advertising budget",
+            "symbol": "Budget",
+            "value": 10000,
+            "shape": [],
+            "code": "Budget = data[\"Budget\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of z-tube advertisements must be an integer",
+            "status": "coded",
+            "formulation": "\\textup{NumberZtubeAds} \\in \\mathbb{Z}_{+}",
+            "related_variables": [
+                "NumberZtubeAds"
+            ],
+            "related_parameters": [],
+            "code": "# Change the variable type to integer as NumberZtubeAds must be non-negative and an integer\nNumberZtubeAds.vtype = gp.GRB.INTEGER"
+        },
+        {
+            "description": "The number of advertisements placed on Soorchle must be an integer.",
+            "status": "coded",
+            "formulation": "\\textup{NumberSoorchleAds} \\in \\mathbb{Z}",
+            "related_variables": [
+                "NumberSoorchleAds"
+            ],
+            "related_parameters": [],
+            "code": "# Changing the variable's integrality to enforce it being an integer\nNumberSoorchleAds.vtype = gp.GRB.INTEGER"
+        },
+        {
+            "description": "The number of Wassa advertisements must be an integer.",
+            "status": "coded",
+            "formulation": "\\textup{NumberWassaAds} \\in \\mathbb{Z}",
+            "related_variables": [
+                "NumberWassaAds"
+            ],
+            "related_parameters": [],
+            "code": "# Change integrality of the variable to ensure NumberWassaAds is an integer\nNumberWassaAds.vtype = gp.GRB.INTEGER"
+        },
+        {
+            "description": "The number of z-tube ads should be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumberZtubeAds} \\geq 0",
+            "related_variables": [
+                "NumberZtubeAds"
+            ],
+            "related_parameters": [],
+            "code": "# The constraint is already satisfied as the variable NumberZtubeAds is defined with a lower bound of 0 by default in gurobipy."
+        },
+        {
+            "description": "The number of Soorchle ads must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumberSoorchleAds} \\geq 0",
+            "related_variables": [
+                "NumberSoorchleAds"
+            ],
+            "related_parameters": [],
+            "code": "# Since the variable \"NumberSoorchleAds\" is already defined with non-negativity enforced as it is continuous, no constraint code is needed."
+        },
+        {
+            "description": "The number of advertisements placed on Wassa must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumberWassaAds} \\geq 0",
+            "related_variables": [
+                "NumberWassaAds"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint to ensure the number of advertisements placed on Wassa is non-negative\nmodel.addConstr(NumberWassaAds >= 0, name=\"non_negative_wassa_ads\")"
+        },
+        {
+            "description": "The total spending on z-tube advertisements must not exceed the budget.",
+            "status": "coded",
+            "formulation": "\\textup{CostZtube} \\times \\textup{NumberZtubeAds} \\leq \\textup{Budget}",
+            "related_variables": [
+                "NumberZtubeAds"
+            ],
+            "related_parameters": [
+                "CostZtube",
+                "Budget"
+            ],
+            "code": "# Add constraint to ensure total spending on z-tube advertisements doesn't exceed the budget\nmodel.addConstr(NumberZtubeAds * CostZtube <= Budget, name=\"ztube_ad_budget\")"
+        },
+        {
+            "description": "Total spending on Soorchle ads does not exceed the weekly advertising budget.",
+            "status": "coded",
+            "formulation": "\\textup{CostSoorchle} \\cdot \\textup{NumberSoorchleAds} \\leq \\textup{Budget}",
+            "related_variables": [
+                "NumberSoorchleAds"
+            ],
+            "related_parameters": [
+                "CostSoorchle",
+                "Budget"
+            ],
+            "code": "# Add constraint to ensure total spending on Soorchle ads does not exceed the advertising budget\nmodel.addConstr(NumberSoorchleAds * CostSoorchle <= Budget, name=\"Soorchle_ad_spending_constraint\")"
+        },
+        {
+            "description": "The total spending on Wassa advertisements does not exceed the advertising budget.",
+            "status": "coded",
+            "formulation": "\\\\textup{CostWassa} \\\\cdot \\\\textup{NumberWassaAds} \\\\leq \\\\textup{Budget}",
+            "related_variables": [
+                "NumberWassaAds"
+            ],
+            "related_parameters": [
+                "CostWassa",
+                "Budget"
+            ],
+            "code": "# Add constraint to ensure spending on Wassa advertisements does not exceed the budget\nmodel.addConstr(NumberWassaAds * CostWassa <= Budget, name=\"Wassa_advertising_budget\")"
+        },
+        {
+            "description": "The sum of spending on z-tube, soorchle, and wassa advertisements does not exceed the budget",
+            "status": "coded",
+            "formulation": "\\\\textup{CostZtube} \\\\cdot \\\\textup{NumberZtubeAds} + \\\\textup{CostSoorchle} \\\\cdot \\\\textup{NumberSoorchleAds} + \\\\textup{CostWassa} \\\\cdot \\\\textup{NumberWassaAds} \\\\leq \\\\textup{Budget}",
+            "related_variables": [
+                "NumberZtubeAds",
+                "NumberSoorchleAds",
+                "NumberWassaAds"
+            ],
+            "related_parameters": [
+                "CostZtube",
+                "CostSoorchle",
+                "CostWassa",
+                "Budget"
+            ],
+            "code": "# Add budget constraint for advertisement spending\nmodel.addConstr(\n    NumberZtubeAds * CostZtube \n    + NumberSoorchleAds * CostSoorchle \n    + NumberWassaAds * CostWassa \n    <= Budget,\n    name=\"AdSpendingBudget\"\n)"
+        },
+        {
+            "description": "The number of advertisements placed on Soorchle is at most the maximum allowed number of Soorchle ads.",
+            "status": "coded",
+            "formulation": "\\textup{NumberSoorchleAds} \\leq \\textup{MaxAdsSoorchle}",
+            "related_variables": [
+                "NumberSoorchleAds"
+            ],
+            "related_parameters": [
+                "MaxAdsSoorchle"
+            ],
+            "code": "# Add constraint to limit the number of Soorchle ads\nmodel.addConstr(NumberSoorchleAds <= MaxAdsSoorchle, name=\"max_soorchle_ads\")"
+        },
+        {
+            "description": "Number of wassa ads is at most MaxPropWassa times the total number of ads",
+            "status": "coded",
+            "formulation": "\\textup{NumberWassaAds} \\leq \\frac{\\textup{MaxPropWassa}}{1 - \\textup{MaxPropWassa}} \\cdot (\\textup{NumberZtubeAds} + \\textup{NumberSoorchleAds})",
+            "related_variables": [
+                "NumberZtubeAds",
+                "NumberSoorchleAds",
+                "NumberWassaAds"
+            ],
+            "related_parameters": [
+                "MaxPropWassa"
+            ],
+            "code": "# Add constraint to restrict the number of Wassa ads\nmodel.addConstr(\n    NumberWassaAds <= (MaxPropWassa / (1 - MaxPropWassa)) * (NumberZtubeAds + NumberSoorchleAds), \n    name=\"WassaAdsLimit\"\n)"
+        },
+        {
+            "description": "The number of z-tube ads is at least \\textup{MinPropZtube} times the total number of ads.",
+            "status": "coded",
+            "formulation": "(1 - \\textup{MinPropZtube}) \\cdot \\textup{NumberZtubeAds} - \\textup{MinPropZtube} \\cdot \\textup{NumberSoorchleAds} - \\textup{MinPropZtube} \\cdot \\textup{NumberWassaAds} \\geq 0",
+            "related_variables": [
+                "NumberZtubeAds",
+                "NumberSoorchleAds",
+                "NumberWassaAds"
+            ],
+            "related_parameters": [
+                "MinPropZtube"
+            ],
+            "code": "# Add constraint to ensure the number of z-tube ads is at least MinPropZtube times the total number of ads\nmodel.addConstr((1 - MinPropZtube) * NumberZtubeAds - MinPropZtube * NumberSoorchleAds - MinPropZtube * NumberWassaAds >= 0, name=\"z_tube_min_ad_proportion\")"
+        },
+        {
+            "description": "Total advertising cost must not exceed the budget",
+            "status": "coded",
+            "formulation": "\\textup{CostZtube} \\\\cdot \\textup{NumberZtubeAds} + \\textup{CostSoorchle} \\\\cdot \\textup{NumberSoorchleAds} + \\textup{CostWassa} \\\\cdot \\textup{NumberWassaAds} \\\\leq \\textup{Budget}",
+            "related_variables": [
+                "NumberZtubeAds",
+                "NumberSoorchleAds",
+                "NumberWassaAds"
+            ],
+            "related_parameters": [
+                "CostZtube",
+                "CostSoorchle",
+                "CostWassa",
+                "Budget"
+            ],
+            "code": "# Add constraint for total advertising cost not exceeding the budget\nmodel.addConstr(\n    NumberZtubeAds * CostZtube + \n    NumberSoorchleAds * CostSoorchle + \n    NumberWassaAds * CostWassa <= Budget, \n    name=\"advertising_budget_constraint\"\n)"
+        },
+        {
+            "description": "Number of advertisements on soorchle must not exceed the maximum limit",
+            "status": "coded",
+            "formulation": "\\textup{NumberSoorchleAds} \\\\leq \\textup{MaxAdsSoorchle}",
+            "related_variables": [
+                "NumberSoorchleAds"
+            ],
+            "related_parameters": [
+                "MaxAdsSoorchle"
+            ],
+            "code": "# Add constraint to ensure the number of advertisements on Soorchle does not exceed the maximum limit\nmodel.addConstr(NumberSoorchleAds <= MaxAdsSoorchle, name=\"max_soorchle_ads\")"
+        },
+        {
+            "description": "Proportion of advertisements on wassa must not exceed the maximum proportion",
+            "status": "coded",
+            "formulation": "\\textup{NumberWassaAds} \\\\leq \\textup{MaxPropWassa} \\\\cdot \\textup{TotalAds}",
+            "related_variables": [
+                "NumberWassaAds",
+                "TotalAds"
+            ],
+            "related_parameters": [
+                "MaxPropWassa"
+            ],
+            "code": "# Add constraint to ensure the proportion of advertisements on Wassa does not exceed the maximum allowed proportion\nmodel.addConstr(NumberWassaAds <= MaxPropWassa * TotalAds, name=\"max_proportion_wassa_ads\")"
+        },
+        {
+            "description": "Proportion of advertisements on z-tube must meet the minimum proportion",
+            "status": "coded",
+            "formulation": "\\textup{NumberZtubeAds} \\\\geq \\textup{MinPropZtube} \\\\cdot \\textup{TotalAds}",
+            "related_variables": [
+                "NumberZtubeAds",
+                "TotalAds"
+            ],
+            "related_parameters": [
+                "MinPropZtube"
+            ],
+            "code": "# Add minimum proportion constraint for advertisements on z-tube\nmodel.addConstr(NumberZtubeAds >= MinPropZtube * TotalAds, name=\"min_proportion_ztube_ads\")"
+        },
+        {
+            "description": "Total number of advertisements is the sum of advertisements across all platforms",
+            "status": "coded",
+            "formulation": "\\textup{TotalAds} = \\textup{NumberZtubeAds} + \\textup{NumberSoorchleAds} + \\textup{NumberWassaAds}",
+            "related_variables": [
+                "TotalAds",
+                "NumberZtubeAds",
+                "NumberSoorchleAds",
+                "NumberWassaAds"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint: Total number of advertisements is the sum of advertisements across all platforms\nmodel.addConstr(TotalAds == NumberZtubeAds + NumberSoorchleAds + NumberWassaAds, name=\"total_ads_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of advertisements placed on z-tube",
+            "symbol": "NumberZtubeAds",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberZtubeAds = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberZtubeAds\")"
+        },
+        {
+            "definition": "The number of advertisements placed on Soorchle.",
+            "symbol": "NumberSoorchleAds",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberSoorchleAds = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberSoorchleAds\")"
+        },
+        {
+            "definition": "The number of advertisements placed on Wassa.",
+            "symbol": "NumberWassaAds",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberWassaAds = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberWassaAds\")"
+        },
+        {
+            "definition": "The total number of advertisements placed across all platforms",
+            "symbol": "TotalAds",
+            "shape": [],
+            "status": "coded",
+            "code": "TotalAds = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TotalAds\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total number of viewers from ads across all platforms",
+            "status": "coded",
+            "formulation": "\\textup{ViewersZtube} \\\\cdot \\textup{NumberZtubeAds} + \\textup{ViewersSoorchle} \\\\cdot \\textup{NumberSoorchleAds} + \\textup{ViewersWassa} \\\\cdot \\textup{NumberWassaAds}",
+            "related_variables": [
+                "NumberZtubeAds",
+                "NumberSoorchleAds",
+                "NumberWassaAds"
+            ],
+            "related_parameters": [
+                "ViewersZtube",
+                "ViewersSoorchle",
+                "ViewersWassa"
+            ],
+            "code": "# Set objective\nmodel.setObjective(\n    ViewersZtube * NumberZtubeAds +\n    ViewersSoorchle * NumberSoorchleAds +\n    ViewersWassa * NumberWassaAds,\n    gp.GRB.MAXIMIZE\n)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413161900_nl4opt_prob_16/",
+    "problem_path": "data/nl4opt/prob_16/"
+}

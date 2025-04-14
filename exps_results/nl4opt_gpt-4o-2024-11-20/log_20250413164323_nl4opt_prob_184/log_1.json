@@ -1,0 +1,226 @@
+{
+    "background": "A factory uses horse-drawn carts of medium and large sizes to transport rice. Different sizes of carts have varying requirements for horses and capacities for carrying rice.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of horses required for a medium sized cart",
+            "symbol": "HorsesPerMediumCart",
+            "value": 2,
+            "shape": [],
+            "code": "HorsesPerMediumCart = data[\"HorsesPerMediumCart\"] # scalar parameter"
+        },
+        {
+            "definition": "Rice capacity of a medium sized cart",
+            "symbol": "CapacityMediumCart",
+            "value": 30,
+            "shape": [],
+            "code": "CapacityMediumCart = data[\"CapacityMediumCart\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of horses required for a large sized cart",
+            "symbol": "HorsesPerLargeCart",
+            "value": 4,
+            "shape": [],
+            "code": "HorsesPerLargeCart = data[\"HorsesPerLargeCart\"] # scalar parameter"
+        },
+        {
+            "definition": "Rice capacity of a large sized cart",
+            "symbol": "CapacityLargeCart",
+            "value": 70,
+            "shape": [],
+            "code": "CapacityLargeCart = data[\"CapacityLargeCart\"] # scalar parameter"
+        },
+        {
+            "definition": "Total number of horses available",
+            "symbol": "TotalHorses",
+            "value": 60,
+            "shape": [],
+            "code": "TotalHorses = data[\"TotalHorses\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of medium sized carts required",
+            "symbol": "MinimumMediumCarts",
+            "value": 5,
+            "shape": [],
+            "code": "MinimumMediumCarts = data[\"MinimumMediumCarts\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of large sized carts required",
+            "symbol": "MinimumLargeCarts",
+            "value": 5,
+            "shape": [],
+            "code": "MinimumLargeCarts = data[\"MinimumLargeCarts\"] # scalar parameter"
+        },
+        {
+            "definition": "Ratio of the number of medium sized carts to the number of large sized carts",
+            "symbol": "CartRatio",
+            "value": 3.0,
+            "shape": [],
+            "code": "CartRatio = data[\"CartRatio\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of medium-sized carts must be non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{MediumCarts} \\\\geq 0",
+            "related_variables": [
+                "MediumCarts"
+            ],
+            "related_parameters": [],
+            "code": "# The variable MediumCarts is already defined as non-negative due to its default lower bound (0) in Gurobi.\n# No additional constraint is needed for this requirement."
+        },
+        {
+            "description": "The number of large-sized carts is non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{LargeCarts} \\geq 0",
+            "related_variables": [
+                "LargeCarts"
+            ],
+            "related_parameters": [],
+            "code": "# No additional code needed since the variable \"LargeCarts\" is non-negative by default (continuous variables in Gurobi are non-negative unless otherwise specified)."
+        },
+        {
+            "description": "The total number of horses used by all carts must not exceed the total number of available horses.",
+            "status": "coded",
+            "formulation": "\\textup{HorsesPerMediumCart} \\cdot \\textup{MediumCarts} + \\textup{HorsesPerLargeCart} \\cdot \\textup{LargeCarts} \\leq \\textup{TotalHorses}",
+            "related_variables": [
+                "MediumCarts",
+                "LargeCarts"
+            ],
+            "related_parameters": [
+                "HorsesPerMediumCart",
+                "HorsesPerLargeCart",
+                "TotalHorses"
+            ],
+            "code": "# Add constraint to ensure total horses used do not exceed available horses\nmodel.addConstr(\n    HorsesPerMediumCart * MediumCarts + HorsesPerLargeCart * LargeCarts <= TotalHorses, \n    name=\"total_horses_limit\"\n)"
+        },
+        {
+            "description": "The number of medium-sized carts must be equal to CartRatio times the number of large-sized carts.",
+            "status": "coded",
+            "formulation": "\\\\textup{MediumCarts} = \\\\textup{CartRatio} \\\\times \\\\textup{LargeCarts}",
+            "related_variables": [
+                "MediumCarts",
+                "LargeCarts"
+            ],
+            "related_parameters": [
+                "CartRatio"
+            ],
+            "code": "# Add constraint ensuring the number of medium-sized carts equals CartRatio times the number of large-sized carts\nmodel.addConstr(MediumCarts == CartRatio * LargeCarts, name=\"cart_ratio_constraint\")"
+        },
+        {
+            "description": "Ensures that at least MinimumMediumCarts medium-sized carts are used by the factory.",
+            "status": "coded",
+            "formulation": "\\\\textup{MediumCarts} \\\\geq \\\\textup{MinimumMediumCarts}",
+            "related_variables": [
+                "MediumCarts"
+            ],
+            "related_parameters": [
+                "MinimumMediumCarts"
+            ],
+            "code": "# Add constraint to enforce minimum usage of medium-sized carts\nmodel.addConstr(MediumCarts >= MinimumMediumCarts, name=\"min_medium_carts\")"
+        },
+        {
+            "description": "At least MinimumLargeCarts large-sized carts must be used",
+            "status": "coded",
+            "formulation": "\\textup{LargeCarts} \\geq \\textup{MinimumLargeCarts}",
+            "related_variables": [
+                "LargeCarts"
+            ],
+            "related_parameters": [
+                "MinimumLargeCarts"
+            ],
+            "code": "# Ensure integer constraint on LargeCarts since the number of carts should be an integer\nLargeCarts.vtype = gp.GRB.INTEGER\n\n# Add minimum large cart constraint\nmodel.addConstr(LargeCarts >= MinimumLargeCarts, name=\"min_large_carts\")"
+        },
+        {
+            "description": "The total number of horses used by all carts cannot exceed the available number of horses",
+            "status": "coded",
+            "formulation": "\\textup{HorsesPerMediumCart} \\cdot \\textup{MediumCarts} + \\textup{HorsesPerLargeCart} \\cdot \\textup{LargeCarts} \\leq \\textup{TotalHorses}",
+            "related_variables": [
+                "MediumCarts",
+                "LargeCarts"
+            ],
+            "related_parameters": [
+                "HorsesPerMediumCart",
+                "HorsesPerLargeCart",
+                "TotalHorses"
+            ],
+            "code": "# Add constraint to ensure the total number of horses used by all carts does not exceed the available number of horses\nmodel.addConstr(HorsesPerMediumCart * MediumCarts + HorsesPerLargeCart * LargeCarts <= TotalHorses, name=\"horse_availability\")"
+        },
+        {
+            "description": "The number of medium-sized carts used must be at least the specified minimum",
+            "status": "coded",
+            "formulation": "\\textup{MediumCarts} \\geq \\textup{MinimumMediumCarts}",
+            "related_variables": [
+                "MediumCarts"
+            ],
+            "related_parameters": [
+                "MinimumMediumCarts"
+            ],
+            "code": "# Add constraint to ensure the number of medium-sized carts is at least the minimum required\nmodel.addConstr(MediumCarts >= MinimumMediumCarts, name=\"min_medium_carts\")"
+        },
+        {
+            "description": "The number of large-sized carts used must be at least the specified minimum",
+            "status": "coded",
+            "formulation": "\\textup{LargeCarts} \\geq \\textup{MinimumLargeCarts}",
+            "related_variables": [
+                "LargeCarts"
+            ],
+            "related_parameters": [
+                "MinimumLargeCarts"
+            ],
+            "code": "# Add constraint to ensure the number of large-sized carts is at least the minimum required\nmodel.addConstr(LargeCarts >= MinimumLargeCarts, name=\"min_large_carts\")"
+        },
+        {
+            "description": "The ratio of the number of medium-sized carts to the number of large-sized carts must satisfy the given ratio",
+            "status": "coded",
+            "formulation": "\\textup{MediumCarts} = \\textup{CartRatio} \\cdot \\textup{LargeCarts}",
+            "related_variables": [
+                "MediumCarts",
+                "LargeCarts"
+            ],
+            "related_parameters": [
+                "CartRatio"
+            ],
+            "code": "# Add constraint to enforce the ratio of medium-sized carts to large-sized carts\nmodel.addConstr(MediumCarts == CartRatio * LargeCarts, name=\"medium_to_large_ratio\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of medium-sized carts used by the factory",
+            "symbol": "MediumCarts",
+            "shape": [],
+            "status": "coded",
+            "code": "MediumCarts = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"MediumCarts\")"
+        },
+        {
+            "definition": "The number of large-sized carts used by the factory",
+            "symbol": "LargeCarts",
+            "shape": [],
+            "status": "coded",
+            "code": "LargeCarts = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"LargeCarts\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total amount of rice transported to the city",
+            "status": "coded",
+            "formulation": "\\textup{Maximize:} \\quad \\textup{CapacityMediumCart} \\cdot \\textup{MediumCarts} + \\textup{CapacityLargeCart} \\cdot \\textup{LargeCarts}",
+            "related_variables": [
+                "MediumCarts",
+                "LargeCarts"
+            ],
+            "related_parameters": [
+                "CapacityMediumCart",
+                "CapacityLargeCart"
+            ],
+            "code": "# Set objective\nmodel.setObjective(CapacityMediumCart * MediumCarts + CapacityLargeCart * LargeCarts, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413164323_nl4opt_prob_184/",
+    "problem_path": "data/nl4opt/prob_184/"
+}

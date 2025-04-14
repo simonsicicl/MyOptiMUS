@@ -1,0 +1,138 @@
+{
+    "background": "The goal is to maximize the total units of currency through transactions with starting quantities, transaction limits for each currency, and defined exchange rates.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of different currencies",
+            "symbol": "N",
+            "value": "",
+            "shape": [],
+            "code": "N = data[\"N\"] # scalar parameter"
+        },
+        {
+            "definition": "Initial amount of currency i",
+            "symbol": "Start",
+            "value": "",
+            "shape": [
+                "N"
+            ],
+            "code": "Start = np.array(data[\"Start\"]) # ['N']"
+        },
+        {
+            "definition": "Limit for the number of transactions for currency i",
+            "symbol": "Limit",
+            "value": "",
+            "shape": [
+                "N"
+            ],
+            "code": "Limit = np.array(data[\"Limit\"]) # ['N']"
+        },
+        {
+            "definition": "Exchange rate from currency i to currency j",
+            "symbol": "Rate",
+            "value": "",
+            "shape": [
+                "N",
+                "N"
+            ],
+            "code": "Rate = np.array(data[\"Rate\"]) # ['N', 'N']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Ensures that the number of transactions for each currency is non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{Transactions}_{i} \\geq 0, \\quad \\forall i \\in \\{1, 2, \\dots, \\textup{N}\\}",
+            "related_variables": [
+                "Transactions"
+            ],
+            "related_parameters": [
+                "N"
+            ],
+            "code": "# Add non-negativity constraint for Transactions\nfor i in range(N):\n    model.addConstr(Transactions[i] >= 0, name=f\"nonnegative_transactions_{i}\")"
+        },
+        {
+            "description": "Number of transactions for each currency i does not exceed the specified Limit",
+            "status": "coded",
+            "formulation": "\\textup{Transactions}_i \\leq \\textup{Limit}_i, \\quad \\forall i = 1, 2, \\dots, N",
+            "related_variables": [
+                "Transactions"
+            ],
+            "related_parameters": [
+                "Limit"
+            ],
+            "code": "# Add transaction limit constraints\nfor i in range(N):\n    model.addConstr(Transactions[i] <= Limit[i], name=f\"transaction_limit_{i}\")"
+        },
+        {
+            "description": "Ensure the total transactions originating from each currency i do not exceed the transaction limits.",
+            "status": "coded",
+            "formulation": "\\sum_{j=1}^{N} \\textup{TransactionsFromTo}_{i,j} \\leq \\textup{Limit}_{i} \\quad \\forall \\ i \\in \\{1, \\dots, N\\}",
+            "related_variables": [
+                "TransactionsFromTo"
+            ],
+            "related_parameters": [
+                "Limit",
+                "N"
+            ],
+            "code": "# Add transaction limit constraints\nfor i in range(N):\n    model.addConstr(\n        gp.quicksum(TransactionsFromTo[i, j] for j in range(N)) <= Limit[i],\n        name=f\"transaction_limit_{i}\"\n    )"
+        },
+        {
+            "description": "Ensure the total outgoing transactions from currency i do not exceed the available amount in that currency, after accounting for incoming exchanges.",
+            "status": "coded",
+            "formulation": "\\sum_{j=1}^{N} \\textup{TransactionsFromTo}_{i,j} \\leq \\textup{Start}_{i} + \\sum_{j=1}^{N} \\textup{Rate}_{j,i} \\cdot \\textup{TransactionsFromTo}_{j,i} \\quad \\forall \\ i \\in \\{1, \\dots, N\\}",
+            "related_variables": [
+                "TransactionsFromTo"
+            ],
+            "related_parameters": [
+                "Start",
+                "Rate",
+                "N"
+            ],
+            "code": "# Add constraints to ensure total outgoing transactions do not exceed the available amount after accounting for incoming exchanges\nfor i in range(N):\n    model.addConstr(\n        gp.quicksum(TransactionsFromTo[i, j] for j in range(N)) <= Start[i] + gp.quicksum(Rate[j, i] * TransactionsFromTo[j, i] for j in range(N)),\n        name=f\"transaction_balance_{i}\"\n    )"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of transactions for each currency i",
+            "symbol": "Transactions",
+            "shape": [
+                "N"
+            ],
+            "status": "coded",
+            "code": "Transactions = model.addVars(N, vtype=gp.GRB.CONTINUOUS, name=\"Transactions\")"
+        },
+        {
+            "definition": "The number of transactions from currency i to currency j",
+            "symbol": "TransactionsFromTo",
+            "shape": [
+                "N",
+                "N"
+            ],
+            "status": "coded",
+            "code": "TransactionsFromTo = model.addVars(N, N, vtype=gp.GRB.CONTINUOUS, name=\"TransactionsFromTo\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total number of units of currency after all transactions.",
+            "status": "coded",
+            "formulation": "\\max \\sum_{i=1}^{N} \\left( \\textup{Start}_{i} + \\sum_{j=1}^{N} \\textup{Rate}_{j,i} \\cdot \\textup{TransactionsFromTo}_{j,i} - \\sum_{j=1}^{N} \\textup{TransactionsFromTo}_{i,j} \\right)",
+            "related_variables": [
+                "TransactionsFromTo"
+            ],
+            "related_parameters": [
+                "Start",
+                "Rate",
+                "N"
+            ],
+            "code": "# Set objective\nmodel.setObjective(gp.quicksum(Start[i] + gp.quicksum(Rate[j, i] * TransactionsFromTo[j, i] for j in range(N)) - gp.quicksum(TransactionsFromTo[i, j] for j in range(N)) for i in range(N)), gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 352.0,
+    "log_path": "logs/log_20250413172814_nlp4lp_13/",
+    "problem_path": "data/nlp4lp/13/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nlp4lp/13/data.json\", \"r\") as f:\n    data = json.load(f)\n\nN = data[\"N\"] # scalar parameter\nStart = np.array(data[\"Start\"]) # ['N']\nLimit = np.array(data[\"Limit\"]) # ['N']\nRate = np.array(data[\"Rate\"]) # ['N', 'N']\nTransactions = model.addVars(N, vtype=gp.GRB.CONTINUOUS, name=\"Transactions\")\nTransactionsFromTo = model.addVars(N, N, vtype=gp.GRB.CONTINUOUS, name=\"TransactionsFromTo\")\n\n# Add non-negativity constraint for Transactions\nfor i in range(N):\n    model.addConstr(Transactions[i] >= 0, name=f\"nonnegative_transactions_{i}\")\n\n# Add transaction limit constraints\nfor i in range(N):\n    model.addConstr(Transactions[i] <= Limit[i], name=f\"transaction_limit_{i}\")\n\n# Add transaction limit constraints\nfor i in range(N):\n    model.addConstr(\n        gp.quicksum(TransactionsFromTo[i, j] for j in range(N)) <= Limit[i],\n        name=f\"transaction_limit_{i}\"\n    )\n\n# Add constraints to ensure total outgoing transactions do not exceed the available amount after accounting for incoming exchanges\nfor i in range(N):\n    model.addConstr(\n        gp.quicksum(TransactionsFromTo[i, j] for j in range(N)) <= Start[i] + gp.quicksum(Rate[j, i] * TransactionsFromTo[j, i] for j in range(N)),\n        name=f\"transaction_balance_{i}\"\n    )\n\n# Set objective\nmodel.setObjective(gp.quicksum(Start[i] + gp.quicksum(Rate[j, i] * TransactionsFromTo[j, i] for j in range(N)) - gp.quicksum(TransactionsFromTo[i, j] for j in range(N)) for i in range(N)), gp.GRB.MAXIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

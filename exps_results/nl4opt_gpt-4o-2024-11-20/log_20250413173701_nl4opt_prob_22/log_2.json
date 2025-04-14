@@ -1,0 +1,286 @@
+{
+    "background": "A glass factory makes two types of glass panes: a regular glass pane and a tempered glass pane, both requiring time on heating and cooling machines with limited daily availability.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Maximum daily usage time of the heating and cooling machines",
+            "symbol": "MaxTime",
+            "value": 300,
+            "shape": [],
+            "code": "MaxTime = data[\"MaxTime\"] # scalar parameter"
+        },
+        {
+            "definition": "Time to make one regular glass pane in the heating machine",
+            "symbol": "TimeRegHeat",
+            "value": 3,
+            "shape": [],
+            "code": "TimeRegHeat = data[\"TimeRegHeat\"] # scalar parameter"
+        },
+        {
+            "definition": "Time to cool one regular glass pane in the cooling machine",
+            "symbol": "TimeRegCool",
+            "value": 5,
+            "shape": [],
+            "code": "TimeRegCool = data[\"TimeRegCool\"] # scalar parameter"
+        },
+        {
+            "definition": "Time to make one tempered glass pane in the heating machine",
+            "symbol": "TimeTempHeat",
+            "value": 5,
+            "shape": [],
+            "code": "TimeTempHeat = data[\"TimeTempHeat\"] # scalar parameter"
+        },
+        {
+            "definition": "Time to cool one tempered glass pane in the cooling machine",
+            "symbol": "TimeTempCool",
+            "value": 8,
+            "shape": [],
+            "code": "TimeTempCool = data[\"TimeTempCool\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit per regular glass pane",
+            "symbol": "ProfitReg",
+            "value": 8,
+            "shape": [],
+            "code": "ProfitReg = data[\"ProfitReg\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit per tempered glass pane",
+            "symbol": "ProfitTemp",
+            "value": 10,
+            "shape": [],
+            "code": "ProfitTemp = data[\"ProfitTemp\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of regular glass panes must be an integer.",
+            "status": "coded",
+            "formulation": "\\textup{NumRegularGlassPanes} \\in \\mathbb{Z}",
+            "related_variables": [
+                "NumRegularGlassPanes"
+            ],
+            "related_parameters": [],
+            "code": "# Change the variable type to integer to ensure NumRegularGlassPanes is an integer\nNumRegularGlassPanes.vtype = gp.GRB.INTEGER"
+        },
+        {
+            "description": "Constraints that all tempered glass production must adhere to integrality.",
+            "status": "coded",
+            "formulation": "\\textup{NumTemperedGlassPanes} \\in \\mathbb{Z}",
+            "related_variables": [
+                "NumTemperedGlassPanes"
+            ],
+            "related_parameters": [],
+            "code": "# Change the variable NumTemperedGlassPanes to be integral\nNumTemperedGlassPanes.vtype = gp.GRB.INTEGER"
+        },
+        {
+            "description": "The number of regular glass panes produced daily must be non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{NumRegularGlassPanes} \\\\geq 0",
+            "related_variables": [
+                "NumRegularGlassPanes"
+            ],
+            "related_parameters": [],
+            "code": "# Add non-negativity constraint for NumRegularGlassPanes\nmodel.addConstr(NumRegularGlassPanes >= 0, name=\"non_negativity_RegularGlassPanes\")"
+        },
+        {
+            "description": "The number of tempered glass panes produced daily must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumTemperedGlassPanes} \\geq 0",
+            "related_variables": [
+                "NumTemperedGlassPanes"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint to ensure NumTemperedGlassPanes is non-negative\nmodel.addConstr(NumTemperedGlassPanes >= 0, name=\"non_negative_NumTemperedGlassPanes\")"
+        },
+        {
+            "description": "The total time used in the heating machine by regular glass panes cannot exceed MaxTime minutes per day.",
+            "status": "coded",
+            "formulation": "\\textup{TimeRegHeat} \\times \\textup{NumRegularGlassPanes} \\leq \\textup{MaxTime}",
+            "related_variables": [
+                "NumRegularGlassPanes"
+            ],
+            "related_parameters": [
+                "TimeRegHeat",
+                "MaxTime"
+            ],
+            "code": "# Add constraint to limit total heating time for regular glass panes\nmodel.addConstr(NumRegularGlassPanes * TimeRegHeat <= MaxTime, name=\"time_limit_regular_glass\")"
+        },
+        {
+            "description": "The total time used in the cooling machine by regular glass panes cannot exceed MaxTime minutes per day.",
+            "status": "coded",
+            "formulation": "\\\\textup{NumRegularGlassPanes} \\\\times \\\\textup{TimeRegCool} \\\\leq \\\\textup{MaxTime}",
+            "related_variables": [
+                "NumRegularGlassPanes"
+            ],
+            "related_parameters": [
+                "TimeRegCool",
+                "MaxTime"
+            ],
+            "code": "# Add total cooling machine time usage constraint\nmodel.addConstr(NumRegularGlassPanes * TimeRegCool <= MaxTime, name=\"cooling_machine_time_limit\")"
+        },
+        {
+            "description": "The total time used in the heating machine by tempered glass panes cannot exceed MaxTime minutes per day.",
+            "status": "coded",
+            "formulation": "\\\\textup{TimeTempHeat} \\\\times \\\\textup{NumTemperedGlassPanes} \\\\leq \\\\textup{MaxTime}",
+            "related_variables": [
+                "NumTemperedGlassPanes"
+            ],
+            "related_parameters": [
+                "TimeTempHeat",
+                "MaxTime"
+            ],
+            "code": "# Add constraint to ensure the total time used in the heating machine does not exceed MaxTime\nmodel.addConstr(TimeTempHeat * NumTemperedGlassPanes <= MaxTime, name=\"time_limit_heating_machine\")"
+        },
+        {
+            "description": "The total time used in the cooling machine by tempered glass panes cannot exceed MaxTime minutes daily.",
+            "status": "coded",
+            "formulation": "\\textup{NumTemperedGlassPanes} \\times \\textup{TimeTempCool} \\leq \\textup{MaxTime}",
+            "related_variables": [
+                "NumTemperedGlassPanes"
+            ],
+            "related_parameters": [
+                "TimeTempCool",
+                "MaxTime"
+            ],
+            "code": "# Add constraint to limit total time used in the cooling machine by tempered glass panes\nmodel.addConstr(NumTemperedGlassPanes * TimeTempCool <= MaxTime, name=\"cooling_time_limit\")"
+        },
+        {
+            "description": "The total time usage for heating and cooling machines by regular and tempered glass panes should not exceed the daily maximum allowable time.",
+            "status": "coded",
+            "formulation": "\\textup{TimeRegHeat} \\cdot \\textup{NumRegularGlassPanes} + \\textup{TimeTempHeat} \\cdot \\textup{NumTemperedGlassPanes} \\leq \\textup{MaxTime}, \\\\ \\textup{TimeRegCool} \\cdot \\textup{NumRegularGlassPanes} + \\textup{TimeTempCool} \\cdot \\textup{NumTemperedGlassPanes} \\leq \\textup{MaxTime}",
+            "related_variables": [
+                "NumRegularGlassPanes",
+                "NumTemperedGlassPanes"
+            ],
+            "related_parameters": [
+                "TimeRegHeat",
+                "TimeTempHeat",
+                "TimeRegCool",
+                "TimeTempCool",
+                "MaxTime"
+            ],
+            "code": "# Add constraints for heating and cooling machine time limits\nmodel.addConstr(\n    TimeRegHeat * NumRegularGlassPanes + TimeTempHeat * NumTemperedGlassPanes <= MaxTime, \n    name=\"HeatingMachineTimeLimit\"\n)\nmodel.addConstr(\n    TimeRegCool * NumRegularGlassPanes + TimeTempCool * NumTemperedGlassPanes <= MaxTime, \n    name=\"CoolingMachineTimeLimit\"\n)"
+        },
+        {
+            "description": "The total time taken on both the heating and cooling machines for producing all regular and tempered glass panes must not exceed the maximum available time each day.",
+            "status": "coded",
+            "formulation": "\\textup{TimeRegCool} \\cdot \\textup{NumRegularGlassPanes} + \\textup{TimeTempCool} \\cdot \\textup{NumTemperedGlassPanes} \\leq \\textup{MaxTime} \\quad \\\\ \\quad \\textup{TimeRegHeat} \\cdot \\textup{NumRegularGlassPanes} + \\textup{TimeTempHeat} \\cdot \\textup{NumTemperedGlassPanes} \\leq \\textup{MaxTime}",
+            "related_variables": [
+                "NumRegularGlassPanes",
+                "NumTemperedGlassPanes"
+            ],
+            "related_parameters": [
+                "TimeRegCool",
+                "TimeTempCool",
+                "TimeRegHeat",
+                "TimeTempHeat",
+                "MaxTime"
+            ],
+            "code": "# Add time constraints for heating and cooling machines\nmodel.addConstr(\n    TimeRegCool * NumRegularGlassPanes + TimeTempCool * NumTemperedGlassPanes <= MaxTime, \n    name=\"CoolingTimeConstraint\"\n)\nmodel.addConstr(\n    TimeRegHeat * NumRegularGlassPanes + TimeTempHeat * NumTemperedGlassPanes <= MaxTime, \n    name=\"HeatingTimeConstraint\"\n)"
+        },
+        {
+            "description": "Time constraints ensuring that the daily heating and cooling times for both regular and tempered glass panes do not exceed the maximum available time on the machines.",
+            "status": "coded",
+            "formulation": "(\\textup{TimeRegHeat} \\times \\textup{NumRegularGlassPanes}) + (\\textup{TimeTempHeat} \\times \\textup{NumTemperedGlassPanes}) \\leq \\textup{MaxTime}, \\\\ (\\textup{TimeRegCool} \\times \\textup{NumRegularGlassPanes}) + (\\textup{TimeTempCool} \\times \\textup{NumTemperedGlassPanes}) \\leq \\textup{MaxTime}",
+            "related_variables": [
+                "NumRegularGlassPanes",
+                "NumTemperedGlassPanes"
+            ],
+            "related_parameters": [
+                "TimeRegHeat",
+                "TimeRegCool",
+                "TimeTempHeat",
+                "TimeTempCool",
+                "MaxTime"
+            ],
+            "code": "# Add time constraints for heating and cooling machines:\n\n# Heating time constraint\nmodel.addConstr(\n    (NumRegularGlassPanes * TimeRegHeat) + (NumTemperedGlassPanes * TimeTempHeat) <= MaxTime,\n    name=\"heating_time_constraint\"\n)\n\n# Cooling time constraint\nmodel.addConstr(\n    (NumRegularGlassPanes * TimeRegCool) + (NumTemperedGlassPanes * TimeTempCool) <= MaxTime,\n    name=\"cooling_time_constraint\"\n)"
+        },
+        {
+            "description": "The total heating and cooling time for all glass panes cannot exceed the maximum daily machine usage time.",
+            "status": "coded",
+            "formulation": "\\\\textup{TimeRegHeat} \\\\cdot \\\\textup{NumRegularGlassPanes} + \\\\textup{TimeRegCool} \\\\cdot \\\\textup{NumRegularGlassPanes} + \\\\textup{TimeTempHeat} \\\\cdot \\\\textup{NumTemperedGlassPanes} + \\\\textup{TimeTempCool} \\\\cdot \\\\textup{NumTemperedGlassPanes} \\\\leq \\\\textup{MaxTime}",
+            "related_variables": [
+                "NumRegularGlassPanes",
+                "NumTemperedGlassPanes"
+            ],
+            "related_parameters": [
+                "TimeRegHeat",
+                "TimeRegCool",
+                "TimeTempHeat",
+                "TimeTempCool",
+                "MaxTime"
+            ],
+            "code": "# Add constraint to ensure total heating and cooling time does not exceed maximum daily usage time\nmodel.addConstr(\n    TimeRegHeat * NumRegularGlassPanes +\n    TimeRegCool * NumRegularGlassPanes +\n    TimeTempHeat * NumTemperedGlassPanes +\n    TimeTempCool * NumTemperedGlassPanes <= MaxTime,\n    name=\"machine_usage_time\"\n)"
+        },
+        {
+            "description": "Ensure that the total time required for heating (both types of glass panes) does not exceed the maximum available time.",
+            "status": "coded",
+            "formulation": "\\textup{TimeRegHeat} \\cdot \\textup{NumRegularGlassPanes} + \\textup{TimeTempHeat} \\cdot \\textup{NumTemperedGlassPanes} \\leq \\textup{MaxTime}",
+            "related_variables": [
+                "NumRegularGlassPanes",
+                "NumTemperedGlassPanes"
+            ],
+            "related_parameters": [
+                "TimeRegHeat",
+                "TimeTempHeat",
+                "MaxTime"
+            ],
+            "code": "# Add total heating time constraint\nmodel.addConstr(\n    TimeRegHeat * NumRegularGlassPanes + TimeTempHeat * NumTemperedGlassPanes <= MaxTime,\n    name=\"total_heating_time_constraint\"\n)"
+        },
+        {
+            "description": "Ensure that the total time required for cooling (both types of glass panes) does not exceed the maximum available time.",
+            "status": "coded",
+            "formulation": "\\textup{TimeRegCool} \\cdot \\textup{NumRegularGlassPanes} + \\textup{TimeTempCool} \\cdot \\textup{NumTemperedGlassPanes} \\leq \\textup{MaxTime}",
+            "related_variables": [
+                "NumRegularGlassPanes",
+                "NumTemperedGlassPanes"
+            ],
+            "related_parameters": [
+                "TimeRegCool",
+                "TimeTempCool",
+                "MaxTime"
+            ],
+            "code": "# Add total cooling time constraint\nmodel.addConstr(\n    TimeRegCool * NumRegularGlassPanes + TimeTempCool * NumTemperedGlassPanes <= MaxTime,\n    name=\"total_cooling_time_constraint\"\n)"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of regular glass panes produced daily.",
+            "symbol": "NumRegularGlassPanes",
+            "shape": [],
+            "status": "coded",
+            "code": "NumRegularGlassPanes = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumRegularGlassPanes\")"
+        },
+        {
+            "definition": "The number of tempered glass panes produced daily.",
+            "symbol": "NumTemperedGlassPanes",
+            "shape": [],
+            "status": "coded",
+            "code": "NumTemperedGlassPanes = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumTemperedGlassPanes\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total profit from producing regular and tempered glass panes.",
+            "status": "coded",
+            "formulation": "\\textup{Maximize} \\quad \\textup{ProfitReg} \\cdot \\textup{NumRegularGlassPanes} + \\textup{ProfitTemp} \\cdot \\textup{NumTemperedGlassPanes}",
+            "related_variables": [
+                "NumRegularGlassPanes",
+                "NumTemperedGlassPanes"
+            ],
+            "related_parameters": [
+                "ProfitReg",
+                "ProfitTemp"
+            ],
+            "code": "# Set objective\nmodel.setObjective(\n    ProfitReg * NumRegularGlassPanes + ProfitTemp * NumTemperedGlassPanes, \n    gp.GRB.MAXIMIZE\n)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 296.0,
+    "log_path": "logs/log_20250413173701_nl4opt_prob_22/",
+    "problem_path": "data/nl4opt/prob_22/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_22/data.json\", \"r\") as f:\n    data = json.load(f)\n\nMaxTime = data[\"MaxTime\"] # scalar parameter\nTimeRegHeat = data[\"TimeRegHeat\"] # scalar parameter\nTimeRegCool = data[\"TimeRegCool\"] # scalar parameter\nTimeTempHeat = data[\"TimeTempHeat\"] # scalar parameter\nTimeTempCool = data[\"TimeTempCool\"] # scalar parameter\nProfitReg = data[\"ProfitReg\"] # scalar parameter\nProfitTemp = data[\"ProfitTemp\"] # scalar parameter\nNumRegularGlassPanes = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumRegularGlassPanes\")\nNumTemperedGlassPanes = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumTemperedGlassPanes\")\n\n# Change the variable type to integer to ensure NumRegularGlassPanes is an integer\nNumRegularGlassPanes.vtype = gp.GRB.INTEGER\n\n# Change the variable NumTemperedGlassPanes to be integral\nNumTemperedGlassPanes.vtype = gp.GRB.INTEGER\n\n# Add non-negativity constraint for NumRegularGlassPanes\nmodel.addConstr(NumRegularGlassPanes >= 0, name=\"non_negativity_RegularGlassPanes\")\n\n# Add constraint to ensure NumTemperedGlassPanes is non-negative\nmodel.addConstr(NumTemperedGlassPanes >= 0, name=\"non_negative_NumTemperedGlassPanes\")\n\n# Add constraint to limit total heating time for regular glass panes\nmodel.addConstr(NumRegularGlassPanes * TimeRegHeat <= MaxTime, name=\"time_limit_regular_glass\")\n\n# Add total cooling machine time usage constraint\nmodel.addConstr(NumRegularGlassPanes * TimeRegCool <= MaxTime, name=\"cooling_machine_time_limit\")\n\n# Add constraint to ensure the total time used in the heating machine does not exceed MaxTime\nmodel.addConstr(TimeTempHeat * NumTemperedGlassPanes <= MaxTime, name=\"time_limit_heating_machine\")\n\n# Add constraint to limit total time used in the cooling machine by tempered glass panes\nmodel.addConstr(NumTemperedGlassPanes * TimeTempCool <= MaxTime, name=\"cooling_time_limit\")\n\n# Add constraints for heating and cooling machine time limits\nmodel.addConstr(\n    TimeRegHeat * NumRegularGlassPanes + TimeTempHeat * NumTemperedGlassPanes <= MaxTime, \n    name=\"HeatingMachineTimeLimit\"\n)\nmodel.addConstr(\n    TimeRegCool * NumRegularGlassPanes + TimeTempCool * NumTemperedGlassPanes <= MaxTime, \n    name=\"CoolingMachineTimeLimit\"\n)\n\n# Add time constraints for heating and cooling machines\nmodel.addConstr(\n    TimeRegCool * NumRegularGlassPanes + TimeTempCool * NumTemperedGlassPanes <= MaxTime, \n    name=\"CoolingTimeConstraint\"\n)\nmodel.addConstr(\n    TimeRegHeat * NumRegularGlassPanes + TimeTempHeat * NumTemperedGlassPanes <= MaxTime, \n    name=\"HeatingTimeConstraint\"\n)\n\n# Add time constraints for heating and cooling machines:\n\n# Heating time constraint\nmodel.addConstr(\n    (NumRegularGlassPanes * TimeRegHeat) + (NumTemperedGlassPanes * TimeTempHeat) <= MaxTime,\n    name=\"heating_time_constraint\"\n)\n\n# Cooling time constraint\nmodel.addConstr(\n    (NumRegularGlassPanes * TimeRegCool) + (NumTemperedGlassPanes * TimeTempCool) <= MaxTime,\n    name=\"cooling_time_constraint\"\n)\n\n# Add constraint to ensure total heating and cooling time does not exceed maximum daily usage time\nmodel.addConstr(\n    TimeRegHeat * NumRegularGlassPanes +\n    TimeRegCool * NumRegularGlassPanes +\n    TimeTempHeat * NumTemperedGlassPanes +\n    TimeTempCool * NumTemperedGlassPanes <= MaxTime,\n    name=\"machine_usage_time\"\n)\n\n# Add total heating time constraint\nmodel.addConstr(\n    TimeRegHeat * NumRegularGlassPanes + TimeTempHeat * NumTemperedGlassPanes <= MaxTime,\n    name=\"total_heating_time_constraint\"\n)\n\n# Add total cooling time constraint\nmodel.addConstr(\n    TimeRegCool * NumRegularGlassPanes + TimeTempCool * NumTemperedGlassPanes <= MaxTime,\n    name=\"total_cooling_time_constraint\"\n)\n\n# Set objective\nmodel.setObjective(\n    ProfitReg * NumRegularGlassPanes + ProfitTemp * NumTemperedGlassPanes, \n    gp.GRB.MAXIMIZE\n)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

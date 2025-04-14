@@ -1,0 +1,340 @@
+{
+    "background": "Lot-sizing problems involve planning production across predefined periods with events such as orders or machine set-ups affecting costs and capacity where each item's demand, production capacity, and costs vary by period.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "symbol": "NumItems",
+            "definition": "The number of distinct items",
+            "shape": [],
+            "code": "NumItems = data[\"NumItems\"] # scalar parameter"
+        },
+        {
+            "symbol": "NumPeriods",
+            "definition": "The number of predefined periods",
+            "shape": [],
+            "code": "NumPeriods = data[\"NumPeriods\"] # scalar parameter"
+        },
+        {
+            "symbol": "Demand",
+            "definition": "The demand for each item across each period",
+            "shape": [
+                "NumItems",
+                "NumPeriods"
+            ],
+            "code": "Demand = np.array(data[\"Demand\"]) # ['NumItems', 'NumPeriods']"
+        },
+        {
+            "symbol": "TotalPeriodCapacity",
+            "definition": "The total production capacity available in each period",
+            "shape": [
+                "NumPeriods"
+            ],
+            "code": "TotalPeriodCapacity = np.array(data[\"TotalPeriodCapacity\"]) # ['NumPeriods']"
+        },
+        {
+            "symbol": "ItemCapacity",
+            "definition": "The specific production capacity of each item",
+            "shape": [
+                "NumItems",
+                "NumPeriods"
+            ],
+            "code": "ItemCapacity = np.array(data[\"ItemCapacity\"]) # ['NumItems', 'NumPeriods']"
+        },
+        {
+            "symbol": "HoldingCost",
+            "definition": "The holding cost for each item",
+            "shape": [
+                "NumItems"
+            ],
+            "code": "HoldingCost = np.array(data[\"HoldingCost\"]) # ['NumItems']"
+        },
+        {
+            "symbol": "BackorderCost",
+            "definition": "The backorder cost for each item",
+            "shape": [
+                "NumItems"
+            ],
+            "code": "BackorderCost = np.array(data[\"BackorderCost\"]) # ['NumItems']"
+        },
+        {
+            "symbol": "FixedCost",
+            "definition": "The fixed order cost for each item",
+            "shape": [
+                "NumItems"
+            ],
+            "code": "FixedCost = np.array(data[\"FixedCost\"]) # ['NumItems']"
+        },
+        {
+            "symbol": "InitialStock",
+            "definition": "The initial stock for each item",
+            "shape": [
+                "NumItems"
+            ],
+            "code": "InitialStock = np.array(data[\"InitialStock\"]) # ['NumItems']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of items produced in each period must meet the demand for each item while considering stock and backorders.",
+            "status": "formulated",
+            "formulation": "\\textup{StockHolding}_{i,t-1} + \\textup{ItemsProduced}_{i,t} - \\textup{StockHolding}_{i,t} + \\textup{Backordered}_{i,t} = \\textup{Demand}_{i,t} \\quad \\forall \\ i \\in \\{1, \\dots, \\textup{NumItems}\\}, \\forall \\ t \\in \\{1, \\dots, \\textup{NumPeriods}\\}",
+            "related_variables": [
+                "ItemsProduced",
+                "StockHolding",
+                "Backordered"
+            ],
+            "related_parameters": [
+                "Demand",
+                "InitialStock"
+            ]
+        },
+        {
+            "description": "The total production across all items for any period must not exceed the total available production capacity in that period.",
+            "status": "formulated",
+            "formulation": "\\sum_{i=1}^{\\textup{NumItems}} \\textup{ItemsProduced}_{i,t} \\leq \\textup{TotalPeriodCapacity}_{t}, \\quad \\forall t \\in \\{1, \\dots, \\textup{NumPeriods}\\}",
+            "related_variables": [
+                "ItemsProduced"
+            ],
+            "related_parameters": [
+                "TotalPeriodCapacity",
+                "NumItems",
+                "NumPeriods"
+            ]
+        },
+        {
+            "description": "Each item's production quantity in each period cannot exceed its specific period capacity.",
+            "status": "formulated",
+            "formulation": "\\textup{ItemsProduced}_{i, t} \\leq \\textup{ItemCapacity}_{i, t}, \\quad \\forall i \\in [1, \\textup{NumItems}], \\; \\forall t \\in [1, \\textup{NumPeriods}]",
+            "related_variables": [
+                "ItemsProduced"
+            ],
+            "related_parameters": [
+                "ItemCapacity"
+            ]
+        },
+        {
+            "description": "Non-negativity constraints on production amounts and stock quantities for all items across all periods.",
+            "status": "formulated",
+            "formulation": "\\textup{ItemsProduced}_{i, t} \\geq 0 \\quad \\forall \\, i \\in \\{1, 2, \\dots, \\textup{NumItems}\\}, \\, t \\in \\{1, 2, \\dots, \\textup{NumPeriods}\\} \\\\\n\\textup{StockHolding}_{i, t} \\geq 0 \\quad \\forall \\, i \\in \\{1, 2, \\dots, \\textup{NumItems}\\}, \\, t \\in \\{1, 2, \\dots, \\textup{NumPeriods}\\}",
+            "related_variables": [
+                "ItemsProduced",
+                "StockHolding"
+            ],
+            "related_parameters": [
+                "NumItems",
+                "NumPeriods"
+            ]
+        },
+        {
+            "description": "The backorder costs and fixed order costs for each item are non-negative.",
+            "status": "formulated",
+            "formulation": "\\textup{BackorderCost}_{i} \\geq 0, \\quad \\forall i \\in \\{1, 2, \\ldots, \\textup{NumItems}\\} \\\\ \\textup{FixedCost}_{i} \\geq 0, \\quad \\forall i \\in \\{1, 2, \\ldots, \\textup{NumItems}\\}",
+            "related_variables": [],
+            "related_parameters": [
+                "BackorderCost",
+                "FixedCost",
+                "NumItems"
+            ]
+        },
+        {
+            "description": "Ensure that stock-holding dynamics align with production, backorders, and demand fulfillment.",
+            "status": "formulated",
+            "formulation": "\\textup{StockHolding}_{i,t} = \\textup{InitialStock}_{i} + \\sum_{k=1}^{t} (\\textup{ItemsProduced}_{i,k} - \\textup{Demand}_{i,k} + \\textup{Backordered}_{i,k}) \\quad \\forall i \\in \\{1, 2, \\dots, \\textup{NumItems}\\}, \\forall t \\in \\{1, 2, \\dots, \\textup{NumPeriods}\\}",
+            "related_variables": [
+                "ItemsProduced",
+                "StockHolding",
+                "Backordered"
+            ],
+            "related_parameters": [
+                "Demand",
+                "InitialStock"
+            ]
+        },
+        {
+            "description": "Balance constraint ensuring that demand is either met by production, inventory, or results in backorder for each item and each period.",
+            "status": "formulated",
+            "formulation": "\\\\textup{ItemsProduced}_{i,t} + \\\\textup{StockHolding}_{i,t-1} - \\\\textup{StockHolding}_{i,t} + \\\\textup{Backordered}_{i,t-1} - \\\\textup{Backordered}_{i,t} = \\\\textup{Demand}_{i,t}, \\\\quad \\\\forall \\\\ i=1,...,\\\\textup{NumItems}, \\\\ t=1,...,\\\\textup{NumPeriods}",
+            "related_variables": [
+                "ItemsProduced",
+                "StockHolding",
+                "Backordered"
+            ],
+            "related_parameters": [
+                "Demand"
+            ]
+        },
+        {
+            "description": "Ensure that the binary variable OrderPlaced indicates whether an order/setup occurs, and relates logically to ItemsProduced.",
+            "status": "formulated",
+            "formulation": "\\textup{ItemsProduced}_{i,t} \\leq M \\cdot \\textup{OrderPlaced}_{i,t} \\quad \\forall i \\in [1, \\textup{NumItems}], \\forall t \\in [1, \\textup{NumPeriods}],",
+            "related_variables": [
+                "ItemsProduced",
+                "OrderPlaced"
+            ],
+            "related_parameters": [
+                "NumItems",
+                "NumPeriods"
+            ]
+        },
+        {
+            "description": "The initial stock balance constraint in period 1 incorporating the initial stock levels.",
+            "status": "formulated",
+            "formulation": "\\textup{InitialStock}_{i} + \\textup{ItemsProduced}_{i,1} - \\textup{StockHolding}_{i,1} + \\textup{Backordered}_{i,1} = \\textup{Demand}_{i,1} \\quad \\forall \\ i \\in \\{1, \\dots, \\textup{NumItems}\\}",
+            "related_variables": [
+                "ItemsProduced",
+                "StockHolding",
+                "Backordered"
+            ],
+            "related_parameters": [
+                "Demand",
+                "InitialStock"
+            ]
+        },
+        {
+            "description": "Maximum production per item in each period must not exceed the item's production capacity.",
+            "status": "formulated",
+            "formulation": "\\textup{ItemsProduced}_{i,t} \\leq \\textup{ItemCapacity}_{i,t} \\quad \\forall \\ i \\in \\{1, \\dots, \\textup{NumItems}\\}, \\forall \\ t \\in \\{1, \\dots, \\textup{NumPeriods}\\}",
+            "related_variables": [
+                "ItemsProduced"
+            ],
+            "related_parameters": [
+                "ItemCapacity"
+            ]
+        },
+        {
+            "description": "The total production across all items in a period must not exceed the total production capacity of the machine in that period.",
+            "status": "formulated",
+            "formulation": "\\sum_{i=1}^{\\textup{NumItems}} \\textup{ItemsProduced}_{i,t} \\leq \\textup{TotalPeriodCapacity}_{t} \\quad \\forall \\ t \\in \\{1, \\dots, \\textup{NumPeriods}\\}",
+            "related_variables": [
+                "ItemsProduced"
+            ],
+            "related_parameters": [
+                "TotalPeriodCapacity"
+            ]
+        },
+        {
+            "description": "Backordered items cannot be negative.",
+            "status": "formulated",
+            "formulation": "\\textup{Backordered}_{i,t} \\geq 0 \\quad \\forall \\ i \\in \\{1, \\dots, \\textup{NumItems}\\}, \\forall \\ t \\in \\{1, \\dots, \\textup{NumPeriods}\\}",
+            "related_variables": [
+                "Backordered"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Stock holding for each item cannot be negative.",
+            "status": "formulated",
+            "formulation": "\\textup{StockHolding}_{i,t} \\geq 0 \\quad \\forall \\ i \\in \\{1, \\dots, \\textup{NumItems}\\}, \\forall \\ t \\in \\{1, \\dots, \\textup{NumPeriods}\\}",
+            "related_variables": [
+                "StockHolding"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Ensure that stock levels are non-negative at the end of any period.",
+            "status": "formulated",
+            "formulation": "\\textup{StockHolding}_{i,t} \\geq 0 \\quad \\forall i \\in \\{1, 2, \\dots, \\textup{NumItems}\\}, \\forall t \\in \\{1, 2, \\dots, \\textup{NumPeriods}\\}",
+            "related_variables": [
+                "StockHolding"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Initial stock and zero backorder constraints for the first period.",
+            "status": "formulated",
+            "formulation": "\\\\textup{StockHolding}_{i,0} = \\\\textup{InitialStock}_{i}, \\\\quad \\\\textup{Backordered}_{i,0} = 0, \\\\quad \\\\forall \\\\ i=1,...,\\\\textup{NumItems}",
+            "related_variables": [
+                "StockHolding",
+                "Backordered"
+            ],
+            "related_parameters": [
+                "InitialStock"
+            ]
+        },
+        {
+            "description": "Non-negativity constraints for StockHolding, ItemsProduced, and Backordered in all periods.",
+            "status": "formulated",
+            "formulation": "\\\\textup{StockHolding}_{i,t} \\\\geq 0, \\\\quad \\\\textup{ItemsProduced}_{i,t} \\\\geq 0, \\\\quad \\\\textup{Backordered}_{i,t} \\\\geq 0, \\\\quad \\\\forall \\\\ i=1,...,\\\\textup{NumItems}, \\\\ t=1,...,\\\\textup{NumPeriods}",
+            "related_variables": [
+                "StockHolding",
+                "ItemsProduced",
+                "Backordered"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "If \\textup{ItemsProduced}_{i,t} > 0, then \\textup{OrderPlaced}_{i,t} must be 1.",
+            "status": "formulated",
+            "formulation": "\\textup{OrderPlaced}_{i,t} \\geq \\frac{\\textup{ItemsProduced}_{i,t}}{M} \\quad \\forall i \\in [1, \\textup{NumItems}], \\forall t \\in [1, \\textup{NumPeriods}],",
+            "related_variables": [
+                "ItemsProduced",
+                "OrderPlaced"
+            ],
+            "related_parameters": [
+                "NumItems",
+                "NumPeriods"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The quantity of each item produced in each period.",
+            "symbol": "ItemsProduced",
+            "shape": [
+                "NumItems",
+                "NumPeriods"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "The quantity of each item in stock at the end of each period.",
+            "symbol": "StockHolding",
+            "shape": [
+                "NumItems",
+                "NumPeriods"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "The quantity of each item backordered in each period.",
+            "symbol": "Backordered",
+            "shape": [
+                "NumItems",
+                "NumPeriods"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "Binary variable indicating whether an order/setup occurs for item i in period t.",
+            "symbol": "OrderPlaced",
+            "shape": [
+                "NumItems",
+                "NumPeriods"
+            ],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total cost of production, including holding costs, backorder costs, and fixed order costs, while satisfying the demand for each item across all periods.",
+            "status": "formulated",
+            "formulation": "\\textup{Minimize:} \\quad \\sum_{i=1}^{\\textup{NumItems}} \\sum_{t=1}^{\\textup{NumPeriods}} \\textup{HoldingCost}_{i} \\\\cdot \\textup{StockHolding}_{i,t} + \\\\ \\quad \\sum_{i=1}^{\\textup{NumItems}} \\sum_{t=1}^{\\textup{NumPeriods}} \\textup{BackorderCost}_{i} \\\\cdot \\textup{Backordered}_{i,t} + \\\\ \\quad \\sum_{i=1}^{\\textup{NumItems}} \\sum_{t=1}^{\\textup{NumPeriods}} \\textup{FixedCost}_{i} \\\\cdot \\textup{OrderPlaced}_{i,t}",
+            "related_variables": [
+                "StockHolding",
+                "Backordered",
+                "OrderPlaced"
+            ],
+            "related_parameters": [
+                "HoldingCost",
+                "BackorderCost",
+                "FixedCost"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413150949_complexor_SingleLevelBigBucket/",
+    "problem_path": "data/complexor/SingleLevelBigBucket/"
+}

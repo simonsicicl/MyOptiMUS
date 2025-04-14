@@ -1,0 +1,273 @@
+{
+    "background": "A farmer has a certain amount of land to allocate to growing tomatoes and potatoes. She has preferences regarding the proportions of each crop and minimum quantities to meet demands, while aiming to maximize profit within the constraints of soil and weather.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Total area available for tomatoes and potatoes",
+            "symbol": "TotalArea",
+            "value": 140,
+            "shape": [],
+            "code": "TotalArea = data[\"TotalArea\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum ratio of area of tomatoes to potatoes",
+            "symbol": "MaxRatioTomatoes",
+            "value": 2,
+            "shape": [],
+            "code": "MaxRatioTomatoes = data[\"MaxRatioTomatoes\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum area required for tomatoes",
+            "symbol": "MinTomatoes",
+            "value": 20,
+            "shape": [],
+            "code": "MinTomatoes = data[\"MinTomatoes\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum area required for potatoes",
+            "symbol": "MinPotatoes",
+            "value": 30,
+            "shape": [],
+            "code": "MinPotatoes = data[\"MinPotatoes\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit per hectare of tomatoes",
+            "symbol": "ProfitTomatoes",
+            "value": 350,
+            "shape": [],
+            "code": "ProfitTomatoes = data[\"ProfitTomatoes\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit per hectare of potatoes",
+            "symbol": "ProfitPotatoes",
+            "value": 600,
+            "shape": [],
+            "code": "ProfitPotatoes = data[\"ProfitPotatoes\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The total area allocated to tomatoes and potatoes cannot exceed the total available area.",
+            "status": "coded",
+            "formulation": "\\\\textup{AreaTomatoes} + \\\\textup{AreaPotatoes} \\\\leq \\\\textup{TotalArea}",
+            "related_variables": [
+                "AreaTomatoes",
+                "AreaPotatoes"
+            ],
+            "related_parameters": [
+                "TotalArea"
+            ],
+            "code": "# Add constraint for total area allocated to tomatoes and potatoes\nmodel.addConstr(AreaTomatoes + AreaPotatoes <= TotalArea, name=\"total_area_constraint\")"
+        },
+        {
+            "description": "The number of hectares allocated to tomatoes must be at least MinTomatoes.",
+            "status": "coded",
+            "formulation": "\\textup{AreaTomatoes} \\geq \\textup{MinTomatoes}",
+            "related_variables": [
+                "AreaTomatoes"
+            ],
+            "related_parameters": [
+                "MinTomatoes"
+            ],
+            "code": "# Add minimum area constraint for tomatoes\nmodel.addConstr(AreaTomatoes >= MinTomatoes, name=\"min_area_tomatoes\")"
+        },
+        {
+            "description": "The number of hectares allocated to potatoes must be at least MinPotatoes.",
+            "status": "coded",
+            "formulation": "\\textup{AreaPotatoes} \\geq \\textup{MinPotatoes}",
+            "related_variables": [
+                "AreaPotatoes"
+            ],
+            "related_parameters": [
+                "MinPotatoes"
+            ],
+            "code": "# Add minimum area allocated to potatoes constraint\nmodel.addConstr(AreaPotatoes >= MinPotatoes, name=\"min_potatoes_constraint\")"
+        },
+        {
+            "description": "The number of hectares of tomatoes cannot exceed twice the number of hectares of potatoes.",
+            "status": "coded",
+            "formulation": "\\textup{AreaTomatoes} \\leq \\textup{MaxRatioTomatoes} \\times \\textup{AreaPotatoes}",
+            "related_variables": [
+                "AreaTomatoes",
+                "AreaPotatoes"
+            ],
+            "related_parameters": [
+                "MaxRatioTomatoes"
+            ],
+            "code": "# Add constraint to ensure the area of tomatoes does not exceed twice the area of potatoes\nmodel.addConstr(AreaTomatoes <= MaxRatioTomatoes * AreaPotatoes, name=\"limit_tomato_area\")"
+        },
+        {
+            "description": "The areas allocated for tomatoes and potatoes are non-negative",
+            "status": "coded",
+            "formulation": "\\textup{AreaTomatoes} \\geq 0 \\quad \\textup{and} \\quad \\textup{AreaPotatoes} \\geq 0",
+            "related_variables": [
+                "AreaTomatoes",
+                "AreaPotatoes"
+            ],
+            "related_parameters": [],
+            "code": "# No code needed: Non-negativity constraints are automatically handled in Gurobi by default for continuous variables."
+        },
+        {
+            "description": "The constraints for land allocation between tomatoes and potatoes, considering the total available area, minimum planting requirements, and the ratio between crop areas.",
+            "status": "coded",
+            "formulation": "\\textup{AreaTomatoes} + \\textup{AreaPotatoes} \\leq \\textup{TotalArea} \\\\ \\textup{AreaTomatoes} \\geq \\textup{MinTomatoes} \\\\ \\textup{AreaPotatoes} \\geq \\textup{MinPotatoes} \\\\ \\textup{AreaTomatoes} \\leq \\textup{MaxRatioTomatoes} \\cdot \\textup{AreaPotatoes} \\\\ \\textup{AreaTomatoes} \\geq 0, \\quad \\textup{AreaPotatoes} \\geq 0",
+            "related_variables": [
+                "AreaTomatoes",
+                "AreaPotatoes"
+            ],
+            "related_parameters": [
+                "TotalArea",
+                "MinTomatoes",
+                "MinPotatoes",
+                "MaxRatioTomatoes"
+            ],
+            "code": "# Add land allocation constraints\nmodel.addConstr(AreaTomatoes + AreaPotatoes <= TotalArea, name=\"total_area_constraint\")\nmodel.addConstr(AreaTomatoes >= MinTomatoes, name=\"min_tomatoes_constraint\")\nmodel.addConstr(AreaPotatoes >= MinPotatoes, name=\"min_potatoes_constraint\")\nmodel.addConstr(AreaTomatoes <= MaxRatioTomatoes * AreaPotatoes, name=\"max_ratio_tomatoes_constraint\")"
+        },
+        {
+            "description": "Ensure that the area allocated to tomatoes meets the minimum required area.",
+            "status": "coded",
+            "formulation": "\\\\textup{AreaTomatoes} \\\\geq \\\\textup{MinTomatoes}",
+            "related_variables": [
+                "AreaTomatoes"
+            ],
+            "related_parameters": [
+                "MinTomatoes"
+            ],
+            "code": "# Add the constraint to ensure the area allocated to tomatoes meets the minimum required area\nmodel.addConstr(AreaTomatoes >= MinTomatoes, name=\"min_tomato_area\")"
+        },
+        {
+            "description": "Ensure that the area allocated to potatoes meets the minimum required area.",
+            "status": "coded",
+            "formulation": "\\\\textup{AreaPotatoes} \\\\geq \\\\textup{MinPotatoes}",
+            "related_variables": [
+                "AreaPotatoes"
+            ],
+            "related_parameters": [
+                "MinPotatoes"
+            ],
+            "code": "# Add the constraint to ensure the area allocated to potatoes meets the minimum required area\nmodel.addConstr(AreaPotatoes >= MinPotatoes, name=\"min_area_potatoes\")"
+        },
+        {
+            "description": "Ensure that the ratio of the area of tomatoes to potatoes does not exceed the maximum ratio.",
+            "status": "coded",
+            "formulation": "\\\\textup{AreaTomatoes} \\\\leq \\\\textup{MaxRatioTomatoes} \\\\times \\\\textup{AreaPotatoes}",
+            "related_variables": [
+                "AreaTomatoes",
+                "AreaPotatoes"
+            ],
+            "related_parameters": [
+                "MaxRatioTomatoes"
+            ],
+            "code": "# Add constraint to ensure that the ratio of AreaTomatoes to AreaPotatoes does not exceed MaxRatioTomatoes\nmodel.addConstr(AreaTomatoes <= MaxRatioTomatoes * AreaPotatoes, name=\"tomatoes_to_potatoes_ratio\")"
+        },
+        {
+            "description": "Ensure the total allocated area does not exceed the total available area.",
+            "status": "coded",
+            "formulation": "\\textup{AreaTomatoes} + \\textup{AreaPotatoes} \\leq \\textup{TotalArea}",
+            "related_variables": [
+                "AreaTomatoes",
+                "AreaPotatoes"
+            ],
+            "related_parameters": [
+                "TotalArea"
+            ],
+            "code": "# Ensure the total allocated area does not exceed the total available area\nmodel.addConstr(AreaTomatoes + AreaPotatoes <= TotalArea, name=\"area_allocation_constraint\")"
+        },
+        {
+            "description": "Ensure the ratio of the area of tomatoes to potatoes does not exceed the maximum allowed ratio.",
+            "status": "coded",
+            "formulation": "\\textup{AreaTomatoes} \\leq \\textup{MaxRatioTomatoes} \\times \\textup{AreaPotatoes}",
+            "related_variables": [
+                "AreaTomatoes",
+                "AreaPotatoes"
+            ],
+            "related_parameters": [
+                "MaxRatioTomatoes"
+            ],
+            "code": "# Add constraint ensuring the area ratio of tomatoes to potatoes does not exceed MaxRatioTomatoes\nmodel.addConstr(AreaTomatoes <= MaxRatioTomatoes * AreaPotatoes, name=\"ratio_tomatoes_to_potatoes\")"
+        },
+        {
+            "description": "Ensure that the minimum area allocated for tomatoes is satisfied.",
+            "status": "coded",
+            "formulation": "\\textup{AreaTomatoes} \\geq \\textup{MinTomatoes}",
+            "related_variables": [
+                "AreaTomatoes"
+            ],
+            "related_parameters": [
+                "MinTomatoes"
+            ],
+            "code": "# Add constraint to ensure minimum area allocated for tomatoes\nmodel.addConstr(AreaTomatoes >= MinTomatoes, name=\"min_area_tomatoes\")"
+        },
+        {
+            "description": "Ensure that the minimum area allocated for potatoes is satisfied.",
+            "status": "coded",
+            "formulation": "\\textup{AreaPotatoes} \\geq \\textup{MinPotatoes}",
+            "related_variables": [
+                "AreaPotatoes"
+            ],
+            "related_parameters": [
+                "MinPotatoes"
+            ],
+            "code": "# Add constraint to ensure minimum area allocated for potatoes\nmodel.addConstr(AreaPotatoes >= MinPotatoes, name=\"min_area_potatoes\")"
+        },
+        {
+            "description": "Ensure that the area allocated to tomatoes is non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{AreaTomatoes} \\geq 0",
+            "related_variables": [
+                "AreaTomatoes"
+            ],
+            "related_parameters": [],
+            "code": "# The variable AreaTomatoes is already defined as non-negative due to its default properties in gurobipy (lower bound of 0)."
+        },
+        {
+            "description": "Ensure that the area allocated to potatoes is non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{AreaPotatoes} \\geq 0",
+            "related_variables": [
+                "AreaPotatoes"
+            ],
+            "related_parameters": [],
+            "code": "# The variable AreaPotatoes is already defined as non-negative due to its default properties (continuous variables in Gurobi are non-negative unless stated otherwise); no additional constraint is needed."
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Total area in hectares allocated for planting tomatoes.",
+            "symbol": "AreaTomatoes",
+            "shape": [],
+            "status": "coded",
+            "code": "AreaTomatoes = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"AreaTomatoes\")"
+        },
+        {
+            "definition": "Total area in hectares allocated for planting potatoes.",
+            "symbol": "AreaPotatoes",
+            "shape": [],
+            "status": "coded",
+            "code": "AreaPotatoes = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"AreaPotatoes\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the profit from planting tomatoes and potatoes.",
+            "status": "coded",
+            "formulation": "\\textup{Maximize}: \\quad \\textup{ProfitTomatoes} \\times \\textup{AreaTomatoes} + \\textup{ProfitPotatoes} \\times \\textup{AreaPotatoes}",
+            "related_variables": [
+                "AreaTomatoes",
+                "AreaPotatoes"
+            ],
+            "related_parameters": [
+                "ProfitTomatoes",
+                "ProfitPotatoes"
+            ],
+            "code": "# Set objective\nmodel.setObjective(ProfitTomatoes * AreaTomatoes + ProfitPotatoes * AreaPotatoes, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 79000.0,
+    "log_path": "logs/log_20250414060445_nl4opt_prob_6/",
+    "problem_path": "data/nl4opt/prob_6/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_6/data.json\", \"r\") as f:\n    data = json.load(f)\n\nTotalArea = data[\"TotalArea\"] # scalar parameter\nMaxRatioTomatoes = data[\"MaxRatioTomatoes\"] # scalar parameter\nMinTomatoes = data[\"MinTomatoes\"] # scalar parameter\nMinPotatoes = data[\"MinPotatoes\"] # scalar parameter\nProfitTomatoes = data[\"ProfitTomatoes\"] # scalar parameter\nProfitPotatoes = data[\"ProfitPotatoes\"] # scalar parameter\nAreaTomatoes = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"AreaTomatoes\")\nAreaPotatoes = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"AreaPotatoes\")\n\n# Add constraint for total area allocated to tomatoes and potatoes\nmodel.addConstr(AreaTomatoes + AreaPotatoes <= TotalArea, name=\"total_area_constraint\")\n\n# Add minimum area constraint for tomatoes\nmodel.addConstr(AreaTomatoes >= MinTomatoes, name=\"min_area_tomatoes\")\n\n# Add minimum area allocated to potatoes constraint\nmodel.addConstr(AreaPotatoes >= MinPotatoes, name=\"min_potatoes_constraint\")\n\n# Add constraint to ensure the area of tomatoes does not exceed twice the area of potatoes\nmodel.addConstr(AreaTomatoes <= MaxRatioTomatoes * AreaPotatoes, name=\"limit_tomato_area\")\n\n# No code needed: Non-negativity constraints are automatically handled in Gurobi by default for continuous variables.\n\n# Add land allocation constraints\nmodel.addConstr(AreaTomatoes + AreaPotatoes <= TotalArea, name=\"total_area_constraint\")\nmodel.addConstr(AreaTomatoes >= MinTomatoes, name=\"min_tomatoes_constraint\")\nmodel.addConstr(AreaPotatoes >= MinPotatoes, name=\"min_potatoes_constraint\")\nmodel.addConstr(AreaTomatoes <= MaxRatioTomatoes * AreaPotatoes, name=\"max_ratio_tomatoes_constraint\")\n\n# Add the constraint to ensure the area allocated to tomatoes meets the minimum required area\nmodel.addConstr(AreaTomatoes >= MinTomatoes, name=\"min_tomato_area\")\n\n# Add the constraint to ensure the area allocated to potatoes meets the minimum required area\nmodel.addConstr(AreaPotatoes >= MinPotatoes, name=\"min_area_potatoes\")\n\n# Add constraint to ensure that the ratio of AreaTomatoes to AreaPotatoes does not exceed MaxRatioTomatoes\nmodel.addConstr(AreaTomatoes <= MaxRatioTomatoes * AreaPotatoes, name=\"tomatoes_to_potatoes_ratio\")\n\n# Ensure the total allocated area does not exceed the total available area\nmodel.addConstr(AreaTomatoes + AreaPotatoes <= TotalArea, name=\"area_allocation_constraint\")\n\n# Add constraint ensuring the area ratio of tomatoes to potatoes does not exceed MaxRatioTomatoes\nmodel.addConstr(AreaTomatoes <= MaxRatioTomatoes * AreaPotatoes, name=\"ratio_tomatoes_to_potatoes\")\n\n# Add constraint to ensure minimum area allocated for tomatoes\nmodel.addConstr(AreaTomatoes >= MinTomatoes, name=\"min_area_tomatoes\")\n\n# Add constraint to ensure minimum area allocated for potatoes\nmodel.addConstr(AreaPotatoes >= MinPotatoes, name=\"min_area_potatoes\")\n\n# The variable AreaTomatoes is already defined as non-negative due to its default properties in gurobipy (lower bound of 0).\n\n# The variable AreaPotatoes is already defined as non-negative due to its default properties (continuous variables in Gurobi are non-negative unless stated otherwise); no additional constraint is needed.\n\n# Set objective\nmodel.setObjective(ProfitTomatoes * AreaTomatoes + ProfitPotatoes * AreaPotatoes, gp.GRB.MAXIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

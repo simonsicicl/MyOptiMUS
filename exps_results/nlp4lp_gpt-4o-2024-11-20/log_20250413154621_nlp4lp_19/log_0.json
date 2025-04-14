@@ -1,0 +1,357 @@
+{
+    "background": "The company deals with various items categorized into vegetables and non-vegetables, which are bought, refined, stored, and sold over a planning horizon of months. Refining capacity for both types of items is limited, and there are storage limitations with associated costs. The company must manage the hardness of the items and start with an initial amount of items in storage.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of months",
+            "symbol": "M",
+            "value": "",
+            "shape": [],
+            "code": "M = data[\"M\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of different items",
+            "symbol": "I",
+            "value": "",
+            "shape": [],
+            "code": "I = data[\"I\"] # scalar parameter"
+        },
+        {
+            "definition": "Month m buy price of item i",
+            "symbol": "BuyPrice",
+            "value": "",
+            "shape": [
+                "M",
+                "I"
+            ],
+            "code": "BuyPrice = np.array(data[\"BuyPrice\"]) # ['M', 'I']"
+        },
+        {
+            "definition": "Sell price of the products after refining",
+            "symbol": "SellPrice",
+            "value": "",
+            "shape": [],
+            "code": "SellPrice = data[\"SellPrice\"] # scalar parameter"
+        },
+        {
+            "definition": "Indicator whether item i is a vegetable",
+            "symbol": "IsVegetable",
+            "value": "",
+            "shape": [
+                "I"
+            ],
+            "code": "IsVegetable = np.array(data[\"IsVegetable\"]) # ['I']"
+        },
+        {
+            "definition": "Maximum refining capability for vegetables per month",
+            "symbol": "MaxVegetableRefiningPerMonth",
+            "value": "",
+            "shape": [],
+            "code": "MaxVegetableRefiningPerMonth = data[\"MaxVegetableRefiningPerMonth\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum refining capability for non-vegetables per month",
+            "symbol": "MaxNonVegetableRefiningPerMonth",
+            "value": "",
+            "shape": [],
+            "code": "MaxNonVegetableRefiningPerMonth = data[\"MaxNonVegetableRefiningPerMonth\"] # scalar parameter"
+        },
+        {
+            "definition": "Size of the storage",
+            "symbol": "StorageSize",
+            "value": "",
+            "shape": [],
+            "code": "StorageSize = data[\"StorageSize\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost for storing items per month",
+            "symbol": "StorageCost",
+            "value": "",
+            "shape": [],
+            "code": "StorageCost = data[\"StorageCost\"] # scalar parameter"
+        },
+        {
+            "definition": "The maximum hardness allowed for the products after refining",
+            "symbol": "MaxHardness",
+            "value": "",
+            "shape": [],
+            "code": "MaxHardness = data[\"MaxHardness\"] # scalar parameter"
+        },
+        {
+            "definition": "The minimum hardness required for the products after refining",
+            "symbol": "MinHardness",
+            "value": "",
+            "shape": [],
+            "code": "MinHardness = data[\"MinHardness\"] # scalar parameter"
+        },
+        {
+            "definition": "Hardness of item i",
+            "symbol": "Hardness",
+            "value": "",
+            "shape": [
+                "I"
+            ],
+            "code": "Hardness = np.array(data[\"Hardness\"]) # ['I']"
+        },
+        {
+            "definition": "Initial amount of items in storage at the beginning of the planning horizon",
+            "symbol": "InitialAmount",
+            "value": "",
+            "shape": [],
+            "code": "InitialAmount = data[\"InitialAmount\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Ensure non-negativity of items bought, stored, and sold.",
+            "status": "formulated",
+            "formulation": "\\textup{ItemsBought}_{m,i} \\geq 0 \\quad \\forall m \\in [1, \\textup{M}], \\forall i \\in [1, \\textup{I}] \\\\\n\\textup{ItemsStored}_{m,i} \\geq 0 \\quad \\forall m \\in [1, \\textup{M}], \\forall i \\in [1, \\textup{I}] \\\\\n\\textup{ItemsSold}_{m,i} \\geq 0 \\quad \\forall m \\in [1, \\textup{M}], \\forall i \\in [1, \\textup{I}]",
+            "related_variables": [
+                "ItemsBought",
+                "ItemsStored",
+                "ItemsSold"
+            ],
+            "related_parameters": [
+                "M",
+                "I"
+            ]
+        },
+        {
+            "description": "Ensures the weighted average hardness of refined items is at least MinHardness across all months",
+            "status": "formulated",
+            "formulation": "\\frac{\\sum_{i=1}^{\\textup{I}} (\\textup{ItemsRefined}_{m,i} \\cdot \\textup{Hardness}_{i})}{\\sum_{i=1}^{\\textup{I}} \\textup{ItemsRefined}_{m,i}} \\geq \\textup{MinHardness}, \\quad \\forall \\, m \\in \\{1, ..., M\\}",
+            "related_variables": [
+                "ItemsRefined"
+            ],
+            "related_parameters": [
+                "MinHardness",
+                "Hardness"
+            ]
+        },
+        {
+            "description": "Ensure that the total hardness of refined items in each month does not exceed the maximum allowable hardness.",
+            "status": "formulated",
+            "formulation": "\\textup{TotalHardnessPerMonth}_m \\leq \\textup{MaxHardness} \\quad \\forall m \\in \\{1, \\dots, \\textup{M}\\}",
+            "related_variables": [
+                "TotalHardnessPerMonth",
+                "ItemsRefined"
+            ],
+            "related_parameters": [
+                "MaxHardness",
+                "Hardness"
+            ]
+        },
+        {
+            "description": "At most MaxVegetableRefiningPerMonth vegetables can be refined per month.",
+            "status": "formulated",
+            "formulation": "\\sum_{i=1}^{I} \\textup{ItemsRefined}_{m,i} \\times \\textup{IsVegetable}_{i} \\leq \\textup{MaxVegetableRefiningPerMonth}, \\quad \\forall m \\in \\{1, ..., M\\}",
+            "related_variables": [
+                "ItemsRefined"
+            ],
+            "related_parameters": [
+                "IsVegetable",
+                "MaxVegetableRefiningPerMonth"
+            ]
+        },
+        {
+            "description": "At most MaxNonVegetableRefiningPerMonth non-vegetables can be refined per month",
+            "status": "formulated",
+            "formulation": "\\sum_{i=1}^{I} (1 - \\textup{IsVegetable}_i) \\cdot \\textup{ItemsRefined}_{m,i} \\leq \\textup{MaxNonVegetableRefiningPerMonth}, \\quad \\forall m \\in \\{1, \\dots, M\\}",
+            "related_variables": [
+                "ItemsRefined"
+            ],
+            "related_parameters": [
+                "MaxNonVegetableRefiningPerMonth",
+                "IsVegetable"
+            ]
+        },
+        {
+            "description": "The total storage used across all items in each month must not exceed the storage size limit.",
+            "status": "formulated",
+            "formulation": "\\sum_{i=1}^{I} \\textup{ItemsStored}_{m,i} \\leq \\textup{StorageSize}, \\quad \\forall \\ m \\in \\{1, \\dots, M\\}",
+            "related_variables": [
+                "ItemsStored"
+            ],
+            "related_parameters": [
+                "StorageSize",
+                "M",
+                "I"
+            ]
+        },
+        {
+            "description": "Ensure that the StorageSize can accommodate the InitialAmount of items at the start of the planning horizon.",
+            "status": "formulated",
+            "formulation": "\\textup{InitialAmount} \\leq \\textup{StorageSize}",
+            "related_variables": [],
+            "related_parameters": [
+                "InitialAmount",
+                "StorageSize"
+            ]
+        },
+        {
+            "description": "Ensures that the refining of vegetables does not exceed the maximum refining capacity for vegetables in any month",
+            "status": "formulated",
+            "formulation": "\\sum_{i=1}^{\\textup{I}} (\\textup{ItemsRefined}_{m,i} \\cdot \\textup{IsVegetable}_{i}) \\leq \\textup{MaxVegetableRefiningPerMonth}, \\quad \\forall \\, m \\in \\{1, ..., M\\}",
+            "related_variables": [
+                "ItemsRefined"
+            ],
+            "related_parameters": [
+                "IsVegetable",
+                "MaxVegetableRefiningPerMonth"
+            ]
+        },
+        {
+            "description": "Ensures that the refining of non-vegetables does not exceed the maximum refining capacity for non-vegetables in any month",
+            "status": "formulated",
+            "formulation": "\\sum_{i=1}^{\\textup{I}} (\\textup{ItemsRefined}_{m,i} \\cdot (1 - \\textup{IsVegetable}_{i})) \\leq \\textup{MaxNonVegetableRefiningPerMonth}, \\quad \\forall \\, m \\in \\{1, ..., M\\}",
+            "related_variables": [
+                "ItemsRefined"
+            ],
+            "related_parameters": [
+                "IsVegetable",
+                "MaxNonVegetableRefiningPerMonth"
+            ]
+        },
+        {
+            "description": "Compute the total hardness of refined items in each month.",
+            "status": "formulated",
+            "formulation": "\\textup{TotalHardnessPerMonth}_m = \\sum_{i=1}^{\\textup{I}} \\textup{Hardness}_i \\cdot \\textup{ItemsRefined}_{m,i} \\quad \\forall m \\in \\{1, \\dots, \\textup{M}\\}",
+            "related_variables": [
+                "TotalHardnessPerMonth",
+                "ItemsRefined"
+            ],
+            "related_parameters": [
+                "Hardness"
+            ]
+        },
+        {
+            "description": "Storage balance constraint: Ensures the storage balance over time (initial inventory + purchases - sales - refinement equals ending inventory).",
+            "status": "formulated",
+            "formulation": "\\textup{ItemsStored}_{m,i} = \\textup{ItemsStored}_{m-1,i} + \\textup{ItemsBought}_{m,i} - \\textup{ItemsSold}_{m,i} - \\textup{ItemsRefined}_{m,i} \\quad \\forall m = 1,...,M, \\forall i = 1,...,I",
+            "related_variables": [
+                "ItemsBought",
+                "ItemsStored",
+                "ItemsSold",
+                "ItemsRefined"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Hardness constraint: Ensures the total hardness of refined items stays within allowable bounds.",
+            "status": "formulated",
+            "formulation": "\\textup{MinHardness} \\leq \\sum_{i=1}^{I} \\textup{ItemsRefined}_{m,i} \\times \\textup{Hardness}_{i} \\leq \\textup{MaxHardness} \\quad \\forall m = 1,...,M",
+            "related_variables": [
+                "ItemsRefined"
+            ],
+            "related_parameters": [
+                "MinHardness",
+                "MaxHardness",
+                "Hardness"
+            ]
+        },
+        {
+            "description": "Vegetable refining capacity constraint: Ensures the maximum number of vegetables refined does not exceed the vegetable refining capacity.",
+            "status": "formulated",
+            "formulation": "\\sum_{i \\colon \\textup{IsVegetable}_{i} = 1} \\textup{ItemsRefined}_{m,i} \\leq \\textup{MaxVegetableRefiningPerMonth} \\quad \\forall m = 1,...,M",
+            "related_variables": [
+                "ItemsRefined"
+            ],
+            "related_parameters": [
+                "MaxVegetableRefiningPerMonth",
+                "IsVegetable"
+            ]
+        },
+        {
+            "description": "Non-vegetable refining capacity constraint: Ensures the maximum number of non-vegetables refined does not exceed the non-vegetable refining capacity.",
+            "status": "formulated",
+            "formulation": "\\sum_{i \\colon \\textup{IsVegetable}_{i} = 0} \\textup{ItemsRefined}_{m,i} \\leq \\textup{MaxNonVegetableRefiningPerMonth} \\quad \\forall m = 1,...,M",
+            "related_variables": [
+                "ItemsRefined"
+            ],
+            "related_parameters": [
+                "MaxNonVegetableRefiningPerMonth",
+                "IsVegetable"
+            ]
+        },
+        {
+            "description": "Storage capacity constraint: Ensures the total stored items do not exceed storage capacity.",
+            "status": "formulated",
+            "formulation": "\\sum_{i=1}^{I} \\textup{ItemsStored}_{m,i} \\leq \\textup{StorageSize} \\quad \\forall m = 1,...,M",
+            "related_variables": [
+                "ItemsStored"
+            ],
+            "related_parameters": [
+                "StorageSize"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Quantity of item i bought in month m",
+            "symbol": "ItemsBought",
+            "shape": [
+                "M",
+                "I"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "Quantity of item i stored at the end of month m",
+            "symbol": "ItemsStored",
+            "shape": [
+                "M",
+                "I"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "Quantity of item i sold in month m",
+            "symbol": "ItemsSold",
+            "shape": [
+                "M",
+                "I"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "Quantity of item i refined in month m",
+            "symbol": "ItemsRefined",
+            "shape": [
+                "M",
+                "I"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "The total hardness of refined items in month m.",
+            "symbol": "TotalHardnessPerMonth",
+            "shape": [
+                "M"
+            ],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the company's profit by determining the optimal buying, storing, and manufacturing policy.",
+            "status": "formulated",
+            "formulation": "\\textup{Maximize} \\quad \\sum_{m=1}^{M} \\sum_{i=1}^{I} \\textup{ItemsSold}_{m,i} \\times \\textup{SellPrice} - \\left( \\sum_{m=1}^{M} \\sum_{i=1}^{I} \\textup{ItemsBought}_{m,i} \\times \\textup{BuyPrice}_{m,i} + \\sum_{m=1}^{M} \\sum_{i=1}^{I} \\textup{ItemsStored}_{m,i} \\times \\textup{StorageCost} \\right)",
+            "related_variables": [
+                "ItemsSold",
+                "ItemsBought",
+                "ItemsStored"
+            ],
+            "related_parameters": [
+                "SellPrice",
+                "BuyPrice",
+                "StorageCost"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413154621_nlp4lp_19/",
+    "problem_path": "data/nlp4lp/19/"
+}

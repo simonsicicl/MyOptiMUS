@@ -1,0 +1,239 @@
+{
+    "background": "A snack exporter sends snacks to customers using two sizes of suitcases with constraints on the minimum ratio of small to large suitcases, as well as limits on the number of each size of suitcases available and the total number that can be sent.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Capacity of a small suitcase",
+            "symbol": "SmallCapacity",
+            "value": 50,
+            "shape": [],
+            "code": "SmallCapacity = data[\"SmallCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Capacity of a large suitcase",
+            "symbol": "LargeCapacity",
+            "value": 80,
+            "shape": [],
+            "code": "LargeCapacity = data[\"LargeCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Ratio of the number of small suitcases to the number of large suitcases",
+            "symbol": "RatioSmallToLarge",
+            "value": 2,
+            "shape": [],
+            "code": "RatioSmallToLarge = data[\"RatioSmallToLarge\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of small suitcases available",
+            "symbol": "MaxSmallSuitcases",
+            "value": 70,
+            "shape": [],
+            "code": "MaxSmallSuitcases = data[\"MaxSmallSuitcases\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of large suitcases available",
+            "symbol": "MaxLargeSuitcases",
+            "value": 50,
+            "shape": [],
+            "code": "MaxLargeSuitcases = data[\"MaxLargeSuitcases\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of large suitcases that must be sent",
+            "symbol": "MinLargeSuitcases",
+            "value": 15,
+            "shape": [],
+            "code": "MinLargeSuitcases = data[\"MinLargeSuitcases\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum total number of suitcases that can be sent",
+            "symbol": "MaxTotalSuitcases",
+            "value": 70,
+            "shape": [],
+            "code": "MaxTotalSuitcases = data[\"MaxTotalSuitcases\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of small suitcases must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfSmallSuitcases} \\geq 0",
+            "related_variables": [
+                "NumberOfSmallSuitcases"
+            ],
+            "related_parameters": [],
+            "code": "# Since NumberOfSmallSuitcases is already required to be integer, the non-negativity constraint is inherent.\nmodel.addConstr(NumberOfSmallSuitcases >= 0, name=\"non_negativity_small_suitcases\")"
+        },
+        {
+            "description": "The number of large suitcases must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfLargeSuitcases} \\geq 0",
+            "related_variables": [
+                "NumberOfLargeSuitcases"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint to ensure the number of large suitcases is non-negative\nmodel.addConstr(NumberOfLargeSuitcases >= 0, \"non_negativity_large_suitcases\")"
+        },
+        {
+            "description": "Number of small suitcases must be at least RatioSmallToLarge times as many as large suitcases",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfSmallSuitcases} \\geq \\textup{RatioSmallToLarge} \\times \\textup{NumberOfLargeSuitcases}",
+            "related_variables": [
+                "NumberOfSmallSuitcases",
+                "NumberOfLargeSuitcases"
+            ],
+            "related_parameters": [
+                "RatioSmallToLarge"
+            ],
+            "code": "# Constraint for the number of small suitcases to be at least RatioSmallToLarge times as many as large suitcases\nmodel.addConstr(NumberOfSmallSuitcases >= RatioSmallToLarge * NumberOfLargeSuitcases, \"RatioSmallLargeSuitcases\")"
+        },
+        {
+            "description": "Constraint reflecting the maximum number of small suitcases available",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfSmallSuitcases} \\leq \\textup{MaxSmallSuitcases}",
+            "related_variables": [
+                "NumberOfSmallSuitcases"
+            ],
+            "related_parameters": [
+                "MaxSmallSuitcases"
+            ],
+            "code": "# Add constraint reflecting the maximum number of small suitcases available\nmodel.addConstr(NumberOfSmallSuitcases <= MaxSmallSuitcases, name=\"max_small_suitcases\")"
+        },
+        {
+            "description": "At most MaxLargeSuitcases large suitcases are available",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfLargeSuitcases} \\leq \\textup{MaxLargeSuitcases}",
+            "related_variables": [
+                "NumberOfLargeSuitcases"
+            ],
+            "related_parameters": [
+                "MaxLargeSuitcases"
+            ],
+            "code": "# Constraint for the maximum number of large suitcases available\nmodel.addConstr(NumberOfLargeSuitcases <= MaxLargeSuitcases, name=\"max_large_suitcases\")"
+        },
+        {
+            "description": "At least MinLargeSuitcases large suitcases must be sent",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfLargeSuitcases} \\geq \\textup{MinLargeSuitcases}",
+            "related_variables": [
+                "NumberOfLargeSuitcases"
+            ],
+            "related_parameters": [
+                "MinLargeSuitcases"
+            ],
+            "code": "# Add constraint for minimum number of large suitcases\nmodel.addConstr(NumberOfLargeSuitcases >= MinLargeSuitcases, name=\"min_large_suitcases_constraint\")"
+        },
+        {
+            "description": "Total number of small and large suitcases sent should not exceed MaxTotalSuitcases",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfSmallSuitcases} + \\textup{NumberOfLargeSuitcases} \\leq \\textup{MaxTotalSuitcases}",
+            "related_variables": [
+                "NumberOfSmallSuitcases",
+                "NumberOfLargeSuitcases"
+            ],
+            "related_parameters": [
+                "MaxTotalSuitcases"
+            ],
+            "code": "# Add constraint to ensure the total number of small and large suitcases does not exceed the maximum allowed\nmodel.addConstr(NumberOfSmallSuitcases + NumberOfLargeSuitcases <= MaxTotalSuitcases, \"total_suitcases_constraint\")"
+        },
+        {
+            "description": "The ratio of small to large suitcases must be at least a specified minimum",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfSmallSuitcases} \\geq \\textup{RatioSmallToLarge} \\times \\textup{NumberOfLargeSuitcases}",
+            "related_variables": [
+                "NumberOfSmallSuitcases",
+                "NumberOfLargeSuitcases"
+            ],
+            "related_parameters": [
+                "RatioSmallToLarge"
+            ],
+            "code": "# Add constraint to maintain the minimum ratio of small to large suitcases\nmodel.addConstr(NumberOfSmallSuitcases >= RatioSmallToLarge * NumberOfLargeSuitcases, name=\"min_ratio_small_to_large_suitcases\")"
+        },
+        {
+            "description": "Do not exceed maximum number of small suitcases available",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfSmallSuitcases} \\leq \\textup{MaxSmallSuitcases}",
+            "related_variables": [
+                "NumberOfSmallSuitcases"
+            ],
+            "related_parameters": [
+                "MaxSmallSuitcases"
+            ],
+            "code": "# Add constraint to ensure the number of small suitcases does not exceed the maximum available\nmodel.addConstr(NumberOfSmallSuitcases <= MaxSmallSuitcases, \"max_small_suitcases_constraint\")"
+        },
+        {
+            "description": "Do not exceed maximum number of large suitcases available",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfLargeSuitcases} \\leq \\textup{MaxLargeSuitcases}",
+            "related_variables": [
+                "NumberOfLargeSuitcases"
+            ],
+            "related_parameters": [
+                "MaxLargeSuitcases"
+            ],
+            "code": "# Add constraint to ensure the number of large suitcases does not exceed the maximum available\nmodel.addConstr(NumberOfLargeSuitcases <= MaxLargeSuitcases, \"max_large_suitcases_constraint\")"
+        },
+        {
+            "description": "Respect the minimum number of large suitcases that must be sent",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfLargeSuitcases} \\geq \\textup{MinLargeSuitcases}",
+            "related_variables": [
+                "NumberOfLargeSuitcases"
+            ],
+            "related_parameters": [
+                "MinLargeSuitcases"
+            ],
+            "code": "# Ensure the minimum number of large suitcases constraint is respected\nmodel.addConstr(NumberOfLargeSuitcases >= MinLargeSuitcases, name=\"min_large_suitcases\")"
+        },
+        {
+            "description": "Do not exceed the maximum total number of suitcases that can be sent",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfSmallSuitcases} + \\textup{NumberOfLargeSuitcases} \\leq \\textup{MaxTotalSuitcases}",
+            "related_variables": [
+                "NumberOfSmallSuitcases",
+                "NumberOfLargeSuitcases"
+            ],
+            "related_parameters": [
+                "MaxTotalSuitcases"
+            ],
+            "code": "# Add constraint to not exceed the maximum total number of suitcases that can be sent\nmodel.addConstr(NumberOfSmallSuitcases + NumberOfLargeSuitcases <= MaxTotalSuitcases, name=\"max_total_suitcases_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of small suitcases to be sent",
+            "symbol": "NumberOfSmallSuitcases",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfSmallSuitcases = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfSmallSuitcases\")"
+        },
+        {
+            "definition": "The number of large suitcases to be sent",
+            "symbol": "NumberOfLargeSuitcases",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfLargeSuitcases = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfLargeSuitcases\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total number of snacks that can be delivered",
+            "status": "coded",
+            "formulation": "\\textup{Maximize } NumberOfSnacks = \\textup{SmallCapacity} \\times \\textup{NumberOfSmallSuitcases} + \\textup{LargeCapacity} \\times \\textup{NumberOfLargeSuitcases}",
+            "related_variables": [
+                "NumberOfSmallSuitcases",
+                "NumberOfLargeSuitcases"
+            ],
+            "related_parameters": [
+                "SmallCapacity",
+                "LargeCapacity"
+            ],
+            "code": "# Define the objective function\nmodel.setObjective(SmallCapacity * NumberOfSmallSuitcases + LargeCapacity * NumberOfLargeSuitcases, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413143104_nl4opt_prob_170/",
+    "problem_path": "data/nl4opt/prob_170/"
+}

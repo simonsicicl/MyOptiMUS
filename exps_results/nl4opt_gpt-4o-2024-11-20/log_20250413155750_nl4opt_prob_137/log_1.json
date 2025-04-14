@@ -1,0 +1,215 @@
+{
+    "background": "A doctor advises a patient to consume oranges and grapefruits to meet certain vitamin C and vitamin A requirements, while minimizing sugar intake.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Units of vitamin C in one orange",
+            "symbol": "VitaminCOrange",
+            "value": 5,
+            "shape": [],
+            "code": "VitaminCOrange = data[\"VitaminCOrange\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of vitamin A in one orange",
+            "symbol": "VitaminAOrange",
+            "value": 3,
+            "shape": [],
+            "code": "VitaminAOrange = data[\"VitaminAOrange\"] # scalar parameter"
+        },
+        {
+            "definition": "Grams of sugar in one orange",
+            "symbol": "SugarOrange",
+            "value": 5,
+            "shape": [],
+            "code": "SugarOrange = data[\"SugarOrange\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of vitamin C in one grapefruit",
+            "symbol": "VitaminCGrapefruit",
+            "value": 7,
+            "shape": [],
+            "code": "VitaminCGrapefruit = data[\"VitaminCGrapefruit\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of vitamin A in one grapefruit",
+            "symbol": "VitaminAGrapefruit",
+            "value": 5,
+            "shape": [],
+            "code": "VitaminAGrapefruit = data[\"VitaminAGrapefruit\"] # scalar parameter"
+        },
+        {
+            "definition": "Grams of sugar in one grapefruit",
+            "symbol": "SugarGrapefruit",
+            "value": 6,
+            "shape": [],
+            "code": "SugarGrapefruit = data[\"SugarGrapefruit\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum required units of vitamin C",
+            "symbol": "MinVitaminC",
+            "value": 80,
+            "shape": [],
+            "code": "MinVitaminC = data[\"MinVitaminC\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum required units of vitamin A",
+            "symbol": "MinVitaminA",
+            "value": 70,
+            "shape": [],
+            "code": "MinVitaminA = data[\"MinVitaminA\"] # scalar parameter"
+        },
+        {
+            "definition": "Ratio of the number of oranges to grapefruits",
+            "symbol": "OrangeGrapefruitRatio",
+            "value": 2,
+            "shape": [],
+            "code": "OrangeGrapefruitRatio = data[\"OrangeGrapefruitRatio\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Ensure the number of oranges is non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfOranges} \\geq 0",
+            "related_variables": [
+                "NumberOfOranges"
+            ],
+            "related_parameters": [],
+            "code": "# Non-negativity constraint for the number of oranges\nmodel.addConstr(NumberOfOranges >= 0, name=\"non_negativity_NumberOfOranges\")"
+        },
+        {
+            "description": "The number of grapefruits consumed must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfGrapefruits} \\geq 0",
+            "related_variables": [
+                "NumberOfGrapefruits"
+            ],
+            "related_parameters": [],
+            "code": "# The constraint is already inherently satisfied by non-negative domain constraints of continuous variables,\n# so no additional code is needed."
+        },
+        {
+            "description": "Total vitamin C from oranges and grapefruits must be at least MinVitaminC.",
+            "status": "coded",
+            "formulation": "\\\\textup{VitaminCOrange} \\\\cdot \\\\textup{NumberOfOranges} + \\\\textup{VitaminCGrapefruit} \\\\cdot \\\\textup{NumberOfGrapefruits} \\\\geq \\\\textup{MinVitaminC}",
+            "related_variables": [
+                "NumberOfOranges",
+                "NumberOfGrapefruits"
+            ],
+            "related_parameters": [
+                "VitaminCOrange",
+                "VitaminCGrapefruit",
+                "MinVitaminC"
+            ],
+            "code": "# Add vitamin C constraint from oranges and grapefruits\nmodel.addConstr(\n    VitaminCOrange * NumberOfOranges + VitaminCGrapefruit * NumberOfGrapefruits >= MinVitaminC,\n    name=\"vitamin_C_requirement\"\n)"
+        },
+        {
+            "description": "The total vitamin A intake from consuming oranges and grapefruits must be at least the minimum required amount (MinVitaminA).",
+            "status": "coded",
+            "formulation": "\\\\textup{VitaminAOrange} \\\\times \\\\textup{NumberOfOranges} + \\\\textup{VitaminAGrapefruit} \\\\times \\\\textup{NumberOfGrapefruits} \\\\geq \\\\textup{MinVitaminA}",
+            "related_variables": [
+                "NumberOfOranges",
+                "NumberOfGrapefruits"
+            ],
+            "related_parameters": [
+                "VitaminAOrange",
+                "VitaminAGrapefruit",
+                "MinVitaminA"
+            ],
+            "code": "# Add constraint for minimum vitamin A intake\nmodel.addConstr(VitaminAOrange * NumberOfOranges + VitaminAGrapefruit * NumberOfGrapefruits >= MinVitaminA, name=\"MinVitaminAConstraint\")"
+        },
+        {
+            "description": "The patient must eat at least OrangeGrapefruitRatio times as many oranges as grapefruits.",
+            "status": "coded",
+            "formulation": "\\\\textup{NumberOfOranges} \\\\geq \\\\textup{OrangeGrapefruitRatio} \\\\cdot \\\\textup{NumberOfGrapefruits}",
+            "related_variables": [
+                "NumberOfOranges",
+                "NumberOfGrapefruits"
+            ],
+            "related_parameters": [
+                "OrangeGrapefruitRatio"
+            ],
+            "code": "# Add constraint that the number of oranges must be at least OrangeGrapefruitRatio times the number of grapefruits\nmodel.addConstr(NumberOfOranges >= OrangeGrapefruitRatio * NumberOfGrapefruits, name=\"orange_grapefruit_ratio\")"
+        },
+        {
+            "description": "The total Vitamin C intake must meet or exceed the minimum required units of Vitamin C.",
+            "status": "coded",
+            "formulation": "\\\\textup{VitaminCOrange} \\\\cdot \\\\textup{NumberOfOranges} + \\\\textup{VitaminCGrapefruit} \\\\cdot \\\\textup{NumberOfGrapefruits} \\\\geq \\\\textup{MinVitaminC}",
+            "related_variables": [
+                "NumberOfOranges",
+                "NumberOfGrapefruits"
+            ],
+            "related_parameters": [
+                "VitaminCOrange",
+                "VitaminCGrapefruit",
+                "MinVitaminC"
+            ],
+            "code": "# Add Vitamin C intake constraint\nmodel.addConstr(\n    VitaminCOrange * NumberOfOranges + VitaminCGrapefruit * NumberOfGrapefruits >= MinVitaminC, \n    name=\"VitaminC_intake_constraint\"\n)"
+        },
+        {
+            "description": "The total Vitamin A intake must meet or exceed the minimum required units of Vitamin A.",
+            "status": "coded",
+            "formulation": "\\\\textup{VitaminAOrange} \\\\cdot \\\\textup{NumberOfOranges} + \\\\textup{VitaminAGrapefruit} \\\\cdot \\\\textup{NumberOfGrapefruits} \\\\geq \\\\textup{MinVitaminA}",
+            "related_variables": [
+                "NumberOfOranges",
+                "NumberOfGrapefruits"
+            ],
+            "related_parameters": [
+                "VitaminAOrange",
+                "VitaminAGrapefruit",
+                "MinVitaminA"
+            ],
+            "code": "# Add Vitamin A intake constraint\nmodel.addConstr(\n    NumberOfOranges * VitaminAOrange + NumberOfGrapefruits * VitaminAGrapefruit >= MinVitaminA,\n    name=\"vitaminA_requirement\"\n)"
+        },
+        {
+            "description": "The number of oranges consumed should maintain the specified ratio of oranges to grapefruits.",
+            "status": "coded",
+            "formulation": "\\\\textup{NumberOfOranges} - \\\\textup{OrangeGrapefruitRatio} \\\\cdot \\\\textup{NumberOfGrapefruits} = 0",
+            "related_variables": [
+                "NumberOfOranges",
+                "NumberOfGrapefruits"
+            ],
+            "related_parameters": [
+                "OrangeGrapefruitRatio"
+            ],
+            "code": "# Add constraint ensuring the specified ratio of oranges to grapefruits is maintained\nmodel.addConstr(NumberOfOranges - OrangeGrapefruitRatio * NumberOfGrapefruits == 0, name=\"orange_grapefruit_ratio\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of oranges the patient decides to consume",
+            "symbol": "NumberOfOranges",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfOranges = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfOranges\")"
+        },
+        {
+            "definition": "The number of grapefruits the patient decides to consume",
+            "symbol": "NumberOfGrapefruits",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfGrapefruits = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfGrapefruits\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total sugar intake from consuming oranges and grapefruits.",
+            "status": "coded",
+            "formulation": "\\\\textup{Minimize}: \\\\quad \\\\textup{SugarOrange} \\\\cdot \\\\textup{NumberOfOranges} + \\\\textup{SugarGrapefruit} \\\\cdot \\\\textup{NumberOfGrapefruits}",
+            "related_variables": [
+                "NumberOfOranges",
+                "NumberOfGrapefruits"
+            ],
+            "related_parameters": [
+                "SugarOrange",
+                "SugarGrapefruit"
+            ],
+            "code": "# Set objective\nmodel.setObjective(SugarOrange * NumberOfOranges + SugarGrapefruit * NumberOfGrapefruits, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413155750_nl4opt_prob_137/",
+    "problem_path": "data/nl4opt/prob_137/"
+}

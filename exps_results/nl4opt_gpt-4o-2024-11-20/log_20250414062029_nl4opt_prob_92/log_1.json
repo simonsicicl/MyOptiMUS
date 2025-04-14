@@ -1,0 +1,173 @@
+{
+    "background": "A toy company needs to determine the number of medium-sized and small factories to build in order to meet daily toy production minimums with a limited number of operators.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of toys produced per day by a medium-sized factory",
+            "symbol": "ToysMedium",
+            "value": 50,
+            "shape": [],
+            "code": "ToysMedium = data[\"ToysMedium\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of operators required for a medium-sized factory",
+            "symbol": "OperatorsMedium",
+            "value": 3,
+            "shape": [],
+            "code": "OperatorsMedium = data[\"OperatorsMedium\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of toys produced per day by a small factory",
+            "symbol": "ToysSmall",
+            "value": 35,
+            "shape": [],
+            "code": "ToysSmall = data[\"ToysSmall\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of operators required for a small factory",
+            "symbol": "OperatorsSmall",
+            "value": 2,
+            "shape": [],
+            "code": "OperatorsSmall = data[\"OperatorsSmall\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of toys to be produced per day",
+            "symbol": "ToysMin",
+            "value": 250,
+            "shape": [],
+            "code": "ToysMin = data[\"ToysMin\"] # scalar parameter"
+        },
+        {
+            "definition": "Total number of operators available",
+            "symbol": "OperatorsTotal",
+            "value": 16,
+            "shape": [],
+            "code": "OperatorsTotal = data[\"OperatorsTotal\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The main constraints for determining the number of medium and small factories while satisfying production and operator limitations.",
+            "status": "coded",
+            "formulation": "\\textup{ToysMedium} \\cdot \\textup{MediumFactories} + \\textup{ToysSmall} \\cdot \\textup{SmallFactories} \\geq \\textup{ToysMin} \\quad \\textup{and} \\quad \\textup{OperatorsMedium} \\cdot \\textup{MediumFactories} + \\textup{OperatorsSmall} \\cdot \\textup{SmallFactories} \\leq \\textup{OperatorsTotal}",
+            "related_variables": [
+                "MediumFactories",
+                "SmallFactories"
+            ],
+            "related_parameters": [
+                "ToysMedium",
+                "ToysSmall",
+                "ToysMin",
+                "OperatorsMedium",
+                "OperatorsSmall",
+                "OperatorsTotal"
+            ],
+            "code": "# Adding constraints for production and operator limitations\n\n# Constraint: Production requirements\nmodel.addConstr(\n    ToysMedium * MediumFactories + ToysSmall * SmallFactories >= ToysMin,\n    name=\"production_constraint\"\n)\n\n# Constraint: Operator availability\nmodel.addConstr(\n    OperatorsMedium * MediumFactories + OperatorsSmall * SmallFactories <= OperatorsTotal,\n    name=\"operator_constraint\"\n)"
+        },
+        {
+            "description": "The number of small factories built cannot be negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{SmallFactories} \\\\geq 0",
+            "related_variables": [
+                "SmallFactories"
+            ],
+            "related_parameters": [],
+            "code": "# Add non-negativity constraint for SmallFactories\nmodel.addConstr(SmallFactories >= 0, name=\"non_negative_small_factories\")"
+        },
+        {
+            "description": "Ensure that total daily toy production is at least the minimum required amount of toys.",
+            "status": "coded",
+            "formulation": "(\\textup{ToysMedium} \\\\cdot \\textup{MediumFactories}) + (\\textup{ToysSmall} \\\\cdot \\textup{SmallFactories}) \\\\geq \\textup{ToysMin}",
+            "related_variables": [
+                "MediumFactories",
+                "SmallFactories"
+            ],
+            "related_parameters": [
+                "ToysMedium",
+                "ToysSmall",
+                "ToysMin"
+            ],
+            "code": "# Add constraint to ensure daily toy production meets the minimum required amount\nmodel.addConstr((ToysMedium * MediumFactories) + (ToysSmall * SmallFactories) >= ToysMin, name=\"min_daily_toy_production\")"
+        },
+        {
+            "description": "The total number of operators required for all factories must not exceed the total number of operators available.",
+            "status": "coded",
+            "formulation": "\\textup{OperatorsMedium} \\cdot \\textup{MediumFactories} + \\textup{OperatorsSmall} \\cdot \\textup{SmallFactories} \\leq \\textup{OperatorsTotal}",
+            "related_variables": [
+                "MediumFactories",
+                "SmallFactories"
+            ],
+            "related_parameters": [
+                "OperatorsMedium",
+                "OperatorsSmall",
+                "OperatorsTotal"
+            ],
+            "code": "# Add constraint to ensure total operators required does not exceed availability\nmodel.addConstr(\n    MediumFactories * OperatorsMedium + SmallFactories * OperatorsSmall <= OperatorsTotal,\n    name=\"operator_limit\"\n)"
+        },
+        {
+            "description": "Total toys produced must meet or exceed the daily minimum production requirement",
+            "status": "coded",
+            "formulation": "\\textup{MediumFactories} \\cdot \\textup{ToysMedium} + \\textup{SmallFactories} \\cdot \\textup{ToysSmall} \\geq \\textup{ToysMin}",
+            "related_variables": [
+                "MediumFactories",
+                "SmallFactories"
+            ],
+            "related_parameters": [
+                "ToysMedium",
+                "ToysSmall",
+                "ToysMin"
+            ],
+            "code": "# Add constraint to ensure total toys produced meets or exceeds the daily minimum requirement\nmodel.addConstr(\n    MediumFactories * ToysMedium + SmallFactories * ToysSmall >= ToysMin,\n    name=\"daily_minimum_toy_production\"\n)"
+        },
+        {
+            "description": "Total operator usage must not exceed the available operators",
+            "status": "coded",
+            "formulation": "\\textup{MediumFactories} \\cdot \\textup{OperatorsMedium} + \\textup{SmallFactories} \\cdot \\textup{OperatorsSmall} \\leq \\textup{OperatorsTotal}",
+            "related_variables": [
+                "MediumFactories",
+                "SmallFactories"
+            ],
+            "related_parameters": [
+                "OperatorsMedium",
+                "OperatorsSmall",
+                "OperatorsTotal"
+            ],
+            "code": "# Add operator usage constraint\nmodel.addConstr(\n    MediumFactories * OperatorsMedium + SmallFactories * OperatorsSmall <= OperatorsTotal,\n    name=\"operator_usage_limit\"\n)"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of medium-sized factories built",
+            "symbol": "MediumFactories",
+            "shape": [],
+            "status": "coded",
+            "code": "MediumFactories = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"MediumFactories\")"
+        },
+        {
+            "definition": "Number of small factories built",
+            "symbol": "SmallFactories",
+            "shape": [],
+            "status": "coded",
+            "code": "SmallFactories = model.addVar(vtype=gp.GRB.INTEGER, name=\"SmallFactories\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of factories built",
+            "status": "coded",
+            "formulation": "\\textup{MediumFactories} + \\textup{SmallFactories}",
+            "related_variables": [
+                "MediumFactories",
+                "SmallFactories"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(MediumFactories + SmallFactories, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250414062029_nl4opt_prob_92/",
+    "problem_path": "data/nl4opt/prob_92/"
+}

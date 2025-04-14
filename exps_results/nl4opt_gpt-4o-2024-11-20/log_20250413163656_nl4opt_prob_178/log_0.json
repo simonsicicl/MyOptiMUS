@@ -1,0 +1,296 @@
+{
+    "background": "A village is hosting a banquet where bike and car transportations are provided, and the objective is to minimize the number of bikes while meeting the transportation needs.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Seating capacity of a bike",
+            "symbol": "BikeCapacity",
+            "value": 3,
+            "shape": [],
+            "code": "BikeCapacity = data[\"BikeCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Seating capacity of a car",
+            "symbol": "CarCapacity",
+            "value": 5,
+            "shape": [],
+            "code": "CarCapacity = data[\"CarCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum proportion of transport vehicles that can be cars",
+            "symbol": "MaxCarProportion",
+            "value": 0.4,
+            "shape": [],
+            "code": "MaxCarProportion = data[\"MaxCarProportion\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of people that need transport",
+            "symbol": "MinPeople",
+            "value": 500,
+            "shape": [],
+            "code": "MinPeople = data[\"MinPeople\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of bikes must be non-negative.",
+            "status": "formulated",
+            "formulation": "\\\\textup{NumberOfBikes} \\\\geq 0",
+            "related_variables": [
+                "NumberOfBikes"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "The number of cars used for transportation must be non-negative.",
+            "status": "formulated",
+            "formulation": "\\textup{NumberOfCars} \\geq 0",
+            "related_variables": [
+                "NumberOfCars"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "The number of people transported by bikes cannot exceed the total capacity of the bikes used.",
+            "status": "formulated",
+            "formulation": "\\textup{PeopleTransportedByBikes} \\leq \\textup{BikeCapacity} \\times \\textup{NumberOfBikes}",
+            "related_variables": [
+                "PeopleTransportedByBikes",
+                "NumberOfBikes"
+            ],
+            "related_parameters": [
+                "BikeCapacity"
+            ]
+        },
+        {
+            "description": "The total people transported by cars cannot exceed the seating capacity of all cars.",
+            "status": "formulated",
+            "formulation": "\\textup{PeopleTransportedByCars} \\leq \\textup{NumberOfCars} \\cdot \\textup{CarCapacity}",
+            "related_variables": [
+                "PeopleTransportedByCars",
+                "NumberOfCars"
+            ],
+            "related_parameters": [
+                "CarCapacity"
+            ]
+        },
+        {
+            "description": "At most MaxCarProportion of the total number of vehicles can be cars.",
+            "status": "formulated",
+            "formulation": "\\\\textup{NumberOfCars} \\\\leq \\\\textup{MaxCarProportion} \\\\cdot \\\\textup{TotalVehicles}",
+            "related_variables": [
+                "NumberOfCars",
+                "TotalVehicles"
+            ],
+            "related_parameters": [
+                "MaxCarProportion"
+            ]
+        },
+        {
+            "description": "The total number of people transported must be at least the minimum required number of people (MinPeople).",
+            "status": "formulated",
+            "formulation": "\\\\textup{PeopleTransportedByBikes} + \\\\textup{PeopleTransportedByCars} \\\\geq \\\\textup{MinPeople}",
+            "related_variables": [
+                "PeopleTransportedByBikes",
+                "PeopleTransportedByCars"
+            ],
+            "related_parameters": [
+                "MinPeople"
+            ]
+        },
+        {
+            "description": "The total capacity of bikes and cars must meet or exceed the minimum number of people requiring transportation.",
+            "status": "formulated",
+            "formulation": "\\\\textup{BikeCapacity} \\\\cdot \\\\textup{NumberOfBikes} + \\\\textup{CarCapacity} \\\\cdot \\\\textup{NumberOfCars} \\\\geq \\\\textup{MinPeople}",
+            "related_variables": [
+                "NumberOfBikes",
+                "NumberOfCars"
+            ],
+            "related_parameters": [
+                "BikeCapacity",
+                "CarCapacity",
+                "MinPeople"
+            ]
+        },
+        {
+            "description": "The number of cars used must be within the maximum proportion allowed relative to total vehicles (bikes and cars).",
+            "status": "formulated",
+            "formulation": "\\\\textup{NumberOfCars} \\\\leq \\\\textup{MaxCarProportion} \\\\cdot (\\\\textup{NumberOfBikes} + \\\\textup{NumberOfCars})",
+            "related_variables": [
+                "NumberOfBikes",
+                "NumberOfCars"
+            ],
+            "related_parameters": [
+                "MaxCarProportion"
+            ]
+        },
+        {
+            "description": "The total number of people transported must equal the sum of people transported by bikes and cars.",
+            "status": "formulated",
+            "formulation": "\\textup{MinPeople} \\leq \\textup{PeopleTransportedByBikes} + \\textup{CarCapacity} \\times \\textup{NumberOfCars}",
+            "related_variables": [
+                "PeopleTransportedByBikes",
+                "NumberOfCars"
+            ],
+            "related_parameters": [
+                "MinPeople",
+                "CarCapacity"
+            ]
+        },
+        {
+            "description": "The total number of people transported (by cars and bikes) must satisfy the minimum required transport demand.",
+            "status": "formulated",
+            "formulation": "\\textup{PeopleTransportedByCars} + \\textup{PeopleTransportedByBikes} \\geq \\textup{MinPeople}",
+            "related_variables": [
+                "PeopleTransportedByCars",
+                "PeopleTransportedByBikes"
+            ],
+            "related_parameters": [
+                "MinPeople"
+            ]
+        },
+        {
+            "description": "The total number of vehicles is equal to the sum of bikes and cars.",
+            "status": "formulated",
+            "formulation": "\\\\textup{TotalVehicles} = \\\\textup{NumberOfBikes} + \\\\textup{NumberOfCars}",
+            "related_variables": [
+                "TotalVehicles",
+                "NumberOfBikes",
+                "NumberOfCars"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Ensure that the total number of people transported by bikes reflects the number of bikes times the capacity of each bike.",
+            "status": "formulated",
+            "formulation": "\\\\textup{PeopleTransportedByBikes} = \\\\textup{BikeCapacity} \\\\cdot \\\\textup{NumberOfBikes}",
+            "related_variables": [
+                "PeopleTransportedByBikes",
+                "NumberOfBikes"
+            ],
+            "related_parameters": [
+                "BikeCapacity"
+            ]
+        },
+        {
+            "description": "Ensure that the total number of people transported by cars reflects the number of cars times the capacity of each car.",
+            "status": "formulated",
+            "formulation": "\\\\textup{PeopleTransportedByCars} = \\\\textup{CarCapacity} \\\\cdot \\\\textup{NumberOfCars}",
+            "related_variables": [
+                "PeopleTransportedByCars",
+                "NumberOfCars"
+            ],
+            "related_parameters": [
+                "CarCapacity"
+            ]
+        },
+        {
+            "description": "The total number of people transported by bikes and cars must meet the minimum transportation requirement.",
+            "status": "formulated",
+            "formulation": "\\textup{PeopleTransportedByBikes} + \\textup{PeopleTransportedByCars} \\\\geq \\textup{MinPeople}",
+            "related_variables": [
+                "PeopleTransportedByBikes",
+                "PeopleTransportedByCars"
+            ],
+            "related_parameters": [
+                "MinPeople"
+            ]
+        },
+        {
+            "description": "The number of people transported by bikes is equal to the total number of bikes multiplied by the seating capacity of a bike.",
+            "status": "formulated",
+            "formulation": "\\textup{PeopleTransportedByBikes} = \\textup{NumberOfBikes} \\\\times \\textup{BikeCapacity}",
+            "related_variables": [
+                "PeopleTransportedByBikes",
+                "NumberOfBikes"
+            ],
+            "related_parameters": [
+                "BikeCapacity"
+            ]
+        },
+        {
+            "description": "The number of people transported by cars is equal to the total number of cars multiplied by the seating capacity of a car.",
+            "status": "formulated",
+            "formulation": "\\textup{PeopleTransportedByCars} = \\textup{NumberOfCars} \\\\times \\textup{CarCapacity}",
+            "related_variables": [
+                "PeopleTransportedByCars",
+                "NumberOfCars"
+            ],
+            "related_parameters": [
+                "CarCapacity"
+            ]
+        },
+        {
+            "description": "The proportion of cars must not exceed the maximum car proportion.",
+            "status": "formulated",
+            "formulation": "\\textup{NumberOfCars} \\\\leq \\textup{MaxCarProportion} \\\\times (\\textup{NumberOfBikes} + \\textup{NumberOfCars})",
+            "related_variables": [
+                "NumberOfCars",
+                "NumberOfBikes"
+            ],
+            "related_parameters": [
+                "MaxCarProportion"
+            ]
+        },
+        {
+            "description": "The total number of vehicles is the sum of bikes and cars.",
+            "status": "formulated",
+            "formulation": "\\textup{TotalVehicles} = \\textup{NumberOfBikes} + \\textup{NumberOfCars}",
+            "related_variables": [
+                "TotalVehicles",
+                "NumberOfBikes",
+                "NumberOfCars"
+            ],
+            "related_parameters": []
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of bikes used to provide transportation.",
+            "symbol": "NumberOfBikes",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "The number of cars used to provide transportation.",
+            "symbol": "NumberOfCars",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "The total number of people transported by bikes.",
+            "symbol": "PeopleTransportedByBikes",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "The total number of people transported by cars.",
+            "symbol": "PeopleTransportedByCars",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "The total number of vehicles used, which is the sum of bikes and cars.",
+            "symbol": "TotalVehicles",
+            "shape": [],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of bikes needed for transportation.",
+            "status": "formulated",
+            "formulation": "\\min \\\\quad \\textup{NumberOfBikes}",
+            "related_variables": [
+                "NumberOfBikes"
+            ],
+            "related_parameters": []
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413163656_nl4opt_prob_178/",
+    "problem_path": "data/nl4opt/prob_178/"
+}

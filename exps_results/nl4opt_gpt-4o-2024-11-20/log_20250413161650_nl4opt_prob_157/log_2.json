@@ -1,0 +1,179 @@
+{
+    "background": "An oil and gas company needs to transport oil to the port using containers and trucks with certain capacities and restrictions.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Capacity of a container",
+            "symbol": "ContainerCapacity",
+            "value": 30,
+            "shape": [],
+            "code": "ContainerCapacity = data[\"ContainerCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Capacity of a truck",
+            "symbol": "TruckCapacity",
+            "value": 40,
+            "shape": [],
+            "code": "TruckCapacity = data[\"TruckCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum ratio of number of trucks to number of containers",
+            "symbol": "TruckContainerRatio",
+            "value": 0.5,
+            "shape": [],
+            "code": "TruckContainerRatio = data[\"TruckContainerRatio\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum total units of oil to send to the port",
+            "symbol": "MinimumUnits",
+            "value": 2000,
+            "shape": [],
+            "code": "MinimumUnits = data[\"MinimumUnits\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of containers to use",
+            "symbol": "MinimumContainers",
+            "value": 15,
+            "shape": [],
+            "code": "MinimumContainers = data[\"MinimumContainers\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of containers used must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumContainers} \\geq 0",
+            "related_variables": [
+                "NumContainers"
+            ],
+            "related_parameters": [],
+            "code": "# The non-negativity constraint for NumContainers is implicitly satisfied by Gurobi's default lower bound of zero for continuous variables."
+        },
+        {
+            "description": "The number of trucks used must be non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{NumTrucks} \\\\geq 0",
+            "related_variables": [
+                "NumTrucks"
+            ],
+            "related_parameters": [],
+            "code": "# No additional code needed because Gurobi variables are non-negative by default unless explicitly defined with lower bounds less than zero."
+        },
+        {
+            "description": "The number of trucks used is at most the TruckContainerRatio times the number of containers used.",
+            "status": "coded",
+            "formulation": "\\textup{NumTrucks} \\leq \\textup{TruckContainerRatio} \\cdot \\textup{NumContainers}",
+            "related_variables": [
+                "NumTrucks",
+                "NumContainers"
+            ],
+            "related_parameters": [
+                "TruckContainerRatio"
+            ],
+            "code": "# Add constraint to ensure the number of trucks used is at most TruckContainerRatio times the number of containers used\nmodel.addConstr(NumTrucks <= TruckContainerRatio * NumContainers, name=\"truck_container_ratio\")"
+        },
+        {
+            "description": "Ensure that the total amount of oil transported via containers and trucks is at least the minimum required units.",
+            "status": "coded",
+            "formulation": "\\textup{NumContainers} \\cdot \\textup{ContainerCapacity} + \\textup{NumTrucks} \\cdot \\textup{TruckCapacity} \\geq \\textup{MinimumUnits}",
+            "related_variables": [
+                "NumContainers",
+                "NumTrucks"
+            ],
+            "related_parameters": [
+                "ContainerCapacity",
+                "TruckCapacity",
+                "MinimumUnits"
+            ],
+            "code": "# Add constraint to ensure the total oil transported meets the minimum required units\nmodel.addConstr(NumContainers * ContainerCapacity + NumTrucks * TruckCapacity >= MinimumUnits, name=\"minimum_transportation_constraint\")"
+        },
+        {
+            "description": "Ensure at least the minimum number of containers are used in the transportation.",
+            "status": "coded",
+            "formulation": "\\textup{NumContainers} \\geq \\textup{MinimumContainers}",
+            "related_variables": [
+                "NumContainers"
+            ],
+            "related_parameters": [
+                "MinimumContainers"
+            ],
+            "code": "# Ensure at least the minimum number of containers are used\nmodel.addConstr(NumContainers >= MinimumContainers, name=\"min_containers\")"
+        },
+        {
+            "description": "Ensure the containers and trucks have sufficient capacity to transport the minimum required oil.",
+            "status": "coded",
+            "formulation": "\\textup{NumContainers} * \\textup{ContainerCapacity} + \\textup{NumTrucks} * \\textup{TruckCapacity} \\geq \\textup{MinimumUnits}",
+            "related_variables": [
+                "NumContainers",
+                "NumTrucks"
+            ],
+            "related_parameters": [
+                "ContainerCapacity",
+                "TruckCapacity",
+                "MinimumUnits"
+            ],
+            "code": "# Add constraint to ensure containers and trucks have sufficient capacity\nmodel.addConstr(\n    NumContainers * ContainerCapacity + NumTrucks * TruckCapacity >= MinimumUnits,\n    name=\"capacity_constraint\"\n)"
+        },
+        {
+            "description": "Ensure the number of trucks does not exceed the permissible truck-to-container ratio.",
+            "status": "coded",
+            "formulation": "\\textup{NumTrucks} \\leq \\textup{TruckContainerRatio} * \\textup{NumContainers}",
+            "related_variables": [
+                "NumTrucks",
+                "NumContainers"
+            ],
+            "related_parameters": [
+                "TruckContainerRatio"
+            ],
+            "code": "# Add constraint to ensure the number of trucks does not exceed TruckContainerRatio multiplied by the number of containers\nmodel.addConstr(NumTrucks <= TruckContainerRatio * NumContainers, name=\"truck_to_container_ratio\")"
+        },
+        {
+            "description": "Enforce a minimum number of containers to be used.",
+            "status": "coded",
+            "formulation": "\\textup{NumContainers} \\geq \\textup{MinimumContainers}",
+            "related_variables": [
+                "NumContainers"
+            ],
+            "related_parameters": [
+                "MinimumContainers"
+            ],
+            "code": "# Adjusting the integrality of NumContainers to INTEGER\nNumContainers.vtype = gp.GRB.INTEGER\n\n# Adding the minimum containers constraint\nmodel.addConstr(NumContainers >= MinimumContainers, name=\"min_containers\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of containers used in the transportation.",
+            "symbol": "NumContainers",
+            "shape": [],
+            "status": "coded",
+            "code": "NumContainers = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumContainers\")"
+        },
+        {
+            "definition": "The number of trucks used in the transportation.",
+            "symbol": "NumTrucks",
+            "shape": [],
+            "status": "coded",
+            "code": "NumTrucks = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumTrucks\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of containers and trucks required for transport.",
+            "status": "coded",
+            "formulation": "\\textup{Minimize:} \\quad \\textup{NumContainers} + \\textup{NumTrucks}",
+            "related_variables": [
+                "NumContainers",
+                "NumTrucks"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(NumContainers + NumTrucks, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 60.0,
+    "log_path": "logs/log_20250413161650_nl4opt_prob_157/",
+    "problem_path": "data/nl4opt/prob_157/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_157/data.json\", \"r\") as f:\n    data = json.load(f)\n\nContainerCapacity = data[\"ContainerCapacity\"] # scalar parameter\nTruckCapacity = data[\"TruckCapacity\"] # scalar parameter\nTruckContainerRatio = data[\"TruckContainerRatio\"] # scalar parameter\nMinimumUnits = data[\"MinimumUnits\"] # scalar parameter\nMinimumContainers = data[\"MinimumContainers\"] # scalar parameter\nNumContainers = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumContainers\")\nNumTrucks = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumTrucks\")\n\n# The non-negativity constraint for NumContainers is implicitly satisfied by Gurobi's default lower bound of zero for continuous variables.\n\n# No additional code needed because Gurobi variables are non-negative by default unless explicitly defined with lower bounds less than zero.\n\n# Add constraint to ensure the number of trucks used is at most TruckContainerRatio times the number of containers used\nmodel.addConstr(NumTrucks <= TruckContainerRatio * NumContainers, name=\"truck_container_ratio\")\n\n# Add constraint to ensure the total oil transported meets the minimum required units\nmodel.addConstr(NumContainers * ContainerCapacity + NumTrucks * TruckCapacity >= MinimumUnits, name=\"minimum_transportation_constraint\")\n\n# Ensure at least the minimum number of containers are used\nmodel.addConstr(NumContainers >= MinimumContainers, name=\"min_containers\")\n\n# Add constraint to ensure containers and trucks have sufficient capacity\nmodel.addConstr(\n    NumContainers * ContainerCapacity + NumTrucks * TruckCapacity >= MinimumUnits,\n    name=\"capacity_constraint\"\n)\n\n# Add constraint to ensure the number of trucks does not exceed TruckContainerRatio multiplied by the number of containers\nmodel.addConstr(NumTrucks <= TruckContainerRatio * NumContainers, name=\"truck_to_container_ratio\")\n\n# Adjusting the integrality of NumContainers to INTEGER\nNumContainers.vtype = gp.GRB.INTEGER\n\n# Adding the minimum containers constraint\nmodel.addConstr(NumContainers >= MinimumContainers, name=\"min_containers\")\n\n# Set objective\nmodel.setObjective(NumContainers + NumTrucks, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

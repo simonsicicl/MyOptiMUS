@@ -1,0 +1,259 @@
+{
+    "background": "Paths must be established in a network of nodes where links have defined capacities and associated costs, ensuring data reach their intended destinations at specific rates.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "The number of links between nodes in the network.",
+            "symbol": "NumLinks",
+            "value": "",
+            "shape": [],
+            "code": "NumLinks = data[\"NumLinks\"] # scalar parameter"
+        },
+        {
+            "definition": "The starting node for link ij",
+            "symbol": "StartNode",
+            "value": "",
+            "shape": [
+                "NumLinks"
+            ],
+            "code": "StartNode = np.array(data[\"StartNode\"]) # ['NumLinks']"
+        },
+        {
+            "definition": "The ending node for link ij",
+            "symbol": "EndNode",
+            "value": "",
+            "shape": [
+                "NumLinks"
+            ],
+            "code": "EndNode = np.array(data[\"EndNode\"]) # ['NumLinks']"
+        },
+        {
+            "definition": "The maximum capacity for link ij",
+            "symbol": "Capacity",
+            "value": "",
+            "shape": [
+                "NumLinks"
+            ],
+            "code": "Capacity = np.array(data[\"Capacity\"]) # ['NumLinks']"
+        },
+        {
+            "definition": "The cost for transporting data through link ij",
+            "symbol": "Cost",
+            "value": "",
+            "shape": [
+                "NumLinks"
+            ],
+            "code": "Cost = np.array(data[\"Cost\"]) # ['NumLinks']"
+        },
+        {
+            "definition": "The number of data flow requirements.",
+            "symbol": "NumFlowReqs",
+            "value": "",
+            "shape": [],
+            "code": "NumFlowReqs = data[\"NumFlowReqs\"] # scalar parameter"
+        },
+        {
+            "definition": "The source node for data flow kl",
+            "symbol": "Source",
+            "value": "",
+            "shape": [
+                "NumFlowReqs"
+            ],
+            "code": "Source = np.array(data[\"Source\"]) # ['NumFlowReqs']"
+        },
+        {
+            "definition": "The destination node for data flow kl",
+            "symbol": "Destination",
+            "value": "",
+            "shape": [
+                "NumFlowReqs"
+            ],
+            "code": "Destination = np.array(data[\"Destination\"]) # ['NumFlowReqs']"
+        },
+        {
+            "definition": "The rate of data flow for flow kl",
+            "symbol": "DataRate",
+            "value": "",
+            "shape": [
+                "NumFlowReqs"
+            ],
+            "code": "DataRate = np.array(data[\"DataRate\"]) # ['NumFlowReqs']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The total data flow passing through a link cannot exceed its capacity.",
+            "status": "formulated",
+            "formulation": "\\sum_{k=1}^{\\textup{NumFlowReqs}} \\textup{Flow}_{kl,ij} \\leq \\textup{Capacity}_{ij}, \\quad \\forall (i,j) \\in \\textup{NumLinks}",
+            "related_variables": [
+                "Flow"
+            ],
+            "related_parameters": [
+                "Capacity",
+                "NumFlowReqs",
+                "NumLinks"
+            ]
+        },
+        {
+            "description": "Each link's data flow must be non-negative.",
+            "status": "formulated",
+            "formulation": "\\textup{Flow}_{kl,ij} \\geq 0, \\quad \\forall \\; kl \\in \\{1, \\ldots, \\textup{NumFlowReqs}\\}, \\forall \\; ij \\in \\{1, \\ldots, \\textup{NumLinks}\\}",
+            "related_variables": [
+                "Flow"
+            ],
+            "related_parameters": [
+                "NumFlowReqs",
+                "NumLinks"
+            ]
+        },
+        {
+            "description": "The sum of data rates on all links from each source node must be at least the required data rate for that source.",
+            "status": "formulated",
+            "formulation": "\\sum_{\\textup{ij} \\in \\textup{Links where StartNode[j] = Source[kl]}} \\textup{Flow}_{kl,ij} \\geq \\textup{DataRate}_{kl}, \\quad \\forall \\textup{kl} \\in \\textup{Flow Requests}",
+            "related_variables": [
+                "Flow"
+            ],
+            "related_parameters": [
+                "StartNode",
+                "Source",
+                "DataRate"
+            ]
+        },
+        {
+            "description": "The sum of data rates on all links to each destination node must be at least the required data rate for that destination.",
+            "status": "formulated",
+            "formulation": "\\sum_{kl: \\textup{Destination}_{kl} = n} \\sum_{ij: \\textup{EndNode}_{ij} = n} \\textup{Flow}_{kl,ij} \\geq \\sum_{kl: \\textup{Destination}_{kl} = n} \\textup{DataRate}_{kl} \\quad \\forall n",
+            "related_variables": [
+                "Flow"
+            ],
+            "related_parameters": [
+                "NumFlowReqs",
+                "NumLinks",
+                "DataRate",
+                "Destination",
+                "EndNode"
+            ]
+        },
+        {
+            "description": "Flow conservation at intermediate nodes: the data flowing into any intermediate node equals the data flowing out, for each flow requirement.",
+            "status": "formulated",
+            "formulation": "\\forall \\textup{flow requirement } kl, \\forall \\textup{intermediate node } n: \\\\ \\quad \\sum_{\\substack{ij: \\\\ \\textup{EndNode}_{ij} = n}} \\textup{Flow}_{kl, ij} - \\sum_{\\substack{ij: \\\\ \\textup{StartNode}_{ij} = n}} \\textup{Flow}_{kl, ij} = 0",
+            "related_variables": [
+                "Flow"
+            ],
+            "related_parameters": [
+                "Source",
+                "Destination",
+                "StartNode",
+                "EndNode"
+            ]
+        },
+        {
+            "description": "The total data flow for a flow requirement must satisfy source-destination constraints.",
+            "status": "formulated",
+            "formulation": "\\sum_{j \\in \\textup{Outgoing}(i)} \\textup{Flow}_{kl,ij} - \\sum_{j \\in \\textup{Incoming}(i)} \\textup{Flow}_{kl,ji} = \\begin{cases} \\textup{DataRate}_{kl}, & \\text{if } i = \\textup{Source}_{kl} \\\\ -\\textup{DataRate}_{kl}, & \\text{if } i = \\textup{Destination}_{kl} \\\\ 0, & \\text{otherwise} \\end{cases}, \\quad \\forall k \\in \\textup{NumFlowReqs}, \\forall i \\in \\textup{NumNodes}",
+            "related_variables": [
+                "Flow"
+            ],
+            "related_parameters": [
+                "DataRate",
+                "Source",
+                "Destination",
+                "NumFlowReqs"
+            ]
+        },
+        {
+            "description": "Ensure the total flow on each link does not exceed its maximum capacity.",
+            "status": "formulated",
+            "formulation": "\\sum_{k=1}^{\\textup{NumFlowReqs}} \\textup{Flow}_{k,j} \\leq \\textup{Capacity}_{j}, \\quad \\forall j \\in \\{1, \\ldots, \\textup{NumLinks}\\}",
+            "related_variables": [
+                "Flow"
+            ],
+            "related_parameters": [
+                "NumFlowReqs",
+                "NumLinks",
+                "Capacity"
+            ]
+        },
+        {
+            "description": "Ensure flow conservation at the source node for each flow requirement.",
+            "status": "formulated",
+            "formulation": "\\sum_{j \\colon \\textup{StartNode}_{j} = \\textup{Source}_{k}} \\textup{Flow}_{k,j} - \\sum_{j \\colon \\textup{EndNode}_{j} = \\textup{Source}_{k}} \\textup{Flow}_{k,j} = \\textup{DataRate}_{k}, \\quad \\forall k \\in \\{1, \\ldots, \\textup{NumFlowReqs}\\}",
+            "related_variables": [
+                "Flow"
+            ],
+            "related_parameters": [
+                "NumFlowReqs",
+                "NumLinks",
+                "StartNode",
+                "EndNode",
+                "Source",
+                "DataRate"
+            ]
+        },
+        {
+            "description": "Ensure flow conservation at the destination node for each flow requirement.",
+            "status": "formulated",
+            "formulation": "\\sum_{j \\colon \\textup{EndNode}_{j} = \\textup{Destination}_{k}} \\textup{Flow}_{k,j} - \\sum_{j \\colon \\textup{StartNode}_{j} = \\textup{Destination}_{k}} \\textup{Flow}_{k,j} = \\textup{DataRate}_{k}, \\quad \\forall k \\in \\{1, \\ldots, \\textup{NumFlowReqs}\\}",
+            "related_variables": [
+                "Flow"
+            ],
+            "related_parameters": [
+                "NumFlowReqs",
+                "NumLinks",
+                "EndNode",
+                "StartNode",
+                "Destination",
+                "DataRate"
+            ]
+        },
+        {
+            "description": "Ensure flow conservation at intermediate nodes for each flow requirement.",
+            "status": "formulated",
+            "formulation": "\\sum_{j \\colon \\textup{EndNode}_{j} = n} \\textup{Flow}_{k,j} - \\sum_{j \\colon \\textup{StartNode}_{j} = n} \\textup{Flow}_{k,j} = 0, \\quad \\forall k \\in \\{1, \\ldots, \\textup{NumFlowReqs}\\}, \\quad \\forall n \\notin \\{\\textup{Source}_{k}, \\textup{Destination}_{k}\\}",
+            "related_variables": [
+                "Flow"
+            ],
+            "related_parameters": [
+                "NumFlowReqs",
+                "NumLinks",
+                "StartNode",
+                "EndNode",
+                "Source",
+                "Destination"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Data flow from flow requirement kl routed through link ij.",
+            "symbol": "Flow",
+            "shape": [
+                "NumFlowReqs",
+                "NumLinks"
+            ],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total cost of data transmission across all links in the network.",
+            "status": "formulated",
+            "formulation": "\\sum_{k=1}^{\\textup{NumFlowReqs}} \\sum_{j=1}^{\\textup{NumLinks}} \\textup{Flow}_{k,j} \\cdot \\textup{Cost}_{j}",
+            "related_variables": [
+                "Flow"
+            ],
+            "related_parameters": [
+                "NumFlowReqs",
+                "NumLinks",
+                "Cost"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413172842_nlp4lp_5/",
+    "problem_path": "data/nlp4lp/5/"
+}

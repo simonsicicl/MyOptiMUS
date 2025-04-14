@@ -1,0 +1,148 @@
+{
+    "background": "A railway company is planning transportation infrastructure in the city, focusing on trains and trams with different capacities and building times.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of people per hour a train can transport comfortably",
+            "symbol": "TrainCapacity",
+            "value": 120,
+            "shape": [],
+            "code": "TrainCapacity = data[\"TrainCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of people per hour a tram can transport comfortably",
+            "symbol": "TramCapacity",
+            "value": 30,
+            "shape": [],
+            "code": "TramCapacity = data[\"TramCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum ratio of the number of trams to the number of trains",
+            "symbol": "TramTrainRatio",
+            "value": 2,
+            "shape": [],
+            "code": "TramTrainRatio = data[\"TramTrainRatio\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of people per hour to be transported",
+            "symbol": "MinPeople",
+            "value": 600,
+            "shape": [],
+            "code": "MinPeople = data[\"MinPeople\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of trains must be non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{NumberOfTrains} \\\\geq 0",
+            "related_variables": [
+                "NumberOfTrains"
+            ],
+            "related_parameters": [],
+            "code": "# The constraint is already satisfied as non-negativity is automatically enforced for continuous variables in Gurobi."
+        },
+        {
+            "description": "The number of trams must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfTrams} \\geq 0",
+            "related_variables": [
+                "NumberOfTrams"
+            ],
+            "related_parameters": [],
+            "code": "# The variable \"NumberOfTrams\" is non-negative due to its default lower bound (0) in Gurobi."
+        },
+        {
+            "description": "Number of trams must be at least TramTrainRatio times the number of trains",
+            "status": "coded",
+            "formulation": "\\\\textup{NumberOfTrams} \\\\geq \\\\textup{TramTrainRatio} \\\\cdot \\\\textup{NumberOfTrains}",
+            "related_variables": [
+                "NumberOfTrams",
+                "NumberOfTrains"
+            ],
+            "related_parameters": [
+                "TramTrainRatio"
+            ],
+            "code": "# Add constraint for tram to train ratio\nmodel.addConstr(NumberOfTrams >= TramTrainRatio * NumberOfTrains, name=\"tram_train_ratio\")"
+        },
+        {
+            "description": "The total capacity of trains and trams must be at least the minimum number of people per hour (MinPeople).",
+            "status": "coded",
+            "formulation": "\\\\textup{NumberOfTrains} \\\\cdot \\\\textup{TrainCapacity} + \\\\textup{NumberOfTrams} \\\\cdot \\\\textup{TramCapacity} \\\\geq \\\\textup{MinPeople}",
+            "related_variables": [
+                "NumberOfTrains",
+                "NumberOfTrams"
+            ],
+            "related_parameters": [
+                "TrainCapacity",
+                "TramCapacity",
+                "MinPeople"
+            ],
+            "code": "# Add capacity constraint for trains and trams\nmodel.addConstr(NumberOfTrains * TrainCapacity + NumberOfTrams * TramCapacity >= MinPeople, name=\"capacity_constraint\")"
+        },
+        {
+            "description": "Ensure the total transportation capacity meets or exceeds the minimum required people per hour",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfTrains} \\cdot \\textup{TrainCapacity} + \\textup{NumberOfTrams} \\cdot \\textup{TramCapacity} \\geq \\textup{MinPeople}",
+            "related_variables": [
+                "NumberOfTrains",
+                "NumberOfTrams"
+            ],
+            "related_parameters": [
+                "TrainCapacity",
+                "TramCapacity",
+                "MinPeople"
+            ],
+            "code": "# Add transportation capacity constraint\nmodel.addConstr(NumberOfTrains * TrainCapacity + NumberOfTrams * TramCapacity >= MinPeople, name=\"transportation_capacity\")"
+        },
+        {
+            "description": "Enforce the minimum ratio of the number of trams to the number of trains",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfTrams} \\geq \\textup{TramTrainRatio} \\cdot \\textup{NumberOfTrains}",
+            "related_variables": [
+                "NumberOfTrams",
+                "NumberOfTrains"
+            ],
+            "related_parameters": [
+                "TramTrainRatio"
+            ],
+            "code": "# Enforce the minimum ratio of the number of trams to the number of trains\nmodel.addConstr(NumberOfTrams >= TramTrainRatio * NumberOfTrains, name=\"min_tram_train_ratio\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of trains used by the railway company.",
+            "symbol": "NumberOfTrains",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfTrains = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfTrains\")"
+        },
+        {
+            "definition": "The number of trams used by the railway company.",
+            "symbol": "NumberOfTrams",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfTrams = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfTrams\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of trains and trams required for transportation",
+            "status": "coded",
+            "formulation": "\\textup{Minimize:}\\quad \\textup{NumberOfTrains} + \\textup{NumberOfTrams}",
+            "related_variables": [
+                "NumberOfTrains",
+                "NumberOfTrams"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(NumberOfTrains + NumberOfTrams, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 10.0,
+    "log_path": "logs/log_20250414053403_nl4opt_prob_256/",
+    "problem_path": "data/nl4opt/prob_256/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_256/data.json\", \"r\") as f:\n    data = json.load(f)\n\nTrainCapacity = data[\"TrainCapacity\"] # scalar parameter\nTramCapacity = data[\"TramCapacity\"] # scalar parameter\nTramTrainRatio = data[\"TramTrainRatio\"] # scalar parameter\nMinPeople = data[\"MinPeople\"] # scalar parameter\nNumberOfTrains = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfTrains\")\nNumberOfTrams = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfTrams\")\n\n# The constraint is already satisfied as non-negativity is automatically enforced for continuous variables in Gurobi.\n\n# The variable \"NumberOfTrams\" is non-negative due to its default lower bound (0) in Gurobi.\n\n# Add constraint for tram to train ratio\nmodel.addConstr(NumberOfTrams >= TramTrainRatio * NumberOfTrains, name=\"tram_train_ratio\")\n\n# Add capacity constraint for trains and trams\nmodel.addConstr(NumberOfTrains * TrainCapacity + NumberOfTrams * TramCapacity >= MinPeople, name=\"capacity_constraint\")\n\n# Add transportation capacity constraint\nmodel.addConstr(NumberOfTrains * TrainCapacity + NumberOfTrams * TramCapacity >= MinPeople, name=\"transportation_capacity\")\n\n# Enforce the minimum ratio of the number of trams to the number of trains\nmodel.addConstr(NumberOfTrams >= TramTrainRatio * NumberOfTrains, name=\"min_tram_train_ratio\")\n\n# Set objective\nmodel.setObjective(NumberOfTrains + NumberOfTrams, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

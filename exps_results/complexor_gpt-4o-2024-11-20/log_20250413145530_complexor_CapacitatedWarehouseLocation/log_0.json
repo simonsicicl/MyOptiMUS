@@ -1,0 +1,297 @@
+{
+    "background": "The capacitated warehouse location problem involves determining the optimal locations for a set number of warehouses to service customers at minimum cost, taking into account warehouse capacities, operating costs, and customer demand.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "symbol": "NumberOfLocations",
+            "definition": "The total number of potential warehouse locations",
+            "shape": [],
+            "code": "NumberOfLocations = data[\"NumberOfLocations\"] # scalar parameter"
+        },
+        {
+            "symbol": "NumberOfCustomers",
+            "definition": "The total number of customers to be serviced",
+            "shape": [],
+            "code": "NumberOfCustomers = data[\"NumberOfCustomers\"] # scalar parameter"
+        },
+        {
+            "symbol": "CustomerDemand",
+            "definition": "The demand of each customer",
+            "shape": [
+                "NumberOfCustomers"
+            ],
+            "code": "CustomerDemand = np.array(data[\"CustomerDemand\"]) # ['NumberOfCustomers']"
+        },
+        {
+            "symbol": "ServiceAllocationCost",
+            "definition": "The cost of allocating service from each warehouse to each customer",
+            "shape": [
+                "NumberOfLocations",
+                "NumberOfCustomers"
+            ],
+            "code": "ServiceAllocationCost = np.array(data[\"ServiceAllocationCost\"]) # ['NumberOfLocations', 'NumberOfCustomers']"
+        },
+        {
+            "symbol": "WarehouseCapacity",
+            "definition": "The total capacity for each warehouse",
+            "shape": [
+                "NumberOfLocations"
+            ],
+            "code": "WarehouseCapacity = np.array(data[\"WarehouseCapacity\"]) # ['NumberOfLocations']"
+        },
+        {
+            "symbol": "MinimumDemandFromWarehouse",
+            "definition": "The lower limit on the demand that must be met from a warehouse if it is to be operational",
+            "shape": [
+                "NumberOfLocations"
+            ],
+            "code": "MinimumDemandFromWarehouse = np.array(data[\"MinimumDemandFromWarehouse\"]) # ['NumberOfLocations']"
+        },
+        {
+            "symbol": "MinimumOpenWarehouses",
+            "definition": "The minimum number of warehouses that need to be operational",
+            "shape": [],
+            "code": "MinimumOpenWarehouses = data[\"MinimumOpenWarehouses\"] # scalar parameter"
+        },
+        {
+            "symbol": "MaximumOpenWarehouses",
+            "definition": "The maximum number of warehouses that can be operational",
+            "shape": [],
+            "code": "MaximumOpenWarehouses = data[\"MaximumOpenWarehouses\"] # scalar parameter"
+        },
+        {
+            "symbol": "WarehouseFixedCost",
+            "definition": "The fixed operating cost of each warehouse",
+            "shape": [
+                "NumberOfLocations"
+            ],
+            "code": "WarehouseFixedCost = np.array(data[\"WarehouseFixedCost\"]) # ['NumberOfLocations']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Ensure each customer's demand is met through allocations from warehouses.",
+            "status": "formulated",
+            "formulation": "\\sum_{l=1}^{\\textup{NumberOfLocations}} \\textup{SupplyFromWarehouseToCustomer}_{l,c} = \\textup{CustomerDemand}_{c}, \\quad \\forall c = 1, \\dots, \\textup{NumberOfCustomers}",
+            "related_variables": [
+                "SupplyFromWarehouseToCustomer"
+            ],
+            "related_parameters": [
+                "CustomerDemand",
+                "NumberOfLocations",
+                "NumberOfCustomers"
+            ]
+        },
+        {
+            "description": "Each warehouse cannot exceed its maximum capacity based on the sum of supply sent to all customers.",
+            "status": "formulated",
+            "formulation": "\\sum_{c=1}^{\\textup{NumberOfCustomers}} \\textup{SupplyFromWarehouseToCustomer}_{l,c} \\leq \\textup{WarehouseCapacity}_{l}, \\quad \\forall \\, l \\in \\{1, \\dots, \\textup{NumberOfLocations}\\}",
+            "related_variables": [
+                "SupplyFromWarehouseToCustomer"
+            ],
+            "related_parameters": [
+                "NumberOfLocations",
+                "NumberOfCustomers",
+                "WarehouseCapacity"
+            ]
+        },
+        {
+            "description": "If a warehouse is open, it must meet at least \\textup{MinimumDemandFromWarehouse}",
+            "status": "formulated",
+            "formulation": "\\sum_{c=1}^{\\textup{NumberOfCustomers}} \\textup{SupplyFromWarehouseToCustomer}_{l,c} \\geq \\textup{MinimumDemandFromWarehouse}_{l} \\times \\textup{WarehouseOpen}_{l}, \\quad \\forall l \\in \\{1,\\dots,\\textup{NumberOfLocations}\\}",
+            "related_variables": [
+                "SupplyFromWarehouseToCustomer",
+                "WarehouseOpen"
+            ],
+            "related_parameters": [
+                "MinimumDemandFromWarehouse",
+                "NumberOfLocations",
+                "NumberOfCustomers"
+            ]
+        },
+        {
+            "description": "Ensure that at least MinimumOpenWarehouses warehouses are operational.",
+            "status": "formulated",
+            "formulation": "\\sum_{l=1}^{\\textup{NumberOfLocations}} \\textup{WarehouseOpen}_{l} \\geq \\textup{MinimumOpenWarehouses}",
+            "related_variables": [
+                "WarehouseOpen"
+            ],
+            "related_parameters": [
+                "MinimumOpenWarehouses",
+                "NumberOfLocations"
+            ]
+        },
+        {
+            "description": "This constraint ensures that at most MaximumOpenWarehouses warehouses can be operational.",
+            "status": "formulated",
+            "formulation": "\\sum_{l=1}^{\\textup{NumberOfLocations}} \\textup{WarehouseOpen}_{l} \\leq \\textup{MaximumOpenWarehouses}",
+            "related_variables": [
+                "WarehouseOpen"
+            ],
+            "related_parameters": [
+                "NumberOfLocations",
+                "MaximumOpenWarehouses"
+            ]
+        },
+        {
+            "description": "The supply from any warehouse to any customer cannot exceed the warehouse's capacity.",
+            "status": "formulated",
+            "formulation": "\\sum_{c=1}^{\\textup{NumberOfCustomers}} \\textup{SupplyFromWarehouseToCustomer}_{l,c} \\leq \\textup{WarehouseCapacity}_{l}, \\quad \\forall l = 1, \\dots, \\textup{NumberOfLocations}",
+            "related_variables": [
+                "SupplyFromWarehouseToCustomer"
+            ],
+            "related_parameters": [
+                "WarehouseCapacity",
+                "NumberOfCustomers",
+                "NumberOfLocations"
+            ]
+        },
+        {
+            "description": "Non-negativity of the supply variables.",
+            "status": "formulated",
+            "formulation": "\\textup{SupplyFromWarehouseToCustomer}_{l,c} \\geq 0, \\quad \\forall l = 1, \\dots, \\textup{NumberOfLocations}, \\; \\forall c = 1, \\dots, \\textup{NumberOfCustomers}",
+            "related_variables": [
+                "SupplyFromWarehouseToCustomer"
+            ],
+            "related_parameters": [
+                "NumberOfLocations",
+                "NumberOfCustomers"
+            ]
+        },
+        {
+            "description": "Maximum supply from a warehouse must respect its capacity if the warehouse is open",
+            "status": "formulated",
+            "formulation": "\\sum_{c=1}^{\\textup{NumberOfCustomers}} \\textup{SupplyFromWarehouseToCustomer}_{l,c} \\leq \\textup{WarehouseCapacity}_{l} \\times \\textup{WarehouseOpen}_{l}, \\quad \\forall l \\in \\{1,\\dots,\\textup{NumberOfLocations}\\}",
+            "related_variables": [
+                "SupplyFromWarehouseToCustomer",
+                "WarehouseOpen"
+            ],
+            "related_parameters": [
+                "WarehouseCapacity",
+                "NumberOfLocations",
+                "NumberOfCustomers"
+            ]
+        },
+        {
+            "description": "Total supply must be 0 if the warehouse is closed",
+            "status": "formulated",
+            "formulation": "\\sum_{c=1}^{\\textup{NumberOfCustomers}} \\textup{SupplyFromWarehouseToCustomer}_{l,c} \\geq \\textup{MinimumDemandFromWarehouse}_{l} \\times \\textup{WarehouseOpen}_{l}, \\quad \\forall l \\in \\{1,\\dots,\\textup{NumberOfLocations}\\}",
+            "related_variables": [
+                "SupplyFromWarehouseToCustomer",
+                "WarehouseOpen"
+            ],
+            "related_parameters": [
+                "MinimumDemandFromWarehouse",
+                "NumberOfLocations",
+                "NumberOfCustomers"
+            ]
+        },
+        {
+            "description": "Ensure a warehouse can only supply customers if it is open.",
+            "status": "formulated",
+            "formulation": "\\sum_{c=1}^{\\textup{NumberOfCustomers}} \\textup{SupplyFromWarehouseToCustomer}_{l,c} \\leq \\textup{WarehouseCapacity}_{l} \\cdot \\textup{WarehouseOpen}_{l} \\quad \\forall l \\in \\{1, \\dots, \\textup{NumberOfLocations}\\}",
+            "related_variables": [
+                "SupplyFromWarehouseToCustomer",
+                "WarehouseOpen"
+            ],
+            "related_parameters": [
+                "NumberOfCustomers",
+                "WarehouseCapacity",
+                "NumberOfLocations"
+            ]
+        },
+        {
+            "description": "Ensure the total supply for each customer meets their demand.",
+            "status": "formulated",
+            "formulation": "\\sum_{l=1}^{\\textup{NumberOfLocations}} \\textup{SupplyFromWarehouseToCustomer}_{l,c} = \\textup{CustomerDemand}_{c} \\quad \\forall c \\in \\{1, \\dots, \\textup{NumberOfCustomers}\\}",
+            "related_variables": [
+                "SupplyFromWarehouseToCustomer"
+            ],
+            "related_parameters": [
+                "NumberOfLocations",
+                "CustomerDemand",
+                "NumberOfCustomers"
+            ]
+        },
+        {
+            "description": "Enforce the minimum number of warehouses to be operational.",
+            "status": "formulated",
+            "formulation": "\\sum_{l=1}^{\\textup{NumberOfLocations}} \\textup{WarehouseOpen}_{l} \\geq \\textup{MinimumOpenWarehouses}",
+            "related_variables": [
+                "WarehouseOpen"
+            ],
+            "related_parameters": [
+                "NumberOfLocations",
+                "MinimumOpenWarehouses"
+            ]
+        },
+        {
+            "description": "Enforce the maximum number of warehouses that can be operational.",
+            "status": "formulated",
+            "formulation": "\\sum_{l=1}^{\\textup{NumberOfLocations}} \\textup{WarehouseOpen}_{l} \\leq \\textup{MaximumOpenWarehouses}",
+            "related_variables": [
+                "WarehouseOpen"
+            ],
+            "related_parameters": [
+                "NumberOfLocations",
+                "MaximumOpenWarehouses"
+            ]
+        },
+        {
+            "description": "Ensure that demand from a warehouse exceeds the minimum if the warehouse is operational.",
+            "status": "formulated",
+            "formulation": "\\sum_{c=1}^{\\textup{NumberOfCustomers}} \\textup{SupplyFromWarehouseToCustomer}_{l,c} \\geq \\textup{MinimumDemandFromWarehouse}_{l} \\cdot \\textup{WarehouseOpen}_{l} \\quad \\forall l \\in \\{1, \\dots, \\textup{NumberOfLocations}\\}",
+            "related_variables": [
+                "SupplyFromWarehouseToCustomer",
+                "WarehouseOpen"
+            ],
+            "related_parameters": [
+                "NumberOfCustomers",
+                "MinimumDemandFromWarehouse",
+                "NumberOfLocations"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The amount of supply sent from warehouse l to customer c.",
+            "symbol": "SupplyFromWarehouseToCustomer",
+            "shape": [
+                "NumberOfLocations",
+                "NumberOfCustomers"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "A binary variable that equals 1 if warehouse l is open and 0 otherwise",
+            "symbol": "WarehouseOpen",
+            "shape": [
+                "NumberOfLocations"
+            ],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total cost of servicing customers, including service allocation and operating costs of warehouses.",
+            "status": "formulated",
+            "formulation": "\\textup{Minimize } \\quad \\sum_{l=1}^{\\textup{NumberOfLocations}} \\sum_{c=1}^{\\textup{NumberOfCustomers}} \\textup{SupplyFromWarehouseToCustomer}_{l,c} \\cdot \\textup{ServiceAllocationCost}_{l,c} + \\sum_{l=1}^{\\textup{NumberOfLocations}} \\textup{WarehouseOpen}_{l} \\cdot \\textup{WarehouseFixedCost}_{l}",
+            "related_variables": [
+                "SupplyFromWarehouseToCustomer",
+                "WarehouseOpen"
+            ],
+            "related_parameters": [
+                "NumberOfLocations",
+                "NumberOfCustomers",
+                "ServiceAllocationCost",
+                "WarehouseFixedCost"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413145530_complexor_CapacitatedWarehouseLocation/",
+    "problem_path": "data/complexor/CapacitatedWarehouseLocation/"
+}

@@ -1,0 +1,126 @@
+{
+    "background": "A logistics problem dealing with the transportation of soybeans from multiple supply terminals to various destinations, with routes connecting terminals and destinations. Each route has associated transportation costs and each destination has a specific demand to be met, while each terminal has a limited supply.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of terminals",
+            "symbol": "NumTerminals",
+            "value": "",
+            "shape": [],
+            "code": "NumTerminals = data[\"NumTerminals\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of destinations",
+            "symbol": "NumDestinations",
+            "value": "",
+            "shape": [],
+            "code": "NumDestinations = data[\"NumDestinations\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost of transportation for route from terminal i to destination j",
+            "symbol": "Cost",
+            "value": "",
+            "shape": [
+                "NumTerminals",
+                "NumDestinations"
+            ],
+            "code": "Cost = np.array(data[\"Cost\"]) # ['NumTerminals', 'NumDestinations']"
+        },
+        {
+            "definition": "Demand at each destination",
+            "symbol": "Demand",
+            "value": "",
+            "shape": [
+                "NumDestinations"
+            ],
+            "code": "Demand = np.array(data[\"Demand\"]) # ['NumDestinations']"
+        },
+        {
+            "definition": "Supply at each terminal",
+            "symbol": "Supply",
+            "value": "",
+            "shape": [
+                "NumTerminals"
+            ],
+            "code": "Supply = np.array(data[\"Supply\"]) # ['NumTerminals']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The transported quantities from terminals to destinations must be non-negative",
+            "status": "coded",
+            "formulation": "x_{ij} \\geq 0 \\quad \\forall i \\in \\{1, \\ldots, \\textup{NumTerminals}\\}, \\quad \\forall j \\in \\{1, \\ldots, \\textup{NumDestinations}\\}",
+            "related_variables": [
+                "TransportedQuantity"
+            ],
+            "related_parameters": [
+                "NumTerminals",
+                "NumDestinations"
+            ],
+            "code": "# Add constraints for non-negative transported quantities from terminals to destinations\nfor i in range(NumTerminals):\n    for j in range(NumDestinations):\n        model.addConstr(TransportedQuantity[i, j] >= 0, name=f\"non_negative_transported_qty_{i}_{j}\")"
+        },
+        {
+            "description": "Transported quantity from each terminal cannot exceed its supply",
+            "status": "coded",
+            "formulation": "\\sum_{j=1}^{\\textup{NumDestinations}} \\textup{TransportedQuantity}_{ij} \\leq \\textup{Supply}_i \\quad \\forall i \\in \\{1, 2, \\ldots, \\textup{NumTerminals}\\}",
+            "related_variables": [
+                "TransportedQuantity"
+            ],
+            "related_parameters": [
+                "Supply",
+                "NumDestinals",
+                "NumTerminals"
+            ],
+            "code": "# Add constraints to ensure transported quantity from each terminal does not exceed its supply\nfor i in range(NumTerminals):\n    model.addConstr(gp.quicksum(TransportedQuantity[i, j] for j in range(NumDestinations)) <= Supply[i], name=f\"supply_constraint_terminal_{i}\")"
+        },
+        {
+            "description": "Demand at each destination must be met by the sum of transported quantities from all terminals",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{\\textup{NumTerminals}} \\textup{TransportedQuantity}_{ij} \\geq \\textup{Demand}_j \\quad \\forall j \\in \\{1, ..., \\textup{NumDestinations}\\}",
+            "related_variables": [
+                "TransportedQuantity"
+            ],
+            "related_parameters": [
+                "NumTerminals",
+                "NumDestinations",
+                "Demand"
+            ],
+            "code": "# Ensure demand at each destination is met by the sum of transported quantities from all terminals\nfor j in range(NumDestinations):\n    model.addConstr(gp.quicksum(TransportedQuantity[i, j] for i in range(NumTerminals)) >= Demand[j], name=f\"Demand_met_{j}\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Transported quantity of soybeans from terminal i to destination j",
+            "symbol": "TransportedQuantity",
+            "shape": [
+                "NumTerminals",
+                "NumDestinations"
+            ],
+            "status": "coded",
+            "code": "TransportedQuantity = model.addVars(NumTerminals, NumDestinations, vtype=gp.GRB.CONTINUOUS, name=\"TransportedQuantity\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total transportation costs of delivering soybeans from terminals to destinations",
+            "status": "coded",
+            "formulation": "\\min \\sum_{i=1}^{\\textup{NumTerminals}} \\quad \\sum_{j=1}^{\\textup{NumDestinations}} \\quad (\\textup{Cost}_{ij} \\times \\textup{TransportedQuantity}_{ij})",
+            "related_variables": [
+                "TransportedQuantity"
+            ],
+            "related_parameters": [
+                "NumTerminals",
+                "NumDestinations",
+                "Cost"
+            ],
+            "code": "# Set objective\nmodel.setObjective(gp.quicksum(Cost[i, j] * TransportedQuantity[i, j] for i in range(NumTerminals) for j in range(NumDestinations)), gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 5230.0,
+    "log_path": "logs/log_20250413093341_nlp4lp_56/",
+    "problem_path": "data/nlp4lp/56/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nlp4lp/56/data.json\", \"r\") as f:\n    data = json.load(f)\n\nNumTerminals = data[\"NumTerminals\"] # scalar parameter\nNumDestinations = data[\"NumDestinations\"] # scalar parameter\nCost = np.array(data[\"Cost\"]) # ['NumTerminals', 'NumDestinations']\nDemand = np.array(data[\"Demand\"]) # ['NumDestinations']\nSupply = np.array(data[\"Supply\"]) # ['NumTerminals']\nTransportedQuantity = model.addVars(NumTerminals, NumDestinations, vtype=gp.GRB.CONTINUOUS, name=\"TransportedQuantity\")\n\n# Add constraints for non-negative transported quantities from terminals to destinations\nfor i in range(NumTerminals):\n    for j in range(NumDestinations):\n        model.addConstr(TransportedQuantity[i, j] >= 0, name=f\"non_negative_transported_qty_{i}_{j}\")\n\n# Add constraints to ensure transported quantity from each terminal does not exceed its supply\nfor i in range(NumTerminals):\n    model.addConstr(gp.quicksum(TransportedQuantity[i, j] for j in range(NumDestinations)) <= Supply[i], name=f\"supply_constraint_terminal_{i}\")\n\n# Ensure demand at each destination is met by the sum of transported quantities from all terminals\nfor j in range(NumDestinations):\n    model.addConstr(gp.quicksum(TransportedQuantity[i, j] for i in range(NumTerminals)) >= Demand[j], name=f\"Demand_met_{j}\")\n\n# Set objective\nmodel.setObjective(gp.quicksum(Cost[i, j] * TransportedQuantity[i, j] for i in range(NumTerminals) for j in range(NumDestinations)), gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

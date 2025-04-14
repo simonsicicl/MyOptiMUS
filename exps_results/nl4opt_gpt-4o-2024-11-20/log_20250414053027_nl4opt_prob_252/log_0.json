@@ -1,0 +1,201 @@
+{
+    "background": "A production company is arranging transportation for their movie by using mixes of large and small mobile production units, which vary in capacity and space requirements. They must accommodate a certain number of people while adhering to preferences and logistic constraints.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of people each large mobile production unit can hold",
+            "symbol": "LargeUnitCapacity",
+            "value": 6,
+            "shape": [],
+            "code": "LargeUnitCapacity = data[\"LargeUnitCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of parking spots taken by each large mobile production unit",
+            "symbol": "LargeUnitSpots",
+            "value": 2,
+            "shape": [],
+            "code": "LargeUnitSpots = data[\"LargeUnitSpots\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of people each small mobile production unit can hold",
+            "symbol": "SmallUnitCapacity",
+            "value": 2,
+            "shape": [],
+            "code": "SmallUnitCapacity = data[\"SmallUnitCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of parking spots taken by each small mobile production unit",
+            "symbol": "SmallUnitSpots",
+            "value": 1,
+            "shape": [],
+            "code": "SmallUnitSpots = data[\"SmallUnitSpots\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of small mobile production units required",
+            "symbol": "MinSmallUnits",
+            "value": 5,
+            "shape": [],
+            "code": "MinSmallUnits = data[\"MinSmallUnits\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum proportion of all vehicles that must be large mobile production units",
+            "symbol": "MinLargeUnitProportion",
+            "value": 0.75,
+            "shape": [],
+            "code": "MinLargeUnitProportion = data[\"MinLargeUnitProportion\"] # scalar parameter"
+        },
+        {
+            "definition": "Total number of people to transport",
+            "symbol": "TotalPeople",
+            "value": 80,
+            "shape": [],
+            "code": "TotalPeople = data[\"TotalPeople\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of large mobile production units should be non-negative.",
+            "status": "formulated",
+            "formulation": "\\textup{LargeUnits} \\geq 0",
+            "related_variables": [
+                "LargeUnits"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "The number of small mobile production units must be non-negative.",
+            "status": "formulated",
+            "formulation": "\\textup{SmallUnits} \\geq 0",
+            "related_variables": [
+                "SmallUnits"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "The number of small mobile units used must be at least MinSmallUnits.",
+            "status": "formulated",
+            "formulation": "\\textup{SmallUnits} \\geq \\textup{MinSmallUnits}",
+            "related_variables": [
+                "SmallUnits"
+            ],
+            "related_parameters": [
+                "MinSmallUnits"
+            ]
+        },
+        {
+            "description": "Large mobile units must constitute at least MinLargeUnitProportion of all vehicles",
+            "status": "formulated",
+            "formulation": "(1 - \\textup{MinLargeUnitProportion}) \\cdot \\textup{LargeUnits} \\geq \\textup{MinLargeUnitProportion} \\cdot \\textup{SmallUnits}",
+            "related_variables": [
+                "LargeUnits",
+                "SmallUnits"
+            ],
+            "related_parameters": [
+                "MinLargeUnitProportion"
+            ]
+        },
+        {
+            "description": "The sum of people carried by large and small mobile units must be equal to or exceed TotalPeople",
+            "status": "formulated",
+            "formulation": "\\\\textup{LargeUnits} \\\\times \\\\textup{LargeUnitCapacity} + \\\\textup{SmallUnits} \\\\times \\\\textup{SmallUnitCapacity} \\\\geq \\\\textup{TotalPeople}",
+            "related_variables": [
+                "LargeUnits",
+                "SmallUnits"
+            ],
+            "related_parameters": [
+                "LargeUnitCapacity",
+                "SmallUnitCapacity",
+                "TotalPeople"
+            ]
+        },
+        {
+            "description": "Total capacity of the mobile production units must accommodate all people",
+            "status": "formulated",
+            "formulation": "\\textup{LargeUnits} \\cdot \\textup{LargeUnitCapacity} + \\textup{SmallUnits} \\cdot \\textup{SmallUnitCapacity} \\geq \\textup{TotalPeople}",
+            "related_variables": [
+                "LargeUnits",
+                "SmallUnits"
+            ],
+            "related_parameters": [
+                "LargeUnitCapacity",
+                "SmallUnitCapacity",
+                "TotalPeople"
+            ]
+        },
+        {
+            "description": "Minimum number of small mobile production units required",
+            "status": "formulated",
+            "formulation": "\\textup{SmallUnits} \\geq \\textup{MinSmallUnits}",
+            "related_variables": [
+                "SmallUnits"
+            ],
+            "related_parameters": [
+                "MinSmallUnits"
+            ]
+        },
+        {
+            "description": "Minimum proportion of large mobile production units among all units",
+            "status": "formulated",
+            "formulation": "(1 - \\textup{MinLargeUnitProportion}) \\cdot \\textup{LargeUnits} - \\textup{MinLargeUnitProportion} \\cdot \\textup{SmallUnits} \\geq 0",
+            "related_variables": [
+                "LargeUnits",
+                "SmallUnits"
+            ],
+            "related_parameters": [
+                "MinLargeUnitProportion"
+            ]
+        },
+        {
+            "description": "Definition of the total number of mobile production units",
+            "status": "formulated",
+            "formulation": "\\textup{TotalUnits} = \\textup{LargeUnits} + \\textup{SmallUnits}",
+            "related_variables": [
+                "TotalUnits",
+                "LargeUnits",
+                "SmallUnits"
+            ],
+            "related_parameters": []
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of large mobile production units used for transportation.",
+            "symbol": "LargeUnits",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "The number of small mobile production units used for transportation.",
+            "symbol": "SmallUnits",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "Total number of mobile production units used",
+            "symbol": "TotalUnits",
+            "shape": [],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of parking spots occupied by the mobile production units",
+            "status": "formulated",
+            "formulation": "\\textup{LargeUnits} \\cdot \\textup{LargeUnitSpots} + \\textup{SmallUnits} \\cdot \\textup{SmallUnitSpots}",
+            "related_variables": [
+                "LargeUnits",
+                "SmallUnits"
+            ],
+            "related_parameters": [
+                "LargeUnitSpots",
+                "SmallUnitSpots"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250414053027_nl4opt_prob_252/",
+    "problem_path": "data/nl4opt/prob_252/"
+}

@@ -1,0 +1,203 @@
+{
+    "background": "Capacitated facility location problems focus on determining the optimal placement of a certain number of facilities to serve a set number of customers in a way that minimizes the total cost, considering fixed costs, capacities, customer demands, and transport costs.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "symbol": "NumberOfFacilities",
+            "definition": "The number of potential facilities that can be established",
+            "shape": [],
+            "code": "NumberOfFacilities = data[\"NumberOfFacilities\"] # scalar parameter"
+        },
+        {
+            "symbol": "NumberOfCustomers",
+            "definition": "The number of customer zones to be served",
+            "shape": [],
+            "code": "NumberOfCustomers = data[\"NumberOfCustomers\"] # scalar parameter"
+        },
+        {
+            "symbol": "FacilityFixedCost",
+            "definition": "The fixed cost associated with establishing a facility",
+            "shape": [
+                "NumberOfFacilities"
+            ],
+            "code": "FacilityFixedCost = np.array(data[\"FacilityFixedCost\"]) # ['NumberOfFacilities']"
+        },
+        {
+            "symbol": "FacilityToCustomerTransportCost",
+            "definition": "The cost of transporting goods from each facility to each customer zone",
+            "shape": [
+                "NumberOfFacilities",
+                "NumberOfCustomers"
+            ],
+            "code": "FacilityToCustomerTransportCost = np.array(data[\"FacilityToCustomerTransportCost\"]) # ['NumberOfFacilities', 'NumberOfCustomers']"
+        },
+        {
+            "symbol": "FacilityCapacity",
+            "definition": "The capacity of each facility, which limits the amount of goods the facility can handle or produce",
+            "shape": [
+                "NumberOfFacilities"
+            ],
+            "code": "FacilityCapacity = np.array(data[\"FacilityCapacity\"]) # ['NumberOfFacilities']"
+        },
+        {
+            "symbol": "CustomerDemand",
+            "definition": "The demand of each customer zone that must be met by the facilities",
+            "shape": [
+                "NumberOfCustomers"
+            ],
+            "code": "CustomerDemand = np.array(data[\"CustomerDemand\"]) # ['NumberOfCustomers']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Each facility's total output to all customer zones must not exceed its capacity",
+            "status": "coded",
+            "formulation": "\\sum_{j=1}^{\\textup{NumberOfCustomers}} x_{ij} \\leq \\textup{FacilityCapacity}_i, \\quad \\forall i \\in \\{1, \\ldots, \\textup{NumberOfFacilities}\\}",
+            "related_variables": [
+                "x_{ij}"
+            ],
+            "related_parameters": [
+                "FacilityCapacity",
+                "NumberOfCustomers",
+                "NumberOfFacilities"
+            ],
+            "code": "```"
+        },
+        {
+            "description": "The total number of open facilities must be equal to the NumberOfFacilities",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{\\textup{NumberOfFacilities}} x_{i} = \\textup{NumberOfFacilities}",
+            "related_variables": [
+                "OpenFacility"
+            ],
+            "related_parameters": [
+                "NumberOfFacilities"
+            ],
+            "code": "# Ensure the total number of open facilities is equal to NumberOfFacilities\nmodel.addConstr(gp.quicksum(OpenFacility[i] for i in range(NumberOfFacilities)) == NumberOfFacilities, name=\"total_open_facilities\")"
+        },
+        {
+            "description": "Each customer zone's demand must be met by the facilities",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{\\textup{NumberOfFacilities}} \\textup{GoodsShipped}_{i,j} \\geq \\textup{CustomerDemand}_j \\quad \\forall j \\in \\{1, ..., \\textup{NumberOfCustomers}\\}",
+            "related_variables": [
+                "GoodsShipped"
+            ],
+            "related_parameters": [
+                "NumberOfFacilities",
+                "CustomerDemand"
+            ],
+            "code": "# Meet each customer zone's demand by the facilities\nfor j in range(NumberOfCustomers):\n    model.addConstr(gp.quicksum(GoodsShipped[i, j] for i in range(NumberOfFacilities)) >= CustomerDemand[j], name=\"demand_met_%s\" % j)"
+        },
+        {
+            "description": "Total output for each facility cannot exceed its capacity",
+            "status": "coded",
+            "formulation": "\\sum_{j=1}^{\\textup{NumberOfCustomers}} \\textup{GoodsShipped}_{i,j} \\leq \\textup{FacilityCapacity}_i \\quad \\forall i \\in \\{1, ..., \\textup{NumberOfFacilities}\\}",
+            "related_variables": [
+                "GoodsShipped"
+            ],
+            "related_parameters": [
+                "FacilityCapacity",
+                "NumberOfCustomers",
+                "NumberOfFacilities"
+            ],
+            "code": "# Total output for each facility cannot exceed its capacity\nfor i in range(NumberOfFacilities):\n    model.addConstr(gp.quicksum(GoodsShipped[i, j] for j in range(NumberOfCustomers)) <= FacilityCapacity[i], name=f\"Capacity_Facility_{i}\")"
+        },
+        {
+            "description": "Each facility should have a non-negative number of open instances, and the amount of goods shipped to customers should be non-negative",
+            "status": "coded",
+            "formulation": "\\forall i \\in \\{1,\\dots,\\textup{NumberOfFacilities}\\}, \\quad \\textup{OpenFacility}_i \\geq 0 \\\\ \\forall i \\in \\{1,\\dots,\\textup{NumberOfFacilities}\\}, \\forall j \\in \\{1,\\dots,\\textup{NumberOfCustomers}\\}, \\quad \\textup{GoodsShipped}_{ij} \\geq 0",
+            "related_variables": [
+                "OpenFacility",
+                "GoodsShipped"
+            ],
+            "related_parameters": [
+                "NumberOfFacilities",
+                "NumberOfCustomers"
+            ],
+            "code": "# Since OpenFacility is a binary variable, it's already non-negative and does not need an additional constraint.\n\n# Add constraints to ensure the amount of goods shipped is non-negative\nfor i in range(NumberOfFacilities):\n    for j in range(NumberOfCustomers):\n        model.addConstr(GoodsShipped[i, j] >= 0, name=f\"goods_shipped_nonneg_{i}_{j}\")"
+        },
+        {
+            "description": "Facilities can ship goods only if they are open",
+            "status": "coded",
+            "formulation": "\\textup{GoodsShipped}_{i,j} \\leq \\textup{FacilityCapacity}_i \\times \\textup{OpenFacility}_i \\quad \\forall i \\in \\{1, ..., \\textup{NumberOfFacilities}\\}, \\forall j \\in \\{1, ..., \\textup{NumberOfCustomers}\\}",
+            "related_variables": [
+                "GoodsShipped",
+                "OpenFacility"
+            ],
+            "related_parameters": [
+                "FacilityCapacity",
+                "NumberOfFacilities",
+                "NumberOfCustomers"
+            ],
+            "code": "# Add constraints to ensure facilities can ship goods only if they are open\nfor i in range(NumberOfFacilities):\n    for j in range(NumberOfCustomers):\n        model.addConstr(GoodsShipped[i, j] <= FacilityCapacity[i] * OpenFacility[i], name=f\"ship_if_open_{i}_{j}\")"
+        },
+        {
+            "description": "The total amount of goods shipped from each facility must not exceed its capacity",
+            "status": "coded",
+            "formulation": "\\sum_{j=1}^{\\textup{NumberOfCustomers}} \\textup{GoodsShipped}_{ij} \\leq \\textup{FacilityCapacity}_i \\cdot \\textup{OpenFacility}_i, \\quad \\forall i \\in \\{1, \\ldots, \\textup{NumberOfFacilities}\\}",
+            "related_variables": [
+                "OpenFacility",
+                "GoodsShipped"
+            ],
+            "related_parameters": [
+                "FacilityCapacity"
+            ],
+            "code": "# Add constraints for the total amount of goods shipped from each facility not exceeding its capacity\nfor i in range(NumberOfFacilities):\n    model.addConstr(gp.quicksum(GoodsShipped[i, j] for j in range(NumberOfCustomers)) <= FacilityCapacity[i] * OpenFacility[i], name=f\"capacity_facility_{i}\")"
+        },
+        {
+            "description": "The total amount of goods shipped to each customer must satisfy the demand",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{\\textup{NumberOfFacilities}} \\textup{GoodsShipped}_{ij} \\geq \\textup{CustomerDemand}_j, \\quad \\forall j \\in \\{1, \\ldots, \\textup{NumberOfCustomers}\\}",
+            "related_variables": [
+                "GoodsShipped"
+            ],
+            "related_parameters": [
+                "CustomerDemand"
+            ],
+            "code": "# Add constraints to ensure the demand of each customer is met\nfor j in range(NumberOfCustomers):\n    model.addConstr(gp.quicksum(GoodsShipped[i, j] for i in range(NumberOfFacilities)) >= CustomerDemand[j], name=f\"demand_satisfaction_{j}\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Binary variable denoting whether a facility is open (1) or not (0)",
+            "symbol": "OpenFacility",
+            "shape": [
+                "NumberOfFacilities"
+            ],
+            "status": "coded",
+            "code": "OpenFacility = model.addVars(NumberOfFacilities, vtype=gp.GRB.BINARY, name=\"OpenFacility\")"
+        },
+        {
+            "definition": "Continuous variable indicating the amount of goods shipped from facility i to customer j",
+            "symbol": "GoodsShipped",
+            "shape": [
+                "NumberOfFacilities",
+                "NumberOfCustomers"
+            ],
+            "status": "coded",
+            "code": "GoodsShipped = model.addVars(NumberOfFacilities, NumberOfCustomers, vtype=gp.GRB.CONTINUOUS, name=\"GoodsShipped\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total cost of locating facilities and the cost of transporting goods to customer zones",
+            "status": "coded",
+            "formulation": "\\textup{Minimize } Z = \\sum_{i=1}^{\\textup{NumberOfFacilities}} \\textup{FacilityFixedCost}_i \\cdot \\textup{OpenFacility}_i + \\sum_{i=1}^{\\textup{NumberOfFacilities}} \\sum_{j=1}^{\\textup{NumberOfCustomers}} \\textup{FacilityToCustomerTransportCost}_{ij} \\cdot \\textup{GoodsShipped}_{ij}",
+            "related_variables": [
+                "OpenFacility",
+                "GoodsShipped"
+            ],
+            "related_parameters": [
+                "FacilityFixedCost",
+                "FacilityToCustomerTransportCost"
+            ],
+            "code": "# Objective: Minimize the total cost of locating facilities and the cost of transporting goods to customer zones\nmodel.setObjective(\n    gp.quicksum(FacilityFixedCost[i] * OpenFacility[i] for i in range(NumberOfFacilities)) +\n    gp.quicksum(FacilityToCustomerTransportCost[i, j] * GoodsShipped[i, j] for i in range(NumberOfFacilities) for j in range(NumberOfCustomers)),\n    gp.GRB.MINIMIZE\n)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413145802_complexor_CFLP/",
+    "problem_path": "data/complexor/CFLP/"
+}

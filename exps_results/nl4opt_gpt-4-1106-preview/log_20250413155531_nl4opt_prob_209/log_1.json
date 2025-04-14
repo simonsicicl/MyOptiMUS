@@ -1,0 +1,233 @@
+{
+    "background": "Lucy is looking to mix dog food from regular and premium brands to meet certain nutritional requirements while minimizing costs.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Minimum units of calcium required",
+            "symbol": "CalciumMin",
+            "value": 15,
+            "shape": [],
+            "code": "CalciumMin = data[\"CalciumMin\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum units of vitamin mix required",
+            "symbol": "VitaminMixMin",
+            "value": 20,
+            "shape": [],
+            "code": "VitaminMixMin = data[\"VitaminMixMin\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum units of protein required",
+            "symbol": "ProteinMin",
+            "value": 20,
+            "shape": [],
+            "code": "ProteinMin = data[\"ProteinMin\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost of a bag of regular brand food",
+            "symbol": "CostRegular",
+            "value": 20,
+            "shape": [],
+            "code": "CostRegular = data[\"CostRegular\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost of a bag of premium brand food",
+            "symbol": "CostPremium",
+            "value": 35,
+            "shape": [],
+            "code": "CostPremium = data[\"CostPremium\"] # scalar parameter"
+        },
+        {
+            "definition": "Calcium units in a bag of regular brand food",
+            "symbol": "CalciumRegular",
+            "value": 4,
+            "shape": [],
+            "code": "CalciumRegular = data[\"CalciumRegular\"] # scalar parameter"
+        },
+        {
+            "definition": "Vitamin mix units in a bag of regular brand food",
+            "symbol": "VitaminMixRegular",
+            "value": 7,
+            "shape": [],
+            "code": "VitaminMixRegular = data[\"VitaminMixRegular\"] # scalar parameter"
+        },
+        {
+            "definition": "Protein units in a bag of regular brand food",
+            "symbol": "ProteinRegular",
+            "value": 10,
+            "shape": [],
+            "code": "ProteinRegular = data[\"ProteinRegular\"] # scalar parameter"
+        },
+        {
+            "definition": "Calcium units in a bag of premium brand food",
+            "symbol": "CalciumPremium",
+            "value": 12,
+            "shape": [],
+            "code": "CalciumPremium = data[\"CalciumPremium\"] # scalar parameter"
+        },
+        {
+            "definition": "Vitamin mix units in a bag of premium brand food",
+            "symbol": "VitaminMixPremium",
+            "value": 10,
+            "shape": [],
+            "code": "VitaminMixPremium = data[\"VitaminMixPremium\"] # scalar parameter"
+        },
+        {
+            "definition": "Protein units in a bag of premium brand food",
+            "symbol": "ProteinPremium",
+            "value": 16,
+            "shape": [],
+            "code": "ProteinPremium = data[\"ProteinPremium\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The mix must have at least CalciumMin units of calcium",
+            "status": "coded",
+            "formulation": "\\textup{CalciumRegular} \\times \\textup{RegularBags} + \\textup{CalciumPremium} \\times \\textup{PremiumBags} \\geq \\textup{CalciumMin}",
+            "related_variables": [
+                "RegularBags",
+                "PremiumBags"
+            ],
+            "related_parameters": [
+                "CalciumRegular",
+                "CalciumPremium",
+                "CalciumMin"
+            ],
+            "code": "# Add constraint to ensure the mix has at least CalciumMin units of calcium\nmodel.addConstr(CalciumRegular * RegularBags + CalciumPremium * PremiumBags >= CalciumMin, name=\"calcium_min_requirement\")"
+        },
+        {
+            "description": "The mix must have at least VitaminMixMin units of vitamin mix",
+            "status": "coded",
+            "formulation": "\\textup{VitaminMixRegular} \\cdot \\textup{RegularBags} + \\textup{VitaminMixPremium} \\cdot \\textup{PremiumBags} \\geq \\textup{VitaminMixMin}",
+            "related_variables": [
+                "RegularBags",
+                "PremiumBags"
+            ],
+            "related_parameters": [
+                "VitaminMixRegular",
+                "VitaminMixPremium",
+                "VitaminMixMin"
+            ],
+            "code": "# Ensure that the mix has at least the minimum required units of vitamin mix\nmodel.addConstr(VitaminMixRegular * RegularBags + VitaminMixPremium * PremiumBags >= VitaminMixMin, \"VitaminMixRequirement\")"
+        },
+        {
+            "description": "The mix must have at least ProteinMin units of protein",
+            "status": "coded",
+            "formulation": "\\textup{ProteinRegular} \\times \\textup{RegularBags} + \\textup{ProteinPremium} \\times \\textup{PremiumBags} \\geq \\textup{ProteinMin}",
+            "related_variables": [
+                "RegularBags",
+                "PremiumBags"
+            ],
+            "related_parameters": [
+                "ProteinRegular",
+                "ProteinPremium",
+                "ProteinMin"
+            ],
+            "code": "# Add constraint to ensure the mix has at least ProteinMin units of protein\nmodel.addConstr(ProteinRegular * RegularBags + ProteinPremium * PremiumBags >= ProteinMin, name=\"protein_requirement\")"
+        },
+        {
+            "description": "The number of regular brand bags must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{RegularBags} \\geq 0",
+            "related_variables": [
+                "RegularBags"
+            ],
+            "related_parameters": [],
+            "code": "# Constraint to ensure the number of regular brand bags is non-negative\nmodel.addConstr(RegularBags >= 0, name=\"nonnegativity_regular_bags\")"
+        },
+        {
+            "description": "The number of premium brand bags must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{PremiumBags} \\geq 0",
+            "related_variables": [
+                "PremiumBags"
+            ],
+            "related_parameters": [],
+            "code": "# Constraint: The number of premium brand bags must be non-negative\nmodel.addConstr(PremiumBags >= 0, name=\"premium_bags_non_negative\")"
+        },
+        {
+            "description": "Ensure the minimum units of calcium are met",
+            "status": "coded",
+            "formulation": "\\textup{CalciumRegular} \\times \\textup{RegularBags} + \\textup{CalciumPremium} \\times \\textup{PremiumBags} \\geq \\textup{CalciumMin}",
+            "related_variables": [
+                "RegularBags",
+                "PremiumBags"
+            ],
+            "related_parameters": [
+                "CalciumRegular",
+                "CalciumPremium",
+                "CalciumMin"
+            ],
+            "code": "# Ensure the minimum units of calcium are met constraint\nmodel.addConstr(CalciumRegular * RegularBags + CalciumPremium * PremiumBags >= CalciumMin, name=\"calcium_requirement\")"
+        },
+        {
+            "description": "Ensure the minimum units of vitamin mix are met",
+            "status": "coded",
+            "formulation": "\\textup{VitaminMixRegular} \\times \\textup{RegularBags} + \\textup{VitaminMixPremium} \\times \\textup{PremiumBags} \\geq \\textup{VitaminMixMin}",
+            "related_variables": [
+                "RegularBags",
+                "PremiumBags"
+            ],
+            "related_parameters": [
+                "VitaminMixRegular",
+                "VitaminMixPremium",
+                "VitaminMixMin"
+            ],
+            "code": "VitaminMixMin = data[\"VitaminMixMin\"]  # scalar parameter\nVitaminMixRegular = data[\"VitaminMixRegular\"]  # scalar parameter\nVitaminMixPremium = data[\"VitaminMixPremium\"]  # scalar parameter\n\nmodel.addConstr(VitaminMixRegular * RegularBags + VitaminMixPremium * PremiumBags >= VitaminMixMin, \"min_vitamin_constraint\")"
+        },
+        {
+            "description": "Ensure the minimum units of protein are met",
+            "status": "coded",
+            "formulation": "\\textup{ProteinRegular} \\times \\textup{RegularBags} + \\textup{ProteinPremium} \\times \\textup{PremiumBags} \\geq \\textup{ProteinMin}",
+            "related_variables": [
+                "RegularBags",
+                "PremiumBags"
+            ],
+            "related_parameters": [
+                "ProteinRegular",
+                "ProteinPremium",
+                "ProteinMin"
+            ],
+            "code": "# Ensure the minimum units of protein are met constraint\nmodel.addConstr(ProteinRegular * RegularBags + ProteinPremium * PremiumBags >= ProteinMin, name=\"min_protein\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of bags of regular brand food",
+            "symbol": "RegularBags",
+            "shape": [],
+            "status": "coded",
+            "code": "RegularBags = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"RegularBags\")"
+        },
+        {
+            "definition": "The number of bags of premium brand food",
+            "symbol": "PremiumBags",
+            "shape": [],
+            "status": "coded",
+            "code": "PremiumBags = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"PremiumBags\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total cost of purchasing bags of regular and premium brand dog food",
+            "status": "coded",
+            "formulation": "\\textup{Minimize} \\quad \\textup{CostRegular} \\times \\textup{RegularBags} + \\textup{CostPremium} \\times \\textup{PremiumBags}",
+            "related_variables": [
+                "RegularBags",
+                "PremiumBags"
+            ],
+            "related_parameters": [
+                "CostRegular",
+                "CostPremium"
+            ],
+            "code": "# Set objective\nmodel.setObjective(CostRegular * RegularBags + CostPremium * PremiumBags, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413155531_nl4opt_prob_209/",
+    "problem_path": "data/nl4opt/prob_209/"
+}

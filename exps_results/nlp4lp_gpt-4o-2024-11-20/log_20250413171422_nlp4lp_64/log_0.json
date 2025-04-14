@@ -1,0 +1,126 @@
+{
+    "background": "Assign consultants to projects in a way that minimizes the total cost, considering fixed costs per project, additional costs for assigning specific consultants to specific projects, and the maximum number of projects a consultant can handle.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Fixed cost for project j",
+            "symbol": "FixedCosts",
+            "value": "",
+            "shape": [
+                "J"
+            ],
+            "code": "FixedCosts = np.array(data[\"FixedCosts\"]) # ['J']"
+        },
+        {
+            "definition": "Additional cost for assigning consultant i to project j",
+            "symbol": "AdditionalCosts",
+            "value": "",
+            "shape": [
+                "I",
+                "J"
+            ],
+            "code": "AdditionalCosts = np.array(data[\"AdditionalCosts\"]) # ['I', 'J']"
+        },
+        {
+            "definition": "Maximum number of projects that can be assigned to a consultant",
+            "symbol": "MaxProjectsPerConsultant",
+            "value": 0,
+            "shape": [],
+            "code": "MaxProjectsPerConsultant = data[\"MaxProjectsPerConsultant\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Each consultant can handle up to MaxProjectsPerConsultant projects.",
+            "status": "formulated",
+            "formulation": "\\sum_{j=1}^{J} \\textup{Assignment}_{i,j} \\leq \\textup{MaxProjectsPerConsultant} \\quad \\forall \\, i \\in \\{1, \\dots, I\\}",
+            "related_variables": [
+                "Assignment"
+            ],
+            "related_parameters": [
+                "MaxProjectsPerConsultant"
+            ]
+        },
+        {
+            "description": "Ensure that each project is assigned at least one consultant.",
+            "status": "formulated",
+            "formulation": "\\sum_{i=1}^{I} \\textup{Assignment}_{i,j} \\geq 1 \\quad \\forall \\, j \\in \\{1, \\dots, J\\}",
+            "related_variables": [
+                "Assignment"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Consultants must not be assigned to more than MaxProjectsPerConsultant projects.",
+            "status": "formulated",
+            "formulation": "\\sum_{j=1}^{J} \\textup{Assignment}_{i,j} \\\\leq \\textup{MaxProjectsPerConsultant} \\quad \\forall i \\in \\{1, \\dots, I\\}",
+            "related_variables": [
+                "Assignment"
+            ],
+            "related_parameters": [
+                "MaxProjectsPerConsultant"
+            ]
+        },
+        {
+            "description": "Ensure that the binary variable \\textup{ProjectAssigned}_{j} is activated if at least one consultant is assigned to project j.",
+            "status": "formulated",
+            "formulation": "\\textup{ProjectAssigned}_{j} \\geq \\frac{\\sum_{i=1}^{I} \\textup{Assignment}_{i,j}}{I}, \\quad \\forall j \\in \\{1, \\dots, J\\}",
+            "related_variables": [
+                "Assignment",
+                "ProjectAssigned"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Ensure that each consultant is assigned to at most \\textup{MaxProjectsPerConsultant} projects.",
+            "status": "formulated",
+            "formulation": "\\sum_{j=1}^{J} \\textup{Assignment}_{i,j} \\leq \\textup{MaxProjectsPerConsultant}, \\quad \\forall i \\in \\{1, \\dots, I\\}",
+            "related_variables": [
+                "Assignment"
+            ],
+            "related_parameters": [
+                "MaxProjectsPerConsultant"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Binary variable indicating whether consultant i is assigned to project j (1 if assigned, 0 otherwise).",
+            "symbol": "Assignment",
+            "shape": [
+                "I",
+                "J"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "Binary variable indicating whether project j is assigned at least one consultant (1 if assigned, 0 otherwise).",
+            "symbol": "ProjectAssigned",
+            "shape": [
+                "J"
+            ],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total cost of assigning consultants to projects, accounting for both fixed costs per project and additional assignment costs.",
+            "status": "formulated",
+            "formulation": "\\sum_{j=1}^{J} \\textup{FixedCosts}_{j} \\cdot \\textup{ProjectAssigned}_{j} + \\sum_{i=1}^{I} \\sum_{j=1}^{J} \\textup{AdditionalCosts}_{i,j} \\cdot \\textup{Assignment}_{i,j}",
+            "related_variables": [
+                "Assignment",
+                "ProjectAssigned"
+            ],
+            "related_parameters": [
+                "FixedCosts",
+                "AdditionalCosts"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413171422_nlp4lp_64/",
+    "problem_path": "data/nlp4lp/64/"
+}

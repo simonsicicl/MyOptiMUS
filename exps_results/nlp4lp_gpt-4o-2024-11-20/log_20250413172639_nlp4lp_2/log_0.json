@@ -1,0 +1,354 @@
+{
+    "background": "DEC is planning to maximize profit for the next quarter by producing an optimal mix of systems. The production will consider the type of systems (workstations or general purpose), various components such as memories and disks, and other constraints such as demand and available resources.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of systems",
+            "symbol": "N",
+            "value": 0,
+            "shape": [],
+            "code": "N = data[\"N\"] # scalar parameter"
+        },
+        {
+            "definition": "Whether system i is a workstation",
+            "symbol": "IsWorkstation",
+            "value": 0,
+            "shape": [
+                "N"
+            ],
+            "code": "IsWorkstation = np.array(data[\"IsWorkstation\"]) # ['N']"
+        },
+        {
+            "definition": "Price of system i",
+            "symbol": "Price",
+            "value": 0,
+            "shape": [
+                "N"
+            ],
+            "code": "Price = np.array(data[\"Price\"]) # ['N']"
+        },
+        {
+            "definition": "Number of disk drives in system i",
+            "symbol": "DiskDrives",
+            "value": 0,
+            "shape": [
+                "N"
+            ],
+            "code": "DiskDrives = np.array(data[\"DiskDrives\"]) # ['N']"
+        },
+        {
+            "definition": "Number of 256K memory boards in system i",
+            "symbol": "MemoryBoards",
+            "value": 0,
+            "shape": [
+                "N"
+            ],
+            "code": "MemoryBoards = np.array(data[\"MemoryBoards\"]) # ['N']"
+        },
+        {
+            "definition": "Maximum number of CPUs available",
+            "symbol": "MaxCpu",
+            "value": 0,
+            "shape": [],
+            "code": "MaxCpu = data[\"MaxCpu\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum total disk drives",
+            "symbol": "MinDisk",
+            "value": 0,
+            "shape": [],
+            "code": "MinDisk = data[\"MinDisk\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum total disk drives",
+            "symbol": "MaxDisk",
+            "value": 0,
+            "shape": [],
+            "code": "MaxDisk = data[\"MaxDisk\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum total memory boards",
+            "symbol": "MinMemory",
+            "value": 0,
+            "shape": [],
+            "code": "MinMemory = data[\"MinMemory\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum total memory boards",
+            "symbol": "MaxMemory",
+            "value": 0,
+            "shape": [],
+            "code": "MaxMemory = data[\"MaxMemory\"] # scalar parameter"
+        },
+        {
+            "definition": "Demand of system i",
+            "symbol": "Demand",
+            "value": 0,
+            "shape": [
+                "N"
+            ],
+            "code": "Demand = np.array(data[\"Demand\"]) # ['N']"
+        },
+        {
+            "definition": "Demand for General Purpose systems",
+            "symbol": "DemandGP",
+            "value": 0,
+            "shape": [],
+            "code": "DemandGP = data[\"DemandGP\"] # scalar parameter"
+        },
+        {
+            "definition": "Demand for Workstations",
+            "symbol": "DemandWS",
+            "value": 0,
+            "shape": [],
+            "code": "DemandWS = data[\"DemandWS\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of preordered system i",
+            "symbol": "Preorder",
+            "value": 0,
+            "shape": [
+                "N"
+            ],
+            "code": "Preorder = np.array(data[\"Preorder\"]) # ['N']"
+        },
+        {
+            "definition": "Number of alternative memory configurations possible",
+            "symbol": "AltMemory",
+            "value": 0,
+            "shape": [],
+            "code": "AltMemory = data[\"AltMemory\"] # scalar parameter"
+        },
+        {
+            "definition": "Whether the alternative memory is compatible with system i",
+            "symbol": "AltCompatible",
+            "value": 0,
+            "shape": [
+                "N"
+            ],
+            "code": "AltCompatible = np.array(data[\"AltCompatible\"]) # ['N']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of systems produced should be non-negative and integer for all systems.",
+            "status": "formulated",
+            "formulation": "\\textup{SystemsProduced}_{i} \\geq 0 \\quad \\forall \\, i \\in \\{1, \\dots, \\textup{N}\\} \\\\\n\\textup{SystemsProduced}_{i} \\in \\mathbb{Z} \\quad \\forall \\, i \\in \\{1, \\dots, \\textup{N}\\}",
+            "related_variables": [
+                "SystemsProduced"
+            ],
+            "related_parameters": [
+                "N"
+            ]
+        },
+        {
+            "description": "Only workstations or general-purpose systems can be produced for each system according to \\textup{IsWorkstation}.",
+            "status": "formulated",
+            "formulation": "\\textup{SystemsProduced}_{i} \\\\leq M \\cdot \\textup{IsProducedWorkstation}_{i}, \\quad \\forall i \\; \\textup{such that} \\; \\textup{IsWorkstation}_{i} = 1 \\\\ \n\\textup{SystemsProduced}_{i} \\\\leq M \\cdot (1 - \\textup{IsProducedWorkstation}_{i}), \\quad \\forall i \\; \\textup{such that} \\; \\textup{IsWorkstation}_{i} = 0",
+            "related_variables": [
+                "SystemsProduced",
+                "IsProducedWorkstation"
+            ],
+            "related_parameters": [
+                "IsWorkstation"
+            ]
+        },
+        {
+            "description": "The total production of systems must not exceed the available MaxCpu CPUs.",
+            "status": "formulated",
+            "formulation": "\\sum_{i=1}^{N} \\textup{SystemsProduced}_{i} \\leq \\textup{MaxCpu}",
+            "related_variables": [
+                "SystemsProduced"
+            ],
+            "related_parameters": [
+                "MaxCpu",
+                "N"
+            ]
+        },
+        {
+            "description": "The total number of disk drives across all systems must be at least MinDisk and at most MaxDisk",
+            "status": "formulated",
+            "formulation": "\\\\textup{MinDisk} \\\\leq \\\\sum_{i=1}^{N} \\\\textup{SystemsProduced}_{i} \\\\cdot \\\\textup{DiskDrives}_{i} \\\\leq \\\\textup{MaxDisk}",
+            "related_variables": [
+                "SystemsProduced"
+            ],
+            "related_parameters": [
+                "DiskDrives",
+                "MinDisk",
+                "MaxDisk",
+                "N"
+            ]
+        },
+        {
+            "description": "The total number of 256K memory boards across all systems must be between MinMemory and MaxMemory.",
+            "status": "formulated",
+            "formulation": "\\textup{MinMemory} \\leq \\sum_{i=1}^{\\textup{N}} \\textup{SystemsProduced}_{i} \\cdot \\textup{MemoryBoards}_{i} \\leq \\textup{MaxMemory}",
+            "related_variables": [
+                "SystemsProduced"
+            ],
+            "related_parameters": [
+                "MemoryBoards",
+                "MinMemory",
+                "MaxMemory",
+                "N"
+            ]
+        },
+        {
+            "description": "The production quantity for each system cannot exceed its corresponding demand.",
+            "status": "formulated",
+            "formulation": "\\textup{SystemsProduced}_{i} \\leq \\textup{Demand}_{i}, \\quad \\forall i = 1, \\dots, N",
+            "related_variables": [
+                "SystemsProduced"
+            ],
+            "related_parameters": [
+                "Demand"
+            ]
+        },
+        {
+            "description": "The total production of general-purpose (\textup{GP}) systems must not exceed the demand, \textup{DemandGP}.",
+            "status": "formulated",
+            "formulation": "\\sum_{i=1}^{\\textup{N}} (1 - \\textup{IsWorkstation}_{i}) \\cdot \\textup{SystemsProduced}_{i} \\\\leq \\textup{DemandGP}",
+            "related_variables": [
+                "SystemsProduced",
+                "IsWorkstation"
+            ],
+            "related_parameters": [
+                "DemandGP",
+                "N"
+            ]
+        },
+        {
+            "description": "The total production of workstations must not exceed DemandWS.",
+            "status": "formulated",
+            "formulation": "\\sum_{i=1}^{N} \\textup{SystemsProduced}_{i} \\cdot \\textup{IsWorkstation}_{i} \\leq \\textup{DemandWS}",
+            "related_variables": [
+                "SystemsProduced"
+            ],
+            "related_parameters": [
+                "IsWorkstation",
+                "DemandWS"
+            ]
+        },
+        {
+            "description": "Preorder systems must be fulfilled as specified by Preorder",
+            "status": "formulated",
+            "formulation": "\\textup{SystemsProduced}_{i} \\geq \\textup{Preorder}_{i}, \\quad \\forall \\, i \\in \\{1, ..., N\\}",
+            "related_variables": [
+                "SystemsProduced"
+            ],
+            "related_parameters": [
+                "Preorder"
+            ]
+        },
+        {
+            "description": "Each system must be configured with compatible alternative memory configurations based on AltCompatible.",
+            "status": "formulated",
+            "formulation": "\\textup{SystemsProduced}_{i} \\leq M \\cdot \\textup{IsCompatible}_{i} \\quad \\forall \\ i \\in \\{1, 2, \\dots, N\\}",
+            "related_variables": [
+                "SystemsProduced",
+                "IsCompatible"
+            ],
+            "related_parameters": [
+                "AltCompatible"
+            ]
+        },
+        {
+            "description": "The total number of systems configured with alternative memory must not exceed the maximum alternative memory limit.",
+            "status": "formulated",
+            "formulation": "\\sum_{i=1}^{\\textup{N}} \\textup{IsCompatible}_{i} \\leq \\textup{AltMemory}",
+            "related_variables": [
+                "IsCompatible"
+            ],
+            "related_parameters": [
+                "AltMemory",
+                "N"
+            ]
+        },
+        {
+            "description": "Ensure binary production logic for each system (produced as one type only).",
+            "status": "formulated",
+            "formulation": "\\textup{IsProducedWorkstation}_{i} \\in \\{0, 1\\}, \\quad \\forall i",
+            "related_variables": [
+                "IsProducedWorkstation"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Ensure that compatibility binary variable aligns with AltCompatible.",
+            "status": "formulated",
+            "formulation": "\\textup{IsCompatible}_{i} \\leq \\textup{AltCompatible}_{i} \\quad \\forall \\ i \\in \\{1, 2, \\dots, N\\}",
+            "related_variables": [
+                "IsCompatible"
+            ],
+            "related_parameters": [
+                "AltCompatible"
+            ]
+        },
+        {
+            "description": "For systems where alternate memory is not compatible, the variable IsCompatible must be 0.",
+            "status": "formulated",
+            "formulation": "\\textup{IsCompatible}_{i} \\leq \\textup{AltCompatible}_{i} \\quad \\forall \\ i \\in \\{1, 2, \\dots, \\textup{N}\\}",
+            "related_variables": [
+                "IsCompatible"
+            ],
+            "related_parameters": [
+                "AltCompatible",
+                "N"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of units produced for each system i.",
+            "symbol": "SystemsProduced",
+            "shape": [
+                "N"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "Binary decision variable indicating whether system i is produced as a workstation.",
+            "symbol": "IsProducedWorkstation",
+            "shape": [
+                "N"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "Binary variable indicating if system i is configured with compatible memory.",
+            "symbol": "IsCompatible",
+            "shape": [
+                "N"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "Binary decision variable indicating if system i is configured with alternative memory.",
+            "symbol": "IsCompatible",
+            "shape": [
+                "N"
+            ],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total profit from systems produced, where profit is calculated as the sum of the number of each system produced multiplied by its corresponding price.",
+            "status": "formulated",
+            "formulation": "\\textup{Maximize} \\quad \\sum_{i=1}^{N} (\\textup{SystemsProduced}_{i} \\cdot \\textup{Price}_{i})",
+            "related_variables": [
+                "SystemsProduced"
+            ],
+            "related_parameters": [
+                "Price",
+                "N"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413172639_nlp4lp_2/",
+    "problem_path": "data/nlp4lp/2/"
+}

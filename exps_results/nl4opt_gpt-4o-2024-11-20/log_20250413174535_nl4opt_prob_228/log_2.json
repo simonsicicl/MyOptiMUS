@@ -1,0 +1,197 @@
+{
+    "background": "A ski resort is looking to add two types of ski lifts, densely-seated and loosely-seated, to transport guests up the slopes. The lifts have different capacities, speeds, and electricity consumption rates. The resort aims to meet a minimum guest transportation rate while adhering to electricity usage constraints.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of guests transported per minute by the densely-seated ski lift",
+            "symbol": "GuestsPerMinDense",
+            "value": 45,
+            "shape": [],
+            "code": "GuestsPerMinDense = data[\"GuestsPerMinDense\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of guests transported per minute by the loosely-seated ski lift",
+            "symbol": "GuestsPerMinLoose",
+            "value": 20,
+            "shape": [],
+            "code": "GuestsPerMinLoose = data[\"GuestsPerMinLoose\"] # scalar parameter"
+        },
+        {
+            "definition": "Electricity units used by the densely-seated ski lift",
+            "symbol": "ElectricityDense",
+            "value": 30,
+            "shape": [],
+            "code": "ElectricityDense = data[\"ElectricityDense\"] # scalar parameter"
+        },
+        {
+            "definition": "Electricity units used by the loosely-seated ski lift",
+            "symbol": "ElectricityLoose",
+            "value": 22,
+            "shape": [],
+            "code": "ElectricityLoose = data[\"ElectricityLoose\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of loosely-seated ski lifts required",
+            "symbol": "MinLooseLifts",
+            "value": 5,
+            "shape": [],
+            "code": "MinLooseLifts = data[\"MinLooseLifts\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of guests per minute required for profit",
+            "symbol": "MinGuestsPerMin",
+            "value": 1000,
+            "shape": [],
+            "code": "MinGuestsPerMin = data[\"MinGuestsPerMin\"] # scalar parameter"
+        },
+        {
+            "definition": "Total available units of electricity",
+            "symbol": "TotalElectricity",
+            "value": 940,
+            "shape": [],
+            "code": "TotalElectricity = data[\"TotalElectricity\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Ensure that the number of densely-seated ski lifts is non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfDenseLifts} \\geq 0",
+            "related_variables": [
+                "NumberOfDenseLifts"
+            ],
+            "related_parameters": [],
+            "code": "# The non-negativity constraint is automatically ensured due to the default non-negative domain of continuous variables in Gurobi."
+        },
+        {
+            "description": "The number of loosely-seated ski lifts must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfLooseLifts} \\geq 0",
+            "related_variables": [
+                "NumberOfLooseLifts"
+            ],
+            "related_parameters": [],
+            "code": "# Add non-negativity constraint for the NumberOfLooseLifts\nmodel.addConstr(NumberOfLooseLifts >= 0, name=\"non_negative_loose_lifts\")"
+        },
+        {
+            "description": "The number of loosely-seated ski lifts must be at least the minimum required number of loosely-seated ski lifts (MinLooseLifts).",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfLooseLifts} \\geq \\textup{MinLooseLifts}",
+            "related_variables": [
+                "NumberOfLooseLifts"
+            ],
+            "related_parameters": [
+                "MinLooseLifts"
+            ],
+            "code": "# Add constraint to ensure the number of loosely-seated ski lifts meets the minimum required\nmodel.addConstr(NumberOfLooseLifts >= MinLooseLifts, name=\"min_loose_lifts_constraint\")"
+        },
+        {
+            "description": "The number of guests transported per minute by densely-seated and loosely-seated ski lifts combined is at least MinGuestsPerMin.",
+            "status": "coded",
+            "formulation": "\\\\textup{NumberOfDenseLifts} \\\\times \\\\textup{GuestsPerMinDense} + \\\\textup{NumberOfLooseLifts} \\\\times \\\\textup{GuestsPerMinLoose} \\\\geq \\\\textup{MinGuestsPerMin}",
+            "related_variables": [
+                "NumberOfDenseLifts",
+                "NumberOfLooseLifts"
+            ],
+            "related_parameters": [
+                "GuestsPerMinDense",
+                "GuestsPerMinLoose",
+                "MinGuestsPerMin"
+            ],
+            "code": "# Add constraint to ensure the combined number of guests transported per minute meets the minimum requirement\nmodel.addConstr(\n    NumberOfDenseLifts * GuestsPerMinDense + NumberOfLooseLifts * GuestsPerMinLoose >= MinGuestsPerMin,\n    name=\"min_guests_per_min\"\n)"
+        },
+        {
+            "description": "The total electricity used by all ski lifts combined should not exceed the available TotalElectricity.",
+            "status": "coded",
+            "formulation": "\\\\textup{ElectricityDense} \\\\cdot \\\\textup{NumberOfDenseLifts} + \\\\textup{ElectricityLoose} \\\\cdot \\\\textup{NumberOfLooseLifts} \\\\leq \\\\textup{TotalElectricity}",
+            "related_variables": [
+                "NumberOfDenseLifts",
+                "NumberOfLooseLifts"
+            ],
+            "related_parameters": [
+                "ElectricityDense",
+                "ElectricityLoose",
+                "TotalElectricity"
+            ],
+            "code": "# Add electricity usage constraint for ski lifts\nmodel.addConstr(ElectricityDense * NumberOfDenseLifts + ElectricityLoose * NumberOfLooseLifts <= TotalElectricity, name=\"electricity_usage_constraint\")"
+        },
+        {
+            "description": "Ensure the total guests transported per minute by all lifts meets the minimum guest transportation requirement.",
+            "status": "coded",
+            "formulation": "\\textup{GuestsPerMinDense} \\cdot \\textup{NumberOfDenseLifts} + \\textup{GuestsPerMinLoose} \\cdot \\textup{NumberOfLooseLifts} \\geq \\textup{MinGuestsPerMin}",
+            "related_variables": [
+                "NumberOfDenseLifts",
+                "NumberOfLooseLifts"
+            ],
+            "related_parameters": [
+                "GuestsPerMinDense",
+                "GuestsPerMinLoose",
+                "MinGuestsPerMin"
+            ],
+            "code": "# Add constraint to ensure the total guests transported meets the minimum requirement\nmodel.addConstr(\n    GuestsPerMinDense * NumberOfDenseLifts + GuestsPerMinLoose * NumberOfLooseLifts >= MinGuestsPerMin,\n    name=\"min_guest_transportation\"\n)"
+        },
+        {
+            "description": "Ensure the total electricity usage by all ski lifts does not exceed the total electricity available.",
+            "status": "coded",
+            "formulation": "\\textup{ElectricityDense} \\cdot \\textup{NumberOfDenseLifts} + \\textup{ElectricityLoose} \\cdot \\textup{NumberOfLooseLifts} \\leq \\textup{TotalElectricity}",
+            "related_variables": [
+                "NumberOfDenseLifts",
+                "NumberOfLooseLifts"
+            ],
+            "related_parameters": [
+                "ElectricityDense",
+                "ElectricityLoose",
+                "TotalElectricity"
+            ],
+            "code": "# Add electricity usage constraint for ski lifts\nmodel.addConstr(\n    NumberOfDenseLifts * ElectricityDense + NumberOfLooseLifts * ElectricityLoose <= TotalElectricity,\n    name=\"electricity_usage_constraint\"\n)"
+        },
+        {
+            "description": "Ensure the number of loosely-seated ski lifts meets the minimum required.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfLooseLifts} \\geq \\textup{MinLooseLifts}",
+            "related_variables": [
+                "NumberOfLooseLifts"
+            ],
+            "related_parameters": [
+                "MinLooseLifts"
+            ],
+            "code": "# Add constraint to ensure the number of loosely-seated ski lifts meets the minimum required\nmodel.addConstr(NumberOfLooseLifts >= MinLooseLifts, name=\"min_loose_lifts\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of densely-seated ski lifts",
+            "symbol": "NumberOfDenseLifts",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfDenseLifts = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfDenseLifts\")"
+        },
+        {
+            "definition": "The number of loosely-seated ski lifts.",
+            "symbol": "NumberOfLooseLifts",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfLooseLifts = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfLooseLifts\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of ski lifts (both densely-seated and loosely-seated).",
+            "status": "coded",
+            "formulation": "\\textup{Minimize}: \\quad \\textup{NumberOfDenseLifts} + \\textup{NumberOfLooseLifts}",
+            "related_variables": [
+                "NumberOfDenseLifts",
+                "NumberOfLooseLifts"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(NumberOfDenseLifts + NumberOfLooseLifts, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 25.0,
+    "log_path": "logs/log_20250413174535_nl4opt_prob_228/",
+    "problem_path": "data/nl4opt/prob_228/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_228/data.json\", \"r\") as f:\n    data = json.load(f)\n\nGuestsPerMinDense = data[\"GuestsPerMinDense\"] # scalar parameter\nGuestsPerMinLoose = data[\"GuestsPerMinLoose\"] # scalar parameter\nElectricityDense = data[\"ElectricityDense\"] # scalar parameter\nElectricityLoose = data[\"ElectricityLoose\"] # scalar parameter\nMinLooseLifts = data[\"MinLooseLifts\"] # scalar parameter\nMinGuestsPerMin = data[\"MinGuestsPerMin\"] # scalar parameter\nTotalElectricity = data[\"TotalElectricity\"] # scalar parameter\nNumberOfDenseLifts = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfDenseLifts\")\nNumberOfLooseLifts = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfLooseLifts\")\n\n# The non-negativity constraint is automatically ensured due to the default non-negative domain of continuous variables in Gurobi.\n\n# Add non-negativity constraint for the NumberOfLooseLifts\nmodel.addConstr(NumberOfLooseLifts >= 0, name=\"non_negative_loose_lifts\")\n\n# Add constraint to ensure the number of loosely-seated ski lifts meets the minimum required\nmodel.addConstr(NumberOfLooseLifts >= MinLooseLifts, name=\"min_loose_lifts_constraint\")\n\n# Add constraint to ensure the combined number of guests transported per minute meets the minimum requirement\nmodel.addConstr(\n    NumberOfDenseLifts * GuestsPerMinDense + NumberOfLooseLifts * GuestsPerMinLoose >= MinGuestsPerMin,\n    name=\"min_guests_per_min\"\n)\n\n# Add electricity usage constraint for ski lifts\nmodel.addConstr(ElectricityDense * NumberOfDenseLifts + ElectricityLoose * NumberOfLooseLifts <= TotalElectricity, name=\"electricity_usage_constraint\")\n\n# Add constraint to ensure the total guests transported meets the minimum requirement\nmodel.addConstr(\n    GuestsPerMinDense * NumberOfDenseLifts + GuestsPerMinLoose * NumberOfLooseLifts >= MinGuestsPerMin,\n    name=\"min_guest_transportation\"\n)\n\n# Add electricity usage constraint for ski lifts\nmodel.addConstr(\n    NumberOfDenseLifts * ElectricityDense + NumberOfLooseLifts * ElectricityLoose <= TotalElectricity,\n    name=\"electricity_usage_constraint\"\n)\n\n# Add constraint to ensure the number of loosely-seated ski lifts meets the minimum required\nmodel.addConstr(NumberOfLooseLifts >= MinLooseLifts, name=\"min_loose_lifts\")\n\n# Set objective\nmodel.setObjective(NumberOfDenseLifts + NumberOfLooseLifts, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

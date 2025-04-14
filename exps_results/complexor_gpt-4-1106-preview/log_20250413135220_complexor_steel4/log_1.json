@@ -1,0 +1,146 @@
+{
+    "background": "A production problem involving a set of products being manufactured over multiple stages, where each product has a defined production rate per stage and profit margin, and each stage has limited available time.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "symbol": "NumProducts",
+            "definition": "The number of different products",
+            "shape": [],
+            "code": "NumProducts = data[\"NumProducts\"] # scalar parameter"
+        },
+        {
+            "symbol": "NumStages",
+            "definition": "The number of different stages",
+            "shape": [],
+            "code": "NumStages = data[\"NumStages\"] # scalar parameter"
+        },
+        {
+            "symbol": "ProductionRate",
+            "definition": "The production rate of product p in stage s",
+            "shape": [
+                "NumProducts",
+                "NumStages"
+            ],
+            "code": "ProductionRate = np.array(data[\"ProductionRate\"]) # ['NumProducts', 'NumStages']"
+        },
+        {
+            "symbol": "ProfitPerTon",
+            "definition": "The profit per ton for each product",
+            "shape": [
+                "NumProducts"
+            ],
+            "code": "ProfitPerTon = np.array(data[\"ProfitPerTon\"]) # ['NumProducts']"
+        },
+        {
+            "symbol": "MinCommitment",
+            "definition": "The minimum number of tons of product p that can be sold in a week",
+            "shape": [
+                "NumProducts"
+            ],
+            "code": "MinCommitment = np.array(data[\"MinCommitment\"]) # ['NumProducts']"
+        },
+        {
+            "symbol": "MaxMarketLimit",
+            "definition": "The maximum market limit on the tons of product p sold in a week",
+            "shape": [
+                "NumProducts"
+            ],
+            "code": "MaxMarketLimit = np.array(data[\"MaxMarketLimit\"]) # ['NumProducts']"
+        },
+        {
+            "symbol": "StageAvailability",
+            "definition": "The number of hours available per week for each stage",
+            "shape": [
+                "NumStages"
+            ],
+            "code": "StageAvailability = np.array(data[\"StageAvailability\"]) # ['NumStages']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Each product must be produced in non-negative quantities",
+            "status": "coded",
+            "formulation": "\\forall p \\in \\{1, \\ldots, \\textup{NumProducts}\\}, \\quad \\textup{TonsProduced}_p \\geq 0",
+            "related_variables": [
+                "TonsProduced"
+            ],
+            "related_parameters": [
+                "NumProducts"
+            ],
+            "code": "# Add non-negative production constraints for each product\nfor p in range(NumProducts):\n    model.addConstr(TonsProduced[p] >= 0, name=f\"TonsProduced_nonnegativity_{p}\")"
+        },
+        {
+            "description": "Total hours used in each stage by all products cannot exceed available hours for that stage",
+            "status": "coded",
+            "formulation": "\\sum_{p=1}^{\\textup{NumProducts}} \\left( \\frac{\\textup{TonsProduced}_p}{\\textup{ProductionRate}_{p,s}} \\right) \\leq \\textup{StageAvailability}_s \\quad \\forall s \\in \\{1, ..., \\textup{NumStages}\\}",
+            "related_variables": [
+                "TonsProduced"
+            ],
+            "related_parameters": [
+                "NumProducts",
+                "NumStages",
+                "ProductionRate",
+                "StageAvailability"
+            ],
+            "code": "# Add constraints to ensure total hours used in each stage by all products do not exceed available hours for that stage\nfor s in range(NumStages):\n    model.addConstr(\n        gp.quicksum(TonsProduced[p] / ProductionRate[p, s] for p in range(NumProducts)) <= StageAvailability[s], \n        name=\"stage_availability_\"+str(s)\n    )"
+        },
+        {
+            "description": "Each product must meet its minimum production commitment in tons per week.",
+            "status": "coded",
+            "formulation": "\\textup{TonsProduced}_p \\geq \\textup{MinCommitment}_p, \\quad \\forall p \\in \\{1, \\ldots, \\textup{NumProducts}\\}",
+            "related_variables": [
+                "TonsProduced"
+            ],
+            "related_parameters": [
+                "MinCommitment",
+                "NumProducts"
+            ],
+            "code": "# Ensure each product meets its minimum production commitment in tons per week.\nfor p in range(NumProducts):\n    model.addConstr(TonsProduced[p] >= MinCommitment[p], name=\"min_commitment_{}\".format(p))"
+        },
+        {
+            "description": "Each product can be sold up to its maximum market limit per week",
+            "status": "coded",
+            "formulation": "\\forall p \\in \\{1, \\ldots, \\textup{NumProducts}\\}, \\quad \\textup{TonsProduced}_p \\leq \\textup{MaxMarketLimit}_p",
+            "related_variables": [
+                "TonsProduced"
+            ],
+            "related_parameters": [
+                "MaxMarketLimit",
+                "NumProducts"
+            ],
+            "code": "# Market limit constraint for each product\nfor p in range(NumProducts):\n    model.addConstr(TonsProduced[p] <= MaxMarketLimit[p], name=f\"market_limit_product_{p}\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of tons of product p produced",
+            "symbol": "TonsProduced",
+            "shape": [
+                "NumProducts"
+            ],
+            "status": "coded",
+            "code": "TonsProduced = model.addVars(NumProducts, vtype=gp.GRB.CONTINUOUS, name=\"TonsProduced\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total profit from all the products produced",
+            "status": "coded",
+            "formulation": "\\max \\sum_{p=1}^{\\textup{NumProducts}} (\\textup{TonsProduced}_{p} \\times \\textup{ProfitPerTon}_{p})",
+            "related_variables": [
+                "TonsProduced"
+            ],
+            "related_parameters": [
+                "NumProducts",
+                "ProfitPerTon"
+            ],
+            "code": "# Set objective\nmodel.setObjective(gp.quicksum(TonsProduced[p] * ProfitPerTon[p] for p in range(NumProducts)), gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413135220_complexor_steel4/",
+    "problem_path": "data/complexor/steel4/"
+}

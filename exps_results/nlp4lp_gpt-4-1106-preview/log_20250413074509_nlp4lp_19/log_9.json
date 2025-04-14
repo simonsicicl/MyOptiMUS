@@ -1,0 +1,292 @@
+{
+    "background": "The company deals with various items categorized into vegetables and non-vegetables, which are bought, refined, stored, and sold over a planning horizon of months. Refining capacity for both types of items is limited, and there are storage limitations with associated costs. The company must manage the hardness of the items and start with an initial amount of items in storage.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of months",
+            "symbol": "M",
+            "value": "",
+            "shape": [],
+            "code": "M = data[\"M\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of different items",
+            "symbol": "I",
+            "value": "",
+            "shape": [],
+            "code": "I = data[\"I\"] # scalar parameter"
+        },
+        {
+            "definition": "Month m buy price of item i",
+            "symbol": "BuyPrice",
+            "value": "",
+            "shape": [
+                "M",
+                "I"
+            ],
+            "code": "BuyPrice = np.array(data[\"BuyPrice\"]) # ['M', 'I']"
+        },
+        {
+            "definition": "Sell price of the products after refining",
+            "symbol": "SellPrice",
+            "value": "",
+            "shape": [],
+            "code": "SellPrice = data[\"SellPrice\"] # scalar parameter"
+        },
+        {
+            "definition": "Indicator whether item i is a vegetable",
+            "symbol": "IsVegetable",
+            "value": "",
+            "shape": [
+                "I"
+            ],
+            "code": "IsVegetable = np.array(data[\"IsVegetable\"]) # ['I']"
+        },
+        {
+            "definition": "Maximum refining capability for vegetables per month",
+            "symbol": "MaxVegetableRefiningPerMonth",
+            "value": "",
+            "shape": [],
+            "code": "MaxVegetableRefiningPerMonth = data[\"MaxVegetableRefiningPerMonth\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum refining capability for non-vegetables per month",
+            "symbol": "MaxNonVegetableRefiningPerMonth",
+            "value": "",
+            "shape": [],
+            "code": "MaxNonVegetableRefiningPerMonth = data[\"MaxNonVegetableRefiningPerMonth\"] # scalar parameter"
+        },
+        {
+            "definition": "Size of the storage",
+            "symbol": "StorageSize",
+            "value": "",
+            "shape": [],
+            "code": "StorageSize = data[\"StorageSize\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost for storing items per month",
+            "symbol": "StorageCost",
+            "value": "",
+            "shape": [],
+            "code": "StorageCost = data[\"StorageCost\"] # scalar parameter"
+        },
+        {
+            "definition": "The maximum hardness allowed for the products after refining",
+            "symbol": "MaxHardness",
+            "value": "",
+            "shape": [],
+            "code": "MaxHardness = data[\"MaxHardness\"] # scalar parameter"
+        },
+        {
+            "definition": "The minimum hardness required for the products after refining",
+            "symbol": "MinHardness",
+            "value": "",
+            "shape": [],
+            "code": "MinHardness = data[\"MinHardness\"] # scalar parameter"
+        },
+        {
+            "definition": "Hardness of item i",
+            "symbol": "Hardness",
+            "value": "",
+            "shape": [
+                "I"
+            ],
+            "code": "Hardness = np.array(data[\"Hardness\"]) # ['I']"
+        },
+        {
+            "definition": "Initial amount of items in storage at the beginning of the planning horizon",
+            "symbol": "InitialAmount",
+            "value": "",
+            "shape": [],
+            "code": "InitialAmount = data[\"InitialAmount\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "All items bought, stored, and sold across the planning horizon must be non-negative.",
+            "status": "coded",
+            "formulation": "\\forall m \\in \\{1, ..., M\\}, \\quad \\forall i \\in \\{1, ..., I\\}, \\\\ \\textup{ItemsBought}_{m,i} \\geq 0, \\quad \\textup{ItemsStored}_{m,i} \\geq 0, \\quad \\textup{ItemsSold}_{m,i} \\geq 0",
+            "related_variables": [
+                "ItemsBought",
+                "ItemsStored",
+                "ItemsSold"
+            ],
+            "related_parameters": [],
+            "code": "# Ensure that all items bought, stored, and sold are non-negative across the planning horizon\nfor m in range(M):\n    for i in range(I):\n        model.addConstr(ItemsBought[m, i] >= 0, name=f\"non_negativity_bought_{m}_{i}\")\n        model.addConstr(ItemsStored[m, i] >= 0, name=f\"non_negativity_stored_{m}_{i}\")\n        model.addConstr(ItemsSold[m, i] >= 0, name=f\"non_negativity_sold_{m}_{i}\")"
+        },
+        {
+            "description": "Each item i sold must have a hardness of at least MinHardness",
+            "status": "coded",
+            "formulation": "\\forall i \\in I, \\quad \\textup{Hardness}_i \\geq \\textup{MinHardness}",
+            "related_variables": [],
+            "related_parameters": [
+                "Hardness",
+                "MinHardness"
+            ],
+            "code": "# Define variables\nmodel._vars = model.addVars(I, name=\"x\")\n\n# Define constraints\nfor i in range(I):\n    model.addConstr(gp.quicksum(Hardness[i] * model._vars[i] for i in range(I)) >= MinHardness, name=f\"min_hardness_{i}\")"
+        },
+        {
+            "description": "The hardness of any refined item ready for sale must not exceed MaxHardness",
+            "status": "coded",
+            "formulation": "\\forall i \\in [1, I]: \\quad \\textup{Hardness}[i] \\leq \\textup{MaxHardness}",
+            "related_variables": [
+                "ItemsSold"
+            ],
+            "related_parameters": [
+                "MaxHardness",
+                "Hardness"
+            ],
+            "code": "ItemsSold = model.addVars(len(Hardness), name='ItemsSold', vtype=gp.GRB.CONTINUOUS)"
+        },
+        {
+            "description": "Total quantity of vegetables refined in any month m should not exceed the maximum refining capability for vegetables per month",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{I} \\textup{ItemsSold}_{m,i} \\cdot \\textup{IsVegetable}_{i} \\leq \\textup{MaxVegetableRefiningPerMonth} \\quad \\forall m \\in \\{1, \\ldots, M\\}",
+            "related_variables": [
+                "ItemsSold"
+            ],
+            "related_parameters": [
+                "IsVegetable",
+                "MaxVegetableRefiningPerMonth"
+            ],
+            "code": "# Add constraints for maximum refining capability of vegetables per month\nfor m in range(M):\n    model.addConstr(gp.quicksum(ItemsSold[m, i] * IsVegetable[i] for i in range(I)) <= MaxVegetableRefiningPerMonth, name=f\"max_veg_refining_month_{m}\")"
+        },
+        {
+            "description": "At most MaxNonVegetableRefiningPerMonth non-vegetables can be refined per month",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{I} (1 - \\textup{IsVegetable}_i) \\times \\textup{ItemsSold}_{m, i} \\leq \\textup{MaxNonVegetableRefiningPerMonth} \\quad \\forall m \\in \\{1, \\ldots, M\\}",
+            "related_variables": [
+                "ItemsSold"
+            ],
+            "related_parameters": [
+                "M",
+                "I",
+                "IsVegetable",
+                "MaxNonVegetableRefiningPerMonth"
+            ],
+            "code": "```"
+        },
+        {
+            "description": "Total storage used in any month must not exceed the total storage size",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{I} \\textup{ItemsStored}_{m, i} \\leq \\textup{StorageSize} \\quad \\forall m \\in \\{1, ..., M\\}",
+            "related_variables": [
+                "ItemsStored"
+            ],
+            "related_parameters": [
+                "StorageSize",
+                "M",
+                "I"
+            ],
+            "code": "# Add constraint for total storage used in any month not to exceed the total storage size\nfor m in range(M):\n    model.addConstr(gp.quicksum(ItemsStored[m, i] for i in range(I)) <= StorageSize, name=f\"storage_limit_month_{m}\")"
+        },
+        {
+            "description": "The storage size must accommodate the initial amount of items",
+            "status": "coded",
+            "formulation": "\\textup{StorageSize} \\geq \\textup{InitialAmount}",
+            "related_variables": [],
+            "related_parameters": [
+                "StorageSize",
+                "InitialAmount"
+            ],
+            "code": "StorageSize = data[\"StorageSize\"] # scalar parameter\nInitialAmount = data[\"InitialAmount\"] # scalar parameter\n\n# Constraint to ensure storage size accommodates the initial amount of items\nmodel.addConstr(StorageSize >= InitialAmount, name=\"storage_initial_amount\")"
+        },
+        {
+            "description": "Each type of item (vegetable or non-vegetable) can only be refined up to the maximum monthly refining capability",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{\\textup{I}} \\textup{ItemsSold}_{mi} \\times \\textup{IsVegetable}_i \\leq \\textup{MaxVegetableRefiningPerMonth}, \\quad \\forall m, \\quad \\sum_{i=1}^{\\textup{I}} \\textup{ItemsSold}_{mi} \\times (1 - \\textup{IsVegetable}_i) \\leq \\textup{MaxNonVegetableRefiningPerMonth}, \\quad \\forall m",
+            "related_variables": [
+                "ItemsSold"
+            ],
+            "related_parameters": [
+                "IsVegetable",
+                "MaxVegetableRefiningPerMonth",
+                "MaxNonVegetableRefiningPerMonth"
+            ],
+            "code": "# Vegetables refining constraint\nfor m in range(M):\n    model.addConstr(gp.quicksum(ItemsSold[m, i] * IsVegetable[i] for i in range(I)) <= MaxVegetableRefiningPerMonth, \n                    name=f\"veg_refining_cap_month_{m}\")\n\n# Non-Vegetables refining constraint\nfor m in range(M):\n    model.addConstr(gp.quicksum(ItemsSold[m, i] * (1 - IsVegetable[i]) for i in range(I)) <= MaxNonVegetableRefiningPerMonth, \n                    name=f\"non_veg_refining_cap_month_{m}\")"
+        },
+        {
+            "description": "The storage cannot exceed its size limit",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{\\textup{I}} \\textup{ItemsStored}_{mi} \\leq \\textup{StorageSize}, \\quad \\forall m",
+            "related_variables": [
+                "ItemsStored"
+            ],
+            "related_parameters": [
+                "StorageSize"
+            ],
+            "code": "# Add constraints to ensure that the storage does not exceed its size limit\nfor m in M:\n    model.addConstr(gp.quicksum(ItemsStored[m, i] for i in I) <= StorageSize, name=f\"StorageLimit_m{m}\")"
+        },
+        {
+            "description": "Product hardness after refining must be within the allowable limits",
+            "status": "coded",
+            "formulation": "\\textup{MinHardness} \\leq \\sum_{i=1}^{\\textup{I}} \\textup{ItemsSold}_{mi} \\times \\textup{Hardness}_i \\leq \\textup{MaxHardness}, \\quad \\forall m",
+            "related_variables": [
+                "ItemsSold"
+            ],
+            "related_parameters": [
+                "MinHardness",
+                "MaxHardness",
+                "Hardness"
+            ],
+            "code": "# Add constraints to ensure product hardness after refining is within allowable limits\nfor m in range(M):\n    model.addConstr(gp.quicksum(ItemsSold[m, i] * Hardness[i] for i in range(I)) >= MinHardness, \n                    name=\"min_hardness_limit_m{}\".format(m))\n    model.addConstr(gp.quicksum(ItemsSold[m, i] * Hardness[i] for i in range(I)) <= MaxHardness, \n                    name=\"max_hardness_limit_m{}\".format(m))"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Quantity of item i bought in month m",
+            "symbol": "ItemsBought",
+            "shape": [
+                "M",
+                "I"
+            ],
+            "status": "coded",
+            "code": "ItemsBought = model.addVars(M, I, vtype=gp.GRB.INTEGER, name=\"ItemsBought\")"
+        },
+        {
+            "definition": "Quantity of item i stored in month m",
+            "symbol": "ItemsStored",
+            "shape": [
+                "M",
+                "I"
+            ],
+            "status": "coded",
+            "code": "ItemsStored = model.addVars(M, I, vtype=gp.GRB.CONTINUOUS, name=\"ItemsStored\")"
+        },
+        {
+            "definition": "Quantity of item i sold in month m after refining",
+            "symbol": "ItemsSold",
+            "shape": [
+                "M",
+                "I"
+            ],
+            "status": "coded",
+            "code": "ItemsSold = model.addVars(M, I, vtype=gp.GRB.CONTINUOUS, name=\"ItemsSold\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total profit over the planning horizon by optimizing the buying, storing, and selling of items after refining",
+            "status": "coded",
+            "formulation": "\\max \\sum_{m=1}^{\\textup{M}} \\sum_{i=1}^{\\textup{I}} (\\textup{SellPrice} \\times \\textup{ItemsSold}_{mi} - \\textup{BuyPrice}_{mi} \\times \\textup{ItemsBought}_{mi} - \\textup{StorageCost} \\times \\textup{ItemsStored}_{mi})",
+            "related_variables": [
+                "ItemsSold",
+                "ItemsBought",
+                "ItemsStored"
+            ],
+            "related_parameters": [
+                "SellPrice",
+                "BuyPrice",
+                "StorageCost"
+            ],
+            "code": "# Set objective function\nmodel.setObjective(gp.quicksum((SellPrice * ItemsSold[m, i] - BuyPrice[m, i] * ItemsBought[m, i] - StorageCost * ItemsStored[m, i])\n                               for m in range(M) for i in range(I)), gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "runtime_error",
+    "solver_output_status": "runtime_error",
+    "error_message": "Traceback (most recent call last):\n  File \"c:\\Users\\Simon\\Desktop\\Courses\\ECE 570\\ECE570_Project\\MyOptiMUS\\evaluator.py\", line 45, in run\n    exec(last_line, local_env, local_env)\n  File \"<string>\", line 1\n    ```\n    ^\nSyntaxError: invalid syntax\n",
+    "obj_val": null,
+    "log_path": "logs/log_20250413074509_nlp4lp_19/",
+    "problem_path": "data/nlp4lp/19/",
+    "prep_code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nlp4lp/19/data.json\", \"r\") as f:\n    data = json.load(f)\n"
+}

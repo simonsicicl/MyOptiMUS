@@ -1,0 +1,162 @@
+{
+    "background": "A patient requires a combination of anxiety medication and anti-depressants with different effectiveness durations, subject to specific quantity requirements and ratio limits.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Time for anxiety medication to be effective",
+            "symbol": "TAnxiety",
+            "value": 3,
+            "shape": [],
+            "code": "TAnxiety = data[\"TAnxiety\"] # scalar parameter"
+        },
+        {
+            "definition": "Time for anti-depressant to be effective",
+            "symbol": "TAntiDepressant",
+            "value": 5,
+            "shape": [],
+            "code": "TAntiDepressant = data[\"TAntiDepressant\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum total units of medication required",
+            "symbol": "MinUnits",
+            "value": 100,
+            "shape": [],
+            "code": "MinUnits = data[\"MinUnits\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum units of anxiety medication required",
+            "symbol": "MinAnxiety",
+            "value": 30,
+            "shape": [],
+            "code": "MinAnxiety = data[\"MinAnxiety\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum ratio of anxiety medication units to anti-depressant units",
+            "symbol": "MaxAnxietyAntiDepressantRatio",
+            "value": 2,
+            "shape": [],
+            "code": "MaxAnxietyAntiDepressantRatio = data[\"MaxAnxietyAntiDepressantRatio\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The total units of medications must meet the minimum required units",
+            "status": "coded",
+            "formulation": "\\textup{AnxietyUnits} + \\textup{AntiDepressantUnits} \\geq \\textup{MinUnits}",
+            "related_variables": [
+                "AnxietyUnits",
+                "AntiDepressantUnits"
+            ],
+            "related_parameters": [
+                "MinUnits"
+            ],
+            "code": "```"
+        },
+        {
+            "description": "Ensure the number of anxiety medication units meets or exceeds the minimum requirement",
+            "status": "coded",
+            "formulation": "\\textup{AnxietyUnits} \\geq \\textup{MinAnxiety}",
+            "related_variables": [
+                "AnxietyUnits"
+            ],
+            "related_parameters": [
+                "MinAnxiety"
+            ],
+            "code": "# Ensure the number of anxiety medication units meets or exceeds the minimum requirement\nmodel.addConstr(AnxietyUnits >= MinAnxiety, name=\"min_anxiety_med_units\")"
+        },
+        {
+            "description": "Anxiety medication units is at most MaxAnxietyAntiDepressantRatio times the anti-depressant units",
+            "status": "coded",
+            "formulation": "\\textup{AnxietyUnits} \\leq \\textup{MaxAnxietyAntiDepressantRatio} \\times \\textup{AntiDepressantUnits}",
+            "related_variables": [
+                "AnxietyUnits",
+                "AntiDepressantUnits"
+            ],
+            "related_parameters": [
+                "MaxAnxietyAntiDepressantRatio"
+            ],
+            "code": "# Add constraint for maximum anxiety medication units relative to anti-depressant units\nmodel.addConstr(AnxietyUnits <= MaxAnxietyAntiDepressantRatio * AntiDepressantUnits, \"anxiety_to_antidepressant_ratio\")"
+        },
+        {
+            "description": "The number of units of the anxiety medication must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{AnxietyUnits} \\geq 0",
+            "related_variables": [
+                "AnxietyUnits"
+            ],
+            "related_parameters": [],
+            "code": "# Since the variable AnxietyUnits is already defined as continuous, it is non-negative by default.\n# No additional code is needed for the constraint.\n# The lower bound of 0 is implicit in the continuous variable definition."
+        },
+        {
+            "description": "The number of anti-depressant units must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{AntiDepressantUnits} \\geq 0",
+            "related_variables": [
+                "AntiDepressantUnits"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint to ensure the number of anti-depressant units is non-negative\nmodel.addConstr(AntiDepressantUnits >= 0, name=\"non_negative_anti_depressant_units\")"
+        },
+        {
+            "description": "Ensure the minimum quantity requirements are met",
+            "status": "coded",
+            "formulation": "\\textup{AnxietyUnits} \\geq \\textup{MinAnxiety} \\quad \\textup{and} \\quad \\textup{AnxietyUnits} + \\textup{AntiDepressantUnits} \\geq \\textup{MinUnits}",
+            "related_variables": [
+                "AnxietyUnits",
+                "AntiDepressantUnits"
+            ],
+            "related_parameters": [
+                "MinAnxiety",
+                "MinUnits"
+            ],
+            "code": "# Ensure the minimum quantity requirements are met\nmodel.addConstr(AnxietyUnits >= MinAnxiety, name=\"min_anxiety_requirement\")\nmodel.addConstr(AnxietyUnits + AntiDepressantUnits >= MinUnits, name=\"min_total_units_requirement\")"
+        },
+        {
+            "description": "Limit the maximum ratio of anxiety medication to anti-depressant",
+            "status": "coded",
+            "formulation": "\\textup{AnxietyUnits} \\leq \\textup{MaxAnxietyAntiDepressantRatio} \\times \\textup{AntiDepressantUnits}",
+            "related_variables": [
+                "AnxietyUnits",
+                "AntiDepressantUnits"
+            ],
+            "related_parameters": [
+                "MaxAnxietyAntiDepressantRatio"
+            ],
+            "code": "# Add constraint to limit the maximum ratio of anxiety medication to anti-depressant\nmodel.addConstr(AnxietyUnits <= MaxAnxietyAntiDepressantRatio * AntiDepressantUnits, name=\"max_anxiety_antidepressant_ratio\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of units of the anxiety medication",
+            "symbol": "AnxietyUnits",
+            "shape": [],
+            "status": "coded",
+            "code": "AnxietyUnits = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"AnxietyUnits\")"
+        },
+        {
+            "definition": "The number of units of the anti-depressant",
+            "symbol": "AntiDepressantUnits",
+            "shape": [],
+            "status": "coded",
+            "code": "AntiDepressantUnits = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"AntiDepressantUnits\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total constant time for the medication to be effective (Note: The objective is not an actionable LP or MILP objective with given parameters as the times are constants)",
+            "status": "formalized but not actionable",
+            "formulation": "TAnxiety \\quad \\textup{and} \\quad TAntiDepressant \\quad \\textup{are constants}",
+            "related_variables": [],
+            "related_parameters": [
+                "TAnxiety",
+                "TAntiDepressant"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413112032_nl4opt_prob_125/",
+    "problem_path": "data/nl4opt/prob_125/"
+}

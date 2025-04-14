@@ -1,0 +1,177 @@
+{
+    "background": "A chemical company needs to perform salinity and pH tests, with a specific requirement for the minimum number of pH tests, the minimum total number of tests, and the maximum ratio of pH tests to salinity tests, all while minimizing the use of probes.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of probes required for each salinity test",
+            "symbol": "ProbesSalinity",
+            "value": 3,
+            "shape": [],
+            "code": "ProbesSalinity = data[\"ProbesSalinity\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of probes required for each pH test",
+            "symbol": "ProbesPH",
+            "value": 2,
+            "shape": [],
+            "code": "ProbesPH = data[\"ProbesPH\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of pH tests to be performed",
+            "symbol": "MinPHTests",
+            "value": 250,
+            "shape": [],
+            "code": "MinPHTests = data[\"MinPHTests\"] # scalar parameter"
+        },
+        {
+            "definition": "Total minimum number of tests (pH and salinity) to be performed",
+            "symbol": "MinTotalTests",
+            "value": 400,
+            "shape": [],
+            "code": "MinTotalTests = data[\"MinTotalTests\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum ratio of pH tests to salinity tests",
+            "symbol": "MaxPHSalinityRatio",
+            "value": 1.5,
+            "shape": [],
+            "code": "MaxPHSalinityRatio = data[\"MaxPHSalinityRatio\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "At least MinPHTests pH tests must be performed",
+            "status": "coded",
+            "formulation": "\\textup{PHTests} \\geq \\textup{MinPHTests}",
+            "related_variables": [
+                "PHTests"
+            ],
+            "related_parameters": [
+                "MinPHTests"
+            ],
+            "code": "# Add constraint to ensure at least MinPHTests pH tests are performed\nmodel.addConstr(PHTests >= MinPHTests, name=\"min_pH_tests\")"
+        },
+        {
+            "description": "At least MinTotalTests tests must be performed in total.",
+            "status": "coded",
+            "formulation": "\\\\textup{PHTests} + \\\\textup{SalinityTests} \\\\geq \\\\textup{MinTotalTests}",
+            "related_variables": [
+                "PHTests",
+                "SalinityTests"
+            ],
+            "related_parameters": [
+                "MinTotalTests"
+            ],
+            "code": "# Add constraint to ensure total tests (pH and salinity) meet or exceed the minimum required\nmodel.addConstr(PHTests + SalinityTests >= MinTotalTests, name=\"min_total_tests\")"
+        },
+        {
+            "description": "The number of pH tests cannot exceed MaxPHSalinityRatio times the number of salinity tests.",
+            "status": "coded",
+            "formulation": "\\textup{PHTests} \\leq \\textup{MaxPHSalinityRatio} \\cdot \\textup{SalinityTests}",
+            "related_variables": [
+                "PHTests",
+                "SalinityTests"
+            ],
+            "related_parameters": [
+                "MaxPHSalinityRatio"
+            ],
+            "code": "# Add constraint to ensure the number of pH tests does not exceed MaxPHSalinityRatio times the number of salinity tests\nmodel.addConstr(PHTests <= MaxPHSalinityRatio * SalinityTests, name=\"PHTests_max_ratio_salinity\")"
+        },
+        {
+            "description": "The number of salinity tests is non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{SalinityTests} \\geq 0",
+            "related_variables": [
+                "SalinityTests"
+            ],
+            "related_parameters": [],
+            "code": "# Non-negativity constraint for SalinityTests\nmodel.addConstr(SalinityTests >= 0, name=\"non_negative_salinity_tests\")"
+        },
+        {
+            "description": "The number of pH tests is non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{PHTests} \\geq 0",
+            "related_variables": [
+                "PHTests"
+            ],
+            "related_parameters": [],
+            "code": "# The non-negativity constraint for PHTests is implicitly satisfied by its continuous type which is non-negative by default in Gurobi. Hence, no additional code is required."
+        },
+        {
+            "description": "Ensure the number of pH tests is at least the minimum required.",
+            "status": "coded",
+            "formulation": "\\textup{PHTests} \\geq \\textup{MinPHTests}",
+            "related_variables": [
+                "PHTests"
+            ],
+            "related_parameters": [
+                "MinPHTests"
+            ],
+            "code": "# Add constraint to ensure the number of pH tests is at least the minimum required\nmodel.addConstr(PHTests >= MinPHTests, name=\"min_ph_tests\")"
+        },
+        {
+            "description": "Ensure the total number of tests meets the minimum requirement.",
+            "status": "coded",
+            "formulation": "\\textup{PHTests} + \\textup{SalinityTests} \\geq \\textup{MinTotalTests}",
+            "related_variables": [
+                "PHTests",
+                "SalinityTests"
+            ],
+            "related_parameters": [
+                "MinTotalTests"
+            ],
+            "code": "# Add constraint to ensure the total number of tests meets the minimum requirement\nmodel.addConstr(PHTests + SalinityTests >= MinTotalTests, name=\"min_total_tests_constraint\")"
+        },
+        {
+            "description": "Restrict the ratio of pH tests to salinity tests to the maximum allowed.",
+            "status": "coded",
+            "formulation": "\\textup{PHTests} \\leq \\textup{MaxPHSalinityRatio} \\cdot \\textup{SalinityTests}",
+            "related_variables": [
+                "PHTests",
+                "SalinityTests"
+            ],
+            "related_parameters": [
+                "MaxPHSalinityRatio"
+            ],
+            "code": "# Add constraint to restrict the ratio of pH tests to salinity tests\nmodel.addConstr(PHTests <= MaxPHSalinityRatio * SalinityTests, name=\"MaxPHSalinityRatio_Constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of pH tests to conduct",
+            "symbol": "PHTests",
+            "shape": [],
+            "status": "coded",
+            "code": "PHTests = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"PHTests\")"
+        },
+        {
+            "definition": "The number of salinity tests to conduct",
+            "symbol": "SalinityTests",
+            "shape": [],
+            "status": "coded",
+            "code": "SalinityTests = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"SalinityTests\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of probes required for salinity and pH tests.",
+            "status": "coded",
+            "formulation": "\\textup{Minimize} \\quad \\textup{ProbesSalinity} \\cdot \\textup{SalinityTests} + \\textup{ProbesPH} \\cdot \\textup{PHTests}",
+            "related_variables": [
+                "PHTests",
+                "SalinityTests"
+            ],
+            "related_parameters": [
+                "ProbesSalinity",
+                "ProbesPH"
+            ],
+            "code": "# Set objective\nmodel.setObjective(ProbesSalinity * SalinityTests + ProbesPH * PHTests, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250414055757_nl4opt_prob_282/",
+    "problem_path": "data/nl4opt/prob_282/"
+}

@@ -1,0 +1,236 @@
+{
+    "background": "A coffee shop aims to determine the quantity of mochas and regular coffees to make, utilizing limited resources of coffee powder and milk, while adhering to a popularity constraint that demands a minimum ratio of mochas to regular coffees.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Units of coffee powder required to make one mocha",
+            "symbol": "CoffeePowderPerMocha",
+            "value": 3,
+            "shape": [],
+            "code": "CoffeePowderPerMocha = data[\"CoffeePowderPerMocha\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of milk required to make one mocha",
+            "symbol": "MilkPerMocha",
+            "value": 6,
+            "shape": [],
+            "code": "MilkPerMocha = data[\"MilkPerMocha\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of coffee powder required to make one regular coffee",
+            "symbol": "CoffeePowderPerRegular",
+            "value": 6,
+            "shape": [],
+            "code": "CoffeePowderPerRegular = data[\"CoffeePowderPerRegular\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of milk required to make one regular coffee",
+            "symbol": "MilkPerRegular",
+            "value": 2,
+            "shape": [],
+            "code": "MilkPerRegular = data[\"MilkPerRegular\"] # scalar parameter"
+        },
+        {
+            "definition": "Total available units of coffee powder",
+            "symbol": "TotalCoffeePowder",
+            "value": 400,
+            "shape": [],
+            "code": "TotalCoffeePowder = data[\"TotalCoffeePowder\"] # scalar parameter"
+        },
+        {
+            "definition": "Total available units of milk",
+            "symbol": "TotalMilk",
+            "value": 500,
+            "shape": [],
+            "code": "TotalMilk = data[\"TotalMilk\"] # scalar parameter"
+        },
+        {
+            "definition": "Time required to make one mocha",
+            "symbol": "TimePerMocha",
+            "value": 5,
+            "shape": [],
+            "code": "TimePerMocha = data[\"TimePerMocha\"] # scalar parameter"
+        },
+        {
+            "definition": "Time required to make one regular coffee",
+            "symbol": "TimePerRegular",
+            "value": 3,
+            "shape": [],
+            "code": "TimePerRegular = data[\"TimePerRegular\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum ratio of the number of mochas to the number of regular coffees",
+            "symbol": "MochaToRegularRatio",
+            "value": 0.33,
+            "shape": [],
+            "code": "MochaToRegularRatio = data[\"MochaToRegularRatio\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of mochas produced must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfMochas} \\geq 0",
+            "related_variables": [
+                "NumberOfMochas"
+            ],
+            "related_parameters": [],
+            "code": "# Since the variable \"NumberOfMochas\" is already defined with non-negativity enforced as it is continuous (GRB.CONTINUOUS) by default, no additional constraint is required."
+        },
+        {
+            "description": "The number of regular coffees produced must be non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{NumberOfRegularCoffees} \\\\geq 0",
+            "related_variables": [
+                "NumberOfRegularCoffees"
+            ],
+            "related_parameters": [],
+            "code": "# Add non-negativity constraint for NumberOfRegularCoffees\nmodel.addConstr(NumberOfRegularCoffees >= 0, name=\"non_negativity_regular_coffees\")"
+        },
+        {
+            "description": "The total coffee powder used for mochas and regular coffees must not exceed the available coffee powder (TotalCoffeePowder).",
+            "status": "coded",
+            "formulation": "\\textup{CoffeePowderPerMocha} \\cdot \\textup{NumberOfMochas} + \\textup{CoffeePowderPerRegular} \\cdot \\textup{NumberOfRegularCoffees} \\leq \\textup{TotalCoffeePowder}",
+            "related_variables": [
+                "NumberOfMochas",
+                "NumberOfRegularCoffees"
+            ],
+            "related_parameters": [
+                "CoffeePowderPerMocha",
+                "CoffeePowderPerRegular",
+                "TotalCoffeePowder"
+            ],
+            "code": "# Add constraint to ensure total coffee powder used does not exceed the available amount\nmodel.addConstr(\n    CoffeePowderPerMocha * NumberOfMochas + CoffeePowderPerRegular * NumberOfRegularCoffees <= TotalCoffeePowder,\n    name=\"coffee_powder_limit\"\n)"
+        },
+        {
+            "description": "The total milk usage for mochas and regular coffees cannot exceed the available milk.",
+            "status": "coded",
+            "formulation": "\\textup{MilkPerMocha} \\cdot \\textup{NumberOfMochas} + \\textup{MilkPerRegular} \\cdot \\textup{NumberOfRegularCoffees} \\leq \\textup{TotalMilk}",
+            "related_variables": [
+                "NumberOfMochas",
+                "NumberOfRegularCoffees"
+            ],
+            "related_parameters": [
+                "MilkPerMocha",
+                "MilkPerRegular",
+                "TotalMilk"
+            ],
+            "code": "# Add milk usage constraint\nmodel.addConstr(MilkPerMocha * NumberOfMochas + MilkPerRegular * NumberOfRegularCoffees <= TotalMilk, name=\"milk_usage_limit\")"
+        },
+        {
+            "description": "The number of mochas made is at least MochaToRegularRatio times the number of regular coffees made.",
+            "status": "coded",
+            "formulation": "\\\\textup{NumberOfMochas} \\\\geq \\\\textup{MochaToRegularRatio} \\\\cdot \\\\textup{NumberOfRegularCoffees}",
+            "related_variables": [
+                "NumberOfMochas",
+                "NumberOfRegularCoffees"
+            ],
+            "related_parameters": [
+                "MochaToRegularRatio"
+            ],
+            "code": "# Add constraint ensuring the number of mochas is at least MochaToRegularRatio times the number of regular coffees\nmodel.addConstr(NumberOfMochas >= MochaToRegularRatio * NumberOfRegularCoffees, name=\"mocha_to_regular_ratio\")"
+        },
+        {
+            "description": "Coffee powder usage must not exceed the available total coffee powder",
+            "status": "coded",
+            "formulation": "\\textup{CoffeePowderPerMocha} \\cdot \\textup{NumberOfMochas} + \\textup{CoffeePowderPerRegular} \\cdot \\textup{NumberOfRegularCoffees} \\leq \\textup{TotalCoffeePowder}",
+            "related_variables": [
+                "NumberOfMochas",
+                "NumberOfRegularCoffees"
+            ],
+            "related_parameters": [
+                "CoffeePowderPerMocha",
+                "CoffeePowderPerRegular",
+                "TotalCoffeePowder"
+            ],
+            "code": "# Add constraint for coffee powder usage\nmodel.addConstr(CoffeePowderPerMocha * NumberOfMochas + CoffeePowderPerRegular * NumberOfRegularCoffees <= TotalCoffeePowder, \n                name=\"coffee_powder_limit\")"
+        },
+        {
+            "description": "Milk usage must not exceed the available total milk",
+            "status": "coded",
+            "formulation": "\\textup{MilkPerMocha} \\cdot \\textup{NumberOfMochas} + \\textup{MilkPerRegular} \\cdot \\textup{NumberOfRegularCoffees} \\leq \\textup{TotalMilk}",
+            "related_variables": [
+                "NumberOfMochas",
+                "NumberOfRegularCoffees"
+            ],
+            "related_parameters": [
+                "MilkPerMocha",
+                "MilkPerRegular",
+                "TotalMilk"
+            ],
+            "code": "# Add milk usage constraint\nmodel.addConstr(\n    MilkPerMocha * NumberOfMochas + MilkPerRegular * NumberOfRegularCoffees <= TotalMilk,\n    name=\"MilkUsageConstraint\"\n)"
+        },
+        {
+            "description": "The number of mochas must respect the minimum ratio constraint with the number of regular coffees",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfMochas} \\geq \\textup{MochaToRegularRatio} \\cdot \\textup{NumberOfRegularCoffees}",
+            "related_variables": [
+                "NumberOfMochas",
+                "NumberOfRegularCoffees"
+            ],
+            "related_parameters": [
+                "MochaToRegularRatio"
+            ],
+            "code": "# Add minimum ratio constraint for number of mochas\nmodel.addConstr(NumberOfMochas >= MochaToRegularRatio * NumberOfRegularCoffees, name=\"min_ratio_mochas_regular\")"
+        },
+        {
+            "description": "The number of mochas must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfMochas} \\geq 0",
+            "related_variables": [
+                "NumberOfMochas"
+            ],
+            "related_parameters": [],
+            "code": "# The variable \"NumberOfMochas\" is already defined as non-negative because Gurobi continuous variables are non-negative by default."
+        },
+        {
+            "description": "The number of regular coffees must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfRegularCoffees} \\geq 0",
+            "related_variables": [
+                "NumberOfRegularCoffees"
+            ],
+            "related_parameters": [],
+            "code": "# The non-negativity constraint is inherently satisfied as the variable `NumberOfRegularCoffees` is defined with type CONTINUOUS, which is non-negative by default."
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of mochas produced by the coffee shop.",
+            "symbol": "NumberOfMochas",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfMochas = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfMochas\")"
+        },
+        {
+            "definition": "The number of regular coffees produced by the coffee shop.",
+            "symbol": "NumberOfRegularCoffees",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfRegularCoffees = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfRegularCoffees\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total production time for mochas and regular coffees",
+            "status": "coded",
+            "formulation": "\\textup{Minimize:} \\quad \\textup{TimePerMocha} \\cdot \\textup{NumberOfMochas} + \\textup{TimePerRegular} \\cdot \\textup{NumberOfRegularCoffees}",
+            "related_variables": [
+                "NumberOfMochas",
+                "NumberOfRegularCoffees"
+            ],
+            "related_parameters": [
+                "TimePerMocha",
+                "TimePerRegular"
+            ],
+            "code": "# Set objective\nmodel.setObjective(TimePerMocha * NumberOfMochas + TimePerRegular * NumberOfRegularCoffees, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 0.0,
+    "log_path": "logs/log_20250414061324_nl4opt_prob_86/",
+    "problem_path": "data/nl4opt/prob_86/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_86/data.json\", \"r\") as f:\n    data = json.load(f)\n\nCoffeePowderPerMocha = data[\"CoffeePowderPerMocha\"] # scalar parameter\nMilkPerMocha = data[\"MilkPerMocha\"] # scalar parameter\nCoffeePowderPerRegular = data[\"CoffeePowderPerRegular\"] # scalar parameter\nMilkPerRegular = data[\"MilkPerRegular\"] # scalar parameter\nTotalCoffeePowder = data[\"TotalCoffeePowder\"] # scalar parameter\nTotalMilk = data[\"TotalMilk\"] # scalar parameter\nTimePerMocha = data[\"TimePerMocha\"] # scalar parameter\nTimePerRegular = data[\"TimePerRegular\"] # scalar parameter\nMochaToRegularRatio = data[\"MochaToRegularRatio\"] # scalar parameter\nNumberOfMochas = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfMochas\")\nNumberOfRegularCoffees = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfRegularCoffees\")\n\n# Since the variable \"NumberOfMochas\" is already defined with non-negativity enforced as it is continuous (GRB.CONTINUOUS) by default, no additional constraint is required.\n\n# Add non-negativity constraint for NumberOfRegularCoffees\nmodel.addConstr(NumberOfRegularCoffees >= 0, name=\"non_negativity_regular_coffees\")\n\n# Add constraint to ensure total coffee powder used does not exceed the available amount\nmodel.addConstr(\n    CoffeePowderPerMocha * NumberOfMochas + CoffeePowderPerRegular * NumberOfRegularCoffees <= TotalCoffeePowder,\n    name=\"coffee_powder_limit\"\n)\n\n# Add milk usage constraint\nmodel.addConstr(MilkPerMocha * NumberOfMochas + MilkPerRegular * NumberOfRegularCoffees <= TotalMilk, name=\"milk_usage_limit\")\n\n# Add constraint ensuring the number of mochas is at least MochaToRegularRatio times the number of regular coffees\nmodel.addConstr(NumberOfMochas >= MochaToRegularRatio * NumberOfRegularCoffees, name=\"mocha_to_regular_ratio\")\n\n# Add constraint for coffee powder usage\nmodel.addConstr(CoffeePowderPerMocha * NumberOfMochas + CoffeePowderPerRegular * NumberOfRegularCoffees <= TotalCoffeePowder, \n                name=\"coffee_powder_limit\")\n\n# Add milk usage constraint\nmodel.addConstr(\n    MilkPerMocha * NumberOfMochas + MilkPerRegular * NumberOfRegularCoffees <= TotalMilk,\n    name=\"MilkUsageConstraint\"\n)\n\n# Add minimum ratio constraint for number of mochas\nmodel.addConstr(NumberOfMochas >= MochaToRegularRatio * NumberOfRegularCoffees, name=\"min_ratio_mochas_regular\")\n\n# The variable \"NumberOfMochas\" is already defined as non-negative because Gurobi continuous variables are non-negative by default.\n\n# The non-negativity constraint is inherently satisfied as the variable `NumberOfRegularCoffees` is defined with type CONTINUOUS, which is non-negative by default.\n\n# Set objective\nmodel.setObjective(TimePerMocha * NumberOfMochas + TimePerRegular * NumberOfRegularCoffees, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

@@ -1,0 +1,402 @@
+{
+    "background": "The company is involved in the buying, storing, and manufacturing process where it deals with different types of items, which can either be vegetables or not. Each item has its own buying price and contributes differently to the manufacturing process concerning its hardness. There is also storage space which incurs a cost, and the company starts with an initial amount of items. The company wishes to maximize profit, considering the constraints related to the refining capacity for vegetable and non-vegetable items, storage size, cost, and item usage.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of goods I",
+            "symbol": "I",
+            "value": "",
+            "shape": [],
+            "code": "I = data[\"I\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of months M",
+            "symbol": "M",
+            "value": "",
+            "shape": [],
+            "code": "M = data[\"M\"] # scalar parameter"
+        },
+        {
+            "definition": "Buying price of good i in month m",
+            "symbol": "BuyPrice",
+            "value": "",
+            "shape": [
+                "I",
+                "M"
+            ],
+            "code": "BuyPrice = np.array(data[\"BuyPrice\"]) # ['I', 'M']"
+        },
+        {
+            "definition": "Selling price",
+            "symbol": "SellPrice",
+            "value": "",
+            "shape": [],
+            "code": "SellPrice = data[\"SellPrice\"] # scalar parameter"
+        },
+        {
+            "definition": "Indicator whether good i is a vegetable or not",
+            "symbol": "IsVegetable",
+            "value": "",
+            "shape": [
+                "I"
+            ],
+            "code": "IsVegetable = np.array(data[\"IsVegetable\"]) # ['I']"
+        },
+        {
+            "definition": "Maximum refining capacity for vegetables per month",
+            "symbol": "MaxVegRefiningPerMonth",
+            "value": "",
+            "shape": [],
+            "code": "MaxVegRefiningPerMonth = data[\"MaxVegRefiningPerMonth\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum refining capacity for non-vegetables per month",
+            "symbol": "MaxNonVegRefiningPerMonth",
+            "value": "",
+            "shape": [],
+            "code": "MaxNonVegRefiningPerMonth = data[\"MaxNonVegRefiningPerMonth\"] # scalar parameter"
+        },
+        {
+            "definition": "Storage capacity",
+            "symbol": "StorageSize",
+            "value": "",
+            "shape": [],
+            "code": "StorageSize = data[\"StorageSize\"] # scalar parameter"
+        },
+        {
+            "definition": "Storage cost per unit per month",
+            "symbol": "StorageCost",
+            "value": "",
+            "shape": [],
+            "code": "StorageCost = data[\"StorageCost\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum hardness of goods that can be processed",
+            "symbol": "MaxHardness",
+            "value": "",
+            "shape": [],
+            "code": "MaxHardness = data[\"MaxHardness\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum hardness of goods that can be processed",
+            "symbol": "MinHardness",
+            "value": "",
+            "shape": [],
+            "code": "MinHardness = data[\"MinHardness\"] # scalar parameter"
+        },
+        {
+            "definition": "Hardness of good i",
+            "symbol": "Hardness",
+            "value": "",
+            "shape": [
+                "I"
+            ],
+            "code": "Hardness = np.array(data[\"Hardness\"]) # ['I']"
+        },
+        {
+            "definition": "Initial amount of goods available for processing",
+            "symbol": "InitialAmount",
+            "value": "",
+            "shape": [],
+            "code": "InitialAmount = data[\"InitialAmount\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum usage of goods",
+            "symbol": "MinUsage",
+            "value": "",
+            "shape": [],
+            "code": "MinUsage = data[\"MinUsage\"] # scalar parameter"
+        },
+        {
+            "definition": "Dependencies of goods i",
+            "symbol": "Dependencies",
+            "value": "",
+            "shape": [
+                "I"
+            ],
+            "code": "Dependencies = np.array(data[\"Dependencies\"]) # ['I']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The maximum amount of vegetables refined per month cannot exceed \\textup{MaxVegRefiningPerMonth}.",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{\\textup{I}} \\textup{VegetableRefined}_{i,m} \\leq \\textup{MaxVegRefiningPerMonth}, \\quad \\forall m \\in [1,\\textup{M}]",
+            "related_variables": [
+                "VegetableRefined"
+            ],
+            "related_parameters": [
+                "MaxVegRefiningPerMonth",
+                "I",
+                "M"
+            ],
+            "code": "# Add maximum vegetable refining constraints per month\nfor m in range(M):\n    model.addConstr(gp.quicksum(VegetableRefined[i, m] for i in range(I)) <= MaxVegRefiningPerMonth, name=f\"max_veg_refining_month_{m}\")"
+        },
+        {
+            "description": "The total amount of non-vegetable goods refined per month cannot exceed the maximum refining capacity for non-vegetables.",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{\\textup{I}} \\textup{NonVegetableRefined}_{i,m} \\leq \\textup{MaxNonVegRefiningPerMonth}, \\quad \\forall m \\in [1, \\textup{M}]",
+            "related_variables": [
+                "NonVegetableRefined"
+            ],
+            "related_parameters": [
+                "MaxNonVegRefiningPerMonth",
+                "I",
+                "M"
+            ],
+            "code": "# Add maximum non-vegetable refining capacity constraints\nfor m in range(M):\n    model.addConstr(\n        gp.quicksum(NonVegetableRefined[i, m] for i in range(I)) <= MaxNonVegRefiningPerMonth,\n        name=f\"MaxNonVegRefiningPerMonth_{m}\"\n    )"
+        },
+        {
+            "description": "The total storage at any month cannot exceed the defined storage size.",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{I} \\textup{StorageLevel}_{i, m} \\leq \\textup{StorageSize}, \\quad \\forall m \\in [1, M]",
+            "related_variables": [
+                "StorageLevel",
+                "TotalRefined"
+            ],
+            "related_parameters": [
+                "StorageSize",
+                "InitialAmount"
+            ],
+            "code": "# Add total storage constraints\nfor m in range(M):\n    model.addConstr(gp.quicksum(StorageLevel[i, m] for i in range(I)) <= StorageSize, name=f\"total_storage_capacity_month_{m}\")"
+        },
+        {
+            "description": "The hardness of each item used in manufacturing must be within the range of MinHardness and MaxHardness",
+            "status": "coded",
+            "formulation": "\\textup{MinHardness} \\leq \\textup{Hardness}_{i} \\leq \\textup{MaxHardness}, \\quad \\forall i \\in \\{1, \\dots, \\textup{I}\\}",
+            "related_variables": [],
+            "related_parameters": [
+                "MinHardness",
+                "MaxHardness",
+                "Hardness",
+                "I"
+            ],
+            "code": "# Add hardness range constraints\nfor i in range(I):\n    model.addConstr(Hardness[i] >= MinHardness, name=f\"min_hardness_{i}\")\n    model.addConstr(Hardness[i] <= MaxHardness, name=f\"max_hardness_{i}\")"
+        },
+        {
+            "description": "The total amount of each good refined (vegetable and non-vegetable) in each month must satisfy the minimum usage requirement.",
+            "status": "coded",
+            "formulation": "\\textup{VegetableRefined}_{i, m} + \\textup{NonVegetableRefined}_{i, m} \\geq \\textup{MinUsage}, \\quad \\forall i \\in \\{1, \\dots, I\\}, \\quad \\forall m \\in \\{1, \\dots, M\\}",
+            "related_variables": [
+                "VegetableRefined",
+                "NonVegetableRefined"
+            ],
+            "related_parameters": [
+                "MinUsage",
+                "I",
+                "M"
+            ],
+            "code": "# Add minimum usage constraints for vegetable and non-vegetable refined goods\nfor i in range(I):\n    for m in range(M):\n        model.addConstr(VegetableRefined[i, m] + NonVegetableRefined[i, m] >= MinUsage, name=f\"min_usage_{i}_{m}\")"
+        },
+        {
+            "description": "Ensure that dependencies between goods are respected during their refinement process.",
+            "status": "coded",
+            "formulation": "\\textup{If} \\ \\textup{Dependencies}[i][j] = 1, \\ \\textup{then} \\ \\sum_{m_1=1}^{m} \\textup{TotalRefined}_{j, m_1} \\geq \\sum_{m_2=1}^{m} \\textup{TotalRefined}_{i, m_2}, \\ \\forall i, j, m.",
+            "related_variables": [
+                "TotalRefined"
+            ],
+            "related_parameters": [
+                "Dependencies"
+            ],
+            "code": "# Add dependency constraints between goods during their refinement process\nfor i in range(I):\n    for j in range(I):\n        if Dependencies[i][j] == 1:\n            for m in range(M):\n                model.addConstr(\n                    gp.quicksum(TotalRefined[j, m1] for m1 in range(m+1)) >=\n                    gp.quicksum(TotalRefined[i, m2] for m2 in range(m+1)),\n                    name=f\"dependency_{i}_{j}_{m}\"\n                )"
+        },
+        {
+            "description": "Ensure that only items marked as vegetables can have non-zero entries in \\textup{VegetableRefined}.",
+            "status": "coded",
+            "formulation": "\\textup{VegetableRefined}_{i,m} \\leq \\textup{IsVegetable}_{i} \\times U, \\quad \\forall i \\in [1,\\textup{I}], \\forall m \\in [1,\\textup{M}]",
+            "related_variables": [
+                "VegetableRefined"
+            ],
+            "related_parameters": [
+                "IsVegetable",
+                "I",
+                "M"
+            ],
+            "code": "# Add constraints to ensure only vegetables can have non-zero VegetableRefined values\nfor i in range(I):\n    for m in range(M):\n        model.addConstr(VegetableRefined[i, m] <= IsVegetable[i] * U, name=f\"veg_refined_limit_{i}_{m}\")"
+        },
+        {
+            "description": "Link the refined amount of non-vegetable goods to the IsVegetable parameter, ensuring goods marked as non-vegetable are correctly handled.",
+            "status": "coded",
+            "formulation": "\\textup{NonVegetableRefined}_{i,m} = (1 - \\textup{IsVegetable}_i) \\cdot \\textup{TotalRefined}_{i,m}, \\quad \\forall i \\in [1, \\textup{I}], \\forall m \\in [1, \\textup{M}]",
+            "related_variables": [
+                "NonVegetableRefined",
+                "TotalRefined"
+            ],
+            "related_parameters": [
+                "IsVegetable",
+                "I",
+                "M"
+            ],
+            "code": "# Link non-vegetable refined amounts to the IsVegetable parameter\nfor i in range(I):\n    for m in range(M):\n        model.addConstr(\n            NonVegetableRefined[i, m] == (1 - IsVegetable[i]) * TotalRefined[i, m],\n            name=f\"non_vegetable_refined_link_{i}_{m}\"\n        )"
+        },
+        {
+            "description": "Update the storage level for goods i at the end of each month m.",
+            "status": "coded",
+            "formulation": "\\textup{StorageLevel}_{i, m} = \\textup{StorageLevel}_{i, m-1} + \\textup{InitialAmount}_{i} - \\textup{TotalRefined}_{i, m}, \\quad \\forall i \\in [1, I], \\forall m \\in [2, M]",
+            "related_variables": [
+                "StorageLevel",
+                "TotalRefined"
+            ],
+            "related_parameters": [
+                "InitialAmount"
+            ],
+            "code": "# Add constraints to update the storage level for goods i at the end of each month m\nfor i in range(I):\n    for m in range(1, M):  # Start from month 2 as per formulation\n        model.addConstr(StorageLevel[i, m] == StorageLevel[i, m - 1] + InitialAmount[i] - TotalRefined[i, m],\n                        name=f\"storage_update_{i}_{m}\")"
+        },
+        {
+            "description": "Initialize the storage level for goods i in the first month.",
+            "status": "coded",
+            "formulation": "\\textup{StorageLevel}_{i, 1} = \\textup{InitialAmount}_{i} - \\textup{TotalRefined}_{i, 1}, \\quad \\forall i \\in [1, I]",
+            "related_variables": [
+                "StorageLevel",
+                "TotalRefined"
+            ],
+            "related_parameters": [
+                "InitialAmount"
+            ],
+            "code": "# Add constraint to initialize the storage levels for goods in the first month\nfor i in range(I):\n    model.addConstr(StorageLevel[i, 1] == InitialAmount[i] - TotalRefined[i, 1], name=f\"initialize_storage_{i}\")"
+        },
+        {
+            "description": "Ensure that the total refinement of good i in a given month equals the sum of its refining as a vegetable and non-vegetable.",
+            "status": "coded",
+            "formulation": "\\textup{TotalRefined}_{i, m} = \\textup{VegetableRefined}_{i, m} + \\textup{NonVegetableRefined}_{i, m}, \\quad \\forall i, m.",
+            "related_variables": [
+                "VegetableRefined",
+                "NonVegetableRefined",
+                "TotalRefined"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraints to ensure total refinement equals the sum of vegetable and non-vegetable refinement\nfor i in range(I):\n    for m in range(M):\n        model.addConstr(\n            TotalRefined[i, m] == VegetableRefined[i, m] + NonVegetableRefined[i, m],\n            name=f\"total_refinement_balance_{i}_{m}\"\n        )"
+        },
+        {
+            "description": "Define TotalRefined as the sum of VegetableRefined and NonVegetableRefined.",
+            "status": "coded",
+            "formulation": "\\textup{TotalRefined}_{i,m} = \\textup{VegetableRefined}_{i,m} + \\textup{NonVegetableRefined}_{i,m}, \\quad \\forall i, m",
+            "related_variables": [
+                "TotalRefined",
+                "VegetableRefined",
+                "NonVegetableRefined"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraints to define TotalRefined as the sum of VegetableRefined and NonVegetableRefined\nfor i in range(I):\n    for m in range(M):\n        model.addConstr(TotalRefined[i, m] == VegetableRefined[i, m] + NonVegetableRefined[i, m], name=f\"TotalRefined_def_{i}_{m}\")"
+        },
+        {
+            "description": "Limit the total refining of vegetables per month.",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{I} \\textup{IsVegetable}_{i} \\cdot \\textup{VegetableRefined}_{i,m} \\leq \\textup{MaxVegRefiningPerMonth}, \\quad \\forall m",
+            "related_variables": [
+                "VegetableRefined"
+            ],
+            "related_parameters": [
+                "IsVegetable",
+                "MaxVegRefiningPerMonth"
+            ],
+            "code": "# Add vegetable refining constraints for each month\nfor m in range(M):\n    model.addConstr(\n        gp.quicksum(IsVegetable[i] * VegetableRefined[i, m] for i in range(I)) <= MaxVegRefiningPerMonth,\n        name=f\"vegetable_refining_limit_month_{m}\"\n    )"
+        },
+        {
+            "description": "Limit the total refining of non-vegetables per month.",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{I} (1 - \\textup{IsVegetable}_{i}) \\cdot \\textup{NonVegetableRefined}_{i,m} \\leq \\textup{MaxNonVegRefiningPerMonth}, \\quad \\forall m",
+            "related_variables": [
+                "NonVegetableRefined"
+            ],
+            "related_parameters": [
+                "IsVegetable",
+                "MaxNonVegRefiningPerMonth"
+            ],
+            "code": "# Add constraints to limit monthly refining of non-vegetables\nfor m in range(M):\n    model.addConstr(\n        gp.quicksum((1 - IsVegetable[i]) * NonVegetableRefined[i, m] for i in range(I)) \n        <= MaxNonVegRefiningPerMonth, \n        name=f\"non_veg_refining_limit_month_{m}\"\n    )"
+        },
+        {
+            "description": "Ensure storage levels do not exceed capacity.",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{I} \\textup{StorageLevel}_{i,m} \\leq \\textup{StorageSize}, \\quad \\forall m",
+            "related_variables": [
+                "StorageLevel"
+            ],
+            "related_parameters": [
+                "StorageSize"
+            ],
+            "code": "# Add storage level constraints to ensure levels do not exceed capacity\nfor m in range(M):\n    model.addConstr(gp.quicksum(StorageLevel[i, m] for i in range(I)) <= StorageSize, name=f\"storage_capacity_{m}\")"
+        },
+        {
+            "description": "Ensure hardness constraints are met for all refined goods.",
+            "status": "coded",
+            "formulation": "\\textup{MinHardness} \\leq \\sum_{i=1}^{I} \\textup{Hardness}_{i} \\cdot \\textup{TotalRefined}_{i,m} \\leq \\textup{MaxHardness}, \\quad \\forall m",
+            "related_variables": [
+                "TotalRefined"
+            ],
+            "related_parameters": [
+                "MinHardness",
+                "MaxHardness",
+                "Hardness"
+            ],
+            "code": "# Add hardness constraints for all refined goods\nfor m in range(M):\n    model.addConstr(\n        gp.quicksum(Hardness[i] * TotalRefined[i, m] for i in range(I)) >= MinHardness,\n        name=f\"min_hardness_{m}\"\n    )\n    model.addConstr(\n        gp.quicksum(Hardness[i] * TotalRefined[i, m] for i in range(I)) <= MaxHardness,\n        name=f\"max_hardness_{m}\"\n    )"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The amount of vegetable good i refined in month m.",
+            "symbol": "VegetableRefined",
+            "shape": [
+                "I",
+                "M"
+            ],
+            "status": "coded",
+            "code": "VegetableRefined = model.addVars(I, M, vtype=gp.GRB.CONTINUOUS, name=\"VegetableRefined\")"
+        },
+        {
+            "definition": "The amount of non-vegetable good i refined in month m.",
+            "symbol": "NonVegetableRefined",
+            "shape": [
+                "I",
+                "M"
+            ],
+            "status": "coded",
+            "code": "NonVegetableRefined = model.addVars(I, M, vtype=gp.GRB.CONTINUOUS, name=\"NonVegetableRefined\")"
+        },
+        {
+            "definition": "The total amount of good i refined in month m.",
+            "symbol": "TotalRefined",
+            "shape": [
+                "I",
+                "M"
+            ],
+            "status": "coded",
+            "code": "TotalRefined = model.addVars(I, M, vtype=gp.GRB.CONTINUOUS, name=\"TotalRefined\")"
+        },
+        {
+            "definition": "The amount of good i stored at the end of month m.",
+            "symbol": "StorageLevel",
+            "shape": [
+                "I",
+                "M"
+            ],
+            "status": "coded",
+            "code": "StorageLevel = model.addVars(I, M, vtype=gp.GRB.CONTINUOUS, name=\"StorageLevel\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the company's profit from refining, storage, and costs across all items and time periods.",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{I} \\sum_{m=1}^{M} \\textup{SellPrice} \\cdot \\textup{TotalRefined}_{i,m} \\\\ - \\sum_{i=1}^{I} \\sum_{m=1}^{M} \\textup{BuyPrice}_{i,m} \\cdot \\textup{TotalRefined}_{i,m} \\\\ - \\sum_{i=1}^{I} \\sum_{m=1}^{M} \\textup{StorageCost} \\cdot \\textup{StorageLevel}_{i,m}",
+            "related_variables": [
+                "TotalRefined",
+                "VegetableRefined",
+                "NonVegetableRefined",
+                "StorageLevel"
+            ],
+            "related_parameters": [
+                "SellPrice",
+                "BuyPrice",
+                "StorageCost"
+            ],
+            "code": "# Set objective\nmodel.setObjective(\n    gp.quicksum(SellPrice * TotalRefined[i, m]\n                - BuyPrice[i, m] * TotalRefined[i, m]\n                - StorageCost * StorageLevel[i, m]\n                for i in range(I)\n                for m in range(M)),\n    gp.GRB.MAXIMIZE\n)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413153237_nlp4lp_20/",
+    "problem_path": "data/nlp4lp/20/"
+}

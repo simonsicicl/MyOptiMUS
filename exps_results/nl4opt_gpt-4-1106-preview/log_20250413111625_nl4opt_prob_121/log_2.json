@@ -1,0 +1,216 @@
+{
+    "background": "A traveling salesman consumes a diet consisting exclusively of ramen and fries, and he has nutritional targets as well as a maximum fraction of meals that can be ramen.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Calories contained in each pack of ramen",
+            "symbol": "CaloriesRamen",
+            "value": 400,
+            "shape": [],
+            "code": "CaloriesRamen = data[\"CaloriesRamen\"] # scalar parameter"
+        },
+        {
+            "definition": "Protein contained in each pack of ramen",
+            "symbol": "ProteinRamen",
+            "value": 20,
+            "shape": [],
+            "code": "ProteinRamen = data[\"ProteinRamen\"] # scalar parameter"
+        },
+        {
+            "definition": "Sodium contained in each pack of ramen",
+            "symbol": "SodiumRamen",
+            "value": 100,
+            "shape": [],
+            "code": "SodiumRamen = data[\"SodiumRamen\"] # scalar parameter"
+        },
+        {
+            "definition": "Calories contained in each pack of fries",
+            "symbol": "CaloriesFries",
+            "value": 300,
+            "shape": [],
+            "code": "CaloriesFries = data[\"CaloriesFries\"] # scalar parameter"
+        },
+        {
+            "definition": "Protein contained in each pack of fries",
+            "symbol": "ProteinFries",
+            "value": 10,
+            "shape": [],
+            "code": "ProteinFries = data[\"ProteinFries\"] # scalar parameter"
+        },
+        {
+            "definition": "Sodium contained in each pack of fries",
+            "symbol": "SodiumFries",
+            "value": 75,
+            "shape": [],
+            "code": "SodiumFries = data[\"SodiumFries\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum fraction of meals that can be ramen",
+            "symbol": "MaxRamenFraction",
+            "value": 0.3,
+            "shape": [],
+            "code": "MaxRamenFraction = data[\"MaxRamenFraction\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum total caloric intake",
+            "symbol": "MinCalories",
+            "value": 3000,
+            "shape": [],
+            "code": "MinCalories = data[\"MinCalories\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum total protein intake",
+            "symbol": "MinProtein",
+            "value": 80,
+            "shape": [],
+            "code": "MinProtein = data[\"MinProtein\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Number of ramen packs must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{RamenPacks} \\geq 0",
+            "related_variables": [
+                "RamenPacks"
+            ],
+            "related_parameters": [],
+            "code": "# RamenPacks is already defined as a non-negative integer variable; hence no additional constraint is needed."
+        },
+        {
+            "description": "Number of fries packs consumed by the salesman is non-negative",
+            "status": "coded",
+            "formulation": "\\textup{FriesPacks} \\geq 0",
+            "related_variables": [
+                "FriesPacks"
+            ],
+            "related_parameters": [],
+            "code": "# Add non-negativity constraint for the number of fries packs\nmodel.addConstr(FriesPacks >= 0, name=\"fries_packs_nonneg\")"
+        },
+        {
+            "description": "At most MaxRamenFraction of the total meals can be ramen",
+            "status": "coded",
+            "formulation": "\\textup{RamenPacks} \\leq \\textup{MaxRamenFraction} \\cdot (\\textup{RamenPacks} + \\textup{FriesPacks})",
+            "related_variables": [
+                "RamenPacks",
+                "FriesPacks"
+            ],
+            "related_parameters": [
+                "MaxRamenFraction"
+            ],
+            "code": "model.addConstr(RamenPacks <= MaxRamenFraction * (RamenPacks + FriesPacks), name=\"MaxRamenFractionConstraint\")"
+        },
+        {
+            "description": "The salesman must consume at least the minimum number of calories",
+            "status": "coded",
+            "formulation": "CaloriesRamen \\cdot \\textup{RamenPacks} + CaloriesFries \\cdot \\textup{FriesPacks} \\geq MinCalories",
+            "related_variables": [
+                "RamenPacks",
+                "FriesPacks"
+            ],
+            "related_parameters": [
+                "CaloriesRamen",
+                "CaloriesFries",
+                "MinCalories"
+            ],
+            "code": "# Add calorie consumption constraint\nmodel.addConstr(CaloriesRamen * RamenPacks + CaloriesFries * FriesPacks >= MinCalories, name=\"min_calories\")"
+        },
+        {
+            "description": "The salesman must consume at least MinProtein grams of protein",
+            "status": "coded",
+            "formulation": "\\textup{ProteinRamen} \\cdot \\textup{RamenPacks} + \\textup{ProteinFries} \\cdot \\textup{FriesPacks} \\geq \\textup{MinProtein}",
+            "related_variables": [
+                "RamenPacks",
+                "FriesPacks"
+            ],
+            "related_parameters": [
+                "ProteinRamen",
+                "ProteinFries",
+                "MinProtein"
+            ],
+            "code": "# Add constraint for minimum protein intake\nmodel.addConstr(ProteinRamen * RamenPacks + ProteinFries * FriesPacks >= MinProtein, name=\"min_protein_intake\")"
+        },
+        {
+            "description": "Ensure the minimum total caloric intake is met",
+            "status": "coded",
+            "formulation": "\\textup{CaloriesRamen} \\cdot \\textup{RamenPacks} + \\textup{CaloriesFries} \\cdot \\textup{FriesPacks} \\geq \\textup{MinCalories}",
+            "related_variables": [
+                "RamenPacks",
+                "FriesPacks"
+            ],
+            "related_parameters": [
+                "CaloriesRamen",
+                "CaloriesFries",
+                "MinCalories"
+            ],
+            "code": "# Ensure the minimum total caloric intake is met\nmodel.addConstr(CaloriesRamen * RamenPacks + CaloriesFries * FriesPacks >= MinCalories, name=\"min_caloric_intake\")"
+        },
+        {
+            "description": "Ensure the minimum total protein intake is met",
+            "status": "coded",
+            "formulation": "\\textup{ProteinRamen} \\cdot \\textup{RamenPacks} + \\textup{ProteinFries} \\cdot \\textup{FriesPacks} \\geq \\textup{MinProtein}",
+            "related_variables": [
+                "RamenPacks",
+                "FriesPacks"
+            ],
+            "related_parameters": [
+                "ProteinRamen",
+                "ProteinFries",
+                "MinProtein"
+            ],
+            "code": "# Ensure the minimum total protein intake is met\nmodel.addConstr(ProteinRamen * RamenPacks + ProteinFries * FriesPacks >= MinProtein, name=\"min_protein_intake\")"
+        },
+        {
+            "description": "The maximum fraction of meals that can be ramen",
+            "status": "coded",
+            "formulation": "\\textup{RamenPacks} \\leq \\textup{MaxRamenFraction} \\cdot (\\textup{RamenPacks} + \\textup{FriesPacks})",
+            "related_variables": [
+                "RamenPacks",
+                "FriesPacks"
+            ],
+            "related_parameters": [
+                "MaxRamenFraction"
+            ],
+            "code": "# Maximum fraction of meals that can be ramen constraint\nmodel.addConstr(RamenPacks <= MaxRamenFraction * (RamenPacks + FriesPacks), name=\"max_ramen_fraction_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of ramen packs consumed by the salesman",
+            "symbol": "RamenPacks",
+            "shape": [],
+            "status": "coded",
+            "code": "RamenPacks = model.addVar(vtype=gp.GRB.INTEGER, name=\"RamenPacks\")"
+        },
+        {
+            "definition": "Number of fries packs consumed by the salesman",
+            "symbol": "FriesPacks",
+            "shape": [],
+            "status": "coded",
+            "code": "FriesPacks = model.addVar(vtype=gp.GRB.INTEGER, name=\"FriesPacks\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total sodium intake from the consumption of ramen and fries",
+            "status": "coded",
+            "formulation": "\\min \\textup{SodiumRamen} \\cdot \\textup{RamenPacks} + \\textup{SodiumFries} \\cdot \\textup{FriesPacks}",
+            "related_variables": [
+                "RamenPacks",
+                "FriesPacks"
+            ],
+            "related_parameters": [
+                "SodiumRamen",
+                "SodiumFries"
+            ],
+            "code": "# Set objective\nmodel.setObjective(SodiumRamen * RamenPacks + SodiumFries * FriesPacks, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 750.0,
+    "log_path": "logs/log_20250413111625_nl4opt_prob_121/",
+    "problem_path": "data/nl4opt/prob_121/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_121/data.json\", \"r\") as f:\n    data = json.load(f)\n\nCaloriesRamen = data[\"CaloriesRamen\"] # scalar parameter\nProteinRamen = data[\"ProteinRamen\"] # scalar parameter\nSodiumRamen = data[\"SodiumRamen\"] # scalar parameter\nCaloriesFries = data[\"CaloriesFries\"] # scalar parameter\nProteinFries = data[\"ProteinFries\"] # scalar parameter\nSodiumFries = data[\"SodiumFries\"] # scalar parameter\nMaxRamenFraction = data[\"MaxRamenFraction\"] # scalar parameter\nMinCalories = data[\"MinCalories\"] # scalar parameter\nMinProtein = data[\"MinProtein\"] # scalar parameter\nRamenPacks = model.addVar(vtype=gp.GRB.INTEGER, name=\"RamenPacks\")\nFriesPacks = model.addVar(vtype=gp.GRB.INTEGER, name=\"FriesPacks\")\n\n# RamenPacks is already defined as a non-negative integer variable; hence no additional constraint is needed.\n\n# Add non-negativity constraint for the number of fries packs\nmodel.addConstr(FriesPacks >= 0, name=\"fries_packs_nonneg\")\n\nmodel.addConstr(RamenPacks <= MaxRamenFraction * (RamenPacks + FriesPacks), name=\"MaxRamenFractionConstraint\")\n\n# Add calorie consumption constraint\nmodel.addConstr(CaloriesRamen * RamenPacks + CaloriesFries * FriesPacks >= MinCalories, name=\"min_calories\")\n\n# Add constraint for minimum protein intake\nmodel.addConstr(ProteinRamen * RamenPacks + ProteinFries * FriesPacks >= MinProtein, name=\"min_protein_intake\")\n\n# Ensure the minimum total caloric intake is met\nmodel.addConstr(CaloriesRamen * RamenPacks + CaloriesFries * FriesPacks >= MinCalories, name=\"min_caloric_intake\")\n\n# Ensure the minimum total protein intake is met\nmodel.addConstr(ProteinRamen * RamenPacks + ProteinFries * FriesPacks >= MinProtein, name=\"min_protein_intake\")\n\n# Maximum fraction of meals that can be ramen constraint\nmodel.addConstr(RamenPacks <= MaxRamenFraction * (RamenPacks + FriesPacks), name=\"max_ramen_fraction_constraint\")\n\n# Set objective\nmodel.setObjective(SodiumRamen * RamenPacks + SodiumFries * FriesPacks, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

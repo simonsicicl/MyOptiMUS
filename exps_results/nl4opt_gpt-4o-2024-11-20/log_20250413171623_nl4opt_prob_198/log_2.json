@@ -1,0 +1,147 @@
+{
+    "background": "A volunteer organization is planning to transport voters to the polls using a fleet of vans and cars, aiming to meet minimum voter transport requirements while adhering to vehicle ratio mandates.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of people a van can carry",
+            "symbol": "VanCapacity",
+            "value": 6,
+            "shape": [],
+            "code": "VanCapacity = data[\"VanCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of people a car can carry",
+            "symbol": "CarCapacity",
+            "value": 3,
+            "shape": [],
+            "code": "CarCapacity = data[\"CarCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of voters to transport to the polls",
+            "symbol": "MinimumVoters",
+            "value": 200,
+            "shape": [],
+            "code": "MinimumVoters = data[\"MinimumVoters\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum proportion of the number of vans to the total number of vehicles",
+            "symbol": "MaxVansRatio",
+            "value": 0.33,
+            "shape": [],
+            "code": "MaxVansRatio = data[\"MaxVansRatio\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of vans should be non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{NumberOfVans} \\\\geq 0",
+            "related_variables": [
+                "NumberOfVans"
+            ],
+            "related_parameters": [],
+            "code": "# The variable \"NumberOfVans\" is non-negative due to its default lower bound (0) in Gurobi.\n# No additional constraint is needed."
+        },
+        {
+            "description": "The number of cars must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfCars} \\geq 0",
+            "related_variables": [
+                "NumberOfCars"
+            ],
+            "related_parameters": [],
+            "code": "# The non-negativity of the continuous variable NumberOfCars is already enforced by default in Gurobi"
+        },
+        {
+            "description": "Ensure the total number of voters transported meets or exceeds the minimum voter requirement.",
+            "status": "coded",
+            "formulation": "\\\\textup{NumberOfVans} \\\\times \\\\textup{VanCapacity} + \\\\textup{NumberOfCars} \\\\times \\\\textup{CarCapacity} \\\\geq \\\\textup{MinimumVoters}",
+            "related_variables": [
+                "NumberOfVans",
+                "NumberOfCars"
+            ],
+            "related_parameters": [
+                "VanCapacity",
+                "CarCapacity",
+                "MinimumVoters"
+            ],
+            "code": "# Add constraint to ensure voter transport meets or exceeds minimum requirement\nmodel.addConstr(\n    NumberOfVans * VanCapacity + NumberOfCars * CarCapacity >= MinimumVoters, \n    name=\"voter_transport_requirement\"\n)"
+        },
+        {
+            "description": "At most MaxVansRatio of the total number of vehicles can be vans.",
+            "status": "coded",
+            "formulation": "\\\\textup{NumberOfVans} \\\\cdot (1 - \\\\textup{MaxVansRatio}) \\\\leq \\\\textup{MaxVansRatio} \\\\cdot \\\\textup{NumberOfCars}",
+            "related_variables": [
+                "NumberOfVans",
+                "NumberOfCars"
+            ],
+            "related_parameters": [
+                "MaxVansRatio"
+            ],
+            "code": "# Add constraint that at most MaxVansRatio of the total number of vehicles can be vans\nmodel.addConstr(NumberOfVans * (1 - MaxVansRatio) <= MaxVansRatio * NumberOfCars, name=\"MaxVansRatio_constraint\")"
+        },
+        {
+            "description": "Ensure the vehicles used can satisfy the minimum voter transport requirement.",
+            "status": "coded",
+            "formulation": "\\textup{VanCapacity} \\cdot \\textup{NumberOfVans} + \\textup{CarCapacity} \\cdot \\textup{NumberOfCars} \\geq \\textup{MinimumVoters}",
+            "related_variables": [
+                "NumberOfVans",
+                "NumberOfCars"
+            ],
+            "related_parameters": [
+                "VanCapacity",
+                "CarCapacity",
+                "MinimumVoters"
+            ],
+            "code": "# Add constraint to ensure vehicles can satisfy the minimum voter transport requirement\nmodel.addConstr(\n    NumberOfVans * VanCapacity + NumberOfCars * CarCapacity >= MinimumVoters,\n    name=\"minimum_voter_transport_requirement\"\n)"
+        },
+        {
+            "description": "Enforce the maximum proportion of vans to total vehicles.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfVans} \\leq \\textup{MaxVansRatio} \\cdot (\\textup{NumberOfVans} + \\textup{NumberOfCars})",
+            "related_variables": [
+                "NumberOfVans",
+                "NumberOfCars"
+            ],
+            "related_parameters": [
+                "MaxVansRatio"
+            ],
+            "code": "# Add constraint to enforce the maximum proportion of vans to total vehicles\nmodel.addConstr(NumberOfVans <= MaxVansRatio * (NumberOfVans + NumberOfCars), name=\"max_vans_ratio\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of vans used to transport voters.",
+            "symbol": "NumberOfVans",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfVans = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfVans\")"
+        },
+        {
+            "definition": "The number of cars used to transport voters.",
+            "symbol": "NumberOfCars",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfCars = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfCars\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of cars used to transport voters.",
+            "status": "coded",
+            "formulation": "\\textup{Minimize } \\quad \\textup{NumberOfCars}",
+            "related_variables": [
+                "NumberOfCars"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(NumberOfCars, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 33.583959899749374,
+    "log_path": "logs/log_20250413171623_nl4opt_prob_198/",
+    "problem_path": "data/nl4opt/prob_198/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_198/data.json\", \"r\") as f:\n    data = json.load(f)\n\nVanCapacity = data[\"VanCapacity\"] # scalar parameter\nCarCapacity = data[\"CarCapacity\"] # scalar parameter\nMinimumVoters = data[\"MinimumVoters\"] # scalar parameter\nMaxVansRatio = data[\"MaxVansRatio\"] # scalar parameter\nNumberOfVans = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfVans\")\nNumberOfCars = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfCars\")\n\n# The variable \"NumberOfVans\" is non-negative due to its default lower bound (0) in Gurobi.\n# No additional constraint is needed.\n\n# The non-negativity of the continuous variable NumberOfCars is already enforced by default in Gurobi\n\n# Add constraint to ensure voter transport meets or exceeds minimum requirement\nmodel.addConstr(\n    NumberOfVans * VanCapacity + NumberOfCars * CarCapacity >= MinimumVoters, \n    name=\"voter_transport_requirement\"\n)\n\n# Add constraint that at most MaxVansRatio of the total number of vehicles can be vans\nmodel.addConstr(NumberOfVans * (1 - MaxVansRatio) <= MaxVansRatio * NumberOfCars, name=\"MaxVansRatio_constraint\")\n\n# Add constraint to ensure vehicles can satisfy the minimum voter transport requirement\nmodel.addConstr(\n    NumberOfVans * VanCapacity + NumberOfCars * CarCapacity >= MinimumVoters,\n    name=\"minimum_voter_transport_requirement\"\n)\n\n# Add constraint to enforce the maximum proportion of vans to total vehicles\nmodel.addConstr(NumberOfVans <= MaxVansRatio * (NumberOfVans + NumberOfCars), name=\"max_vans_ratio\")\n\n# Set objective\nmodel.setObjective(NumberOfCars, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

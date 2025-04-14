@@ -68,7 +68,9 @@ class Evaluator(Agent):
                 "error_message": None,
             }
         except Exception as e:
+                
                 if not bogus_context:
+                    print(e)
                     return ("CRASHED", state)
                     # error_msg = traceback.format_exc()
                     # raise Exception(
@@ -78,7 +80,6 @@ class Evaluator(Agent):
                     #     + "\n\n\n"
                     #     + error_msg
                     # )
-
                 error_msg = traceback.format_exc()
                 res = {
                     "success": False,
@@ -89,6 +90,7 @@ class Evaluator(Agent):
                     "error_message": error_msg,
                     "bogus_context": bogus_context,
                 }
+                print(res)
         try:
             if not res["success"]:
                 state["solution_status"] = "runtime_error"

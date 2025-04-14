@@ -1,0 +1,162 @@
+{
+    "background": "Employees of a company have the option to car-pool or take the company bus to work. Each car-pool and bus has different capacities and pollution outputs.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of employees per car",
+            "symbol": "C",
+            "value": 4,
+            "shape": [],
+            "code": "C = data[\"C\"] # scalar parameter"
+        },
+        {
+            "definition": "Pollution units produced by one car",
+            "symbol": "Pc",
+            "value": 10,
+            "shape": [],
+            "code": "Pc = data[\"Pc\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of employees per bus",
+            "symbol": "B",
+            "value": 20,
+            "shape": [],
+            "code": "B = data[\"B\"] # scalar parameter"
+        },
+        {
+            "definition": "Pollution units produced by one bus",
+            "symbol": "Pb",
+            "value": 30,
+            "shape": [],
+            "code": "Pb = data[\"Pb\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of employees to be transported",
+            "symbol": "MinE",
+            "value": 300,
+            "shape": [],
+            "code": "MinE = data[\"MinE\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of buses to be used",
+            "symbol": "MaxBuses",
+            "value": 4,
+            "shape": [],
+            "code": "MaxBuses = data[\"MaxBuses\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of cars used for transportation must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfCars} \\geq 0",
+            "related_variables": [
+                "NumberOfCars"
+            ],
+            "related_parameters": [],
+            "code": "# No additional code needed since the variable \"NumberOfCars\" is already defined as non-negative due to its type being CONTINUOUS in gurobipy."
+        },
+        {
+            "description": "The number of buses must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfBuses} \\geq 0",
+            "related_variables": [
+                "NumberOfBuses"
+            ],
+            "related_parameters": [],
+            "code": "# The variable \"NumberOfBuses\" is already defined as non-negative (continuous variables in Gurobi are non-negative by default), so no additional constraint is needed."
+        },
+        {
+            "description": "The minimum number of employees that must be transported by the combination of cars and buses.",
+            "status": "coded",
+            "formulation": "\\\\textup{C} \\\\cdot \\\\textup{NumberOfCars} + \\\\textup{B} \\\\cdot \\\\textup{NumberOfBuses} \\\\geq \\\\textup{MinE}",
+            "related_variables": [
+                "NumberOfCars",
+                "NumberOfBuses"
+            ],
+            "related_parameters": [
+                "C",
+                "B",
+                "MinE"
+            ],
+            "code": "# Add constraint for minimum employees transported\nmodel.addConstr(C * NumberOfCars + B * NumberOfBuses >= MinE, name=\"min_employees_constraint\")"
+        },
+        {
+            "description": "At most MaxBuses buses can be used.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfBuses} \\leq \\textup{MaxBuses}",
+            "related_variables": [
+                "NumberOfBuses"
+            ],
+            "related_parameters": [
+                "MaxBuses"
+            ],
+            "code": "# Add constraint to enforce that the number of buses does not exceed MaxBuses\nmodel.addConstr(NumberOfBuses <= MaxBuses, name=\"bus_limit_constraint\")"
+        },
+        {
+            "description": "Ensure that the total number of employees transported meets or exceeds the minimum required",
+            "status": "coded",
+            "formulation": "\\textup{C} \\cdot \\textup{NumberOfCars} + \\textup{B} \\cdot \\textup{NumberOfBuses} \\geq \\textup{MinE}",
+            "related_variables": [
+                "NumberOfCars",
+                "NumberOfBuses"
+            ],
+            "related_parameters": [
+                "C",
+                "B",
+                "MinE"
+            ],
+            "code": "# Add constraint to ensure that the total number of employees transported meets or exceeds the minimum required\nmodel.addConstr(C * NumberOfCars + B * NumberOfBuses >= MinE, name=\"employee_transport_minimum\")"
+        },
+        {
+            "description": "Restrict the number of buses used to the maximum allowed",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfBuses} \\leq \\textup{MaxBuses}",
+            "related_variables": [
+                "NumberOfBuses"
+            ],
+            "related_parameters": [
+                "MaxBuses"
+            ],
+            "code": "# Add the constraint to restrict the number of buses used to the maximum allowed\nmodel.addConstr(NumberOfBuses <= MaxBuses, name=\"bus_limit_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of cars used for employee transportation.",
+            "symbol": "NumberOfCars",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfCars = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfCars\")"
+        },
+        {
+            "definition": "The number of buses used for employee transportation.",
+            "symbol": "NumberOfBuses",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfBuses = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfBuses\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total pollution produced by the transportation of employees",
+            "status": "coded",
+            "formulation": "\\textup{Pc} \\cdot \\textup{NumberOfCars} + \\textup{Pb} \\cdot \\textup{NumberOfBuses}",
+            "related_variables": [
+                "NumberOfCars",
+                "NumberOfBuses"
+            ],
+            "related_parameters": [
+                "Pc",
+                "Pb"
+            ],
+            "code": "# Set objective\nmodel.setObjective(Pc * NumberOfCars + Pb * NumberOfBuses, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250414065850_nl4opt_prob_193/",
+    "problem_path": "data/nl4opt/prob_193/"
+}

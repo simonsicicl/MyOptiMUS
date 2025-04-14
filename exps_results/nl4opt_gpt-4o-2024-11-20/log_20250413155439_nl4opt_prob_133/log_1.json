@@ -1,0 +1,193 @@
+{
+    "background": "A pharmaceutical company is producing daytime and nighttime painkiller pills, both containing painkiller medicine, with nighttime pills also containing sleep medicine. There are limited resources for producing these pills, and certain minimum production requirements must be met.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Total units of painkiller medicine available",
+            "symbol": "TotalPainkillerUnits",
+            "value": 800,
+            "shape": [],
+            "code": "TotalPainkillerUnits = data[\"TotalPainkillerUnits\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of painkiller medicine per daytime pill",
+            "symbol": "DaytimePainkillerUnits",
+            "value": 6,
+            "shape": [],
+            "code": "DaytimePainkillerUnits = data[\"DaytimePainkillerUnits\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of sleep medicine per daytime pill",
+            "symbol": "DaytimeSleepUnits",
+            "value": 2,
+            "shape": [],
+            "code": "DaytimeSleepUnits = data[\"DaytimeSleepUnits\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of painkiller medicine per nighttime pill",
+            "symbol": "NighttimePainkillerUnits",
+            "value": 5,
+            "shape": [],
+            "code": "NighttimePainkillerUnits = data[\"NighttimePainkillerUnits\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of sleep medicine per nighttime pill",
+            "symbol": "NighttimeSleepUnits",
+            "value": 5,
+            "shape": [],
+            "code": "NighttimeSleepUnits = data[\"NighttimeSleepUnits\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum percentage of pills that must be daytime pills",
+            "symbol": "MinimumDaytimePercentage",
+            "value": 0.4,
+            "shape": [],
+            "code": "MinimumDaytimePercentage = data[\"MinimumDaytimePercentage\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of nighttime pills required",
+            "symbol": "MinimumNighttimePills",
+            "value": 200,
+            "shape": [],
+            "code": "MinimumNighttimePills = data[\"MinimumNighttimePills\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The total units of painkiller medicine used across all pills cannot exceed the available units, TotalPainkillerUnits.",
+            "status": "coded",
+            "formulation": "\\textup{DaytimePainkillerUnits} \\cdot \\textup{DaytimePills} + \\textup{NighttimePainkillerUnits} \\cdot \\textup{NighttimePills} \\leq \\textup{TotalPainkillerUnits}",
+            "related_variables": [
+                "DaytimePills",
+                "NighttimePills"
+            ],
+            "related_parameters": [
+                "DaytimePainkillerUnits",
+                "NighttimePainkillerUnits",
+                "TotalPainkillerUnits"
+            ],
+            "code": "# Add constraint to limit total painkiller units used\nmodel.addConstr(\n    DaytimePainkillerUnits * DaytimePills + NighttimePainkillerUnits * NighttimePills <= TotalPainkillerUnits,\n    name=\"total_painkiller_limit\"\n)"
+        },
+        {
+            "description": "At least MinimumDaytimePercentage % of the total pills must be daytime pills",
+            "status": "coded",
+            "formulation": "(1 - \\textup{MinimumDaytimePercentage}) \\cdot \\textup{DaytimePills} \\geq \\textup{MinimumDaytimePercentage} \\cdot \\textup{NighttimePills}",
+            "related_variables": [
+                "DaytimePills",
+                "NighttimePills"
+            ],
+            "related_parameters": [
+                "MinimumDaytimePercentage"
+            ],
+            "code": "# Add constraint to enforce MinimumDaytimePercentage\nmodel.addConstr((1 - MinimumDaytimePercentage) * DaytimePills >= MinimumDaytimePercentage * NighttimePills, name=\"minimum_daytime_percentage\")"
+        },
+        {
+            "description": "Ensure that at least MinimumNighttimePills nighttime pills must be made.",
+            "status": "coded",
+            "formulation": "\\textup{NighttimePills} \\geq \\textup{MinimumNighttimePills}",
+            "related_variables": [
+                "NighttimePills"
+            ],
+            "related_parameters": [
+                "MinimumNighttimePills"
+            ],
+            "code": "# Add constraint to ensure at least MinimumNighttimePills nighttime pills are made\nmodel.addConstr(NighttimePills >= MinimumNighttimePills, name=\"minimum_nighttime_pills\")"
+        },
+        {
+            "description": "The daytime pills produced must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{DaytimePills} \\geq 0",
+            "related_variables": [
+                "DaytimePills"
+            ],
+            "related_parameters": [],
+            "code": "# The variable \"DaytimePills\" is already constrained to be non-negative by default in Gurobi as it is of type CONTINUOUS."
+        },
+        {
+            "description": "Number of nighttime pills is non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NighttimePills} \\geq 0",
+            "related_variables": [
+                "NighttimePills"
+            ],
+            "related_parameters": [],
+            "code": "# No additional code is required because the variable \"NighttimePills\" is non-negative by default (gurobipy non-negative domain for continuous variables)."
+        },
+        {
+            "description": "The total painkiller medicine used must not exceed the available amount",
+            "status": "coded",
+            "formulation": "\\textup{DaytimePainkillerUnits} \\times \\textup{DaytimePills} + \\textup{NighttimePainkillerUnits} \\times \\textup{NighttimePills} \\leq \\textup{TotalPainkillerUnits}",
+            "related_variables": [
+                "DaytimePills",
+                "NighttimePills"
+            ],
+            "related_parameters": [
+                "DaytimePainkillerUnits",
+                "NighttimePainkillerUnits",
+                "TotalPainkillerUnits"
+            ],
+            "code": "# Add constraint to ensure total painkiller medicine used does not exceed available amount\nmodel.addConstr(\n    DaytimePainkillerUnits * DaytimePills + NighttimePainkillerUnits * NighttimePills <= TotalPainkillerUnits,\n    name=\"painkiller_usage_limit\"\n)"
+        },
+        {
+            "description": "The minimum percentage of pills that must be daytime pills",
+            "status": "coded",
+            "formulation": "\\textup{DaytimePills} \\geq \\textup{MinimumDaytimePercentage} \\times (\\textup{DaytimePills} + \\textup{NighttimePills})",
+            "related_variables": [
+                "DaytimePills",
+                "NighttimePills"
+            ],
+            "related_parameters": [
+                "MinimumDaytimePercentage"
+            ],
+            "code": "# Add minimum daytime pills percentage constraint\nmodel.addConstr(\n    DaytimePills >= MinimumDaytimePercentage * (DaytimePills + NighttimePills), \n    name=\"min_daytime_pills_percentage\"\n)"
+        },
+        {
+            "description": "The number of nighttime pills must meet the minimum requirement",
+            "status": "coded",
+            "formulation": "\\textup{NighttimePills} \\geq \\textup{MinimumNighttimePills}",
+            "related_variables": [
+                "NighttimePills"
+            ],
+            "related_parameters": [
+                "MinimumNighttimePills"
+            ],
+            "code": "# Add nighttime pill minimum requirement constraint\nmodel.addConstr(NighttimePills >= MinimumNighttimePills, name=\"min_nighttime_pills_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of daytime pills produced",
+            "symbol": "DaytimePills",
+            "shape": [],
+            "status": "coded",
+            "code": "DaytimePills = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"DaytimePills\")"
+        },
+        {
+            "definition": "The number of nighttime pills produced",
+            "symbol": "NighttimePills",
+            "shape": [],
+            "status": "coded",
+            "code": "NighttimePills = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NighttimePills\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total amount of sleep medicine used in the pills",
+            "status": "coded",
+            "formulation": "\\textup{Minimize:} \\quad \\textup{NighttimeSleepUnits} \\times \\textup{NighttimePills}",
+            "related_variables": [
+                "NighttimePills"
+            ],
+            "related_parameters": [
+                "NighttimeSleepUnits"
+            ],
+            "code": "# Set objective\nmodel.setObjective(NighttimeSleepUnits * NighttimePills, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413155439_nl4opt_prob_133/",
+    "problem_path": "data/nl4opt/prob_133/"
+}

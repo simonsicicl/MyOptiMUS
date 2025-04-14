@@ -1,0 +1,160 @@
+{
+    "background": "The problem focuses on finding an optimal trading strategy that involves deciding on the quantity of goods to buy and sell each month, considering storage capacity and associated costs.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Maximum storage capacity",
+            "symbol": "Capacity",
+            "value": 0,
+            "shape": [],
+            "code": "Capacity = data[\"Capacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost of holding one unit of product",
+            "symbol": "HoldingCost",
+            "value": 0,
+            "shape": [],
+            "code": "HoldingCost = data[\"HoldingCost\"] # scalar parameter"
+        },
+        {
+            "definition": "Selling price in each period",
+            "symbol": "Price",
+            "value": 0,
+            "shape": [
+                "N"
+            ],
+            "code": "Price = np.array(data[\"Price\"]) # ['N']"
+        },
+        {
+            "definition": "Cost of buying in each period",
+            "symbol": "Cost",
+            "value": 0,
+            "shape": [
+                "N"
+            ],
+            "code": "Cost = np.array(data[\"Cost\"]) # ['N']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The amount of goods held in storage must be non-negative at all time periods.",
+            "status": "formulated",
+            "formulation": "\\textup{GoodsInStorage}_{t} \\geq 0 \\quad \\forall \\ t \\in \\{1, 2, \\dots, N\\}",
+            "related_variables": [
+                "GoodsInStorage"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "The amount of goods sold in each period must be non-negative.",
+            "status": "formulated",
+            "formulation": "\\textup{GoodsSold}_{t} \\geq 0 \\quad \\forall t \\in \\{1, \\dots, N\\}",
+            "related_variables": [
+                "GoodsSold"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "The amount of goods bought in each period must be non-negative",
+            "status": "formulated",
+            "formulation": "\\textup{GoodsBought}_{t} \\geq 0 \\quad \\forall t \\in \\{1, \\dots, N\\}",
+            "related_variables": [
+                "GoodsBought"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "The amount of goods stored must not exceed the maximum storage capacity.",
+            "status": "formulated",
+            "formulation": "\\textup{GoodsInStorage}_{t} \\leq \\textup{Capacity}, \\quad \\forall \\ t \\in \\{1, 2, ..., N\\}",
+            "related_variables": [
+                "GoodsInStorage"
+            ],
+            "related_parameters": [
+                "Capacity"
+            ]
+        },
+        {
+            "description": "Storage balance constraint, ensuring the flow of goods is consistent with what is stored, bought, and sold.",
+            "status": "formulated",
+            "formulation": "\\textup{GoodsInStorage}_{t} = \\textup{GoodsInStorage}_{t-1} + \\textup{GoodsBought}_{t} - \\textup{GoodsSold}_{t}, \\quad \\forall t \\geq 2",
+            "related_variables": [
+                "GoodsBought",
+                "GoodsSold",
+                "GoodsInStorage"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Initial storage constraint, setting the starting storage amount.",
+            "status": "formulated",
+            "formulation": "\\textup{GoodsInStorage}_{1} = \\textup{GoodsBought}_{1} - \\textup{GoodsSold}_{1}",
+            "related_variables": [
+                "GoodsBought",
+                "GoodsSold",
+                "GoodsInStorage"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Storage capacity constraint, ensuring storage does not exceed maximum capacity.",
+            "status": "formulated",
+            "formulation": "\\textup{GoodsInStorage}_{t} \\leq \\textup{Capacity}, \\quad \\forall t = 1, \\dots, N",
+            "related_variables": [
+                "GoodsInStorage"
+            ],
+            "related_parameters": [
+                "Capacity"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The amount of goods held in storage in time period t",
+            "symbol": "GoodsInStorage",
+            "shape": [
+                "N"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "The amount of goods sold in each time period t",
+            "symbol": "GoodsSold",
+            "shape": [
+                "N"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "The amount of goods bought in each time period t",
+            "symbol": "GoodsBought",
+            "shape": [
+                "N"
+            ],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total profit over the months by considering revenue from selling, cost of buying, and the cost of holding goods in storage.",
+            "status": "formulated",
+            "formulation": "\\max \\quad \\sum_{t=1}^{N} \\left( \\textup{GoodsSold}_{t} \\times \\textup{Price}_{t} - \\textup{GoodsBought}_{t} \\times \\textup{Cost}_{t} - \\textup{GoodsInStorage}_{t} \\times \\textup{HoldingCost} \\right)",
+            "related_variables": [
+                "GoodsBought",
+                "GoodsSold",
+                "GoodsInStorage"
+            ],
+            "related_parameters": [
+                "Price",
+                "Cost",
+                "HoldingCost"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413155229_nlp4lp_38/",
+    "problem_path": "data/nlp4lp/38/"
+}

@@ -1,0 +1,117 @@
+{
+    "background": "The problem is to find the largest possible ball by radius, which is entirely contained within a given set P, where the center of this ball is referred to as the Chebychev center of P.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "The number of inequalities defining the set P",
+            "symbol": "M",
+            "value": "",
+            "shape": [],
+            "code": "M = data[\"M\"] # scalar parameter"
+        },
+        {
+            "definition": "The ambient space dimension of the set P",
+            "symbol": "N",
+            "value": "",
+            "shape": [],
+            "code": "N = data[\"N\"] # scalar parameter"
+        },
+        {
+            "definition": "The coefficients of the linear inequalities defining the set P",
+            "symbol": "A",
+            "value": "",
+            "shape": [
+                "M",
+                "N"
+            ],
+            "code": "A = np.array(data[\"A\"]) # ['M', 'N']"
+        },
+        {
+            "definition": "The right-hand side of the inequalities defining the set P",
+            "symbol": "B",
+            "value": "",
+            "shape": [
+                "M"
+            ],
+            "code": "B = np.array(data[\"B\"]) # ['M']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The radii of balls must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{Radius} \\geq 0",
+            "related_variables": [
+                "Radius"
+            ],
+            "related_parameters": [],
+            "code": "# Radius of balls must be non-negative\nmodel.addConstr(Radius >= 0, name=\"non_negative_radius\")"
+        },
+        {
+            "description": "The ball must be completely within the set P, defined by the constraints Ax \\leq b",
+            "status": "coded",
+            "formulation": "\\mathbf{a}_i^\top \\mathbf{c} + \\textup{Radius} \\cdot \\| \\mathbf{a}_i \\|_2 \\leq b_i \\quad \\forall i = 1,\\ldots,\\textup{M}",
+            "related_variables": [
+                "Radius",
+                "Center"
+            ],
+            "related_parameters": [
+                "A",
+                "B"
+            ],
+            "code": "# Ensure the ball is completely within the set P\nfor i in range(M):\n    model.addQConstr(\n        gp.quicksum(A[i][j] * Center[j] for j in range(N)) -\n        gp.quicksum((Radius * A[i][j]) * (Radius * A[i][j]) for j in range(N)) <= B[i],\n        name=f\"ball_within_set_P_{i}\"\n    )"
+        },
+        {
+            "description": "The ball centered at the Chebychev center with radius 'Radius' must be entirely within the polytope P",
+            "status": "coded",
+            "formulation": "A \\cdot \\textup{Center} + \\textup{Radius} \\cdot \\| A_i \\|_2 \\leq B",
+            "related_variables": [
+                "Radius",
+                "Center"
+            ],
+            "related_parameters": [
+                "A",
+                "B"
+            ],
+            "code": "# Add constraint to ensure the ball is entirely within the polytope P\nfor i in range(M):\n    lhs = gp.quicksum(A[i,j] * Center[j] for j in range(N))\n    model.addConstr(lhs <= B[i], name=f\"polytope_containment_{i}\")\n    model.addQConstr(gp.quicksum(A[i, j]**2 for j in range(N)) * Radius**2 <= B[i]**2, name=f\"sphere_containment_{i}\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The radius of the ball",
+            "symbol": "Radius",
+            "shape": [],
+            "status": "coded",
+            "code": "Radius = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"Radius\")"
+        },
+        {
+            "definition": "The center of the ball in the ambient space",
+            "symbol": "Center",
+            "shape": [
+                "N"
+            ],
+            "status": "coded",
+            "code": "Center = model.addVars(N, vtype=gp.GRB.CONTINUOUS, name=\"Center\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the radius of the ball centered at the Chebychev center that lies entirely within P",
+            "status": "coded",
+            "formulation": "\\max \\quad \\textup{Radius}",
+            "related_variables": [
+                "Radius"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(Radius, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": "Traceback (most recent call last):\n  File \"c:\\Users\\Simon\\Desktop\\Courses\\ECE 570\\ECE570_Project\\MyOptiMUS\\evaluator.py\", line 45, in run\n    exec(last_line, local_env, local_env)\n  File \"<string>\", line 4, in <module>\n  File \"src\\\\gurobipy\\\\nlexpr.pxi\", line 618, in gurobipy._core.NLExpr.__le__\ngurobipy._exception.GurobiError: Nonlinear constraints must take the form y=f(x)\n",
+    "obj_val": 2.0,
+    "log_path": "logs/log_20250413073757_nlp4lp_14/",
+    "problem_path": "data/nlp4lp/14/",
+    "prep_code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nlp4lp/14/data.json\", \"r\") as f:\n    data = json.load(f)\n",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nlp4lp/14/data.json\", \"r\") as f:\n    data = json.load(f)\n\nM = data[\"M\"] # scalar parameter\nN = data[\"N\"] # scalar parameter\nA = np.array(data[\"A\"]) # ['M', 'N']\nB = np.array(data[\"B\"]) # ['M']\nRadius = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"Radius\")\nCenter = model.addVars(N, vtype=gp.GRB.CONTINUOUS, name=\"Center\")\n\n# Radius of balls must be non-negative\nmodel.addConstr(Radius >= 0, name=\"non_negative_radius\")\n\n# Ensure the ball is completely within the set P\nfor i in range(M):\n    model.addQConstr(\n        gp.quicksum(A[i][j] * Center[j] for j in range(N)) -\n        gp.quicksum((Radius * A[i][j]) * (Radius * A[i][j]) for j in range(N)) <= B[i],\n        name=f\"ball_within_set_P_{i}\"\n    )\n\n# Add constraint to ensure the ball is entirely within the polytope P\nfor i in range(M):\n    lhs = gp.quicksum(A[i,j] * Center[j] for j in range(N))\n    model.addConstr(lhs <= B[i], name=f\"polytope_containment_{i}\")\n    model.addQConstr(gp.quicksum(A[i, j]**2 for j in range(N)) * Radius**2 <= B[i]**2, name=f\"sphere_containment_{i}\")\n\n# Set objective\nmodel.setObjective(Radius, gp.GRB.MAXIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

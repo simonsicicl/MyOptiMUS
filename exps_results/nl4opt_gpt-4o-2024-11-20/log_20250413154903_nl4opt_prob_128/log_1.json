@@ -1,0 +1,235 @@
+{
+    "background": "A company produces liquid and foam hand sanitizers, each requiring different quantities of water and alcohol, under resource constraints and a production preference.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Units of water required to make one unit of liquid hand sanitizer",
+            "symbol": "WaterL",
+            "value": 40,
+            "shape": [],
+            "code": "WaterL = data[\"WaterL\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of alcohol required to make one unit of liquid hand sanitizer",
+            "symbol": "AlcoholL",
+            "value": 50,
+            "shape": [],
+            "code": "AlcoholL = data[\"AlcoholL\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of water required to make one unit of foam hand sanitizer",
+            "symbol": "WaterF",
+            "value": 60,
+            "shape": [],
+            "code": "WaterF = data[\"WaterF\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of alcohol required to make one unit of foam hand sanitizer",
+            "symbol": "AlcoholF",
+            "value": 40,
+            "shape": [],
+            "code": "AlcoholF = data[\"AlcoholF\"] # scalar parameter"
+        },
+        {
+            "definition": "Total units of water available",
+            "symbol": "WaterTotal",
+            "value": 2000,
+            "shape": [],
+            "code": "WaterTotal = data[\"WaterTotal\"] # scalar parameter"
+        },
+        {
+            "definition": "Total units of alcohol available",
+            "symbol": "AlcoholTotal",
+            "value": 2100,
+            "shape": [],
+            "code": "AlcoholTotal = data[\"AlcoholTotal\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of liquid hand sanitizers that can be produced",
+            "symbol": "MaxLiquid",
+            "value": 30,
+            "shape": [],
+            "code": "MaxLiquid = data[\"MaxLiquid\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of hands that can be cleaned by one unit of liquid hand sanitizer",
+            "symbol": "CleanHandsL",
+            "value": 30,
+            "shape": [],
+            "code": "CleanHandsL = data[\"CleanHandsL\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of hands that can be cleaned by one unit of foam hand sanitizer",
+            "symbol": "CleanHandsF",
+            "value": 20,
+            "shape": [],
+            "code": "CleanHandsF = data[\"CleanHandsF\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of liquid hand sanitizers produced must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{LiquidSanitizers} \\geq 0",
+            "related_variables": [
+                "LiquidSanitizers"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint to ensure the number of liquid hand sanitizers is non-negative\nmodel.addConstr(LiquidSanitizers >= 0, name=\"non_negative_liquid_sanitizers\")"
+        },
+        {
+            "description": "The number of foam hand sanitizers is non-negative",
+            "status": "coded",
+            "formulation": "\\textup{FoamSanitizers} \\geq 0",
+            "related_variables": [
+                "FoamSanitizers"
+            ],
+            "related_parameters": [],
+            "code": "# No code is needed as the non-negativity is defined inherently by the lower bound of the FoamSanitizers variable during its creation (default lb=0)."
+        },
+        {
+            "description": "The total water usage for the production of liquid and foam hand sanitizers is at most the available WaterTotal.",
+            "status": "coded",
+            "formulation": "\\\\textup{WaterL} \\\\cdot \\\\textup{LiquidSanitizers} + \\\\textup{WaterF} \\\\cdot \\\\textup{FoamSanitizers} \\\\leq \\\\textup{WaterTotal}",
+            "related_variables": [
+                "LiquidSanitizers",
+                "FoamSanitizers"
+            ],
+            "related_parameters": [
+                "WaterL",
+                "WaterF",
+                "WaterTotal"
+            ],
+            "code": "# Add water usage constraint\nmodel.addConstr(\n    LiquidSanitizers * WaterL + FoamSanitizers * WaterF <= WaterTotal, \n    name=\"water_usage_constraint\"\n)"
+        },
+        {
+            "description": "Total alcohol used in liquid and foam hand sanitizers must not exceed AlcoholTotal",
+            "status": "coded",
+            "formulation": "\\textup{AlcoholL} \\times \\textup{LiquidSanitizers} + \\textup{AlcoholF} \\times \\textup{FoamSanitizers} \\leq \\textup{AlcoholTotal}",
+            "related_variables": [
+                "LiquidSanitizers",
+                "FoamSanitizers"
+            ],
+            "related_parameters": [
+                "AlcoholL",
+                "AlcoholF",
+                "AlcoholTotal"
+            ],
+            "code": "# Add constraint for total alcohol usage\nmodel.addConstr(AlcoholL * LiquidSanitizers + AlcoholF * FoamSanitizers <= AlcoholTotal, name=\"alcohol_usage_limit\")"
+        },
+        {
+            "description": "The number of foam hand sanitizers must exceed the number of liquid hand sanitizers.",
+            "status": "coded",
+            "formulation": "\\\\textup{FoamSanitizers} \\\\geq \\\\textup{LiquidSanitizers} + 1",
+            "related_variables": [
+                "FoamSanitizers",
+                "LiquidSanitizers"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint to ensure FoamSanitizers exceed LiquidSanitizers by at least 1\nmodel.addConstr(FoamSanitizers >= LiquidSanitizers + 1, name=\"foam_vs_liquid_sanitizers\")"
+        },
+        {
+            "description": "The maximum number of liquid hand sanitizers that can be produced is limited by MaxLiquid.",
+            "status": "coded",
+            "formulation": "\\textup{LiquidSanitizers} \\leq \\textup{MaxLiquid}",
+            "related_variables": [
+                "LiquidSanitizers"
+            ],
+            "related_parameters": [
+                "MaxLiquid"
+            ],
+            "code": "# Add constraint for limiting the maximum number of liquid hand sanitizers\nmodel.addConstr(LiquidSanitizers <= MaxLiquid, name=\"max_liquid_sanitizers\")"
+        },
+        {
+            "description": "Water usage constraint ensuring total water usage does not exceed the available supply",
+            "status": "coded",
+            "formulation": "\\textup{WaterL} \\cdot \\textup{LiquidSanitizers} + \\textup{WaterF} \\cdot \\textup{FoamSanitizers} \\leq \\textup{WaterTotal}",
+            "related_variables": [
+                "LiquidSanitizers",
+                "FoamSanitizers"
+            ],
+            "related_parameters": [
+                "WaterL",
+                "WaterF",
+                "WaterTotal"
+            ],
+            "code": "# Add water usage constraint\nmodel.addConstr(WaterL * LiquidSanitizers + WaterF * FoamSanitizers <= WaterTotal, name=\"water_usage\")"
+        },
+        {
+            "description": "Alcohol usage constraint ensuring total alcohol usage does not exceed the available supply",
+            "status": "coded",
+            "formulation": "\\textup{AlcoholL} \\cdot \\textup{LiquidSanitizers} + \\textup{AlcoholF} \\cdot \\textup{FoamSanitizers} \\leq \\textup{AlcoholTotal}",
+            "related_variables": [
+                "LiquidSanitizers",
+                "FoamSanitizers"
+            ],
+            "related_parameters": [
+                "AlcoholL",
+                "AlcoholF",
+                "AlcoholTotal"
+            ],
+            "code": "# Add alcohol usage constraint\nmodel.addConstr(AlcoholL * LiquidSanitizers + AlcoholF * FoamSanitizers <= AlcoholTotal, name=\"alcohol_usage_constraint\")"
+        },
+        {
+            "description": "Production constraint limiting the maximum number of liquid sanitizers that can be produced",
+            "status": "coded",
+            "formulation": "\\textup{LiquidSanitizers} \\leq \\textup{MaxLiquid}",
+            "related_variables": [
+                "LiquidSanitizers"
+            ],
+            "related_parameters": [
+                "MaxLiquid"
+            ],
+            "code": "# Add production constraint for limiting liquid sanitizers\nmodel.addConstr(LiquidSanitizers <= MaxLiquid, name=\"production_constraint\")"
+        },
+        {
+            "description": "Non-negativity constraint ensuring that the production quantities are not negative",
+            "status": "coded",
+            "formulation": "\\textup{LiquidSanitizers} \\geq 0, \\quad \\textup{FoamSanitizers} \\geq 0",
+            "related_variables": [
+                "LiquidSanitizers",
+                "FoamSanitizers"
+            ],
+            "related_parameters": [],
+            "code": "# Add non-negativity constraints for production quantities\nmodel.addConstr(LiquidSanitizers >= 0, name=\"non_negativity_LiquidSanitizers\")\nmodel.addConstr(FoamSanitizers >= 0, name=\"non_negativity_FoamSanitizers\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of liquid hand sanitizers produced.",
+            "symbol": "LiquidSanitizers",
+            "shape": [],
+            "status": "coded",
+            "code": "LiquidSanitizers = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"LiquidSanitizers\")"
+        },
+        {
+            "definition": "The number of foam hand sanitizers produced.",
+            "symbol": "FoamSanitizers",
+            "shape": [],
+            "status": "coded",
+            "code": "FoamSanitizers = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"FoamSanitizers\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total number of hands cleaned by the produced hand sanitizers",
+            "status": "coded",
+            "formulation": "\\max \\quad \\textup{CleanHandsL} \\cdot \\textup{LiquidSanitizers} + \\textup{CleanHandsF} \\cdot \\textup{FoamSanitizers}",
+            "related_variables": [
+                "LiquidSanitizers",
+                "FoamSanitizers"
+            ],
+            "related_parameters": [
+                "CleanHandsL",
+                "CleanHandsF"
+            ],
+            "code": "# Set objective\nmodel.setObjective(CleanHandsL * LiquidSanitizers + CleanHandsF * FoamSanitizers, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413154903_nl4opt_prob_128/",
+    "problem_path": "data/nl4opt/prob_128/"
+}

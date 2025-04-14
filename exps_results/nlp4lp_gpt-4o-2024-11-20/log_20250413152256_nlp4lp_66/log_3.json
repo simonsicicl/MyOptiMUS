@@ -1,0 +1,148 @@
+{
+    "background": "Identifying the shortest route for a traveler to visit a certain number of towns and return to the original starting town.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of towns to visit",
+            "symbol": "N",
+            "value": "",
+            "shape": [],
+            "code": "N = data[\"N\"] # scalar parameter"
+        },
+        {
+            "definition": "Index of the start city",
+            "symbol": "StartCity",
+            "value": "",
+            "shape": [],
+            "code": "StartCity = data[\"StartCity\"] # scalar parameter"
+        },
+        {
+            "definition": "Distance from city i to city j",
+            "symbol": "Distances",
+            "value": "",
+            "shape": [
+                "N",
+                "N"
+            ],
+            "code": "Distances = np.array(data[\"Distances\"]) # ['N', 'N']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The traveler must visit each town exactly once, departing from each city and arriving at each city exactly one time.",
+            "status": "coded",
+            "formulation": "\\sum_{j=1, j \\neq i}^{\\textup{N}} \\textup{VisitPath}_{i,j} = 1 \\quad \\forall \\quad i = 1, \\dots, \\textup{N} \\\\ \\sum_{i=1, i \\neq j}^{\\textup{N}} \\textup{VisitPath}_{i,j} = 1 \\quad \\forall \\quad j = 1, \\dots, \\textup{N}",
+            "related_variables": [
+                "VisitPath"
+            ],
+            "related_parameters": [
+                "N"
+            ],
+            "code": "# Add constraints to ensure each town is visited exactly once\nfor i in range(N):\n    model.addConstr(gp.quicksum(VisitPath[i, j] for j in range(N) if j != i) == 1, name=f\"outgoing_{i}\")\n\n# Add constraints to ensure each town is arrived at exactly once\nfor j in range(N):\n    model.addConstr(gp.quicksum(VisitPath[i, j] for i in range(N) if i != j) == 1, name=f\"incoming_{j}\")"
+        },
+        {
+            "description": "The traveler must return to StartCity after visiting all other towns.",
+            "status": "coded",
+            "formulation": "\\sum_{i=1, i \\\\neq \\textup{StartCity}}^{\\textup{N}} \\textup{VisitPath}_{i, \\textup{StartCity}} = 1",
+            "related_variables": [
+                "VisitPath"
+            ],
+            "related_parameters": [
+                "StartCity",
+                "N"
+            ],
+            "code": "# Add constraint to ensure the traveler returns to StartCity after visiting all other towns\nmodel.addConstr(\n    gp.quicksum(VisitPath[i, StartCity] for i in range(N) if i != StartCity) == 1,\n    name=\"return_to_StartCity\"\n)"
+        },
+        {
+            "description": "The distances between any two towns must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{Distances}_{i,j} \\geq 0, \\quad \\forall \\ i, j \\in \\{1, 2, \\dots, \\textup{N}\\}",
+            "related_variables": [],
+            "related_parameters": [
+                "Distances",
+                "N"
+            ],
+            "code": "for i in range(N):\n    for j in range(N):\n        model.addConstr(0 <= Distances[i, j], name=f\"non_negative_distance_{i}_{j}\")"
+        },
+        {
+            "description": "Each city must have exactly one incoming path (exactly one other city leads to it).",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{N} \\textup{VisitPath}_{i,j} = 1 \\quad \\forall j \\in \\{1, \\dots, N\\}",
+            "related_variables": [
+                "VisitPath"
+            ],
+            "related_parameters": [
+                "N"
+            ],
+            "code": "# Add constraints to ensure each city has exactly one incoming path\nfor j in range(N):\n    model.addConstr(gp.quicksum(VisitPath[i, j] for i in range(N)) == 1, name=f\"one_incoming_path_{j}\")"
+        },
+        {
+            "description": "Each city must have exactly one outgoing path (it must travel to exactly one other city).",
+            "status": "coded",
+            "formulation": "\\sum_{j=1}^{N} \\textup{VisitPath}_{i,j} = 1 \\quad \\forall i \\in \\{1, \\dots, N\\}",
+            "related_variables": [
+                "VisitPath"
+            ],
+            "related_parameters": [
+                "N"
+            ],
+            "code": "# Add constraints to ensure each city has exactly one outgoing path\nfor i in range(N):\n    model.addConstr(gp.quicksum(VisitPath[i, j] for j in range(N)) == 1, name=f\"outgoing_path_{i}\")"
+        },
+        {
+            "description": "Subtour elimination constraint: Prevents disjoint cycles by ensuring positional order.",
+            "status": "coded",
+            "formulation": "\\textup{SubtourElim}_{i} - \\textup{SubtourElim}_{j} + N \\cdot \\textup{VisitPath}_{i,j} \\leq N - 1 \\quad \\forall i, j \\in \\{2, \\dots, N\\}, \\quad i \\neq j",
+            "related_variables": [
+                "VisitPath",
+                "SubtourElim"
+            ],
+            "related_parameters": [
+                "N"
+            ],
+            "code": "# Add subtour elimination constraints\nfor i in range(1, N):\n    for j in range(1, N):\n        if i != j:\n            model.addConstr(\n                SubtourElim[i] - SubtourElim[j] + N * VisitPath[i, j] <= N - 1,\n                name=f\"subtour_elim_{i}_{j}\"\n            )"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Binary variable indicating if the traveler travels from city i to city j",
+            "symbol": "VisitPath",
+            "shape": [
+                "N",
+                "N"
+            ],
+            "status": "coded",
+            "code": "VisitPath = model.addVars(N, N, vtype=gp.GRB.BINARY, name=\"VisitPath\")"
+        },
+        {
+            "definition": "Auxiliary variable representing the position of a city in the travel sequence, used for subtour elimination.",
+            "symbol": "SubtourElim",
+            "shape": [
+                "N"
+            ],
+            "status": "coded",
+            "code": "SubtourElim = model.addVars(N, vtype=gp.GRB.CONTINUOUS, name=\"SubtourElim\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total travel distance by ordering visits to all cities and returning to the starting city, ensuring the shortest possible route.",
+            "status": "coded",
+            "formulation": "\\min \\sum_{i=1}^{N} \\sum_{j=1}^{N} \\textup{Distances}_{i,j} \\cdot \\textup{VisitPath}_{i,j}",
+            "related_variables": [
+                "VisitPath"
+            ],
+            "related_parameters": [
+                "Distances",
+                "N"
+            ],
+            "code": "# Set objective\nmodel.setObjective(gp.quicksum(Distances[i, j] * VisitPath[i, j] for i in range(N) for j in range(N)), gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "runtime_error",
+    "solver_output_status": "runtime_error",
+    "error_message": "Traceback (most recent call last):\n  File \"/Users/simonsici/Desktop/MyOptiMUS/evaluator.py\", line 45, in run\n    exec(last_line, local_env, local_env)\n  File \"<string>\", line 4, in <module>\n  File \"src/gurobipy/model.pxi\", line 3625, in gurobipy.Model.addConstr\nTypeError: unsupported operand type(s) for -: 'bool' and 'NoneType'\n",
+    "obj_val": null,
+    "log_path": "logs/log_20250413152256_nlp4lp_66/",
+    "problem_path": "data/nlp4lp/66/",
+    "prep_code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nlp4lp/66/data.json\", \"r\") as f:\n    data = json.load(f)\n"
+}

@@ -1,0 +1,280 @@
+{
+    "background": "The Employee Assignment Problem involves scheduling a certain number of employees with specific skills across multiple shifts and restaurants, taking into account skill demands and employee preferences to minimize the scheduling cost.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "symbol": "NumRestaurants",
+            "definition": "The number of restaurants",
+            "shape": [],
+            "code": "NumRestaurants = data[\"NumRestaurants\"] # scalar parameter"
+        },
+        {
+            "symbol": "NumEmployees",
+            "definition": "The number of employees",
+            "shape": [],
+            "code": "NumEmployees = data[\"NumEmployees\"] # scalar parameter"
+        },
+        {
+            "symbol": "NumShifts",
+            "definition": "The number of shifts",
+            "shape": [],
+            "code": "NumShifts = data[\"NumShifts\"] # scalar parameter"
+        },
+        {
+            "symbol": "NumSkills",
+            "definition": "The total number of skills that employees can have",
+            "shape": [],
+            "code": "NumSkills = data[\"NumSkills\"] # scalar parameter"
+        },
+        {
+            "symbol": "Demand",
+            "definition": "The demand for employees with specific skills at each restaurant during each shift",
+            "shape": [
+                "NumRestaurants",
+                "NumShifts",
+                "NumSkills"
+            ],
+            "code": "Demand = np.array(data[\"Demand\"]) # ['NumRestaurants', 'NumShifts', 'NumSkills']"
+        },
+        {
+            "symbol": "EmployeeSkills",
+            "definition": "Binary indicator if an employee has a specific skill",
+            "shape": [
+                "NumEmployees",
+                "NumSkills"
+            ],
+            "code": "EmployeeSkills = np.array(data[\"EmployeeSkills\"]) # ['NumEmployees', 'NumSkills']"
+        },
+        {
+            "symbol": "SkillPreference",
+            "definition": "Employee's preference level for each skill",
+            "shape": [
+                "NumEmployees",
+                "NumSkills"
+            ],
+            "code": "SkillPreference = np.array(data[\"SkillPreference\"]) # ['NumEmployees', 'NumSkills']"
+        },
+        {
+            "symbol": "ShiftAvailability",
+            "definition": "Binary indicator if an employee is available for a specific shift",
+            "shape": [
+                "NumEmployees",
+                "NumShifts"
+            ],
+            "code": "ShiftAvailability = np.array(data[\"ShiftAvailability\"]) # ['NumEmployees', 'NumShifts']"
+        },
+        {
+            "symbol": "UnfulfilledPositionWeight",
+            "definition": "The weighting factor for unfulfilled positions",
+            "shape": [],
+            "code": "UnfulfilledPositionWeight = data[\"UnfulfilledPositionWeight\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Exactly NumEmployees employees must be assigned across all restaurants and shifts.",
+            "status": "coded",
+            "formulation": "\\sum_{e=1}^{\\textup{NumEmployees}} \\sum_{r=1}^{\\textup{NumRestaurants}} \\sum_{s=1}^{\\textup{NumShifts}} \\textup{Assignment}_{e,r,s} = \\textup{NumEmployees}",
+            "related_variables": [
+                "Assignment"
+            ],
+            "related_parameters": [
+                "NumEmployees",
+                "NumRestaurants",
+                "NumShifts"
+            ],
+            "code": "# Add a constraint to enforce that exactly NumEmployees assignments are made across all employees, restaurants, and shifts\nmodel.addConstr(\n    gp.quicksum(Assignment[e, r, s] for e in range(NumEmployees) for r in range(NumRestaurants) for s in range(NumShifts)) == NumEmployees,\n    name=\"exactly_NumEmployees_assigned\"\n)"
+        },
+        {
+            "description": "Each employee can only be assigned to one shift at one restaurant at a time",
+            "status": "coded",
+            "formulation": "\\sum_{r=1}^{\\textup{NumRestaurants}} \\sum_{s=1}^{\\textup{NumShifts}} \\textup{Assignment}_{e,r,s} \\leq 1 \\quad \\forall e \\in \\{1, \\dots, \\textup{NumEmployees}\\}",
+            "related_variables": [
+                "Assignment"
+            ],
+            "related_parameters": [
+                "NumRestaurants",
+                "NumShifts",
+                "NumEmployees"
+            ],
+            "code": "# Add constraint ensuring each employee can only be assigned to one shift at one restaurant at a time\nfor e in range(NumEmployees):\n    model.addConstr(\n        gp.quicksum(Assignment[e, r, s] for r in range(NumRestaurants) for s in range(NumShifts)) <= 1, \n        name=f\"Employee_Assignment_Limit_{e}\"\n    )"
+        },
+        {
+            "description": "The total number of employees assigned to each shift in each restaurant must meet the skill demand for that shift.",
+            "status": "coded",
+            "formulation": "\\sum_{e=1}^{\\textup{NumEmployees}} \\textup{Assignment}_{e,r,s} \\cdot \\textup{EmployeeSkills}_{e,k} \\geq \\textup{Demand}_{r,s,k}, \\quad \\forall r \\in [1, \\textup{NumRestaurants}], \\quad \\forall s \\in [1, \\textup{NumShifts}], \\quad \\forall k \\in [1, \\textup{NumSkills}]",
+            "related_variables": [
+                "Assignment"
+            ],
+            "related_parameters": [
+                "Demand",
+                "EmployeeSkills",
+                "NumRestaurants",
+                "NumShifts",
+                "NumSkills",
+                "NumEmployees"
+            ],
+            "code": "# Add constraints to ensure the total number of employees assigned to each shift in each restaurant meets the skill demand\nfor r in range(NumRestaurants):\n    for s in range(NumShifts):\n        for k in range(NumSkills):\n            model.addConstr(\n                gp.quicksum(\n                    Assignment[e, r, s] * EmployeeSkills[e, k] for e in range(NumEmployees)\n                ) >= Demand[r, s, k],\n                name=f\"skill_demand_r{r}_s{s}_k{k}\"\n            )"
+        },
+        {
+            "description": "Ensure the total skill contributions from assigned employees satisfy the skill demand for each restaurant and shift.",
+            "status": "coded",
+            "formulation": "\\sum_{\\textup{e}=1}^{\\textup{NumEmployees}} \\textup{SkillMatch}_{\\textup{e},\\textup{r},\\textup{s},\\textup{k}} \\geq \\textup{Demand}_{\\textup{r},\\textup{s},\\textup{k}}, \\quad \\forall \\textup{r} \\in [1,\\textup{NumRestaurants}], \\forall \\textup{s} \\in [1,\\textup{NumShifts}], \\forall \\textup{k} \\in [1,\\textup{NumSkills}]",
+            "related_variables": [
+                "SkillMatch"
+            ],
+            "related_parameters": [
+                "Demand"
+            ],
+            "code": "# Add skill contribution constraints\nfor r in range(NumRestaurants):\n    for s in range(NumShifts):\n        for k in range(NumSkills):\n            model.addConstr(\n                gp.quicksum(SkillMatch[e, r, s, k] for e in range(NumEmployees)) >= Demand[r, s, k],\n                name=f\"skill_contribution_r{r}_s{s}_k{k}\"\n            )"
+        },
+        {
+            "description": "Defines SkillMatch, ensuring it is valid only if an employee is assigned to a shift and possesses the required skill.",
+            "status": "coded",
+            "formulation": "\\textup{SkillMatch}_{\\textup{e},\\textup{r},\\textup{s},\\textup{k}} \\leq \\textup{Assignment}_{\\textup{e},\\textup{r},\\textup{s}}, \\quad \\forall \\textup{e} \\in [1,\\textup{NumEmployees}], \\forall \\textup{r} \\in [1,\\textup{NumRestaurants}], \\forall \\textup{s} \\in [1,\\textup{NumShifts}], \\forall \\textup{k} \\in [1,\\textup{NumSkills}]",
+            "related_variables": [
+                "SkillMatch",
+                "Assignment"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraints to ensure that SkillMatch is valid only if an employee is assigned to a shift\nfor e in range(NumEmployees):\n    for r in range(NumRestaurants):\n        for s in range(NumShifts):\n            for k in range(NumSkills):\n                model.addConstr(SkillMatch[e, r, s, k] <= Assignment[e, r, s], name=f\"SkillMatch_validity_e{e}_r{r}_s{s}_k{k}\")"
+        },
+        {
+            "description": "Ensures SkillMatch is 0 if the assigned employee does not possess the required skill.",
+            "status": "coded",
+            "formulation": "\\textup{SkillMatch}_{\\textup{e},\\textup{r},\\textup{s},\\textup{k}} \\leq \\textup{EmployeeSkills}_{\\textup{e},\\textup{k}}, \\quad \\forall \\textup{e} \\in [1,\\textup{NumEmployees}], \\forall \\textup{r} \\in [1,\\textup{NumRestaurants}], \\forall \\textup{s} \\in [1,\\textup{NumShifts}], \\forall \\textup{k} \\in [1,\\textup{NumSkills}]",
+            "related_variables": [
+                "SkillMatch"
+            ],
+            "related_parameters": [
+                "EmployeeSkills"
+            ],
+            "code": "# Add constraints to ensure SkillMatch is 0 if the assigned employee does not possess the required skill\nfor e in range(NumEmployees):\n    for r in range(NumRestaurants):\n        for s in range(NumShifts):\n            for k in range(NumSkills):\n                model.addConstr(SkillMatch[e, r, s, k] <= EmployeeSkills[e, k], name=f\"SkillMatch_constraint_{e}_{r}_{s}_{k}\")"
+        },
+        {
+            "description": "Defines SkillMatch as 1 only if both assignment and employee skill match conditions hold.",
+            "status": "coded",
+            "formulation": "\\textup{SkillMatch}_{\\textup{e},\\textup{r},\\textup{s},\\textup{k}} \\geq \\textup{Assignment}_{\\textup{e},\\textup{r},\\textup{s}} + \\textup{EmployeeSkills}_{\\textup{e},\\textup{k}} - 1, \\quad \\forall \\textup{e} \\in [1,\\textup{NumEmployees}], \\forall \\textup{r} \\in [1,\\textup{NumRestaurants}], \\forall \\textup{s} \\in [1,\\textup{NumShifts}], \\forall \\textup{k} \\in [1,\\textup{NumSkills}]",
+            "related_variables": [
+                "SkillMatch",
+                "Assignment"
+            ],
+            "related_parameters": [
+                "EmployeeSkills"
+            ],
+            "code": "# Add SkillMatch constraints for ensuring proper assignment and skill compatibility\nfor e in range(NumEmployees):\n    for r in range(NumRestaurants):\n        for s in range(NumShifts):\n            for k in range(NumSkills):\n                model.addConstr(SkillMatch[e, r, s, k] >= Assignment[e, r, s] + EmployeeSkills[e, k] - 1, \n                                name=f\"SkillMatchConstr_e{e}_r{r}_s{s}_k{k}\")"
+        },
+        {
+            "description": "Ensure that the unmet demand for all skills at a restaurant and shift is measured by UnfulfilledPositions.",
+            "status": "coded",
+            "formulation": "\\textup{UnfulfilledPositions}_{r,s,k} = \\textup{Demand}_{r,s,k} - \\sum_{e=1}^{\\textup{NumEmployees}} \\textup{SkillMatch}_{e,r,s,k}, \\quad \\forall \\, r \\in [1, \\textup{NumRestaurants}], \\, s \\in [1, \\textup{NumShifts}], \\, k \\in [1, \\textup{NumSkills}]",
+            "related_variables": [
+                "SkillMatch",
+                "UnfulfilledPositions"
+            ],
+            "related_parameters": [
+                "Demand",
+                "NumRestaurants",
+                "NumShifts",
+                "NumSkills",
+                "NumEmployees"
+            ],
+            "code": "# Add constraints to calculate UnfulfilledPositions for all restaurants, shifts, and skills\nfor r in range(NumRestaurants):\n    for s in range(NumShifts):\n        for k in range(NumSkills):\n            model.addConstr(\n                UnfulfilledPositions[r, s, k] == Demand[r, s, k] - gp.quicksum(SkillMatch[e, r, s, k] for e in range(NumEmployees)), \n                name=f\"UnfulfilledPositions_calc_r{r}_s{s}_k{k}\"\n            )"
+        },
+        {
+            "description": "Ensure SkillMatch is consistent with employees' skills and assignments.",
+            "status": "coded",
+            "formulation": "\\textup{SkillMatch}_{e,r,s,k} \\leq \\textup{EmployeeSkills}_{e,k} \\cdot \\textup{Assignment}_{e,r,s}, \\quad \\forall \\, e \\in [1, \\textup{NumEmployees}], \\, r \\in [1, \\textup{NumRestaurants}], \\, s \\in [1, \\textup{NumShifts}], \\, k \\in [1, \\textup{NumSkills}]",
+            "related_variables": [
+                "SkillMatch",
+                "Assignment"
+            ],
+            "related_parameters": [
+                "EmployeeSkills",
+                "NumRestaurants",
+                "NumShifts",
+                "NumSkills",
+                "NumEmployees"
+            ],
+            "code": "# Add SkillMatch consistency constraints\nfor e in range(NumEmployees):\n    for r in range(NumRestaurants):\n        for s in range(NumShifts):\n            for k in range(NumSkills):\n                model.addConstr(SkillMatch[e, r, s, k] <= EmployeeSkills[e, k] * Assignment[e, r, s], \n                                name=f\"SkillMatch_consistency_e{e}_r{r}_s{s}_k{k}\")"
+        },
+        {
+            "description": "Ensure that UnfulfilledPositions is non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{UnfulfilledPositions}_{r,s,k} \\geq 0, \\quad \\forall \\, r \\in [1, \\textup{NumRestaurants}], \\, s \\in [1, \\textup{NumShifts}], \\, k \\in [1, \\textup{NumSkills}]",
+            "related_variables": [
+                "UnfulfilledPositions"
+            ],
+            "related_parameters": [
+                "NumRestaurants",
+                "NumShifts",
+                "NumSkills"
+            ],
+            "code": "# Add non-negativity constraints for UnfulfilledPositions\nfor r in range(NumRestaurants):\n    for s in range(NumShifts):\n        for k in range(NumSkills):\n            model.addConstr(UnfulfilledPositions[r, s, k] >= 0, name=f\"non_negativity_UnfulfilledPositions_r{r}_s{s}_k{k}\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Binary variable indicating whether an employee e is assigned to restaurant r during shift s.",
+            "symbol": "Assignment",
+            "shape": [
+                "NumEmployees",
+                "NumRestaurants",
+                "NumShifts"
+            ],
+            "status": "coded",
+            "code": "Assignment = model.addVars(NumEmployees, NumRestaurants, NumShifts, vtype=gp.GRB.BINARY, name=\"Assignment\")"
+        },
+        {
+            "definition": "Binary variable indicating whether employee e satisfies skill k at restaurant r during shift s.",
+            "symbol": "SkillMatch",
+            "shape": [
+                "NumEmployees",
+                "NumRestaurants",
+                "NumShifts",
+                "NumSkills"
+            ],
+            "status": "coded",
+            "code": "SkillMatch = model.addVars(NumEmployees, NumRestaurants, NumShifts, NumSkills, vtype=gp.GRB.BINARY, name=\"SkillMatch\")"
+        },
+        {
+            "definition": "Number of unfulfilled positions for skill k at restaurant r during shift s.",
+            "symbol": "UnfulfilledPositions",
+            "shape": [
+                "NumRestaurants",
+                "NumShifts",
+                "NumSkills"
+            ],
+            "status": "coded",
+            "code": "UnfulfilledPositions = model.addVars(NumRestaurants, NumShifts, NumSkills, vtype=gp.GRB.CONTINUOUS, name=\"UnfulfilledPositions\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total cost, including unfulfilled position cost and employee preference cost.",
+            "status": "coded",
+            "formulation": "\\textup{Minimize} \\quad \\sum_{r=1}^{\\textup{NumRestaurants}} \\sum_{s=1}^{\\textup{NumShifts}} \\sum_{k=1}^{\\textup{NumSkills}} \\left( \\textup{UnfulfilledPositions}_{r,s,k} \\cdot \\textup{UnfulfilledPositionWeight} \\right) + \\sum_{e=1}^{\\textup{NumEmployees}} \\sum_{r=1}^{\\textup{NumRestaurants}} \\sum_{s=1}^{\\textup{NumShifts}} \\sum_{k=1}^{\\textup{NumSkills}} \\left( \\textup{Assignment}_{e,r,s} \\cdot (1 - \\textup{SkillPreference}_{e,k}) \\cdot \\textup{EmployeeSkills}_{e,k} \\right)",
+            "related_variables": [
+                "Assignment",
+                "UnfulfilledPositions"
+            ],
+            "related_parameters": [
+                "UnfulfilledPositionWeight",
+                "SkillPreference",
+                "EmployeeSkills",
+                "NumRestaurants",
+                "NumShifts",
+                "NumSkills",
+                "NumEmployees"
+            ],
+            "code": "# Set objective\nmodel.setObjective(\n    gp.quicksum(\n        UnfulfilledPositions[r, s, k] * UnfulfilledPositionWeight\n        for r in range(NumRestaurants)\n        for s in range(NumShifts)\n        for k in range(NumSkills)\n    )\n    +\n    gp.quicksum(\n        Assignment[e, r, s] * (1 - SkillPreference[e, k]) * EmployeeSkills[e, k]\n        for e in range(NumEmployees)\n        for r in range(NumRestaurants)\n        for s in range(NumShifts)\n        for k in range(NumSkills)\n    ),\n    gp.GRB.MINIMIZE\n)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 3,
+    "error_message": null,
+    "obj_val": "infeasible",
+    "log_path": "logs/log_20250413150831_complexor_Scheduling Problem/",
+    "problem_path": "data/complexor/Scheduling Problem/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/complexor/Scheduling Problem/data.json\", \"r\") as f:\n    data = json.load(f)\n\nNumRestaurants = data[\"NumRestaurants\"] # scalar parameter\nNumEmployees = data[\"NumEmployees\"] # scalar parameter\nNumShifts = data[\"NumShifts\"] # scalar parameter\nNumSkills = data[\"NumSkills\"] # scalar parameter\nDemand = np.array(data[\"Demand\"]) # ['NumRestaurants', 'NumShifts', 'NumSkills']\nEmployeeSkills = np.array(data[\"EmployeeSkills\"]) # ['NumEmployees', 'NumSkills']\nSkillPreference = np.array(data[\"SkillPreference\"]) # ['NumEmployees', 'NumSkills']\nShiftAvailability = np.array(data[\"ShiftAvailability\"]) # ['NumEmployees', 'NumShifts']\nUnfulfilledPositionWeight = data[\"UnfulfilledPositionWeight\"] # scalar parameter\nAssignment = model.addVars(NumEmployees, NumRestaurants, NumShifts, vtype=gp.GRB.BINARY, name=\"Assignment\")\nSkillMatch = model.addVars(NumEmployees, NumRestaurants, NumShifts, NumSkills, vtype=gp.GRB.BINARY, name=\"SkillMatch\")\nUnfulfilledPositions = model.addVars(NumRestaurants, NumShifts, NumSkills, vtype=gp.GRB.CONTINUOUS, name=\"UnfulfilledPositions\")\n\n# Add a constraint to enforce that exactly NumEmployees assignments are made across all employees, restaurants, and shifts\nmodel.addConstr(\n    gp.quicksum(Assignment[e, r, s] for e in range(NumEmployees) for r in range(NumRestaurants) for s in range(NumShifts)) == NumEmployees,\n    name=\"exactly_NumEmployees_assigned\"\n)\n\n# Add constraint ensuring each employee can only be assigned to one shift at one restaurant at a time\nfor e in range(NumEmployees):\n    model.addConstr(\n        gp.quicksum(Assignment[e, r, s] for r in range(NumRestaurants) for s in range(NumShifts)) <= 1, \n        name=f\"Employee_Assignment_Limit_{e}\"\n    )\n\n# Add constraints to ensure the total number of employees assigned to each shift in each restaurant meets the skill demand\nfor r in range(NumRestaurants):\n    for s in range(NumShifts):\n        for k in range(NumSkills):\n            model.addConstr(\n                gp.quicksum(\n                    Assignment[e, r, s] * EmployeeSkills[e, k] for e in range(NumEmployees)\n                ) >= Demand[r, s, k],\n                name=f\"skill_demand_r{r}_s{s}_k{k}\"\n            )\n\n# Add skill contribution constraints\nfor r in range(NumRestaurants):\n    for s in range(NumShifts):\n        for k in range(NumSkills):\n            model.addConstr(\n                gp.quicksum(SkillMatch[e, r, s, k] for e in range(NumEmployees)) >= Demand[r, s, k],\n                name=f\"skill_contribution_r{r}_s{s}_k{k}\"\n            )\n\n# Add constraints to ensure that SkillMatch is valid only if an employee is assigned to a shift\nfor e in range(NumEmployees):\n    for r in range(NumRestaurants):\n        for s in range(NumShifts):\n            for k in range(NumSkills):\n                model.addConstr(SkillMatch[e, r, s, k] <= Assignment[e, r, s], name=f\"SkillMatch_validity_e{e}_r{r}_s{s}_k{k}\")\n\n# Add constraints to ensure SkillMatch is 0 if the assigned employee does not possess the required skill\nfor e in range(NumEmployees):\n    for r in range(NumRestaurants):\n        for s in range(NumShifts):\n            for k in range(NumSkills):\n                model.addConstr(SkillMatch[e, r, s, k] <= EmployeeSkills[e, k], name=f\"SkillMatch_constraint_{e}_{r}_{s}_{k}\")\n\n# Add SkillMatch constraints for ensuring proper assignment and skill compatibility\nfor e in range(NumEmployees):\n    for r in range(NumRestaurants):\n        for s in range(NumShifts):\n            for k in range(NumSkills):\n                model.addConstr(SkillMatch[e, r, s, k] >= Assignment[e, r, s] + EmployeeSkills[e, k] - 1, \n                                name=f\"SkillMatchConstr_e{e}_r{r}_s{s}_k{k}\")\n\n# Add constraints to calculate UnfulfilledPositions for all restaurants, shifts, and skills\nfor r in range(NumRestaurants):\n    for s in range(NumShifts):\n        for k in range(NumSkills):\n            model.addConstr(\n                UnfulfilledPositions[r, s, k] == Demand[r, s, k] - gp.quicksum(SkillMatch[e, r, s, k] for e in range(NumEmployees)), \n                name=f\"UnfulfilledPositions_calc_r{r}_s{s}_k{k}\"\n            )\n\n# Add SkillMatch consistency constraints\nfor e in range(NumEmployees):\n    for r in range(NumRestaurants):\n        for s in range(NumShifts):\n            for k in range(NumSkills):\n                model.addConstr(SkillMatch[e, r, s, k] <= EmployeeSkills[e, k] * Assignment[e, r, s], \n                                name=f\"SkillMatch_consistency_e{e}_r{r}_s{s}_k{k}\")\n\n# Add non-negativity constraints for UnfulfilledPositions\nfor r in range(NumRestaurants):\n    for s in range(NumShifts):\n        for k in range(NumSkills):\n            model.addConstr(UnfulfilledPositions[r, s, k] >= 0, name=f\"non_negativity_UnfulfilledPositions_r{r}_s{s}_k{k}\")\n\n# Set objective\nmodel.setObjective(\n    gp.quicksum(\n        UnfulfilledPositions[r, s, k] * UnfulfilledPositionWeight\n        for r in range(NumRestaurants)\n        for s in range(NumShifts)\n        for k in range(NumSkills)\n    )\n    +\n    gp.quicksum(\n        Assignment[e, r, s] * (1 - SkillPreference[e, k]) * EmployeeSkills[e, k]\n        for e in range(NumEmployees)\n        for r in range(NumRestaurants)\n        for s in range(NumShifts)\n        for k in range(NumSkills)\n    ),\n    gp.GRB.MINIMIZE\n)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

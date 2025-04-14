@@ -1,0 +1,166 @@
+{
+    "background": "The problem is about curve fitting, specifically quadratic curve fitting, which involves finding a quadratic function that best fits a given set of data points in terms of minimizing the sum of absolute deviations between observed values and those predicted by the quadratic function.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of data points",
+            "symbol": "K",
+            "value": "",
+            "shape": [],
+            "code": "K = data[\"K\"] # scalar parameter"
+        },
+        {
+            "definition": "Observed y values at each data point k",
+            "symbol": "ObservedValues",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "ObservedValues = np.array(data[\"ObservedValues\"]) # ['K']"
+        },
+        {
+            "definition": "Observed x values at each data point k",
+            "symbol": "ObservedXValues",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "ObservedXValues = np.array(data[\"ObservedXValues\"]) # ['K']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Defines the relationship between the observed y-values, predicted y-values using the quadratic function, and the auxiliary variables for absolute deviations.",
+            "status": "coded",
+            "formulation": "\\textup{ObservedValues}_{k} - d_{k} \\leq \\hat{y}_{k} \\leq \\textup{ObservedValues}_{k} + d_{k}, \\quad \\forall \\ k \\in \\{1, 2, \\dots, K\\}",
+            "related_variables": [
+                "PredictedYValues",
+                "Deviations"
+            ],
+            "related_parameters": [
+                "ObservedValues"
+            ],
+            "code": "# Add constraints linking observed values, predicted values, and absolute deviations\nfor k in range(K):\n    model.addConstr(PredictedYValues[k] >= ObservedValues[k] - Deviations[k], name=f\"constraint_lower_{k}\")\n    model.addConstr(PredictedYValues[k] <= ObservedValues[k] + Deviations[k], name=f\"constraint_upper_{k}\")"
+        },
+        {
+            "description": "Defines the predicted y-values using the quadratic function for each x-value.",
+            "status": "coded",
+            "formulation": "\\hat{y}_{k} = c \\cdot \\textup{ObservedXValues}_{k}^2 + b \\cdot \\textup{ObservedXValues}_{k} + a, \\quad \\forall \\ k \\in \\{1, 2, \\dots, K\\}",
+            "related_variables": [
+                "PredictedYValues",
+                "CoefficientA",
+                "CoefficientB",
+                "CoefficientC"
+            ],
+            "related_parameters": [
+                "ObservedXValues"
+            ],
+            "code": "# Add constraints to define the quadratic relationship for predicted y-values\nfor k in range(K):\n    model.addConstr(\n        PredictedYValues[k] == CoefficientC * ObservedXValues[k] ** 2\n        + CoefficientB * ObservedXValues[k]\n        + CoefficientA,\n        name=f\"quadratic_relationship_{k}\"\n    )"
+        },
+        {
+            "description": "Define absolute deviation as greater than or equal to the difference between observed values and predicted values",
+            "status": "coded",
+            "formulation": "\\textup{Deviations}_{k} \\geq \\textup{ObservedValues}_{k} - \\textup{PredictedYValues}_{k} \\quad \\forall k \\in [1, \\textup{K}]",
+            "related_variables": [
+                "Deviations",
+                "PredictedYValues"
+            ],
+            "related_parameters": [
+                "ObservedValues",
+                "K"
+            ],
+            "code": "# Add constraints to define absolute deviation as greater than or equal to the difference between observed values and predicted values\nfor k in range(K):\n    model.addConstr(Deviations[k] >= ObservedValues[k] - PredictedYValues[k], name=f\"abs_dev_pos_{k}\")"
+        },
+        {
+            "description": "Define absolute deviation as greater than or equal to the difference between predicted values and observed values",
+            "status": "coded",
+            "formulation": "\\textup{Deviations}_{k} \\geq \\textup{PredictedYValues}_{k} - \\textup{ObservedValues}_{k} \\quad \\forall k \\in [1, \\textup{K}]",
+            "related_variables": [
+                "Deviations",
+                "PredictedYValues"
+            ],
+            "related_parameters": [
+                "ObservedValues",
+                "K"
+            ],
+            "code": "# Add constraints to define absolute deviation as greater than or equal to the difference between predicted values and observed values\nfor k in range(K):\n    model.addConstr(Deviations[k] >= PredictedYValues[k] - ObservedValues[k], name=f\"abs_dev_pos_{k}\")"
+        },
+        {
+            "description": "Define predicted y-values as the output of the quadratic function",
+            "status": "coded",
+            "formulation": "\\textup{PredictedYValues}_{k} = \\textup{CoefficientC} \\cdot (\\textup{ObservedXValues}_{k})^2 + \\textup{CoefficientB} \\cdot \\textup{ObservedXValues}_{k} + \\textup{CoefficientA} \\quad \\forall k \\in [1, \\textup{K}]",
+            "related_variables": [
+                "PredictedYValues",
+                "CoefficientA",
+                "CoefficientB",
+                "CoefficientC"
+            ],
+            "related_parameters": [
+                "ObservedXValues",
+                "K"
+            ],
+            "code": "# Add constraint to define PredictedYValues as the output of the quadratic function\nfor k in range(K):\n    model.addConstr(\n        PredictedYValues[k] == CoefficientC * (ObservedXValues[k] ** 2) + CoefficientB * ObservedXValues[k] + CoefficientA,\n        name=f\"quadratic_function_{k}\"\n    )"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Predicted y-values based on the quadratic curve for each data point k.",
+            "symbol": "PredictedYValues",
+            "shape": [
+                "K"
+            ],
+            "status": "coded",
+            "code": "PredictedYValues = model.addVars(K, vtype=gp.GRB.CONTINUOUS, name=\"PredictedYValues\")"
+        },
+        {
+            "definition": "Auxiliary variables representing the absolute deviation for each data point k.",
+            "symbol": "Deviations",
+            "shape": [
+                "K"
+            ],
+            "status": "coded",
+            "code": "Deviations = model.addVars(K, vtype=gp.GRB.CONTINUOUS, name=\"Deviations\")"
+        },
+        {
+            "definition": "Coefficient a of the constant term in the quadratic function.",
+            "symbol": "CoefficientA",
+            "shape": [],
+            "status": "coded",
+            "code": "CoefficientA = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"CoefficientA\")"
+        },
+        {
+            "definition": "Coefficient b of the linear term in the quadratic function.",
+            "symbol": "CoefficientB",
+            "shape": [],
+            "status": "coded",
+            "code": "CoefficientB = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"CoefficientB\")"
+        },
+        {
+            "definition": "Coefficient c of the quadratic term in the quadratic function.",
+            "symbol": "CoefficientC",
+            "shape": [],
+            "status": "coded",
+            "code": "CoefficientC = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"CoefficientC\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the sum of absolute deviations between the observed values and the predicted values from the quadratic function",
+            "status": "coded",
+            "formulation": "\\min \\sum_{k=1}^{\\textup{K}} \\textup{Deviations}_{k}",
+            "related_variables": [
+                "Deviations"
+            ],
+            "related_parameters": [
+                "K"
+            ],
+            "code": "# Set objective\nmodel.setObjective(gp.quicksum(Deviations[k] for k in range(K)), gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413153206_nlp4lp_33/",
+    "problem_path": "data/nlp4lp/33/"
+}

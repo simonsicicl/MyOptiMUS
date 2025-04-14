@@ -1,0 +1,251 @@
+{
+    "background": "A candle-making company requires the transportation of their candle inventory using freight and air, each with different capacities and costs. The company has to fulfill a minimum transportation amount while meeting budget constraints and specific requirements regarding air transportation and minimum freight trips.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Freight transport capacity per trip",
+            "symbol": "FreightCapacity",
+            "value": 5,
+            "shape": [],
+            "code": "FreightCapacity = data[\"FreightCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Air transport capacity per trip",
+            "symbol": "AirCapacity",
+            "value": 3,
+            "shape": [],
+            "code": "AirCapacity = data[\"AirCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost for each freight trip",
+            "symbol": "FreightCost",
+            "value": 300,
+            "shape": [],
+            "code": "FreightCost = data[\"FreightCost\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost for each air trip",
+            "symbol": "AirCost",
+            "value": 550,
+            "shape": [],
+            "code": "AirCost = data[\"AirCost\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum total tons of candles to be transported",
+            "symbol": "MinimumTons",
+            "value": 200,
+            "shape": [],
+            "code": "MinimumTons = data[\"MinimumTons\"] # scalar parameter"
+        },
+        {
+            "definition": "Budget for transporting candles",
+            "symbol": "Budget",
+            "value": 20000,
+            "shape": [],
+            "code": "Budget = data[\"Budget\"] # scalar parameter"
+        },
+        {
+            "definition": "Fraction of total tons required to be transported by air",
+            "symbol": "AirFraction",
+            "value": 0.3,
+            "shape": [],
+            "code": "AirFraction = data[\"AirFraction\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of trips by freight",
+            "symbol": "MinimumFreightTrips",
+            "value": 5,
+            "shape": [],
+            "code": "MinimumFreightTrips = data[\"MinimumFreightTrips\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The total tons of candles transported must be at least the minimum required",
+            "status": "coded",
+            "formulation": "\\textup{FreightCapacity} \\cdot \\textup{FreightTrips} + \\textup{AirCapacity} \\cdot \\textup{AirTrips} \\geq \\textup{MinimumTons}",
+            "related_variables": [
+                "FreightTrips",
+                "AirTrips"
+            ],
+            "related_parameters": [
+                "FreightCapacity",
+                "AirCapacity",
+                "MinimumTons"
+            ],
+            "code": "# Ensure the total tons of candles transported meet or exceed the minimum required\nmodel.addConstr(FreightCapacity * FreightTrips + AirCapacity * AirTrips >= MinimumTons, name=\"min_tons_transported\")"
+        },
+        {
+            "description": "The number of trips taken by freight must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{FreightTrips} \\geq 0",
+            "related_variables": [
+                "FreightTrips"
+            ],
+            "related_parameters": [],
+            "code": "# Since FreightTrips is already defined as a continuous variable, we just need to add a constraint ensuring it's non-negative\nmodel.addConstr(FreightTrips >= 0, \"FreightTrips_non_negative\")"
+        },
+        {
+            "description": "The number of air trips is non-negative",
+            "status": "coded",
+            "formulation": "\\textup{AirTrips} \\geq 0",
+            "related_variables": [
+                "AirTrips"
+            ],
+            "related_parameters": [],
+            "code": "# Air trips non-negativity constraint\nmodel.addConstr(AirTrips >= 0, name=\"non_negative_air_trips\")"
+        },
+        {
+            "description": "The total cost of transportation should not exceed the budget",
+            "status": "coded",
+            "formulation": "\\textup{FreightTrips} \\times \\textup{FreightCost} + \\textup{AirTrips} \\times \\textup{AirCost} \\leq \\textup{Budget}",
+            "related_variables": [
+                "FreightTrips",
+                "AirTrips"
+            ],
+            "related_parameters": [
+                "FreightCost",
+                "AirCost",
+                "Budget"
+            ],
+            "code": "# Total cost of transportation should not exceed the budget\nmodel.addConstr(FreightTrips * FreightCost + AirTrips * AirCost <= Budget, name=\"transportation_budget\")"
+        },
+        {
+            "description": "At least AirFraction of the total tons must be transported by air",
+            "status": "coded",
+            "formulation": "\\textup{TonsTransportedByAir} \\geq \\textup{AirFraction} \\times \\textup{MinimumTons}",
+            "related_variables": [
+                "TonsTransportedByAir"
+            ],
+            "related_parameters": [
+                "AirFraction",
+                "MinimumTons"
+            ],
+            "code": "# At least AirFraction of the total tons must be transported by air constraint\nmodel.addConstr(TonsTransportedByAir >= AirFraction * MinimumTons, name=\"air_transport_fraction\")"
+        },
+        {
+            "description": "Total tons transported by air must equal the number of air trips times the air capacity",
+            "status": "coded",
+            "formulation": "\\textup{TonsTransportedByAir} = \\textup{AirTrips} \\times \\textup{AirCapacity}",
+            "related_variables": [
+                "TonsTransportedByAir",
+                "AirTrips"
+            ],
+            "related_parameters": [
+                "AirCapacity"
+            ],
+            "code": "# Total tons transported by air equals air trips times air capacity constraint\nmodel.addConstr(TonsTransportedByAir == AirTrips * AirCapacity, name=\"air_transport_capacity\")"
+        },
+        {
+            "description": "Ensure the total tons transported meets the minimum requirement",
+            "status": "coded",
+            "formulation": "\\textup{FreightTrips} \\times \\textup{FreightCapacity} + \\textup{AirTrips} \\times \\textup{AirCapacity} \\geq \\textup{MinimumTons}",
+            "related_variables": [
+                "FreightTrips",
+                "AirTrips"
+            ],
+            "related_parameters": [
+                "FreightCapacity",
+                "AirCapacity",
+                "MinimumTons"
+            ],
+            "code": "# Ensure the total tons transported meets the minimum requirement\nmodel.addConstr(FreightTrips * FreightCapacity + AirTrips * AirCapacity >= MinimumTons, \"min_tons_transported\")"
+        },
+        {
+            "description": "Ensure that the budget is not exceeded",
+            "status": "coded",
+            "formulation": "\\textup{FreightTrips} \\times \\textup{FreightCost} + \\textup{AirTrips} \\times \\textup{AirCost} \\leq \\textup{Budget}",
+            "related_variables": [
+                "FreightTrips",
+                "AirTrips"
+            ],
+            "related_parameters": [
+                "FreightCost",
+                "AirCost",
+                "Budget"
+            ],
+            "code": "# Ensure that the budget is not exceeded\nmodel.addConstr(FreightTrips * FreightCost + AirTrips * AirCost <= Budget, name=\"budget_constraint\")"
+        },
+        {
+            "description": "Ensure that at least a certain fraction of the total tons is transported by air",
+            "status": "coded",
+            "formulation": "\\textup{TonsTransportedByAir} \\geq \\textup{AirFraction} \\times \\textup{MinimumTons}",
+            "related_variables": [
+                "TonsTransportedByAir"
+            ],
+            "related_parameters": [
+                "AirFraction",
+                "MinimumTons"
+            ],
+            "code": "# Ensure that at least a certain fraction of the total tons is transported by air\nmodel.addConstr(TonsTransportedByAir >= AirFraction * MinimumTons, name=\"air_transport_fraction\")"
+        },
+        {
+            "description": "Relate the tons transported by air to the air trips and air capacity",
+            "status": "coded",
+            "formulation": "\\textup{TonsTransportedByAir} = \\textup{AirTrips} \\times \\textup{AirCapacity}",
+            "related_variables": [
+                "TonsTransportedByAir",
+                "AirTrips"
+            ],
+            "related_parameters": [
+                "AirCapacity"
+            ],
+            "code": "# Relate the tons transported by air to the air trips and air capacity\nmodel.addConstr(TonsTransportedByAir == AirTrips * AirCapacity, name=\"relate_tons_to_trips_and_capacity\")"
+        },
+        {
+            "description": "Ensure the minimum number of freight trips is met",
+            "status": "coded",
+            "formulation": "\\textup{FreightTrips} \\geq \\textup{MinimumFreightTrips}",
+            "related_variables": [
+                "FreightTrips"
+            ],
+            "related_parameters": [
+                "MinimumFreightTrips"
+            ],
+            "code": "# Ensure the minimum number of freight trips is met\nmodel.addConstr(FreightTrips >= MinimumFreightTrips, name=\"min_freight_trips_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of trips taken by freight",
+            "symbol": "FreightTrips",
+            "shape": [],
+            "status": "coded",
+            "code": "FreightTrips = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"FreightTrips\")"
+        },
+        {
+            "definition": "The number of trips taken by air",
+            "symbol": "AirTrips",
+            "shape": [],
+            "status": "coded",
+            "code": "AirTrips = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"AirTrips\")"
+        },
+        {
+            "definition": "Total tons of candles transported by air",
+            "symbol": "TonsTransportedByAir",
+            "shape": [],
+            "status": "coded",
+            "code": "TonsTransportedByAir = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TonsTransportedByAir\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of freight and air trips",
+            "status": "coded",
+            "formulation": "\\textup{Minimize} \\quad \\textup{FreightTrips} + \\textup{AirTrips}",
+            "related_variables": [
+                "FreightTrips",
+                "AirTrips"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(FreightTrips + AirTrips, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 48.0,
+    "log_path": "logs/log_20250413171218_nl4opt_prob_251/",
+    "problem_path": "data/nl4opt/prob_251/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_251/data.json\", \"r\") as f:\n    data = json.load(f)\n\nFreightCapacity = data[\"FreightCapacity\"] # scalar parameter\nAirCapacity = data[\"AirCapacity\"] # scalar parameter\nFreightCost = data[\"FreightCost\"] # scalar parameter\nAirCost = data[\"AirCost\"] # scalar parameter\nMinimumTons = data[\"MinimumTons\"] # scalar parameter\nBudget = data[\"Budget\"] # scalar parameter\nAirFraction = data[\"AirFraction\"] # scalar parameter\nMinimumFreightTrips = data[\"MinimumFreightTrips\"] # scalar parameter\nFreightTrips = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"FreightTrips\")\nAirTrips = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"AirTrips\")\nTonsTransportedByAir = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TonsTransportedByAir\")\n\n# Ensure the total tons of candles transported meet or exceed the minimum required\nmodel.addConstr(FreightCapacity * FreightTrips + AirCapacity * AirTrips >= MinimumTons, name=\"min_tons_transported\")\n\n# Since FreightTrips is already defined as a continuous variable, we just need to add a constraint ensuring it's non-negative\nmodel.addConstr(FreightTrips >= 0, \"FreightTrips_non_negative\")\n\n# Air trips non-negativity constraint\nmodel.addConstr(AirTrips >= 0, name=\"non_negative_air_trips\")\n\n# Total cost of transportation should not exceed the budget\nmodel.addConstr(FreightTrips * FreightCost + AirTrips * AirCost <= Budget, name=\"transportation_budget\")\n\n# At least AirFraction of the total tons must be transported by air constraint\nmodel.addConstr(TonsTransportedByAir >= AirFraction * MinimumTons, name=\"air_transport_fraction\")\n\n# Total tons transported by air equals air trips times air capacity constraint\nmodel.addConstr(TonsTransportedByAir == AirTrips * AirCapacity, name=\"air_transport_capacity\")\n\n# Ensure the total tons transported meets the minimum requirement\nmodel.addConstr(FreightTrips * FreightCapacity + AirTrips * AirCapacity >= MinimumTons, \"min_tons_transported\")\n\n# Ensure that the budget is not exceeded\nmodel.addConstr(FreightTrips * FreightCost + AirTrips * AirCost <= Budget, name=\"budget_constraint\")\n\n# Ensure that at least a certain fraction of the total tons is transported by air\nmodel.addConstr(TonsTransportedByAir >= AirFraction * MinimumTons, name=\"air_transport_fraction\")\n\n# Relate the tons transported by air to the air trips and air capacity\nmodel.addConstr(TonsTransportedByAir == AirTrips * AirCapacity, name=\"relate_tons_to_trips_and_capacity\")\n\n# Ensure the minimum number of freight trips is met\nmodel.addConstr(FreightTrips >= MinimumFreightTrips, name=\"min_freight_trips_constraint\")\n\n# Set objective\nmodel.setObjective(FreightTrips + AirTrips, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

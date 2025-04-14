@@ -1,0 +1,183 @@
+{
+    "background": "An office company manufactures desks and drawers, each requiring different amounts of assembly and sanding time. The company has limited time for these processes.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Minutes of assembly required for each desk",
+            "symbol": "AssemblyDesk",
+            "value": 40,
+            "shape": [],
+            "code": "AssemblyDesk = data[\"AssemblyDesk\"] # scalar parameter"
+        },
+        {
+            "definition": "Minutes of sanding required for each desk",
+            "symbol": "SandingDesk",
+            "value": 20,
+            "shape": [],
+            "code": "SandingDesk = data[\"SandingDesk\"] # scalar parameter"
+        },
+        {
+            "definition": "Minutes of assembly required for each drawer",
+            "symbol": "AssemblyDrawer",
+            "value": 30,
+            "shape": [],
+            "code": "AssemblyDrawer = data[\"AssemblyDrawer\"] # scalar parameter"
+        },
+        {
+            "definition": "Minutes of sanding required for each drawer",
+            "symbol": "SandingDrawer",
+            "value": 10,
+            "shape": [],
+            "code": "SandingDrawer = data[\"SandingDrawer\"] # scalar parameter"
+        },
+        {
+            "definition": "Total minutes available for assembly",
+            "symbol": "TotalAssembly",
+            "value": 4000,
+            "shape": [],
+            "code": "TotalAssembly = data[\"TotalAssembly\"] # scalar parameter"
+        },
+        {
+            "definition": "Total minutes available for sanding",
+            "symbol": "TotalSanding",
+            "value": 3500,
+            "shape": [],
+            "code": "TotalSanding = data[\"TotalSanding\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit per desk",
+            "symbol": "ProfitDesk",
+            "value": 100,
+            "shape": [],
+            "code": "ProfitDesk = data[\"ProfitDesk\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit per drawer",
+            "symbol": "ProfitDrawer",
+            "value": 90,
+            "shape": [],
+            "code": "ProfitDrawer = data[\"ProfitDrawer\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of desks and drawers produced must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumDesks} \\\\geq 0 \\quad \\text{and} \\quad \\textup{NumDrawers} \\\\geq 0",
+            "related_variables": [
+                "NumDesks",
+                "NumDrawers"
+            ],
+            "related_parameters": [],
+            "code": "# Non-negativity constraints to ensure production values are non-negative\nmodel.addConstr(NumDesks >= 0, name=\"non_negativity_NumDesks\")\nmodel.addConstr(NumDrawers >= 0, name=\"non_negativity_NumDrawers\")"
+        },
+        {
+            "description": "The number of drawers manufactured by the company must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumDrawers} \\geq 0",
+            "related_variables": [
+                "NumDrawers"
+            ],
+            "related_parameters": [],
+            "code": "# The non-negativity of NumDrawers is enforced implicitly by setting the lower bound of the variable to 0."
+        },
+        {
+            "description": "The total assembly time for desks and drawers must not exceed the total available assembly time.",
+            "status": "coded",
+            "formulation": "\\textup{NumDesks} \\times \\textup{AssemblyDesk} + \\textup{NumDrawers} \\times \\textup{AssemblyDrawer} \\leq \\textup{TotalAssembly}",
+            "related_variables": [
+                "NumDesks",
+                "NumDrawers"
+            ],
+            "related_parameters": [
+                "AssemblyDesk",
+                "AssemblyDrawer",
+                "TotalAssembly"
+            ],
+            "code": "# Add assembly time constraint\nmodel.addConstr(\n    NumDesks * AssemblyDesk + NumDrawers * AssemblyDrawer <= TotalAssembly,\n    name=\"assembly_time_constraint\"\n)"
+        },
+        {
+            "description": "The total sanding time for desks and drawers cannot exceed TotalSanding minutes.",
+            "status": "coded",
+            "formulation": "(\\textup{SandingDesk} \\times \\textup{NumDesks}) + (\\textup{SandingDrawer} \\times \\textup{NumDrawers}) \\leq \\textup{TotalSanding}",
+            "related_variables": [
+                "NumDesks",
+                "NumDrawers"
+            ],
+            "related_parameters": [
+                "SandingDesk",
+                "SandingDrawer",
+                "TotalSanding"
+            ],
+            "code": "# Add sanding time constraint\nmodel.addConstr((SandingDesk * NumDesks) + (SandingDrawer * NumDrawers) <= TotalSanding, name=\"sanding_time_limit\")"
+        },
+        {
+            "description": "The total assembly time used must not exceed the available assembly time",
+            "status": "coded",
+            "formulation": "\\textup{AssemblyDesk} \\times \\textup{NumDesks} + \\textup{AssemblyDrawer} \\times \\textup{NumDrawers} \\leq \\textup{TotalAssembly}",
+            "related_variables": [
+                "NumDesks",
+                "NumDrawers"
+            ],
+            "related_parameters": [
+                "AssemblyDesk",
+                "AssemblyDrawer",
+                "TotalAssembly"
+            ],
+            "code": "# Add assembly time constraint\nmodel.addConstr(NumDesks * AssemblyDesk + NumDrawers * AssemblyDrawer <= TotalAssembly, name=\"assembly_time_constraint\")"
+        },
+        {
+            "description": "The total sanding time used must not exceed the available sanding time",
+            "status": "coded",
+            "formulation": "\\textup{SandingDesk} \\times \\textup{NumDesks} + \\textup{SandingDrawer} \\times \\textup{NumDrawers} \\leq \\textup{TotalSanding}",
+            "related_variables": [
+                "NumDesks",
+                "NumDrawers"
+            ],
+            "related_parameters": [
+                "SandingDesk",
+                "SandingDrawer",
+                "TotalSanding"
+            ],
+            "code": "# Add sanding time constraint\nmodel.addConstr(SandingDesk * NumDesks + SandingDrawer * NumDrawers <= TotalSanding, name=\"sanding_time_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of desks manufactured by the company",
+            "symbol": "NumDesks",
+            "shape": [],
+            "status": "coded",
+            "code": "NumDesks = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumDesks\")"
+        },
+        {
+            "definition": "The number of drawers manufactured by the company",
+            "symbol": "NumDrawers",
+            "shape": [],
+            "status": "coded",
+            "code": "NumDrawers = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumDrawers\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the company's profit from manufacturing desks and drawers",
+            "status": "coded",
+            "formulation": "\\textup{Maximize:} \\quad \\textup{Profit} = (\\textup{ProfitDesk} \\times \\textup{NumDesks}) + (\\textup{ProfitDrawer} \\times \\textup{NumDrawers})",
+            "related_variables": [
+                "NumDesks",
+                "NumDrawers"
+            ],
+            "related_parameters": [
+                "ProfitDesk",
+                "ProfitDrawer"
+            ],
+            "code": "# Set objective\nmodel.setObjective(ProfitDesk * NumDesks + ProfitDrawer * NumDrawers, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413172104_nl4opt_prob_202/",
+    "problem_path": "data/nl4opt/prob_202/"
+}

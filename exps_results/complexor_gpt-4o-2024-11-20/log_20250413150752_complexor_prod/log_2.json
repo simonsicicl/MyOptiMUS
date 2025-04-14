@@ -1,0 +1,143 @@
+{
+    "background": "The problem involves optimizing the total profit based on production or usage decisions for a set of elements, each with associated profits, coefficients affecting the production or usage cost, and upper bounds on their levels.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "symbol": "ElementNum",
+            "definition": "The set of elements",
+            "shape": [],
+            "code": "ElementNum = data[\"ElementNum\"] # scalar parameter"
+        },
+        {
+            "symbol": "CoefficientA",
+            "definition": "A coefficient parameter for each element in the set",
+            "shape": [
+                "ElementNum"
+            ],
+            "code": "CoefficientA = np.array(data[\"CoefficientA\"]) # ['ElementNum']"
+        },
+        {
+            "symbol": "ProfitCoefficientC",
+            "definition": "Profit coefficient for each element in the set",
+            "shape": [
+                "ElementNum"
+            ],
+            "code": "ProfitCoefficientC = np.array(data[\"ProfitCoefficientC\"]) # ['ElementNum']"
+        },
+        {
+            "symbol": "UpperBoundU",
+            "definition": "Upper bound on the decision variable for each element in the set",
+            "shape": [
+                "ElementNum"
+            ],
+            "code": "UpperBoundU = np.array(data[\"UpperBoundU\"]) # ['ElementNum']"
+        },
+        {
+            "symbol": "GlobalParameterB",
+            "definition": "A global parameter representing an upper limit on the weighted sum of decision variables",
+            "shape": [],
+            "code": "GlobalParameterB = data[\"GlobalParameterB\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The constraint ensures that the sum of inverses of CoefficientA_j scaled by DecisionVariableX_j, across all elements, does not exceed GlobalParameterB.",
+            "status": "runtime_error",
+            "formulation": "\\sum_{j \\in \\textup{ElementNum}} \\frac{\\textup{DecisionVariableX}_{j}}{\\textup{CoefficientA}_{j}} \\leq \\textup{GlobalParameterB}",
+            "related_variables": [
+                "DecisionVariableX"
+            ],
+            "related_parameters": [
+                "ElementNum",
+                "CoefficientA",
+                "GlobalParameterB"
+            ],
+            "code": "# Add the constraint for the sum of scaled inverses of CoefficientA_j not exceeding GlobalParameterB\nmodel.addConstr(\n    gp.quicksum(DecisionVariableX[j] / CoefficientA[j] for j in range(len(ElementNum))) <= GlobalParameterB,\n    name=\"inverse_scaled_sum_constraint\"\n)"
+        },
+        {
+            "description": "Ensure non-negativity of the decision variables representing production or usage levels for each element.",
+            "status": "coded",
+            "formulation": "\\\\textup{DecisionVariableX}_{j} \\\\geq 0 \\\\quad \\\\forall j \\\\in \\\\{1, 2, \\\\dots, \\\\textup{ElementNum}\\\\}",
+            "related_variables": [
+                "DecisionVariableX"
+            ],
+            "related_parameters": [
+                "ElementNum"
+            ],
+            "code": "# Non-negativity constraint for DecisionVariableX\nfor j in range(ElementNum):\n    model.addConstr(DecisionVariableX[j] >= 0, name=f\"non_negativity_{j}\")"
+        },
+        {
+            "description": "Each DecisionVariableX_j is less than or equal to its respective UpperBoundU_j",
+            "status": "coded",
+            "formulation": "\\\\textup{DecisionVariableX}_j \\\\leq \\\\textup{UpperBoundU}_j, \\\\quad \\\\forall j \\\\in \\\\{1, 2, \\\\dots, \\\\textup{ElementNum}\\\\}",
+            "related_variables": [
+                "DecisionVariableX"
+            ],
+            "related_parameters": [
+                "UpperBoundU",
+                "ElementNum"
+            ],
+            "code": "# Add upper bound constraints for DecisionVariableX_j\nfor j in range(ElementNum):\n    model.addConstr(DecisionVariableX[j] <= UpperBoundU[j], name=f\"upper_bound_{j}\")"
+        },
+        {
+            "description": "Each decision variable must lie within its respective upper bound.",
+            "status": "coded",
+            "formulation": "0 \\leq \\textup{DecisionVariableX}_{j} \\leq \\textup{UpperBoundU}_{j} \\quad \\forall j",
+            "related_variables": [
+                "DecisionVariableX"
+            ],
+            "related_parameters": [
+                "UpperBoundU",
+                "ElementNum"
+            ],
+            "code": "# Add upper bound constraints for DecisionVariableX\nfor j in range(ElementNum):\n    model.addConstr(DecisionVariableX[j] <= UpperBoundU[j], name=f\"upper_bound_x_{j}\")"
+        },
+        {
+            "description": "The weighted sum of the decision variables must not exceed the global parameter limit.",
+            "status": "coded",
+            "formulation": "\\sum_{j=1}^{\\textup{ElementNum}} \\textup{CoefficientA}_{j} \\cdot \\textup{DecisionVariableX}_{j} \\leq \\textup{GlobalParameterB}",
+            "related_variables": [
+                "DecisionVariableX"
+            ],
+            "related_parameters": [
+                "CoefficientA",
+                "GlobalParameterB",
+                "ElementNum"
+            ],
+            "code": "# Add constraint ensuring the weighted sum of decision variables does not exceed the global parameter limit\nmodel.addConstr(gp.quicksum(CoefficientA[j] * DecisionVariableX[j] for j in range(ElementNum)) <= GlobalParameterB, name=\"weighted_sum_limit\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The decision variable representing the production or usage level for each element in the set.",
+            "symbol": "DecisionVariableX",
+            "shape": [
+                "ElementNum"
+            ],
+            "status": "coded",
+            "code": "DecisionVariableX = model.addVars(ElementNum, vtype=gp.GRB.CONTINUOUS, name=\"DecisionVariableX\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total profit by optimizing the decision variables within the given constraints.",
+            "status": "coded",
+            "formulation": "\\sum_{j=1}^{\\textup{ElementNum}} \\textup{ProfitCoefficientC}_{j} \\cdot \\textup{DecisionVariableX}_{j}",
+            "related_variables": [
+                "DecisionVariableX"
+            ],
+            "related_parameters": [
+                "ProfitCoefficientC",
+                "ElementNum"
+            ],
+            "code": "# Set objective\nmodel.setObjective(gp.quicksum(ProfitCoefficientC[j] * DecisionVariableX[j] for j in range(ElementNum)), gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "runtime_error",
+    "solver_output_status": "runtime_error",
+    "error_message": "Traceback (most recent call last):\n  File \"c:\\Users\\Simon\\Desktop\\Courses\\ECE 570\\ECE570_Project\\MyOptiMUS3\\evaluator.py\", line 45, in run\n    exec(last_line, local_env, local_env)\n  File \"<string>\", line 3, in <module>\nTypeError: object of type 'int' has no len()\n",
+    "obj_val": null,
+    "log_path": "logs/log_20250413150752_complexor_prod/",
+    "problem_path": "data/complexor/prod/",
+    "prep_code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/complexor/prod/data.json\", \"r\") as f:\n    data = json.load(f)\n"
+}

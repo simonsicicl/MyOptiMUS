@@ -1,0 +1,176 @@
+{
+    "background": "A lab has a limited amount of mRNA anti-viral to produce children's and adult vaccines, each requiring differing amounts of mRNA and fever suppressant, with a minimum proportion of adult vaccines required and a minimum number of children's vaccines to be produced.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Total amount of mRNA anti-viral available",
+            "symbol": "TotalMRna",
+            "value": 20000,
+            "shape": [],
+            "code": "TotalMRna = data[\"TotalMRna\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of mRNA per children's vaccine",
+            "symbol": "MRnaPerChildVaccine",
+            "value": 50,
+            "shape": [],
+            "code": "MRnaPerChildVaccine = data[\"MRnaPerChildVaccine\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of mRNA per adult vaccine",
+            "symbol": "MRnaPerAdultVaccine",
+            "value": 75,
+            "shape": [],
+            "code": "MRnaPerAdultVaccine = data[\"MRnaPerAdultVaccine\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of fever suppressant per children's vaccine",
+            "symbol": "FeverSuppressantPerChildVaccine",
+            "value": 50,
+            "shape": [],
+            "code": "FeverSuppressantPerChildVaccine = data[\"FeverSuppressantPerChildVaccine\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of fever suppressant per adult vaccine",
+            "symbol": "FeverSuppressantPerAdultVaccine",
+            "value": 75,
+            "shape": [],
+            "code": "FeverSuppressantPerAdultVaccine = data[\"FeverSuppressantPerAdultVaccine\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum proportion of vaccines as adult vaccines",
+            "symbol": "MinAdultVaccineProp",
+            "value": 0.7,
+            "shape": [],
+            "code": "MinAdultVaccineProp = data[\"MinAdultVaccineProp\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of children's vaccines",
+            "symbol": "MinChildVaccines",
+            "value": 50,
+            "shape": [],
+            "code": "MinChildVaccines = data[\"MinChildVaccines\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Total mRNA used in children's and adult vaccines cannot exceed TotalMRna mg",
+            "status": "coded",
+            "formulation": "\\textup{MRnaPerChildVaccine} \\cdot \\textup{NumberOfChildVaccines} + \\textup{MRnaPerAdultVaccine} \\cdot \\textup{NumberOfAdultVaccines} \\leq \\textup{TotalMRna}",
+            "related_variables": [
+                "NumberOfChildVaccines",
+                "NumberOfAdultVaccines"
+            ],
+            "related_parameters": [
+                "TotalMRna",
+                "MRnaPerChildVaccine",
+                "MRnaPerAdultVaccine"
+            ],
+            "code": "# Add mRNA total usage constraint\nmodel.addConstr(MRnaPerChildVaccine * NumberOfChildVaccines + MRnaPerAdultVaccine * NumberOfAdultVaccines <= TotalMRna, name=\"total_mrna_usage\")"
+        },
+        {
+            "description": "At least a given proportion of the total vaccines must be adult vaccines",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfAdultVaccines} \\geq \\textup{MinAdultVaccineProp} \\times (\\textup{NumberOfAdultVaccines} + \\textup{NumberOfChildVaccines})",
+            "related_variables": [
+                "NumberOfAdultVaccines",
+                "NumberOfChildVaccines"
+            ],
+            "related_parameters": [
+                "MinAdultVaccineProp"
+            ],
+            "code": "# Adult vaccine proportion constraint\nmodel.addConstr(NumberOfAdultVaccines >= MinAdultVaccineProp * (NumberOfAdultVaccines + NumberOfChildVaccines), name=\"adult_vaccine_proportion\")"
+        },
+        {
+            "description": "At least MinChildVaccines children's vaccines must be made",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfChildVaccines} \\geq \\textup{MinChildVaccines}",
+            "related_variables": [
+                "NumberOfChildVaccines"
+            ],
+            "related_parameters": [
+                "MinChildVaccines"
+            ],
+            "code": "# Add constraint for minimum number of children's vaccines to be produced\nmodel.addConstr(NumberOfChildVaccines >= MinChildVaccines, name=\"min_children_vaccines\")"
+        },
+        {
+            "description": "Ensure that the total amount of mRNA anti-viral used does not exceed the available amount",
+            "status": "coded",
+            "formulation": "\\textup{MRnaPerChildVaccine} \\cdot \\textup{NumberOfChildVaccines} + \\textup{MRnaPerAdultVaccine} \\cdot \\textup{NumberOfAdultVaccines} \\leq \\textup{TotalMRna}",
+            "related_variables": [
+                "NumberOfChildVaccines",
+                "NumberOfAdultVaccines"
+            ],
+            "related_parameters": [
+                "TotalMRna",
+                "MRnaPerChildVaccine",
+                "MRnaPerAdultVaccine"
+            ],
+            "code": "# Ensure that the total amount of mRNA anti-viral used does not exceed the available amount\nmodel.addConstr(MRnaPerChildVaccine * NumberOfChildVaccines + MRnaPerAdultVaccine * NumberOfAdultVaccines <= TotalMRna, name=\"TotalMRnaConstraint\")"
+        },
+        {
+            "description": "Ensure that a minimum proportion of vaccines are for adults",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfAdultVaccines} \\geq \\textup{MinAdultVaccineProp} \\cdot (\\textup{NumberOfChildVaccines} + \\textup{NumberOfAdultVaccines})",
+            "related_variables": [
+                "NumberOfChildVaccines",
+                "NumberOfAdultVaccines"
+            ],
+            "related_parameters": [
+                "MinAdultVaccineProp"
+            ],
+            "code": "# Ensure that a minimum proportion of vaccines are for adults\nmodel.addConstr(NumberOfAdultVaccines >= MinAdultVaccineProp * (NumberOfChildVaccines + NumberOfAdultVaccines), name=\"min_adult_vaccine_proportion\")"
+        },
+        {
+            "description": "Ensure that a minimum number of children's vaccines are produced",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfChildVaccines} \\geq \\textup{MinChildVaccines}",
+            "related_variables": [
+                "NumberOfChildVaccines"
+            ],
+            "related_parameters": [
+                "MinChildVaccines"
+            ],
+            "code": "# Ensure that a minimum number of children's vaccines are produced\nmodel.addConstr(NumberOfChildVaccines >= MinChildVaccines, name=\"min_children_vaccines\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of children's vaccines produced",
+            "symbol": "NumberOfChildVaccines",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfChildVaccines = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfChildVaccines\")"
+        },
+        {
+            "definition": "Number of adult vaccines produced",
+            "symbol": "NumberOfAdultVaccines",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfAdultVaccines = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfAdultVaccines\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total amount of fever suppressant used in both children's and adult vaccines",
+            "status": "coded",
+            "formulation": "\\textup{Min} \\quad \\textup{FeverSuppressantPerChildVaccine} \\cdot \\textup{NumberOfChildVaccines} + \\textup{FeverSuppressantPerAdultVaccine} \\cdot \\textup{NumberOfAdultVaccines}",
+            "related_variables": [
+                "NumberOfChildVaccines",
+                "NumberOfAdultVaccines"
+            ],
+            "related_parameters": [
+                "FeverSuppressantPerChildVaccine",
+                "FeverSuppressantPerAdultVaccine"
+            ],
+            "code": "# Set objective\nmodel.setObjective(FeverSuppressantPerChildVaccine * NumberOfChildVaccines + FeverSuppressantPerAdultVaccine * NumberOfAdultVaccines, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 11275.0,
+    "log_path": "logs/log_20250413110741_nl4opt_prob_113/",
+    "problem_path": "data/nl4opt/prob_113/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_113/data.json\", \"r\") as f:\n    data = json.load(f)\n\nTotalMRna = data[\"TotalMRna\"] # scalar parameter\nMRnaPerChildVaccine = data[\"MRnaPerChildVaccine\"] # scalar parameter\nMRnaPerAdultVaccine = data[\"MRnaPerAdultVaccine\"] # scalar parameter\nFeverSuppressantPerChildVaccine = data[\"FeverSuppressantPerChildVaccine\"] # scalar parameter\nFeverSuppressantPerAdultVaccine = data[\"FeverSuppressantPerAdultVaccine\"] # scalar parameter\nMinAdultVaccineProp = data[\"MinAdultVaccineProp\"] # scalar parameter\nMinChildVaccines = data[\"MinChildVaccines\"] # scalar parameter\nNumberOfChildVaccines = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfChildVaccines\")\nNumberOfAdultVaccines = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfAdultVaccines\")\n\n# Add mRNA total usage constraint\nmodel.addConstr(MRnaPerChildVaccine * NumberOfChildVaccines + MRnaPerAdultVaccine * NumberOfAdultVaccines <= TotalMRna, name=\"total_mrna_usage\")\n\n# Adult vaccine proportion constraint\nmodel.addConstr(NumberOfAdultVaccines >= MinAdultVaccineProp * (NumberOfAdultVaccines + NumberOfChildVaccines), name=\"adult_vaccine_proportion\")\n\n# Add constraint for minimum number of children's vaccines to be produced\nmodel.addConstr(NumberOfChildVaccines >= MinChildVaccines, name=\"min_children_vaccines\")\n\n# Ensure that the total amount of mRNA anti-viral used does not exceed the available amount\nmodel.addConstr(MRnaPerChildVaccine * NumberOfChildVaccines + MRnaPerAdultVaccine * NumberOfAdultVaccines <= TotalMRna, name=\"TotalMRnaConstraint\")\n\n# Ensure that a minimum proportion of vaccines are for adults\nmodel.addConstr(NumberOfAdultVaccines >= MinAdultVaccineProp * (NumberOfChildVaccines + NumberOfAdultVaccines), name=\"min_adult_vaccine_proportion\")\n\n# Ensure that a minimum number of children's vaccines are produced\nmodel.addConstr(NumberOfChildVaccines >= MinChildVaccines, name=\"min_children_vaccines\")\n\n# Set objective\nmodel.setObjective(FeverSuppressantPerChildVaccine * NumberOfChildVaccines + FeverSuppressantPerAdultVaccine * NumberOfAdultVaccines, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

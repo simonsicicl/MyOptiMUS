@@ -1,0 +1,192 @@
+{
+    "background": "The problem involves determining an optimal production schedule that minimizes the total cost, taking into account regular and overtime production along with storage.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Demand of product n",
+            "symbol": "Demand",
+            "value": "",
+            "shape": [
+                "N"
+            ],
+            "code": "Demand = np.array(data[\"Demand\"]) # ['N']"
+        },
+        {
+            "definition": "Maximum production amount under regular conditions",
+            "symbol": "MaxRegularAmount",
+            "value": "",
+            "shape": [],
+            "code": "MaxRegularAmount = data[\"MaxRegularAmount\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost of production under regular conditions per unit",
+            "symbol": "CostRegular",
+            "value": "",
+            "shape": [],
+            "code": "CostRegular = data[\"CostRegular\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost of production under overtime conditions per unit",
+            "symbol": "CostOvertime",
+            "value": "",
+            "shape": [],
+            "code": "CostOvertime = data[\"CostOvertime\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost to store one unit of product",
+            "symbol": "StoreCost",
+            "value": "",
+            "shape": [],
+            "code": "StoreCost = data[\"StoreCost\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Demand for each product must be met",
+            "status": "coded",
+            "formulation": "\\textup{RegularProduction}_{n} + \\textup{OvertimeProduction}_{n} + \\textup{StoredInventory}_{n} \\geq \\textup{Demand}_{n} \\quad \\forall \\, n \\in \\{1, \\dots, N\\}",
+            "related_variables": [
+                "RegularProduction",
+                "OvertimeProduction",
+                "StoredInventory"
+            ],
+            "related_parameters": [
+                "Demand"
+            ],
+            "code": "# Add product demand satisfaction constraints\nfor n in range(N):\n    model.addConstr(\n        RegularProduction[n] + OvertimeProduction[n] + StoredInventory[n] >= Demand[n],\n        name=f\"demand_satisfaction_{n}\"\n    )"
+        },
+        {
+            "description": "The maximum production under regular conditions for each product must not exceed the predefined maximum allowed amount \\textup{MaxRegularAmount}.",
+            "status": "coded",
+            "formulation": "\\textup{RegularProduction}_{n} \\leq \\textup{MaxRegularAmount}, \\quad \\forall n \\in N",
+            "related_variables": [
+                "RegularProduction"
+            ],
+            "related_parameters": [
+                "MaxRegularAmount"
+            ],
+            "code": "# Add maximum production constraints under regular conditions\nfor n in N:\n    model.addConstr(RegularProduction[n] <= MaxRegularAmount, name=f\"max_regular_production_{n}\")"
+        },
+        {
+            "description": "Regular production for any product cannot exceed the maximum regular production amount",
+            "status": "coded",
+            "formulation": "\\textup{RegularProduction}_{n} \\leq \\textup{MaxRegularAmount} \\quad \\forall \\, n \\in \\{1, \\dots, N\\}",
+            "related_variables": [
+                "RegularProduction"
+            ],
+            "related_parameters": [
+                "MaxRegularAmount"
+            ],
+            "code": "# Add maximum regular production constraints\nfor n in range(N):\n    model.addConstr(RegularProduction[n] <= MaxRegularAmount, name=f\"max_regular_production_{n}\")"
+        },
+        {
+            "description": "Non-negativity constraint for regular production",
+            "status": "coded",
+            "formulation": "\\textup{RegularProduction}_{n} \\geq 0 \\quad \\forall \\, n \\in \\{1, \\dots, N\\}",
+            "related_variables": [
+                "RegularProduction"
+            ],
+            "related_parameters": [],
+            "code": "# Add non-negativity constraint for RegularProduction\nfor n in range(N):\n    model.addConstr(RegularProduction[n] >= 0, name=f\"non_negativity_RegularProduction_{n}\")"
+        },
+        {
+            "description": "Non-negativity constraint for overtime production",
+            "status": "coded",
+            "formulation": "\\textup{OvertimeProduction}_{n} \\geq 0 \\quad \\forall \\, n \\in \\{1, \\dots, N\\}",
+            "related_variables": [
+                "OvertimeProduction"
+            ],
+            "related_parameters": [],
+            "code": "# Add non-negativity constraints for overtime production\nfor n in range(N):\n    model.addConstr(OvertimeProduction[n] >= 0, name=f\"non_negativity_overtime_{n}\")"
+        },
+        {
+            "description": "Non-negativity constraint for stored inventory",
+            "status": "coded",
+            "formulation": "\\textup{StoredInventory}_{n} \\geq 0 \\quad \\forall \\, n \\in \\{1, \\dots, N\\}",
+            "related_variables": [
+                "StoredInventory"
+            ],
+            "related_parameters": [],
+            "code": "# Add non-negativity constraints for stored inventory\nfor n in range(N):\n    model.addConstr(StoredInventory[n] >= 0, name=f\"non_negativity_stored_inventory_{n}\")"
+        },
+        {
+            "description": "Demand satisfaction constraint ensuring total production and inventory meet demand for each product.",
+            "status": "coded",
+            "formulation": "\\textup{RegularProduction}_{n} + \\textup{OvertimeProduction}_{n} + \\textup{StoredInventory}_{n} \\geq \\textup{Demand}_{n}, \\quad \\forall n \\in \\{1, 2, \\dots, N\\}",
+            "related_variables": [
+                "RegularProduction",
+                "OvertimeProduction",
+                "StoredInventory"
+            ],
+            "related_parameters": [
+                "Demand"
+            ],
+            "code": "# Add demand satisfaction constraints\nfor n in range(N):\n    model.addConstr(\n        RegularProduction[n] + OvertimeProduction[n] + StoredInventory[n] >= Demand[n],\n        name=f\"demand_satisfaction_{n}\"\n    )"
+        },
+        {
+            "description": "Regular production cannot exceed the maximum allowed under regular working hours.",
+            "status": "coded",
+            "formulation": "\\textup{RegularProduction}_{n} \\leq \\textup{MaxRegularAmount}, \\quad \\forall n \\in \\{1, 2, \\dots, N\\}",
+            "related_variables": [
+                "RegularProduction"
+            ],
+            "related_parameters": [
+                "MaxRegularAmount"
+            ],
+            "code": "# Add constraint to ensure regular production does not exceed the maximum allowed amount\nfor n in range(N):\n    model.addConstr(RegularProduction[n] <= MaxRegularAmount, name=f\"regular_production_limit_{n}\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The quantity produced under regular working conditions for product n",
+            "symbol": "RegularProduction",
+            "shape": [
+                "N"
+            ],
+            "status": "coded",
+            "code": "RegularProduction = model.addVars(N, vtype=gp.GRB.CONTINUOUS, name=\"RegularProduction\")"
+        },
+        {
+            "definition": "The quantity produced under overtime working conditions for product n",
+            "symbol": "OvertimeProduction",
+            "shape": [
+                "N"
+            ],
+            "status": "coded",
+            "code": "OvertimeProduction = model.addVars(N, vtype=gp.GRB.CONTINUOUS, name=\"OvertimeProduction\")"
+        },
+        {
+            "definition": "The quantity of stored inventory available for product n",
+            "symbol": "StoredInventory",
+            "shape": [
+                "N"
+            ],
+            "status": "coded",
+            "code": "StoredInventory = model.addVars(N, vtype=gp.GRB.CONTINUOUS, name=\"StoredInventory\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total cost of production and storage, including regular production, overtime production, and inventory storage costs.",
+            "status": "coded",
+            "formulation": "\\sum_{n=1}^{N} \\Big( \\textup{RegularProduction}_{n} \\cdot \\textup{CostRegular} + \\textup{OvertimeProduction}_{n} \\cdot \\textup{CostOvertime} + \\textup{StoredInventory}_{n} \\cdot \\textup{StoreCost} \\Big)",
+            "related_variables": [
+                "RegularProduction",
+                "OvertimeProduction",
+                "StoredInventory"
+            ],
+            "related_parameters": [
+                "CostRegular",
+                "CostOvertime",
+                "StoreCost"
+            ],
+            "code": "# Set objective\nmodel.setObjective(gp.quicksum(RegularProduction[n] * CostRegular \n                               + OvertimeProduction[n] * CostOvertime \n                               + StoredInventory[n] * StoreCost \n                               for n in range(N)), \n                   gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413171550_nlp4lp_41/",
+    "problem_path": "data/nlp4lp/41/"
+}

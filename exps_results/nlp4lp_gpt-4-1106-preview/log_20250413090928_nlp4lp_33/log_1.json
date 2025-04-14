@@ -1,0 +1,163 @@
+{
+    "background": "The problem is about curve fitting, specifically quadratic curve fitting, which involves finding a quadratic function that best fits a given set of data points in terms of minimizing the sum of absolute deviations between observed values and those predicted by the quadratic function.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of data points",
+            "symbol": "K",
+            "value": "",
+            "shape": [],
+            "code": "K = data[\"K\"] # scalar parameter"
+        },
+        {
+            "definition": "Observed y values at each data point k",
+            "symbol": "ObservedValues",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "ObservedValues = np.array(data[\"ObservedValues\"]) # ['K']"
+        },
+        {
+            "definition": "Observed x values at each data point k",
+            "symbol": "ObservedXValues",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "ObservedXValues = np.array(data[\"ObservedXValues\"]) # ['K']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The curve is a quadratic function of the form y = c * x^2 + b * x + a, where the coefficients a, b, c are to be determined based on the observed data points",
+            "status": "coded",
+            "formulation": "\\textup{PredictedValue}_{k} = c \\cdot \\textup{ObservedXValues}_{k}^2 + b \\cdot \\textup{ObservedXValues}_{k} + a \\quad \\forall k \\in \\{1, \\ldots, K\\}",
+            "related_variables": [
+                "PredictedValue",
+                "CoefficientA",
+                "CoefficientB",
+                "CoefficientC"
+            ],
+            "related_parameters": [
+                "ObservedXValues"
+            ],
+            "code": "# Add the quadratic function constraints for the predicted values\nfor k in range(K):\n    model.addConstr(PredictedValue[k] == CoefficientC * ObservedXValues[k]**2 + CoefficientB * ObservedXValues[k] + CoefficientA,\n                    name=f\"quad_func_constraint_{k}\")"
+        },
+        {
+            "description": "Predicted values are determined by the quadratic function at each data point k",
+            "status": "coded",
+            "formulation": "\\textup{PredictedValue}_{k} = \\textup{CoefficientA} + \\textup{CoefficientB} \\cdot \\textup{ObservedXValues}_{k} + \\textup{CoefficientC} \\cdot \\textup{ObservedXValues}_{k}^2 \\quad \\forall k \\in \\{1, \\ldots, K\\}",
+            "related_variables": [
+                "PredictedValue",
+                "CoefficientA",
+                "CoefficientB",
+                "CoefficientC"
+            ],
+            "related_parameters": [
+                "ObservedXValues",
+                "K"
+            ],
+            "code": "# Add predicted values constraints for each data point k using a quadratic function\nfor k in range(K):\n    model.addConstr(PredictedValue[k] == CoefficientA + CoefficientB * ObservedXValues[k] + CoefficientC * ObservedXValues[k]**2, name=f\"predicted_value_{k}\")"
+        },
+        {
+            "description": "Positive deviation is greater or equal to the difference between the observed and predicted values",
+            "status": "coded",
+            "formulation": "\\textup{DeviationPositive}_{k} \\geq \\textup{ObservedValues}_{k} - \\textup{PredictedValue}_{k} \\quad \\forall k \\in \\{1, \\ldots, K\\}",
+            "related_variables": [
+                "DeviationPositive",
+                "ObservedValues",
+                "PredictedValue"
+            ],
+            "related_parameters": [
+                "K"
+            ],
+            "code": "# Add constraints for positive deviation to be greater or equal to observed minus predicted values\nfor k in range(K):\n    model.addConstr(DeviationPositive[k] >= ObservedValues[k] - PredictedValue[k], name=f\"pos_dev_{k}\")"
+        },
+        {
+            "description": "Negative deviation is greater or equal to the difference between the predicted and observed values",
+            "status": "coded",
+            "formulation": "\\textup{DeviationNegative}_{k} \\geq \\textup{PredictedValue}_{k} - \\textup{ObservedValues}_{k} \\quad \\forall k \\in \\{1, \\ldots, K\\}",
+            "related_variables": [
+                "DeviationNegative",
+                "ObservedValues",
+                "PredictedValue"
+            ],
+            "related_parameters": [
+                "K"
+            ],
+            "code": "# Add constraints for negative deviation to be greater or equal than predicted minus observed values for all data points\nfor k in range(K):\n    model.addConstr(DeviationNegative[k] >= PredictedValue[k] - ObservedValues[k], name=\"negative_deviation_{}\".format(k))"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Predicted y value at each data point k",
+            "symbol": "PredictedValue",
+            "shape": [
+                "K"
+            ],
+            "status": "coded",
+            "code": "PredictedValue = model.addVars(K, vtype=gp.GRB.CONTINUOUS, name=\"PredictedValue\")"
+        },
+        {
+            "definition": "Coefficient for the constant term in the quadratic function",
+            "symbol": "CoefficientA",
+            "shape": [],
+            "status": "coded",
+            "code": "CoefficientA = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"CoefficientA\")"
+        },
+        {
+            "definition": "Coefficient for the linear term x in the quadratic function",
+            "symbol": "CoefficientB",
+            "shape": [],
+            "status": "coded",
+            "code": "CoefficientB = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"CoefficientB\")"
+        },
+        {
+            "definition": "Coefficient for the quadratic term x^2 in the quadratic function",
+            "symbol": "CoefficientC",
+            "shape": [],
+            "status": "coded",
+            "code": "CoefficientC = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"CoefficientC\")"
+        },
+        {
+            "definition": "Positive deviation between the observed and predicted values at each data point k",
+            "symbol": "DeviationPositive",
+            "shape": [
+                "K"
+            ],
+            "status": "coded",
+            "code": "DeviationPositive = model.addVars(K, vtype=gp.GRB.CONTINUOUS, lb=0.0, name=\"DeviationPositive\")"
+        },
+        {
+            "definition": "Negative deviation between the observed and predicted values at each data point k",
+            "symbol": "DeviationNegative",
+            "shape": [
+                "K"
+            ],
+            "status": "coded",
+            "code": "DeviationNegative = model.addVars(K, vtype=gp.GRB.CONTINUOUS, lb=0.0, name=\"DeviationNegative\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the sum of absolute deviations between the observed values and the values predicted by the quadratic function",
+            "status": "coded",
+            "formulation": "\\min \\quad \\sum_{k=1}^{K} \\textup{DeviationPositive}_{k} + \\textup{DeviationNegative}_{k}",
+            "related_variables": [
+                "DeviationPositive",
+                "DeviationNegative"
+            ],
+            "related_parameters": [
+                "K"
+            ],
+            "code": "# Set objective\nmodel.setObjective(gp.quicksum(DeviationPositive[k] + DeviationNegative[k] for k in range(K)), gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413090928_nlp4lp_33/",
+    "problem_path": "data/nlp4lp/33/"
+}

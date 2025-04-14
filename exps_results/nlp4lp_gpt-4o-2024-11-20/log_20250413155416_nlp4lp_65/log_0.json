@@ -1,0 +1,270 @@
+{
+    "background": "The problem involves finding an optimal combination of interventions to prevent an intruder's progress in a network, considering processing times and costs of interventions at both central and distributed systems, within given maximum hours of operation.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of interventions",
+            "symbol": "N",
+            "value": "",
+            "shape": [],
+            "code": "N = data[\"N\"] # scalar parameter"
+        },
+        {
+            "definition": "Processing time for isolating at the central system for each intervention",
+            "symbol": "IsolateCentral",
+            "value": "",
+            "shape": [
+                "N"
+            ],
+            "code": "IsolateCentral = np.array(data[\"IsolateCentral\"]) # ['N']"
+        },
+        {
+            "definition": "Processing time for scanning at the central system for each intervention",
+            "symbol": "ScanCentral",
+            "value": "",
+            "shape": [
+                "N"
+            ],
+            "code": "ScanCentral = np.array(data[\"ScanCentral\"]) # ['N']"
+        },
+        {
+            "definition": "Processing time for isolating at the distributed system for each intervention",
+            "symbol": "IsolateDistributed",
+            "value": "",
+            "shape": [
+                "N"
+            ],
+            "code": "IsolateDistributed = np.array(data[\"IsolateDistributed\"]) # ['N']"
+        },
+        {
+            "definition": "Processing time for scanning at the distributed system for each intervention",
+            "symbol": "ScanDistributed",
+            "value": "",
+            "shape": [
+                "N"
+            ],
+            "code": "ScanDistributed = np.array(data[\"ScanDistributed\"]) # ['N']"
+        },
+        {
+            "definition": "Cost for central system intervention",
+            "symbol": "CentralCost",
+            "value": "",
+            "shape": [],
+            "code": "CentralCost = data[\"CentralCost\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost for distributed system intervention",
+            "symbol": "DistributedCost",
+            "value": "",
+            "shape": [],
+            "code": "DistributedCost = data[\"DistributedCost\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum hours of operation for the central system",
+            "symbol": "CentralMaxHours",
+            "value": "",
+            "shape": [],
+            "code": "CentralMaxHours = data[\"CentralMaxHours\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum hours of operation for the distributed system",
+            "symbol": "DistributedMaxHours",
+            "value": "",
+            "shape": [],
+            "code": "DistributedMaxHours = data[\"DistributedMaxHours\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The total processing time for isolating selected interventions in the central system must not exceed the maximum allowed hours CentralMaxHours.",
+            "status": "formulated",
+            "formulation": "\\sum_{i=1}^{\\textup{N}} \\textup{IsolateCentral}_{i} \\cdot \\textup{InterventionSelected}_{i} \\leq \\textup{CentralMaxHours}",
+            "related_variables": [
+                "InterventionSelected"
+            ],
+            "related_parameters": [
+                "IsolateCentral",
+                "CentralMaxHours",
+                "N"
+            ]
+        },
+        {
+            "description": "The total scanning time for selected interventions at the central system must not exceed the maximum allowable hours (CentralMaxHours).",
+            "status": "formulated",
+            "formulation": "\\sum_{i=1}^{N} \\textup{ScanCentral}_{i} \\cdot \\textup{InterventionSelected}_{i} \\leq \\textup{CentralMaxHours}",
+            "related_variables": [
+                "InterventionSelected"
+            ],
+            "related_parameters": [
+                "ScanCentral",
+                "CentralMaxHours"
+            ]
+        },
+        {
+            "description": "The total processing time for isolation in the distributed system, across all selected interventions, must not exceed the maximum allowable distributed hours (\textup{DistributedMaxHours}).",
+            "status": "formulated",
+            "formulation": "\\sum_{i=1}^{\\textup{N}} \\textup{IsolateDistributed}_{i} \\cdot \\textup{InterventionSelected}_{i} \\leq \\textup{DistributedMaxHours}",
+            "related_variables": [
+                "InterventionSelected"
+            ],
+            "related_parameters": [
+                "N",
+                "IsolateDistributed",
+                "DistributedMaxHours"
+            ]
+        },
+        {
+            "description": "The total processing time for scanning in the distributed system, for all selected interventions, must be less than or equal to DistributedMaxHours.",
+            "status": "formulated",
+            "formulation": "\\sum_{i=1}^{N} \\left( \\textup{ScanDistributed}_{i} \\cdot \\textup{InterventionSelected}_{i} \\right) \\leq \\textup{DistributedMaxHours}",
+            "related_variables": [
+                "InterventionSelected"
+            ],
+            "related_parameters": [
+                "ScanDistributed",
+                "DistributedMaxHours",
+                "N"
+            ]
+        },
+        {
+            "description": "The total number of selected interventions for both systems must equal \\textup{N}.",
+            "status": "formulated",
+            "formulation": "\\\\sum_{i=1}^{\\\\textup{N}} \\\\textup{InterventionSelected}_{i} = \\\\textup{N}",
+            "related_variables": [
+                "InterventionSelected"
+            ],
+            "related_parameters": [
+                "N"
+            ]
+        },
+        {
+            "description": "The number of central system interventions must be non-negative and integer-valued.",
+            "status": "formulated",
+            "formulation": "\\textup{CentralInterventionsCount} \\geq 0 \\quad \\textup{and it must be an integer}",
+            "related_variables": [
+                "CentralInterventionsCount",
+                "InterventionSelected"
+            ],
+            "related_parameters": [
+                "N"
+            ]
+        },
+        {
+            "description": "The number of distributed system interventions is non-negative and integer-valued.",
+            "status": "formulated",
+            "formulation": "\\textup{DistributedInterventionsCount} \\geq 0 \\quad \\textup{and} \\quad \\textup{DistributedInterventionsCount} \\in \\mathbb{Z}",
+            "related_variables": [
+                "DistributedInterventionsCount"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Define the total count of central system interventions as the sum over all selected interventions.",
+            "status": "formulated",
+            "formulation": "\\textup{CentralInterventionsCount} = \\sum_{i=1}^{N} \\textup{InterventionSelected}_{i}",
+            "related_variables": [
+                "CentralInterventionsCount",
+                "InterventionSelected"
+            ],
+            "related_parameters": [
+                "N"
+            ]
+        },
+        {
+            "description": "Total processing time for the central system cannot exceed the maximum allowed hours.",
+            "status": "formulated",
+            "formulation": "\\sum_{i=1}^{\\textup{N}} (\\textup{InterventionSelected}_{i} \\cdot (\\textup{IsolateCentral}_{i} + \\textup{ScanCentral}_{i})) \\leq \\textup{CentralMaxHours}",
+            "related_variables": [
+                "InterventionSelected"
+            ],
+            "related_parameters": [
+                "IsolateCentral",
+                "ScanCentral",
+                "CentralMaxHours",
+                "N"
+            ]
+        },
+        {
+            "description": "Total processing time for the distributed system cannot exceed the maximum allowed hours.",
+            "status": "formulated",
+            "formulation": "\\sum_{i=1}^{\\textup{N}} (\\textup{InterventionSelected}_{i} \\cdot (\\textup{IsolateDistributed}_{i} + \\textup{ScanDistributed}_{i})) \\leq \\textup{DistributedMaxHours}",
+            "related_variables": [
+                "InterventionSelected"
+            ],
+            "related_parameters": [
+                "IsolateDistributed",
+                "ScanDistributed",
+                "DistributedMaxHours",
+                "N"
+            ]
+        },
+        {
+            "description": "Define the total number of interventions processed by the central system.",
+            "status": "formulated",
+            "formulation": "\\textup{CentralInterventionsCount} = \\sum_{i=1}^{\\textup{N}} \\textup{InterventionSelected}_{i}",
+            "related_variables": [
+                "InterventionSelected",
+                "CentralInterventionsCount"
+            ],
+            "related_parameters": [
+                "N"
+            ]
+        },
+        {
+            "description": "Define the total number of interventions processed by the distributed system.",
+            "status": "formulated",
+            "formulation": "\\textup{DistributedInterventionsCount} = \\sum_{i=1}^{\\textup{N}} \\textup{InterventionSelected}_{i}",
+            "related_variables": [
+                "InterventionSelected",
+                "DistributedInterventionsCount"
+            ],
+            "related_parameters": [
+                "N"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Binary decision variable indicating whether intervention i is selected (1 if selected, 0 if not).",
+            "symbol": "InterventionSelected",
+            "shape": [
+                "N"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "The total number of interventions processed by the central system.",
+            "symbol": "CentralInterventionsCount",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "The total number of interventions processed by the distributed system.",
+            "symbol": "DistributedInterventionsCount",
+            "shape": [],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total cost of interventions at the central and distributed systems.",
+            "status": "formulated",
+            "formulation": "\\textup{Minimize:} \\quad \\textup{CentralCost} \\cdot \\textup{CentralInterventionsCount} + \\textup{DistributedCost} \\cdot \\textup{DistributedInterventionsCount}",
+            "related_variables": [
+                "InterventionSelected",
+                "CentralInterventionsCount",
+                "DistributedInterventionsCount"
+            ],
+            "related_parameters": [
+                "CentralCost",
+                "DistributedCost"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413155416_nlp4lp_65/",
+    "problem_path": "data/nlp4lp/65/"
+}

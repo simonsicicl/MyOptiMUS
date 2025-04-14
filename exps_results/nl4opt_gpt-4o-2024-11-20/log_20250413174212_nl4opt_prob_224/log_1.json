@@ -1,0 +1,178 @@
+{
+    "background": "A disease testing station performs temperature checks and blood tests, with different durations for each test, and aims to maximize the number of patients seen within the total available staff time.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Time taken for a temperature check",
+            "symbol": "TemperatureCheckTime",
+            "value": 2,
+            "shape": [],
+            "code": "TemperatureCheckTime = data[\"TemperatureCheckTime\"] # scalar parameter"
+        },
+        {
+            "definition": "Time taken for a blood test",
+            "symbol": "BloodTestTime",
+            "value": 10,
+            "shape": [],
+            "code": "BloodTestTime = data[\"BloodTestTime\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of blood tests required",
+            "symbol": "MinBloodTests",
+            "value": 45,
+            "shape": [],
+            "code": "MinBloodTests = data[\"MinBloodTests\"] # scalar parameter"
+        },
+        {
+            "definition": "Factor by which temperature checks must be more than blood tests",
+            "symbol": "TemperatureBloodTestFactor",
+            "value": 5,
+            "shape": [],
+            "code": "TemperatureBloodTestFactor = data[\"TemperatureBloodTestFactor\"] # scalar parameter"
+        },
+        {
+            "definition": "Total staff time available in minutes",
+            "symbol": "TotalStaffTime",
+            "value": 22000,
+            "shape": [],
+            "code": "TotalStaffTime = data[\"TotalStaffTime\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of temperature checks performed must be non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{NumberOfTemperatureChecks} \\\\geq 0",
+            "related_variables": [
+                "NumberOfTemperatureChecks"
+            ],
+            "related_parameters": [],
+            "code": "# The variable \"NumberOfTemperatureChecks\" is non-negative by default (continuous variables in Gurobi are non-negative), so no additional constraint is needed."
+        },
+        {
+            "description": "The number of blood tests performed must be non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{NumberOfBloodTests} \\\\geq 0",
+            "related_variables": [
+                "NumberOfBloodTests"
+            ],
+            "related_parameters": [],
+            "code": "# The variable \"NumberOfBloodTests\" is non-negative due to its default lower bound (0) in Gurobi's `addVar`."
+        },
+        {
+            "description": "At least the minimum number of blood tests must be conducted",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfBloodTests} \\geq \\textup{MinBloodTests}",
+            "related_variables": [
+                "NumberOfBloodTests"
+            ],
+            "related_parameters": [
+                "MinBloodTests"
+            ],
+            "code": "# Add minimum blood test constraint\nmodel.addConstr(NumberOfBloodTests >= MinBloodTests, name=\"min_blood_tests\")"
+        },
+        {
+            "description": "The number of temperature checks must be at least TemperatureBloodTestFactor times the number of blood tests",
+            "status": "coded",
+            "formulation": "\\\\textup{NumberOfTemperatureChecks} \\\\geq \\\\textup{TemperatureBloodTestFactor} \\\\cdot \\\\textup{NumberOfBloodTests}",
+            "related_variables": [
+                "NumberOfTemperatureChecks",
+                "NumberOfBloodTests"
+            ],
+            "related_parameters": [
+                "TemperatureBloodTestFactor"
+            ],
+            "code": "# Add constraint for temperature checks being at least TemperatureBloodTestFactor times the number of blood tests\nmodel.addConstr(NumberOfTemperatureChecks >= TemperatureBloodTestFactor * NumberOfBloodTests, name=\"temp_check_vs_blood_test\")"
+        },
+        {
+            "description": "The total time spent on both temperature checks and blood tests cannot exceed TotalStaffTime minutes.",
+            "status": "coded",
+            "formulation": "\\\\textup{TemperatureCheckTime} \\\\cdot \\\\textup{NumberOfTemperatureChecks} + \\\\textup{BloodTestTime} \\\\cdot \\\\textup{NumberOfBloodTests} \\\\leq \\\\textup{TotalStaffTime}",
+            "related_variables": [
+                "NumberOfTemperatureChecks",
+                "NumberOfBloodTests"
+            ],
+            "related_parameters": [
+                "TemperatureCheckTime",
+                "BloodTestTime",
+                "TotalStaffTime"
+            ],
+            "code": "# Add constraint for total staff time\nmodel.addConstr(\n    NumberOfTemperatureChecks * TemperatureCheckTime + NumberOfBloodTests * BloodTestTime <= TotalStaffTime,\n    name=\"TotalStaffTimeConstraint\"\n)"
+        },
+        {
+            "description": "The total time spent on temperature checks and blood tests cannot exceed the total available staff time.",
+            "status": "coded",
+            "formulation": "\\textup{TemperatureCheckTime} \\cdot \\textup{NumberOfTemperatureChecks} + \\textup{BloodTestTime} \\cdot \\textup{NumberOfBloodTests} \\leq \\textup{TotalStaffTime}",
+            "related_variables": [
+                "NumberOfTemperatureChecks",
+                "NumberOfBloodTests"
+            ],
+            "related_parameters": [
+                "TemperatureCheckTime",
+                "BloodTestTime",
+                "TotalStaffTime"
+            ],
+            "code": "# Add constraint for total time spent on temperature checks and blood tests\nmodel.addConstr(\n    TemperatureCheckTime * NumberOfTemperatureChecks + BloodTestTime * NumberOfBloodTests <= TotalStaffTime,\n    name=\"total_staff_time_constraint\"\n)"
+        },
+        {
+            "description": "At least the minimum required number of blood tests must be performed.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfBloodTests} \\geq \\textup{MinBloodTests}",
+            "related_variables": [
+                "NumberOfBloodTests"
+            ],
+            "related_parameters": [
+                "MinBloodTests"
+            ],
+            "code": "# Add constraint to enforce minimum required number of blood tests\nmodel.addConstr(NumberOfBloodTests >= MinBloodTests, name=\"min_blood_tests_constraint\")"
+        },
+        {
+            "description": "The number of temperature checks must be at least TemperatureBloodTestFactor times the number of blood tests.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfTemperatureChecks} \\geq \\textup{TemperatureBloodTestFactor} \\cdot \\textup{NumberOfBloodTests}",
+            "related_variables": [
+                "NumberOfTemperatureChecks",
+                "NumberOfBloodTests"
+            ],
+            "related_parameters": [
+                "TemperatureBloodTestFactor"
+            ],
+            "code": "# Add constraint ensuring temperature checks are at least TemperatureBloodTestFactor times the blood tests\nmodel.addConstr(NumberOfTemperatureChecks >= TemperatureBloodTestFactor * NumberOfBloodTests, name=\"min_temperature_checks\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of temperature checks performed.",
+            "symbol": "NumberOfTemperatureChecks",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfTemperatureChecks = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfTemperatureChecks\")"
+        },
+        {
+            "definition": "The number of blood tests performed.",
+            "symbol": "NumberOfBloodTests",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfBloodTests = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfBloodTests\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the number of patients seen, which is the sum of temperature checks and blood tests performed.",
+            "status": "coded",
+            "formulation": "\\textup{Maximize: } \\quad \\textup{NumberOfTemperatureChecks} + \\textup{NumberOfBloodTests}",
+            "related_variables": [
+                "NumberOfTemperatureChecks",
+                "NumberOfBloodTests"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(NumberOfTemperatureChecks + NumberOfBloodTests, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413174212_nl4opt_prob_224/",
+    "problem_path": "data/nl4opt/prob_224/"
+}

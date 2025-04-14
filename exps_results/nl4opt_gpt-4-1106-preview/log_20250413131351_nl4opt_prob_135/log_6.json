@@ -1,0 +1,191 @@
+{
+    "background": "A shampoo requires both sulfate and ginger as ingredients, with individual effectiveness times and quantity constraints. The goal is to minimize the total effectiveness time required for the mixture.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Time for one unit of sulfate to be effective",
+            "symbol": "SulfateTime",
+            "value": 0.5,
+            "shape": [],
+            "code": "SulfateTime = data[\"SulfateTime\"] # scalar parameter"
+        },
+        {
+            "definition": "Time for one unit of ginger to be effective",
+            "symbol": "GingerTime",
+            "value": 0.75,
+            "shape": [],
+            "code": "GingerTime = data[\"GingerTime\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum required units of sulfate",
+            "symbol": "MinSulfate",
+            "value": 100,
+            "shape": [],
+            "code": "MinSulfate = data[\"MinSulfate\"] # scalar parameter"
+        },
+        {
+            "definition": "Total required units of ingredients",
+            "symbol": "TotalUnits",
+            "value": 400,
+            "shape": [],
+            "code": "TotalUnits = data[\"TotalUnits\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum ratio of sulfate to ginger",
+            "symbol": "MaxSulfateGingerRatio",
+            "value": 2.0,
+            "shape": [],
+            "code": "MaxSulfateGingerRatio = data[\"MaxSulfateGingerRatio\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The amount of sulfate must meet the minimum required units",
+            "status": "coded",
+            "formulation": "\\textup{SulfateUnits} \\geq \\textup{MinSulfate}",
+            "related_variables": [
+                "SulfateUnits"
+            ],
+            "related_parameters": [
+                "MinSulfate"
+            ],
+            "code": "# Ensure the amount of sulfate meets the minimum required units\nmodel.addConstr(SulfateUnits >= MinSulfate, \"min_sulfate_requirement\")"
+        },
+        {
+            "description": "The total units of sulfate and ginger must equal TotalUnits",
+            "status": "coded",
+            "formulation": "\\textup{SulfateUnits} + \\textup{GingerUnits} = \\textup{TotalUnits}",
+            "related_variables": [
+                "SulfateUnits",
+                "GingerUnits"
+            ],
+            "related_parameters": [
+                "TotalUnits"
+            ],
+            "code": "# Add constraint for the total units of sulfate and ginger\nmodel.addConstr(SulfateUnits + GingerUnits == TotalUnits, name=\"total_units\")"
+        },
+        {
+            "description": "The sulfate-to-ginger ratio must be at most MaxSulfateGingerRatio",
+            "status": "coded",
+            "formulation": "\\frac{\\textup{SulfateUnits}}{\\textup{GingerUnits}} \\leq \\textup{MaxSulfateGingerRatio} \\quad \\textup{if} \\quad \\textup{GingerUnits} > 0",
+            "related_variables": [
+                "SulfateUnits",
+                "GingerUnits"
+            ],
+            "related_parameters": [
+                "MaxSulfateGingerRatio"
+            ],
+            "code": "model.addConstr((SulfateUnits <= MaxSulfateGingerRatio * (GingerUnits + 1e-6)), name=\"sulfate_ginger_ratio_constraint\")"
+        },
+        {
+            "description": "Units of sulfate are non-negative and meet minimum requirements",
+            "status": "coded",
+            "formulation": "\\textup{SulfateUnits} \\geq 0 \\quad \\textup{and} \\quad \\textup{SulfateUnits} \\geq \\textup{MinSulfate}",
+            "related_variables": [
+                "SulfateUnits"
+            ],
+            "related_parameters": [
+                "MinSulfate"
+            ],
+            "code": "SulfateUnits = model.addVar(vtype=gp.GRB.CONTINUOUS, name='SulfateUnits')"
+        },
+        {
+            "description": "Units of ginger are non-negative",
+            "status": "coded",
+            "formulation": "\\textup{GingerUnits} \\geq 0",
+            "related_variables": [
+                "GingerUnits"
+            ],
+            "related_parameters": [],
+            "code": "# Since GingerUnits is already a non-negative continuous variable by default, no constraint is needed\n# Guropy automatically assumes variables are non-negative unless otherwise specified"
+        },
+        {
+            "description": "Ginger amount must be non-negative to prevent division by zero",
+            "status": "coded",
+            "formulation": "\\textup{GingerUnits} \\geq 0",
+            "related_variables": [
+                "GingerUnits"
+            ],
+            "related_parameters": [],
+            "code": "model.addConstr(GingerUnits >= 0, name=\"non_negativity_ginger\")"
+        },
+        {
+            "description": "The total units of sulfate and ginger must equal the total required units of ingredients",
+            "status": "coded",
+            "formulation": "\\textup{SulfateUnits} + \\textup{GingerUnits} = \\textup{TotalUnits}",
+            "related_variables": [
+                "SulfateUnits",
+                "GingerUnits"
+            ],
+            "related_parameters": [
+                "TotalUnits"
+            ],
+            "code": "# Total units of sulfate and ginger must equal the total required units of ingredients\nmodel.addConstr(SulfateUnits + GingerUnits == TotalUnits, name=\"total_units\")"
+        },
+        {
+            "description": "The minimum required units of sulfate should be satisfied",
+            "status": "coded",
+            "formulation": "\\textup{SulfateUnits} \\geq \\textup{MinSulfate}",
+            "related_variables": [
+                "SulfateUnits"
+            ],
+            "related_parameters": [
+                "MinSulfate"
+            ],
+            "code": "# Add constraint to ensure the minimum required units of sulfate are satisfied\nmodel.addConstr(SulfateUnits >= MinSulfate, name=\"min_sulfate_requirement\")"
+        },
+        {
+            "description": "The ratio of sulfate to ginger should not exceed the maximum ratio",
+            "status": "coded",
+            "formulation": "\\textup{SulfateUnits} \\leq \\textup{GingerUnits} \\times \\textup{MaxSulfateGingerRatio}",
+            "related_variables": [
+                "SulfateUnits",
+                "GingerUnits"
+            ],
+            "related_parameters": [
+                "MaxSulfateGingerRatio"
+            ],
+            "code": "# Constraint: The ratio of sulfate to ginger should not exceed the maximum ratio\nmodel.addConstr(SulfateUnits <= GingerUnits * MaxSulfateGingerRatio, name=\"sulfate_ginger_ratio_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The amount of sulfate units used in the shampoo mixture",
+            "symbol": "SulfateUnits",
+            "shape": [],
+            "status": "coded",
+            "code": "SulfateUnits = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"SulfateUnits\")"
+        },
+        {
+            "definition": "The amount of ginger units used in the shampoo mixture",
+            "symbol": "GingerUnits",
+            "shape": [],
+            "status": "coded",
+            "code": "GingerUnits = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"GingerUnits\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total effectiveness time of the shampoo mixture",
+            "status": "coded",
+            "formulation": "\\textup{Minimize} \\quad TotalEffectivenessTime = \\textup{SulfateUnits} \\times \\textup{SulfateTime} + \\textup{GingerUnits} \\times \\textup{GingerTime}",
+            "related_variables": [
+                "SulfateUnits",
+                "GingerUnits"
+            ],
+            "related_parameters": [
+                "SulfateTime",
+                "GingerTime"
+            ],
+            "code": "# Define the objective function\nmodel.setObjective(SulfateUnits * SulfateTime + GingerUnits * GingerTime, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": "Traceback (most recent call last):\n  File \"c:\\Users\\Simon\\Desktop\\Courses\\ECE 570\\ECE570_Project\\MyOptiMUS\\evaluator.py\", line 45, in run\n    exec(last_line, local_env, local_env)\n  File \"<string>\", line 1\n    ```\n    ^\nSyntaxError: invalid syntax\n",
+    "obj_val": 233.33333333333331,
+    "log_path": "logs/log_20250413131351_nl4opt_prob_135/",
+    "problem_path": "data/nl4opt/prob_135/",
+    "prep_code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_135/data.json\", \"r\") as f:\n    data = json.load(f)\n",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_135/data.json\", \"r\") as f:\n    data = json.load(f)\n\nSulfateTime = data[\"SulfateTime\"] # scalar parameter\nGingerTime = data[\"GingerTime\"] # scalar parameter\nMinSulfate = data[\"MinSulfate\"] # scalar parameter\nTotalUnits = data[\"TotalUnits\"] # scalar parameter\nMaxSulfateGingerRatio = data[\"MaxSulfateGingerRatio\"] # scalar parameter\nSulfateUnits = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"SulfateUnits\")\nGingerUnits = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"GingerUnits\")\n\n# Ensure the amount of sulfate meets the minimum required units\nmodel.addConstr(SulfateUnits >= MinSulfate, \"min_sulfate_requirement\")\n\n# Add constraint for the total units of sulfate and ginger\nmodel.addConstr(SulfateUnits + GingerUnits == TotalUnits, name=\"total_units\")\n\nmodel.addConstr((SulfateUnits <= MaxSulfateGingerRatio * (GingerUnits + 1e-6)), name=\"sulfate_ginger_ratio_constraint\")\n\nSulfateUnits = model.addVar(vtype=gp.GRB.CONTINUOUS, name='SulfateUnits')\n\n# Since GingerUnits is already a non-negative continuous variable by default, no constraint is needed\n# Guropy automatically assumes variables are non-negative unless otherwise specified\n\nmodel.addConstr(GingerUnits >= 0, name=\"non_negativity_ginger\")\n\n# Total units of sulfate and ginger must equal the total required units of ingredients\nmodel.addConstr(SulfateUnits + GingerUnits == TotalUnits, name=\"total_units\")\n\n# Add constraint to ensure the minimum required units of sulfate are satisfied\nmodel.addConstr(SulfateUnits >= MinSulfate, name=\"min_sulfate_requirement\")\n\n# Constraint: The ratio of sulfate to ginger should not exceed the maximum ratio\nmodel.addConstr(SulfateUnits <= GingerUnits * MaxSulfateGingerRatio, name=\"sulfate_ginger_ratio_constraint\")\n\n# Define the objective function\nmodel.setObjective(SulfateUnits * SulfateTime + GingerUnits * GingerTime, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

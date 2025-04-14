@@ -1,0 +1,139 @@
+{
+    "background": "A taco stand sells regular and deluxe tacos, aiming to maximize profit within the constraints of supply and demand.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Profit per regular taco",
+            "symbol": "ProfitRegular",
+            "value": 2.5,
+            "shape": [],
+            "code": "ProfitRegular = data[\"ProfitRegular\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit per deluxe taco",
+            "symbol": "ProfitDeluxe",
+            "value": 3.55,
+            "shape": [],
+            "code": "ProfitDeluxe = data[\"ProfitDeluxe\"] # scalar parameter"
+        },
+        {
+            "definition": "Demand maximum for regular tacos",
+            "symbol": "DemandRegularMax",
+            "value": 50,
+            "shape": [],
+            "code": "DemandRegularMax = data[\"DemandRegularMax\"] # scalar parameter"
+        },
+        {
+            "definition": "Demand maximum for deluxe tacos",
+            "symbol": "DemandDeluxeMax",
+            "value": 40,
+            "shape": [],
+            "code": "DemandDeluxeMax = data[\"DemandDeluxeMax\"] # scalar parameter"
+        },
+        {
+            "definition": "Supply limit for total tacos",
+            "symbol": "SupplyTotalMax",
+            "value": 70,
+            "shape": [],
+            "code": "SupplyTotalMax = data[\"SupplyTotalMax\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The quantity of regular tacos made (x1) should be non-negative",
+            "status": "coded",
+            "formulation": "x_{1} \\geq 0",
+            "related_variables": [
+                "x1"
+            ],
+            "related_parameters": [],
+            "code": "# Add non-negativity constraint for the quantity of regular tacos made\nmodel.addConstr(x1 >= 0, name=\"x1_non_negativity\")"
+        },
+        {
+            "description": "The number of deluxe tacos made must be non-negative",
+            "status": "coded",
+            "formulation": "x_2 \\geq 0",
+            "related_variables": [
+                "x2"
+            ],
+            "related_parameters": [],
+            "code": "model.addConstr(x2 >= 0, name=\"deluxe_taco_nonnegativity\")"
+        },
+        {
+            "description": "The number of regular tacos must not exceed the maximum demand for regular tacos",
+            "status": "coded",
+            "formulation": "\\textup{x1} \\leq \\textup{DemandRegularMax}",
+            "related_variables": [
+                "x1"
+            ],
+            "related_parameters": [
+                "DemandRegularMax"
+            ],
+            "code": "# Ensure the number of regular tacos does not exceed maximum demand\nmodel.addConstr(x1 <= DemandRegularMax, name=\"regular_taco_demand_constraint\")"
+        },
+        {
+            "description": "The number of deluxe tacos made is at most the maximum demand for deluxe tacos",
+            "status": "coded",
+            "formulation": "x2 \\leq \\textup{DemandDeluxeMax}",
+            "related_variables": [
+                "x2"
+            ],
+            "related_parameters": [
+                "DemandDeluxeMax"
+            ],
+            "code": "model.addConstr(x2 <= DemandDeluxeMax, name=\"deluxe_taco_demand_constraint\")"
+        },
+        {
+            "description": "Total number of tacos made must not exceed the supply limit",
+            "status": "coded",
+            "formulation": "\\textup{x1} + \\textup{x2} \\leq \\textup{SupplyTotalMax}",
+            "related_variables": [
+                "x1",
+                "x2"
+            ],
+            "related_parameters": [
+                "SupplyTotalMax"
+            ],
+            "code": "# Add constraint: Total number of tacos made must not exceed the supply limit\nmodel.addConstr(x1 + x2 <= SupplyTotalMax, name=\"supply_limit\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of regular tacos made",
+            "symbol": "x1",
+            "shape": [],
+            "status": "coded",
+            "code": "x1 = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"x1\")"
+        },
+        {
+            "definition": "Number of deluxe tacos made",
+            "symbol": "x2",
+            "shape": [],
+            "status": "coded",
+            "code": "x2 = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"x2\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total profit from regular and deluxe tacos",
+            "status": "coded",
+            "formulation": "\\max (\\textup{ProfitRegular} \\times \\textup{x1} + \\textup{ProfitDeluxe} \\times \\textup{x2})",
+            "related_variables": [
+                "x1",
+                "x2"
+            ],
+            "related_parameters": [
+                "ProfitRegular",
+                "ProfitDeluxe"
+            ],
+            "code": "# Set objective function\nmodel.setObjective(ProfitRegular * x1 + ProfitDeluxe * x2, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 217.0,
+    "log_path": "logs/log_20250413160915_nl4opt_prob_218/",
+    "problem_path": "data/nl4opt/prob_218/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_218/data.json\", \"r\") as f:\n    data = json.load(f)\n\nProfitRegular = data[\"ProfitRegular\"] # scalar parameter\nProfitDeluxe = data[\"ProfitDeluxe\"] # scalar parameter\nDemandRegularMax = data[\"DemandRegularMax\"] # scalar parameter\nDemandDeluxeMax = data[\"DemandDeluxeMax\"] # scalar parameter\nSupplyTotalMax = data[\"SupplyTotalMax\"] # scalar parameter\nx1 = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"x1\")\nx2 = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"x2\")\n\n# Add non-negativity constraint for the quantity of regular tacos made\nmodel.addConstr(x1 >= 0, name=\"x1_non_negativity\")\n\nmodel.addConstr(x2 >= 0, name=\"deluxe_taco_nonnegativity\")\n\n# Ensure the number of regular tacos does not exceed maximum demand\nmodel.addConstr(x1 <= DemandRegularMax, name=\"regular_taco_demand_constraint\")\n\nmodel.addConstr(x2 <= DemandDeluxeMax, name=\"deluxe_taco_demand_constraint\")\n\n# Add constraint: Total number of tacos made must not exceed the supply limit\nmodel.addConstr(x1 + x2 <= SupplyTotalMax, name=\"supply_limit\")\n\n# Set objective function\nmodel.setObjective(ProfitRegular * x1 + ProfitDeluxe * x2, gp.GRB.MAXIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

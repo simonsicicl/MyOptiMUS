@@ -1,0 +1,198 @@
+{
+    "background": "A cleaning company requires an optimal mix of cleansing and odor-removing chemicals to clean houses efficiently.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Time effectiveness of cleansing chemical per unit",
+            "symbol": "Tc",
+            "value": 4,
+            "shape": [],
+            "code": "Tc = data[\"Tc\"] # scalar parameter"
+        },
+        {
+            "definition": "Time effectiveness of odor-removing chemical per unit",
+            "symbol": "To",
+            "value": 6,
+            "shape": [],
+            "code": "To = data[\"To\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum units of cleansing chemical required",
+            "symbol": "MinCleansing",
+            "value": 100,
+            "shape": [],
+            "code": "MinCleansing = data[\"MinCleansing\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum total units of chemicals used per house",
+            "symbol": "MaxTotal",
+            "value": 300,
+            "shape": [],
+            "code": "MaxTotal = data[\"MaxTotal\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum ratio of cleansing to odor-removing chemical",
+            "symbol": "MaxRatio",
+            "value": 2,
+            "shape": [],
+            "code": "MaxRatio = data[\"MaxRatio\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The amount of cleansing chemical used is at least MinCleansing units.",
+            "status": "coded",
+            "formulation": "\\textup{CleansingUsed} \\geq \\textup{MinCleansing}",
+            "related_variables": [
+                "CleansingUsed"
+            ],
+            "related_parameters": [
+                "MinCleansing"
+            ],
+            "code": "# Add constraint ensuring the amount of cleansing chemical used is at least MinCleansing\nmodel.addConstr(CleansingUsed >= MinCleansing, name=\"min_cleansing_constraint\")"
+        },
+        {
+            "description": "The total amount of chemicals used (cleansing and odor-removing) is at most MaxTotal units per house.",
+            "status": "coded",
+            "formulation": "\\textup{CleansingUsed} + \\textup{OdorRemovingUsed} \\leq \\textup{MaxTotal}",
+            "related_variables": [
+                "CleansingUsed",
+                "OdorRemovingUsed"
+            ],
+            "related_parameters": [
+                "MaxTotal"
+            ],
+            "code": "# Add constraint for the total amount of chemicals used per house\nmodel.addConstr(CleansingUsed + OdorRemovingUsed <= MaxTotal, name=\"chemical_usage_limit\")"
+        },
+        {
+            "description": "The amount of cleansing chemical cannot exceed MaxRatio times the amount of odor-removing chemical.",
+            "status": "coded",
+            "formulation": "\\\\textup{CleansingUsed} \\\\leq \\\\textup{MaxRatio} \\\\cdot \\\\textup{OdorRemovingUsed}",
+            "related_variables": [
+                "CleansingUsed",
+                "OdorRemovingUsed"
+            ],
+            "related_parameters": [
+                "MaxRatio"
+            ],
+            "code": "# Add constraint: The amount of cleansing chemical cannot exceed MaxRatio times the amount of odor-removing chemical\nmodel.addConstr(CleansingUsed <= MaxRatio * OdorRemovingUsed, name=\"cleansing_chemical_limit\")"
+        },
+        {
+            "description": "The amount of cleansing chemical used is non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{CleansingUsed} \\\\geq 0",
+            "related_variables": [
+                "CleansingUsed"
+            ],
+            "related_parameters": [],
+            "code": "# The constraint is already satisfied as CleansingUsed was defined as a continuous variable, ensuring non-negativity."
+        },
+        {
+            "description": "The amount of odor-removing chemical used per house must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{OdorRemovingUsed} \\geq 0",
+            "related_variables": [
+                "OdorRemovingUsed"
+            ],
+            "related_parameters": [],
+            "code": "# OdorRemovingUsed is already defined as a continuous variable, ensuring non-negativity. No additional code needed."
+        },
+        {
+            "description": "Ensure the minimum units of cleansing chemical is used.",
+            "status": "coded",
+            "formulation": "\\textup{CleansingUsed} \\geq \\textup{MinCleansing}",
+            "related_variables": [
+                "CleansingUsed"
+            ],
+            "related_parameters": [
+                "MinCleansing"
+            ],
+            "code": "# Add constraint to ensure the minimum units of cleansing chemical is used\nmodel.addConstr(CleansingUsed >= MinCleansing, name=\"min_cleansing_requirement\")"
+        },
+        {
+            "description": "Ensure the total units of chemicals used per house does not exceed the maximum allowed.",
+            "status": "coded",
+            "formulation": "\\textup{CleansingUsed} + \\textup{OdorRemovingUsed} \\leq \\textup{MaxTotal}",
+            "related_variables": [
+                "CleansingUsed",
+                "OdorRemovingUsed"
+            ],
+            "related_parameters": [
+                "MaxTotal"
+            ],
+            "code": "# Add constraint to ensure total chemicals used per house does not exceed maximum allowed\nmodel.addConstr(CleansingUsed + OdorRemovingUsed <= MaxTotal, name=\"total_chemicals_limit\")"
+        },
+        {
+            "description": "Ensure the cleansing chemical does not exceed the maximum ratio relative to odor-removing chemical.",
+            "status": "coded",
+            "formulation": "\\textup{CleansingUsed} \\leq \\textup{MaxRatio} \\cdot \\textup{OdorRemovingUsed}",
+            "related_variables": [
+                "CleansingUsed",
+                "OdorRemovingUsed"
+            ],
+            "related_parameters": [
+                "MaxRatio"
+            ],
+            "code": "# Add constraint to ensure cleansing chemical does not exceed the maximum ratio relative to odor-removing chemical\nmodel.addConstr(CleansingUsed <= MaxRatio * OdorRemovingUsed, name=\"cleansing_ratio_constraint\")"
+        },
+        {
+            "description": "Non-negativity constraint on the amount of cleansing chemical used.",
+            "status": "coded",
+            "formulation": "\\textup{CleansingUsed} \\geq 0",
+            "related_variables": [
+                "CleansingUsed"
+            ],
+            "related_parameters": [],
+            "code": "# The variable \"CleansingUsed\" is non-negative by default (continuous variables in Gurobi are non-negative), so no additional constraint is needed."
+        },
+        {
+            "description": "Non-negativity constraint on the amount of odor-removing chemical used.",
+            "status": "coded",
+            "formulation": "\\textup{OdorRemovingUsed} \\geq 0",
+            "related_variables": [
+                "OdorRemovingUsed"
+            ],
+            "related_parameters": [],
+            "code": "# No code needed, as non-negativity is inherent to the variable type (GRB.CONTINUOUS); this constraint is automatically satisfied."
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The amount of cleansing chemical used per house",
+            "symbol": "CleansingUsed",
+            "shape": [],
+            "status": "coded",
+            "code": "CleansingUsed = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"CleansingUsed\")"
+        },
+        {
+            "definition": "The amount of odor-removing chemical used per house",
+            "symbol": "OdorRemovingUsed",
+            "shape": [],
+            "status": "coded",
+            "code": "OdorRemovingUsed = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"OdorRemovingUsed\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total time taken to clean a house, which depends on the usage of cleansing and odor-removing chemicals.",
+            "status": "coded",
+            "formulation": "\\textup{Minimize} \\quad \\textup{Tc} \\cdot \\textup{CleansingUsed} + \\textup{To} \\cdot \\textup{OdorRemovingUsed}",
+            "related_variables": [
+                "CleansingUsed",
+                "OdorRemovingUsed"
+            ],
+            "related_parameters": [
+                "Tc",
+                "To"
+            ],
+            "code": "# Set objective\nmodel.setObjective(Tc * CleansingUsed + To * OdorRemovingUsed, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 700.0,
+    "log_path": "logs/log_20250413152647_nl4opt_prob_105/",
+    "problem_path": "data/nl4opt/prob_105/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_105/data.json\", \"r\") as f:\n    data = json.load(f)\n\nTc = data[\"Tc\"] # scalar parameter\nTo = data[\"To\"] # scalar parameter\nMinCleansing = data[\"MinCleansing\"] # scalar parameter\nMaxTotal = data[\"MaxTotal\"] # scalar parameter\nMaxRatio = data[\"MaxRatio\"] # scalar parameter\nCleansingUsed = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"CleansingUsed\")\nOdorRemovingUsed = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"OdorRemovingUsed\")\n\n# Add constraint ensuring the amount of cleansing chemical used is at least MinCleansing\nmodel.addConstr(CleansingUsed >= MinCleansing, name=\"min_cleansing_constraint\")\n\n# Add constraint for the total amount of chemicals used per house\nmodel.addConstr(CleansingUsed + OdorRemovingUsed <= MaxTotal, name=\"chemical_usage_limit\")\n\n# Add constraint: The amount of cleansing chemical cannot exceed MaxRatio times the amount of odor-removing chemical\nmodel.addConstr(CleansingUsed <= MaxRatio * OdorRemovingUsed, name=\"cleansing_chemical_limit\")\n\n# The constraint is already satisfied as CleansingUsed was defined as a continuous variable, ensuring non-negativity.\n\n# OdorRemovingUsed is already defined as a continuous variable, ensuring non-negativity. No additional code needed.\n\n# Add constraint to ensure the minimum units of cleansing chemical is used\nmodel.addConstr(CleansingUsed >= MinCleansing, name=\"min_cleansing_requirement\")\n\n# Add constraint to ensure total chemicals used per house does not exceed maximum allowed\nmodel.addConstr(CleansingUsed + OdorRemovingUsed <= MaxTotal, name=\"total_chemicals_limit\")\n\n# Add constraint to ensure cleansing chemical does not exceed the maximum ratio relative to odor-removing chemical\nmodel.addConstr(CleansingUsed <= MaxRatio * OdorRemovingUsed, name=\"cleansing_ratio_constraint\")\n\n# The variable \"CleansingUsed\" is non-negative by default (continuous variables in Gurobi are non-negative), so no additional constraint is needed.\n\n# No code needed, as non-negativity is inherent to the variable type (GRB.CONTINUOUS); this constraint is automatically satisfied.\n\n# Set objective\nmodel.setObjective(Tc * CleansingUsed + To * OdorRemovingUsed, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

@@ -1,0 +1,243 @@
+{
+    "background": "The Aircraft Assignment Problem involves assigning a given number of aircraft to specified routes with the goal of minimizing the total operational cost while adhering to aircraft availability limits and route demand requirements.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "symbol": "TotalAircraft",
+            "definition": "The total number of aircraft available for assignment",
+            "shape": [],
+            "code": "TotalAircraft = data[\"TotalAircraft\"] # scalar parameter"
+        },
+        {
+            "symbol": "TotalRoutes",
+            "definition": "The total number of routes that require aircraft assignment",
+            "shape": [],
+            "code": "TotalRoutes = data[\"TotalRoutes\"] # scalar parameter"
+        },
+        {
+            "symbol": "Availability",
+            "definition": "The availability of each aircraft, indicating the maximum number of routes it can be assigned to",
+            "shape": [
+                "TotalAircraft"
+            ],
+            "code": "Availability = np.array(data[\"Availability\"]) # ['TotalAircraft']"
+        },
+        {
+            "symbol": "Demand",
+            "definition": "The demand for each route, indicating the number of aircraft required",
+            "shape": [
+                "TotalRoutes"
+            ],
+            "code": "Demand = np.array(data[\"Demand\"]) # ['TotalRoutes']"
+        },
+        {
+            "symbol": "Capacity",
+            "definition": "The capacity matrix defining the suitability and capability of each aircraft for each route",
+            "shape": [
+                "TotalAircraft",
+                "TotalRoutes"
+            ],
+            "code": "Capacity = np.array(data[\"Capacity\"]) # ['TotalAircraft', 'TotalRoutes']"
+        },
+        {
+            "symbol": "Costs",
+            "definition": "The cost matrix representing the cost of assigning each aircraft to each route",
+            "shape": [
+                "TotalAircraft",
+                "TotalRoutes"
+            ],
+            "code": "Costs = np.array(data[\"Costs\"]) # ['TotalAircraft', 'TotalRoutes']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Each aircraft can be assigned to at most its individual availability.",
+            "status": "formulated",
+            "formulation": "\\sum_{j=1}^{\\textup{TotalRoutes}} \\textup{Assignment}_{i,j} \\leq \\textup{Availability}_{i}, \\quad \\forall i \\in \\{1, 2, ..., \\textup{TotalAircraft}\\}",
+            "related_variables": [
+                "Assignment"
+            ],
+            "related_parameters": [
+                "Availability",
+                "TotalRoutes",
+                "TotalAircraft"
+            ]
+        },
+        {
+            "description": "Each route must have at least the required number of aircraft to meet its demand",
+            "status": "formulated",
+            "formulation": "\\sum_{a=1}^{\\textup{TotalAircraft}} \\textup{Assignment}_{a,r} \\geq \\textup{Demand}_{r}, \\quad \\forall r \\in \\{ 1, \\dots, \\textup{TotalRoutes} \\}",
+            "related_variables": [
+                "Assignment"
+            ],
+            "related_parameters": [
+                "TotalAircraft",
+                "TotalRoutes",
+                "Demand"
+            ]
+        },
+        {
+            "description": "An aircraft can be assigned to a route only if it has the capacity for that route.",
+            "status": "formulated",
+            "formulation": "\\textup{Assignment}_{i,j} \\\\leq \\textup{Capacity}_{i,j},\\\\quad \\forall \\\\ i \\\\in \\\\{1, \\dots, \\textup{TotalAircraft}\\\\},\\\\quad j \\\\in \\\\{1, \\dots, \\textup{TotalRoutes}\\\\}",
+            "related_variables": [
+                "Assignment"
+            ],
+            "related_parameters": [
+                "Capacity"
+            ]
+        },
+        {
+            "description": "The number of aircraft assigned to a route must be an integer. This is inherently handled as the decision variable Assignment is binary. Nonetheless, auxiliary expressions can represent totals explicitly.",
+            "status": "formulated",
+            "formulation": "\\textup{Assignment}_{i, j} \\in \\{0, 1\\} \\quad \\forall \\ i = 1, \\dots, \\textup{TotalAircraft}, \\ j = 1, \\dots, \\textup{TotalRoutes}",
+            "related_variables": [
+                "Assignment"
+            ],
+            "related_parameters": [
+                "TotalAircraft",
+                "TotalRoutes"
+            ]
+        },
+        {
+            "description": "The total number of aircraft assigned to each route must be non-negative.",
+            "status": "formulated",
+            "formulation": "\\textup{TotalAssigned}_{j} \\geq 0 \\quad \\forall \\\\ j \\in \\{1, 2, \\ldots, \\textup{TotalRoutes}\\}",
+            "related_variables": [
+                "TotalAssigned"
+            ],
+            "related_parameters": [
+                "TotalRoutes"
+            ]
+        },
+        {
+            "description": "The total number of aircraft assigned across all routes must not exceed the total number of available aircraft.",
+            "status": "formulated",
+            "formulation": "\\sum_{i=1}^{\\textup{TotalAircraft}} \\sum_{j=1}^{\\textup{TotalRoutes}} \\textup{Assignment}_{i,j} \\leq \\textup{TotalAircraft}",
+            "related_variables": [
+                "Assignment"
+            ],
+            "related_parameters": [
+                "TotalAircraft",
+                "TotalRoutes"
+            ]
+        },
+        {
+            "description": "Ensure that each decision variable representing the assignment of an aircraft to a route is binary.",
+            "status": "formulated",
+            "formulation": "\\textup{Assignment}_{i,j} \\in \\{0, 1\\}, \\quad \\forall i \\in \\{1, 2, ..., \\textup{TotalAircraft}\\}, \\forall j \\in \\{1, 2, ..., \\textup{TotalRoutes}\\}",
+            "related_variables": [
+                "Assignment"
+            ],
+            "related_parameters": [
+                "TotalAircraft",
+                "TotalRoutes"
+            ]
+        },
+        {
+            "description": "The total number of aircraft assigned to each route must equal the integer variable TotalAssigned.",
+            "status": "formulated",
+            "formulation": "\\textup{TotalAssigned}_{j} = \\sum_{i=1}^{\\textup{TotalAircraft}} \\textup{Assignment}_{i, j} \\quad \\forall \\ j = 1, \\dots, \\textup{TotalRoutes}",
+            "related_variables": [
+                "Assignment",
+                "TotalAssigned"
+            ],
+            "related_parameters": [
+                "TotalAircraft",
+                "TotalRoutes"
+            ]
+        },
+        {
+            "description": "Define the relationship between binary decision variable \\textup{Assignment} and the total number of aircraft assigned to each route \\textup{TotalAssigned}.",
+            "status": "formulated",
+            "formulation": "\\textup{TotalAssigned}_{j} = \\sum_{i=1}^{\\textup{TotalAircraft}} \\textup{Assignment}_{i,j} \\quad \\forall \\\\ j \\in \\{1, 2, \\ldots, \\textup{TotalRoutes}\\}",
+            "related_variables": [
+                "Assignment",
+                "TotalAssigned"
+            ],
+            "related_parameters": [
+                "TotalAircraft",
+                "TotalRoutes"
+            ]
+        },
+        {
+            "description": "An aircraft cannot be assigned to more routes than its availability",
+            "status": "formulated",
+            "formulation": "\\sum_{j=1}^{\\textup{TotalRoutes}} \\textup{Assignment}_{ij} \\leq \\textup{Availability}_{i}, \\quad \\forall i \\in \\{1, ..., \\textup{TotalAircraft}\\}",
+            "related_variables": [
+                "Assignment"
+            ],
+            "related_parameters": [
+                "TotalRoutes",
+                "Availability",
+                "TotalAircraft"
+            ]
+        },
+        {
+            "description": "Each route must meet the required demand for aircraft",
+            "status": "formulated",
+            "formulation": "\\sum_{i=1}^{\\textup{TotalAircraft}} \\textup{Assignment}_{ij} = \\textup{Demand}_{j}, \\quad \\forall j \\in \\{1, ..., \\textup{TotalRoutes}\\}",
+            "related_variables": [
+                "Assignment"
+            ],
+            "related_parameters": [
+                "TotalAircraft",
+                "Demand",
+                "TotalRoutes"
+            ]
+        },
+        {
+            "description": "An aircraft can only be assigned to a route if it meets the capacity feasibility",
+            "status": "formulated",
+            "formulation": "\\textup{Assignment}_{ij} \\leq \\textup{Capacity}_{ij}, \\quad \\forall i \\in \\{1, ..., \\textup{TotalAircraft}\\}, \\quad \\forall j \\in \\{1, ..., \\textup{TotalRoutes}\\}",
+            "related_variables": [
+                "Assignment"
+            ],
+            "related_parameters": [
+                "TotalAircraft",
+                "TotalRoutes",
+                "Capacity"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "A binary decision variable indicating whether an aircraft is assigned to a specific route.",
+            "symbol": "Assignment",
+            "shape": [
+                "TotalAircraft",
+                "TotalRoutes"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "The total number of aircraft assigned to each route.",
+            "symbol": "TotalAssigned",
+            "shape": [
+                "TotalRoutes"
+            ],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total cost of assigning aircraft to routes",
+            "status": "formulated",
+            "formulation": "\\sum_{i=1}^{\\textup{TotalAircraft}} \\sum_{j=1}^{\\textup{TotalRoutes}} \\textup{Costs}_{ij} \\cdot \\textup{Assignment}_{ij}",
+            "related_variables": [
+                "Assignment"
+            ],
+            "related_parameters": [
+                "TotalAircraft",
+                "TotalRoutes",
+                "Costs"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413145233_complexor_AircraftAssignment/",
+    "problem_path": "data/complexor/AircraftAssignment/"
+}

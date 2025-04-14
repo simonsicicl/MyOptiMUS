@@ -1,0 +1,196 @@
+{
+    "background": "The fish in a freezing pond need to be transported using helicopters and cars to maintain their survival, with each mode of transport having different capacities and time requirements.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of fish transported per helicopter trip",
+            "symbol": "FishPerHelicopter",
+            "value": 30,
+            "shape": [],
+            "code": "FishPerHelicopter = data[\"FishPerHelicopter\"] # scalar parameter"
+        },
+        {
+            "definition": "Time taken per helicopter trip",
+            "symbol": "TimeHelicopter",
+            "value": 40,
+            "shape": [],
+            "code": "TimeHelicopter = data[\"TimeHelicopter\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of fish transported per car trip",
+            "symbol": "FishPerCar",
+            "value": 20,
+            "shape": [],
+            "code": "FishPerCar = data[\"FishPerCar\"] # scalar parameter"
+        },
+        {
+            "definition": "Time taken per car trip",
+            "symbol": "TimeCar",
+            "value": 30,
+            "shape": [],
+            "code": "TimeCar = data[\"TimeCar\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of helicopter trips allowed",
+            "symbol": "MaxHelicopterTrips",
+            "value": 5,
+            "shape": [],
+            "code": "MaxHelicopterTrips = data[\"MaxHelicopterTrips\"] # scalar parameter"
+        },
+        {
+            "definition": "Percentage of trips that should be by car",
+            "symbol": "CarTripPercentage",
+            "value": 0.6,
+            "shape": [],
+            "code": "CarTripPercentage = data[\"CarTripPercentage\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of fish that need to be transported",
+            "symbol": "MinFishNeeded",
+            "value": 300,
+            "shape": [],
+            "code": "MinFishNeeded = data[\"MinFishNeeded\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of helicopter trips must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{HelicopterTrips} \\geq 0",
+            "related_variables": [
+                "HelicopterTrips"
+            ],
+            "related_parameters": [],
+            "code": "# No additional code needed since the variable HellicopterTrips is already non-negative due to its default lower bound (0) in Gurobi."
+        },
+        {
+            "description": "The number of car trips should be non-negative to ensure there are no negative trip values.",
+            "status": "coded",
+            "formulation": "\\\\textup{CarTrips} \\\\geq 0",
+            "related_variables": [
+                "CarTrips"
+            ],
+            "related_parameters": [],
+            "code": "# No additional code is necessary because the non-negativity constraint is automatically enforced\n# by defining CarTrips with the default lower bound of 0 in Gurobi."
+        },
+        {
+            "description": "Ensure at least \\textup{MinFishNeeded} fish are transported.",
+            "status": "coded",
+            "formulation": "\\textup{HelicopterTrips} \\cdot \\textup{FishPerHelicopter} + \\textup{CarTrips} \\cdot \\textup{FishPerCar} \\geq \\textup{MinFishNeeded}",
+            "related_variables": [
+                "HelicopterTrips",
+                "CarTrips"
+            ],
+            "related_parameters": [
+                "FishPerHelicopter",
+                "FishPerCar",
+                "MinFishNeeded"
+            ],
+            "code": "# Add constraint to ensure at least MinFishNeeded fish are transported\nmodel.addConstr(\n    HelicopterTrips * FishPerHelicopter + CarTrips * FishPerCar >= MinFishNeeded,\n    name=\"min_fish_transport\"\n)"
+        },
+        {
+            "description": "The number of helicopter trips cannot exceed the maximum allowed number of trips.",
+            "status": "coded",
+            "formulation": "\\\\textup{HelicopterTrips} \\\\leq \\\\textup{MaxHelicopterTrips}",
+            "related_variables": [
+                "HelicopterTrips"
+            ],
+            "related_parameters": [
+                "MaxHelicopterTrips"
+            ],
+            "code": "# Add constraint to limit the number of helicopter trips\nmodel.addConstr(HelicopterTrips <= MaxHelicopterTrips, name=\"helicopter_trips_limit\")"
+        },
+        {
+            "description": "At least CarTripPercentage percent of the total number of trips must be by car.",
+            "status": "coded",
+            "formulation": "(1 - \\textup{CarTripPercentage}) \\times \\textup{CarTrips} \\geq \\textup{CarTripPercentage} \\times \\textup{HelicopterTrips}",
+            "related_variables": [
+                "HelicopterTrips",
+                "CarTrips"
+            ],
+            "related_parameters": [
+                "CarTripPercentage"
+            ],
+            "code": "# Add constraint for minimum car trip percentage\nmodel.addConstr((1 - CarTripPercentage) * CarTrips >= CarTripPercentage * HelicopterTrips, name=\"min_car_trip_percentage\")"
+        },
+        {
+            "description": "Ensure at least the minimum number of fish are transported.",
+            "status": "coded",
+            "formulation": "\\textup{HelicopterTrips} \\cdot \\textup{FishPerHelicopter} + \\textup{CarTrips} \\cdot \\textup{FishPerCar} \\geq \\textup{MinFishNeeded}",
+            "related_variables": [
+                "HelicopterTrips",
+                "CarTrips"
+            ],
+            "related_parameters": [
+                "FishPerHelicopter",
+                "FishPerCar",
+                "MinFishNeeded"
+            ],
+            "code": "# Add constraint to ensure minimum number of fish are transported\nmodel.addConstr(HelicopterTrips * FishPerHelicopter + CarTrips * FishPerCar >= MinFishNeeded, name=\"min_fish_transport\")"
+        },
+        {
+            "description": "Ensure the number of helicopter trips does not exceed the maximum allowed.",
+            "status": "coded",
+            "formulation": "\\textup{HelicopterTrips} \\leq \\textup{MaxHelicopterTrips}",
+            "related_variables": [
+                "HelicopterTrips"
+            ],
+            "related_parameters": [
+                "MaxHelicopterTrips"
+            ],
+            "code": "# Add constraint to limit the number of helicopter trips\nmodel.addConstr(HelicopterTrips <= MaxHelicopterTrips, name=\"helicopter_trip_limit\")"
+        },
+        {
+            "description": "Ensure at least the specified percentage of trips are by car.",
+            "status": "coded",
+            "formulation": "\\textup{CarTrips} \\cdot (1 - \\textup{CarTripPercentage}) \\geq \\textup{CarTripPercentage} \\cdot \\textup{HelicopterTrips}",
+            "related_variables": [
+                "HelicopterTrips",
+                "CarTrips"
+            ],
+            "related_parameters": [
+                "CarTripPercentage"
+            ],
+            "code": "# Add constraint to ensure at least the specified percentage of trips are by car\nmodel.addConstr(CarTrips * (1 - CarTripPercentage) >= CarTripPercentage * HelicopterTrips, name=\"car_trip_percentage\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of helicopter trips taken.",
+            "symbol": "HelicopterTrips",
+            "shape": [],
+            "status": "coded",
+            "code": "HelicopterTrips = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"HelicopterTrips\")"
+        },
+        {
+            "definition": "The number of car trips taken.",
+            "symbol": "CarTrips",
+            "shape": [],
+            "status": "coded",
+            "code": "CarTrips = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"CarTrips\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total time needed to transport all the fish using helicopters and cars.",
+            "status": "coded",
+            "formulation": "\\textup{Minimize:} \\\\quad \\textup{HelicopterTrips} \\cdot \\textup{TimeHelicopter} + \\textup{CarTrips} \\cdot \\textup{TimeCar}",
+            "related_variables": [
+                "HelicopterTrips",
+                "CarTrips"
+            ],
+            "related_parameters": [
+                "TimeHelicopter",
+                "TimeCar"
+            ],
+            "code": "# Set objective\nmodel.setObjective(HelicopterTrips * TimeHelicopter + CarTrips * TimeCar, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 425.0,
+    "log_path": "logs/log_20250413164159_nl4opt_prob_182/",
+    "problem_path": "data/nl4opt/prob_182/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_182/data.json\", \"r\") as f:\n    data = json.load(f)\n\nFishPerHelicopter = data[\"FishPerHelicopter\"] # scalar parameter\nTimeHelicopter = data[\"TimeHelicopter\"] # scalar parameter\nFishPerCar = data[\"FishPerCar\"] # scalar parameter\nTimeCar = data[\"TimeCar\"] # scalar parameter\nMaxHelicopterTrips = data[\"MaxHelicopterTrips\"] # scalar parameter\nCarTripPercentage = data[\"CarTripPercentage\"] # scalar parameter\nMinFishNeeded = data[\"MinFishNeeded\"] # scalar parameter\nHelicopterTrips = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"HelicopterTrips\")\nCarTrips = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"CarTrips\")\n\n# No additional code needed since the variable HellicopterTrips is already non-negative due to its default lower bound (0) in Gurobi.\n\n# No additional code is necessary because the non-negativity constraint is automatically enforced\n# by defining CarTrips with the default lower bound of 0 in Gurobi.\n\n# Add constraint to ensure at least MinFishNeeded fish are transported\nmodel.addConstr(\n    HelicopterTrips * FishPerHelicopter + CarTrips * FishPerCar >= MinFishNeeded,\n    name=\"min_fish_transport\"\n)\n\n# Add constraint to limit the number of helicopter trips\nmodel.addConstr(HelicopterTrips <= MaxHelicopterTrips, name=\"helicopter_trips_limit\")\n\n# Add constraint for minimum car trip percentage\nmodel.addConstr((1 - CarTripPercentage) * CarTrips >= CarTripPercentage * HelicopterTrips, name=\"min_car_trip_percentage\")\n\n# Add constraint to ensure minimum number of fish are transported\nmodel.addConstr(HelicopterTrips * FishPerHelicopter + CarTrips * FishPerCar >= MinFishNeeded, name=\"min_fish_transport\")\n\n# Add constraint to limit the number of helicopter trips\nmodel.addConstr(HelicopterTrips <= MaxHelicopterTrips, name=\"helicopter_trip_limit\")\n\n# Add constraint to ensure at least the specified percentage of trips are by car\nmodel.addConstr(CarTrips * (1 - CarTripPercentage) >= CarTripPercentage * HelicopterTrips, name=\"car_trip_percentage\")\n\n# Set objective\nmodel.setObjective(HelicopterTrips * TimeHelicopter + CarTrips * TimeCar, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

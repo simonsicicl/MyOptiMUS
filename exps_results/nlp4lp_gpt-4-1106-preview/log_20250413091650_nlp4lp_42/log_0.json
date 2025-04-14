@@ -1,0 +1,223 @@
+{
+    "background": "The problem is to find the minimum number of employees needed to meet a certain coverage requirement where employees work for a set number of consecutive days followed by a mandatory rest period.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "The number of users on the nth day",
+            "symbol": "Num",
+            "value": "",
+            "shape": [
+                "N"
+            ],
+            "code": "Num = np.array(data[\"Num\"]) # ['N']"
+        },
+        {
+            "definition": "Number of consecutive working days before a resting period",
+            "symbol": "WorkingDays",
+            "value": "",
+            "shape": [],
+            "code": "WorkingDays = data[\"WorkingDays\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of consecutive resting days",
+            "symbol": "RestingDays",
+            "value": "",
+            "shape": [],
+            "code": "RestingDays = data[\"RestingDays\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Ensure that each employee works for WorkingDays consecutive days",
+            "status": "formulated",
+            "formulation": "\\sum_{k=j}^{j+\\textup{WorkingDays}-1} \\textup{EmployeeWorking}_{i,k} = \\textup{WorkingDays} \\times \\textup{EmployeeWorking}_{i,j} \\quad \\forall i, \\forall j: j+\\textup{WorkingDays}-1 \\leq N",
+            "related_variables": [
+                "EmployeeWorking"
+            ],
+            "related_parameters": [
+                "WorkingDays",
+                "N"
+            ]
+        },
+        {
+            "description": "Ensure that each employee must have at least RestingDays consecutive days of rest",
+            "status": "formulated",
+            "formulation": "\\sum_{j=k}^{\\min(k+\\textup{RestingDays}-1, N)} (1 - \\textup{EmployeeWorking}_{i,j}) \\geq \\textup{RestingDays} \\times \\textup{EmployeeStartRest}_{i, k}, \\quad \\forall i \\in E, \\quad \\forall k \\in \\{1, \\ldots, N-\\textup{RestingDays}+1\\}",
+            "related_variables": [
+                "EmployeeWorking",
+                "EmployeeStartRest"
+            ],
+            "related_parameters": [
+                "RestingDays"
+            ]
+        },
+        {
+            "description": "The total number of employees needed for coverage is a non-negative integer.",
+            "status": "formulated",
+            "formulation": "\\sum_{i=1}^{E} \\textup{EmployeeWorking}_{i,j} \\geq \\textup{Num}_j \\quad \\forall j \\in \\{1, ..., N\\}",
+            "related_variables": [
+                "EmployeeWorking"
+            ],
+            "related_parameters": [
+                "Num"
+            ]
+        },
+        {
+            "description": "Define the minimum gap (rest period) between working blocks of an employee",
+            "status": "formulated",
+            "formulation": "\\sum_{k=j}^{j+\\textup{WorkingDays}+\\textup{RestingDays}-1} \\textup{EmployeeWorking}_{i,k} \\leq \\textup{WorkingDays} \\quad \\forall i, \\forall j: j+\\textup{WorkingDays}+\\textup{RestingDays}-1 \\leq N",
+            "related_variables": [
+                "EmployeeWorking"
+            ],
+            "related_parameters": [
+                "WorkingDays",
+                "RestingDays",
+                "N"
+            ]
+        },
+        {
+            "description": "Define the start of the resting period for an employee",
+            "status": "formulated",
+            "formulation": "\\textup{EmployeeStartRest}_{i,k} \\geq \\textup{EmployeeWorking}_{i, k-1} - \\textup{EmployeeWorking}_{i, k}, \\quad \\forall i \\in E, k \\in \\{2, \\ldots, N\\}",
+            "related_variables": [
+                "EmployeeWorking",
+                "EmployeeStartRest"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Ensure that EmployeeStartRest is 0 if the employee continues to work",
+            "status": "formulated",
+            "formulation": "\\textup{EmployeeStartRest}_{i,k} = 0, \\quad \\textup{if} \\quad \\textup{EmployeeWorking}_{i, k} = 1, \\quad \\forall i \\in E, k \\in \\{1, \\ldots, N\\}",
+            "related_variables": [
+                "EmployeeWorking",
+                "EmployeeStartRest"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Each variable representing the number of employees needs to be an integer",
+            "status": "formulated",
+            "formulation": "\\textup{EmployeeWorking}_{i,j} \\in \\{0,1\\} \\quad \\forall i \\in \\{1, ..., E\\}, \\forall j \\in \\{1, ..., N\\}",
+            "related_variables": [
+                "EmployeeWorking"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Employees must be working for a set number of consecutive days before starting their rest period",
+            "status": "formulated",
+            "formulation": "\\sum_{k=j}^{j+\\textup{WorkingDays}-1} \\textup{EmployeeWorking}_{i,k} = \\textup{WorkingDays} \\times \\textup{EmployeeStartRest}_{i,j} \\quad \\forall i \\in \\{1, ..., E\\}, \\forall j \\in \\{1, ..., N-\\textup{WorkingDays}+1\\}",
+            "related_variables": [
+                "EmployeeWorking",
+                "EmployeeStartRest"
+            ],
+            "related_parameters": [
+                "WorkingDays"
+            ]
+        },
+        {
+            "description": "After working for the set number of consecutive days, employees must have a mandatory rest period",
+            "status": "formulated",
+            "formulation": "\\sum_{k=j+\\textup{WorkingDays}}^{j+\\textup{WorkingDays}+\\textup{RestingDays}-1} \\textup{EmployeeWorking}_{i,k} = 0 \\quad \\forall i \\in \\{1, ..., E\\}, \\forall j \\in \\{1, ..., N-\\textup{WorkingDays}-\\textup{RestingDays}+1\\}",
+            "related_variables": [
+                "EmployeeWorking"
+            ],
+            "related_parameters": [
+                "WorkingDays",
+                "RestingDays"
+            ]
+        },
+        {
+            "description": "Ensure that each employee that is worked at least one day is counted",
+            "status": "formulated",
+            "formulation": "\\sum_{j=1}^{N} \\textup{EmployeeWorking}_{ij} \\geq \\textup{EmployeeCounted}_i, \\quad \\forall i \\in \\{1, \\ldots, E\\}",
+            "related_variables": [
+                "EmployeeWorking",
+                "EmployeeCounted"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Ensure employee i starts their rest period after WorkingDays consecutive working days",
+            "status": "formulated",
+            "formulation": "\\sum_{j=k}^{k+\\textup{WorkingDays}-1} \\textup{EmployeeWorking}_{ij} = \\textup{WorkingDays} \\times \\textup{EmployeeStartRest}_{ik}, \\quad \\forall i \\in \\{1, \\ldots, E\\}, \\forall k \\in \\{1, \\ldots, N-\\textup{WorkingDays}+1\\}",
+            "related_variables": [
+                "EmployeeWorking",
+                "EmployeeStartRest"
+            ],
+            "related_parameters": [
+                "WorkingDays"
+            ]
+        },
+        {
+            "description": "Ensure employee i does not work during their rest period",
+            "status": "formulated",
+            "formulation": "\\sum_{j=k}^{k+\\textup{RestingDays}-1} \\textup{EmployeeWorking}_{ij} = 0, \\quad \\textup{if} \\quad \\textup{EmployeeStartRest}_{i,k-\\textup{WorkingDays}} = 1, \\quad \\forall i \\in \\{1, \\ldots, E\\}, k > \\textup{WorkingDays}, k+\\textup{RestingDays} \\leq N",
+            "related_variables": [
+                "EmployeeWorking",
+                "EmployeeStartRest"
+            ],
+            "related_parameters": [
+                "RestingDays",
+                "WorkingDays"
+            ]
+        },
+        {
+            "description": "Ensure the coverage requirement is met on each day",
+            "status": "formulated",
+            "formulation": "\\sum_{i=1}^{E} \\textup{EmployeeWorking}_{ij} \\geq \\textup{Num}_j, \\quad \\forall j \\in \\{1, \\ldots, N\\}",
+            "related_variables": [
+                "EmployeeWorking"
+            ],
+            "related_parameters": [
+                "Num"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "1 if employee i is working on day j, 0 otherwise",
+            "symbol": "EmployeeWorking",
+            "shape": [
+                "E",
+                "N"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "1 if employee i starts rest on day k, 0 otherwise",
+            "symbol": "EmployeeStartRest",
+            "shape": [
+                "E",
+                "N"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "Indicator variable for whether employee i is counted towards the total number of employees needed, which is 1 when employee i is working at least once within the period under consideration, 0 otherwise",
+            "symbol": "EmployeeCounted",
+            "shape": [
+                "E"
+            ],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of employees needed to meet the coverage requirements",
+            "status": "formulated",
+            "formulation": "\\min \\sum_{i=1}^{E} \\textup{EmployeeCounted}_i",
+            "related_variables": [
+                "EmployeeCounted"
+            ],
+            "related_parameters": []
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413091650_nlp4lp_42/",
+    "problem_path": "data/nlp4lp/42/"
+}

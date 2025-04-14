@@ -1,0 +1,196 @@
+{
+    "background": "An airport is trying to figure out the optimal number of escalators and elevators to install to transport passengers efficiently while minimizing space usage.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "The number of people an escalator can transport every minute",
+            "symbol": "EscalatorRate",
+            "value": 20,
+            "shape": [],
+            "code": "EscalatorRate = data[\"EscalatorRate\"] # scalar parameter"
+        },
+        {
+            "definition": "The number of people an elevator can transport every minute",
+            "symbol": "ElevatorRate",
+            "value": 8,
+            "shape": [],
+            "code": "ElevatorRate = data[\"ElevatorRate\"] # scalar parameter"
+        },
+        {
+            "definition": "The units of space an escalator takes up",
+            "symbol": "EscalatorSpace",
+            "value": 5,
+            "shape": [],
+            "code": "EscalatorSpace = data[\"EscalatorSpace\"] # scalar parameter"
+        },
+        {
+            "definition": "The units of space an elevator takes up",
+            "symbol": "ElevatorSpace",
+            "value": 2,
+            "shape": [],
+            "code": "ElevatorSpace = data[\"ElevatorSpace\"] # scalar parameter"
+        },
+        {
+            "definition": "The minimum number of people the airport needs to have the capacity to transport every minute",
+            "symbol": "CapacityMinimum",
+            "value": 400,
+            "shape": [],
+            "code": "CapacityMinimum = data[\"CapacityMinimum\"] # scalar parameter"
+        },
+        {
+            "definition": "The ratio of the minimum number of escalators to elevators",
+            "symbol": "EscalatorElevatorRatio",
+            "value": 3,
+            "shape": [],
+            "code": "EscalatorElevatorRatio = data[\"EscalatorElevatorRatio\"] # scalar parameter"
+        },
+        {
+            "definition": "The minimum number of elevators that must be used",
+            "symbol": "ElevatorMinNumber",
+            "value": 2,
+            "shape": [],
+            "code": "ElevatorMinNumber = data[\"ElevatorMinNumber\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Total transport capacity of escalators and elevators must be at least CapacityMinimum people per minute",
+            "status": "coded",
+            "formulation": "\\textup{EscalatorNumber} \\times \\textup{EscalatorRate} + \\textup{ElevatorNumber} \\times \\textup{ElevatorRate} \\geq \\textup{CapacityMinimum}",
+            "related_variables": [
+                "EscalatorNumber",
+                "ElevatorNumber"
+            ],
+            "related_parameters": [
+                "EscalatorRate",
+                "ElevatorRate",
+                "CapacityMinimum"
+            ],
+            "code": "# Add minimum transport capacity constraint\nmodel.addConstr(EscalatorNumber * EscalatorRate + ElevatorNumber * ElevatorRate >= CapacityMinimum, name=\"min_transport_capacity\")"
+        },
+        {
+            "description": "Number of escalators must be at least EscalatorElevatorRatio times the number of elevators",
+            "status": "coded",
+            "formulation": "\\textup{EscalatorNumber} \\geq \\textup{EscalatorElevatorRatio} \\times \\textup{ElevatorNumber}",
+            "related_variables": [
+                "EscalatorNumber",
+                "ElevatorNumber"
+            ],
+            "related_parameters": [
+                "EscalatorElevatorRatio"
+            ],
+            "code": "EscalatorNumber >= EscalatorElevatorRatio * ElevatorNumber\nmodel.addConstr(EscalatorNumber >= EscalatorElevatorRatio * ElevatorNumber, name=\"escalator_elevator_ratio\")"
+        },
+        {
+            "description": "There must be at least ElevatorMinNumber elevators in the airport",
+            "status": "coded",
+            "formulation": "\\textup{ElevatorNumber} \\geq \\textup{ElevatorMinNumber}",
+            "related_variables": [
+                "ElevatorNumber"
+            ],
+            "related_parameters": [
+                "ElevatorMinNumber"
+            ],
+            "code": "ElevatorMinNumber = data[\"ElevatorMinNumber\"] # scalar parameter\nmodel.addConstr(ElevatorNumber >= ElevatorMinNumber, name=\"min_elevator_constraint\")"
+        },
+        {
+            "description": "Number of escalators must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{EscalatorNumber} \\geq 0",
+            "related_variables": [
+                "EscalatorNumber"
+            ],
+            "related_parameters": [],
+            "code": "# Since the variable \"EscalatorNumber\" is already guaranteed to be non-negative by its type definition,\n# no additional constraint is necessary.\n# However, if we needed to explicitly add a constraint, we would do the following:\n# model.addConstr(EscalatorNumber >= 0, name=\"non_negative_escalators\")"
+        },
+        {
+            "description": "Number of elevators must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{ElevatorNumber} \\geq 0",
+            "related_variables": [
+                "ElevatorNumber"
+            ],
+            "related_parameters": [],
+            "code": "# Ensure that the number of elevators is non-negative\nmodel.addConstr(ElevatorNumber >= 0, name=\"elevator_non_negativity\")"
+        },
+        {
+            "description": "The airport's transport capacity for passengers must meet or exceed the minimum required capacity",
+            "status": "coded",
+            "formulation": "\\textup{EscalatorNumber} \\times \\textup{EscalatorRate} + \\textup{ElevatorNumber} \\times \\textup{ElevatorRate} \\geq \\textup{CapacityMinimum}",
+            "related_variables": [
+                "EscalatorNumber",
+                "ElevatorNumber"
+            ],
+            "related_parameters": [
+                "EscalatorRate",
+                "ElevatorRate",
+                "CapacityMinimum"
+            ],
+            "code": "# Transport capacity constraint\nmodel.addConstr(EscalatorNumber * EscalatorRate + ElevatorNumber * ElevatorRate >= CapacityMinimum, name=\"transport_capacity\")"
+        },
+        {
+            "description": "The number of escalators must be at least a certain ratio of the number of elevators",
+            "status": "coded",
+            "formulation": "\\textup{EscalatorNumber} \\geq \\textup{EscalatorElevatorRatio} \\times \\textup{ElevatorNumber}",
+            "related_variables": [
+                "EscalatorNumber",
+                "ElevatorNumber"
+            ],
+            "related_parameters": [
+                "EscalatorElevatorRatio"
+            ],
+            "code": "# Add constraint for the number of escalators to be at least a certain ratio of the number of elevators\nmodel.addConstr(EscalatorNumber >= EscalatorElevatorRatio * ElevatorNumber, name=\"escalator_to_elevator_ratio\")"
+        },
+        {
+            "description": "The number of elevators used must be at least the minimum number specified",
+            "status": "coded",
+            "formulation": "\\textup{ElevatorNumber} \\geq \\textup{ElevatorMinNumber}",
+            "related_variables": [
+                "ElevatorNumber"
+            ],
+            "related_parameters": [
+                "ElevatorMinNumber"
+            ],
+            "code": "# Add constraint for the minimum number of elevators\nmodel.addConstr(ElevatorNumber >= ElevatorMinNumber, \"min_elevators\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of escalators installed in the airport",
+            "symbol": "EscalatorNumber",
+            "shape": [],
+            "status": "coded",
+            "code": "EscalatorNumber = model.addVar(vtype=gp.GRB.INTEGER, name=\"EscalatorNumber\")"
+        },
+        {
+            "definition": "The number of elevators installed in the airport",
+            "symbol": "ElevatorNumber",
+            "shape": [],
+            "status": "coded",
+            "code": "ElevatorNumber = model.addVar(vtype=gp.GRB.INTEGER, name=\"ElevatorNumber\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total units of space used by escalators and elevators",
+            "status": "coded",
+            "formulation": "\\min \\quad \\textup{EscalatorNumber} \\times \\textup{EscalatorSpace} + \\textup{ElevatorNumber} \\times \\textup{ElevatorSpace}",
+            "related_variables": [
+                "EscalatorNumber",
+                "ElevatorNumber"
+            ],
+            "related_parameters": [
+                "EscalatorSpace",
+                "ElevatorSpace"
+            ],
+            "code": "# Set objective function\nmodel.setObjective(EscalatorNumber * EscalatorSpace + ElevatorNumber * ElevatorSpace, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 100.0,
+    "log_path": "logs/log_20250413172115_nl4opt_prob_259/",
+    "problem_path": "data/nl4opt/prob_259/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_259/data.json\", \"r\") as f:\n    data = json.load(f)\n\nEscalatorRate = data[\"EscalatorRate\"] # scalar parameter\nElevatorRate = data[\"ElevatorRate\"] # scalar parameter\nEscalatorSpace = data[\"EscalatorSpace\"] # scalar parameter\nElevatorSpace = data[\"ElevatorSpace\"] # scalar parameter\nCapacityMinimum = data[\"CapacityMinimum\"] # scalar parameter\nEscalatorElevatorRatio = data[\"EscalatorElevatorRatio\"] # scalar parameter\nElevatorMinNumber = data[\"ElevatorMinNumber\"] # scalar parameter\nEscalatorNumber = model.addVar(vtype=gp.GRB.INTEGER, name=\"EscalatorNumber\")\nElevatorNumber = model.addVar(vtype=gp.GRB.INTEGER, name=\"ElevatorNumber\")\n\n# Add minimum transport capacity constraint\nmodel.addConstr(EscalatorNumber * EscalatorRate + ElevatorNumber * ElevatorRate >= CapacityMinimum, name=\"min_transport_capacity\")\n\nEscalatorNumber >= EscalatorElevatorRatio * ElevatorNumber\nmodel.addConstr(EscalatorNumber >= EscalatorElevatorRatio * ElevatorNumber, name=\"escalator_elevator_ratio\")\n\nElevatorMinNumber = data[\"ElevatorMinNumber\"] # scalar parameter\nmodel.addConstr(ElevatorNumber >= ElevatorMinNumber, name=\"min_elevator_constraint\")\n\n# Since the variable \"EscalatorNumber\" is already guaranteed to be non-negative by its type definition,\n# no additional constraint is necessary.\n# However, if we needed to explicitly add a constraint, we would do the following:\n# model.addConstr(EscalatorNumber >= 0, name=\"non_negative_escalators\")\n\n# Ensure that the number of elevators is non-negative\nmodel.addConstr(ElevatorNumber >= 0, name=\"elevator_non_negativity\")\n\n# Transport capacity constraint\nmodel.addConstr(EscalatorNumber * EscalatorRate + ElevatorNumber * ElevatorRate >= CapacityMinimum, name=\"transport_capacity\")\n\n# Add constraint for the number of escalators to be at least a certain ratio of the number of elevators\nmodel.addConstr(EscalatorNumber >= EscalatorElevatorRatio * ElevatorNumber, name=\"escalator_to_elevator_ratio\")\n\n# Add constraint for the minimum number of elevators\nmodel.addConstr(ElevatorNumber >= ElevatorMinNumber, \"min_elevators\")\n\n# Set objective function\nmodel.setObjective(EscalatorNumber * EscalatorSpace + ElevatorNumber * ElevatorSpace, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

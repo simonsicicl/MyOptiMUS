@@ -1,0 +1,183 @@
+{
+    "background": "A factory operates two types of machines, A and B, to produce items. Both machines have different production rates and energy consumptions. The factory must meet minimum production requirements, adhere to electricity limitations, maintain a certain percentage of machine type B, and ensure a minimum number of machine A are used.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of items machine A can make per day",
+            "symbol": "ItemsAMadePerDay",
+            "value": 30,
+            "shape": [],
+            "code": "ItemsAMadePerDay = data[\"ItemsAMadePerDay\"] # scalar parameter"
+        },
+        {
+            "definition": "Electricity consumed by machine A per day",
+            "symbol": "ElectricityA",
+            "value": 100,
+            "shape": [],
+            "code": "ElectricityA = data[\"ElectricityA\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of items machine B can make per day",
+            "symbol": "ItemsBMadePerDay",
+            "value": 50,
+            "shape": [],
+            "code": "ItemsBMadePerDay = data[\"ItemsBMadePerDay\"] # scalar parameter"
+        },
+        {
+            "definition": "Electricity consumed by machine B per day",
+            "symbol": "ElectricityB",
+            "value": 120,
+            "shape": [],
+            "code": "ElectricityB = data[\"ElectricityB\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum total items the factory must produce per day",
+            "symbol": "MinItems",
+            "value": 1000,
+            "shape": [],
+            "code": "MinItems = data[\"MinItems\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum amount of electricity available for the factory per day",
+            "symbol": "MaxElectricity",
+            "value": 3000,
+            "shape": [],
+            "code": "MaxElectricity = data[\"MaxElectricity\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum percentage of type B machines",
+            "symbol": "MaxPercentB",
+            "value": 0.3,
+            "shape": [],
+            "code": "MaxPercentB = data[\"MaxPercentB\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of machine A to be used",
+            "symbol": "MinMachineA",
+            "value": 5,
+            "shape": [],
+            "code": "MinMachineA = data[\"MinMachineA\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Total number of items produced by machines A and B must meet or exceed the minimum required per day",
+            "status": "formulated",
+            "formulation": "\\textup{ItemsAMadePerDay} \\times \\textup{NumMachineA} + \\textup{ItemsBMadePerDay} \\times \\textup{NumMachineB} \\geq \\textup{MinItems}",
+            "related_variables": [
+                "NumMachineA",
+                "NumMachineB"
+            ],
+            "related_parameters": [
+                "ItemsAMadePerDay",
+                "ItemsBMadePerDay",
+                "MinItems"
+            ]
+        },
+        {
+            "description": "Total electricity consumption by machines A and B is at most MaxElectricity kWh per day",
+            "status": "formulated",
+            "formulation": "\\textup{NumMachineA} \\times \\textup{ElectricityA} + \\textup{NumMachineB} \\times \\textup{ElectricityB} \\leq \\textup{MaxElectricity}",
+            "related_variables": [
+                "NumMachineA",
+                "NumMachineB"
+            ],
+            "related_parameters": [
+                "ElectricityA",
+                "ElectricityB",
+                "MaxElectricity"
+            ]
+        },
+        {
+            "description": "Number of machine B is at most MaxPercentB percent of the total number of machines",
+            "status": "formulated",
+            "formulation": "\\textup{NumMachineB} \\leq \\textup{MaxPercentB} \\times (\\textup{NumMachineA} + \\textup{NumMachineB})",
+            "related_variables": [
+                "NumMachineA",
+                "NumMachineB"
+            ],
+            "related_parameters": [
+                "MaxPercentB"
+            ]
+        },
+        {
+            "description": "The number of machine A used should be at least the minimum number specified by MinMachineA",
+            "status": "formulated",
+            "formulation": "\\textup{NumMachineA} \\geq \\textup{MinMachineA}",
+            "related_variables": [
+                "NumMachineA"
+            ],
+            "related_parameters": [
+                "MinMachineA"
+            ]
+        },
+        {
+            "description": "Total electricity used by machine A is at most the product of ElectricityA and NumMachineA",
+            "status": "formulated",
+            "formulation": "\\textup{TotalElectricityA} \\leq \\textup{ElectricityA} \\cdot \\textup{NumMachineA}",
+            "related_variables": [
+                "TotalElectricityA",
+                "NumMachineA"
+            ],
+            "related_parameters": [
+                "ElectricityA"
+            ]
+        },
+        {
+            "description": "Total electricity used by machine B is at most ElectricityB times the number of machine B",
+            "status": "formulated",
+            "formulation": "\\textup{TotalElectricityB} \\leq \\textup{ElectricityB} \\cdot \\textup{NumMachineB}",
+            "related_variables": [
+                "TotalElectricityB",
+                "NumMachineB"
+            ],
+            "related_parameters": [
+                "ElectricityB"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of machine A used",
+            "symbol": "NumMachineA",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "Number of machine B used",
+            "symbol": "NumMachineB",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "Total electricity used by machine A",
+            "symbol": "TotalElectricityA",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "Total electricity used by machine B",
+            "symbol": "TotalElectricityB",
+            "shape": [],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of machines used (both A and B)",
+            "status": "formulated",
+            "formulation": "\\textup{Minimize} \\\\ \\textup{NumMachineA} + \\textup{NumMachineB}",
+            "related_variables": [
+                "NumMachineA",
+                "NumMachineB"
+            ],
+            "related_parameters": []
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250414050940_nl4opt_prob_91/",
+    "problem_path": "data/nl4opt/prob_91/"
+}

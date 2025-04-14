@@ -1,0 +1,167 @@
+{
+    "background": "The task is to plan the expansion of energy capacity to meet a certain demand over a period while considering the costs and capacities of different energy sources and their lifetimes.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of time periods",
+            "symbol": "T",
+            "value": "",
+            "shape": [],
+            "code": "T = data[\"T\"] # scalar parameter"
+        },
+        {
+            "definition": "The demand in period t",
+            "symbol": "Demand",
+            "value": "",
+            "shape": [
+                "T"
+            ],
+            "code": "Demand = np.array(data[\"Demand\"]) # ['T']"
+        },
+        {
+            "definition": "The maximum oil capacity in period t",
+            "symbol": "OilCap",
+            "value": "",
+            "shape": [
+                "T"
+            ],
+            "code": "OilCap = np.array(data[\"OilCap\"]) # ['T']"
+        },
+        {
+            "definition": "The cost of coal per unit",
+            "symbol": "CoalCost",
+            "value": 0,
+            "shape": [],
+            "code": "CoalCost = data[\"CoalCost\"] # scalar parameter"
+        },
+        {
+            "definition": "The cost of nuclear energy per unit",
+            "symbol": "NukeCost",
+            "value": 0,
+            "shape": [],
+            "code": "NukeCost = data[\"NukeCost\"] # scalar parameter"
+        },
+        {
+            "definition": "The maximum nuclear capacity",
+            "symbol": "MaxNuke",
+            "value": 0,
+            "shape": [],
+            "code": "MaxNuke = data[\"MaxNuke\"] # scalar parameter"
+        },
+        {
+            "definition": "The lifetime of a coal plant",
+            "symbol": "CoalLife",
+            "value": 0,
+            "shape": [],
+            "code": "CoalLife = data[\"CoalLife\"] # scalar parameter"
+        },
+        {
+            "definition": "The lifetime of a nuclear plant",
+            "symbol": "NukeLife",
+            "value": 0,
+            "shape": [],
+            "code": "NukeLife = data[\"NukeLife\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Meet the energy demand in each period T",
+            "status": "coded",
+            "formulation": "\\sum_{s \\in S} \\textup{EnergyProduced}_{s,t} \\geq \\textup{Demand}_t \\quad \\forall t \\in [1, T]",
+            "related_variables": [
+                "EnergyProducedOil",
+                "EnergyProducedCoal",
+                "EnergyProducedNuke"
+            ],
+            "related_parameters": [
+                "Demand"
+            ],
+            "code": "# Meet the energy demand in each period T\nfor t in range(T):\n    model.addConstr(gp.quicksum([EnergyProducedOil[t], EnergyProducedCoal[t], EnergyProducedNuke[t]]) >= Demand[t], name=f\"energy_demand_{t}\")"
+        },
+        {
+            "description": "Do not exceed the maximum oil capacity in period T",
+            "status": "coded",
+            "formulation": "\\forall t \\in \\{1, \\ldots, T\\}, \\quad \\textup{EnergyProducedOil}_t \\leq \\textup{OilCap}_t",
+            "related_variables": [
+                "EnergyProducedOil"
+            ],
+            "related_parameters": [
+                "OilCap"
+            ],
+            "code": "# Add constraints to not exceed the maximum oil capacity in each period T\nfor t in range(T):\n    model.addConstr(EnergyProducedOil[t] <= OilCap[t], name=f\"max_oil_capacity_{t}\")"
+        },
+        {
+            "description": "The total energy produced by nuclear power in any period must not exceed the maximum nuclear capacity",
+            "status": "coded",
+            "formulation": "\\textup{EnergyProducedNuke}_{t} \\leq \\textup{MaxNuke} \\quad \\forall t \\in \\{1, \\ldots, \\textup{T}\\}",
+            "related_variables": [
+                "EnergyProducedNuke"
+            ],
+            "related_parameters": [
+                "MaxNuke",
+                "T"
+            ],
+            "code": "# Add the constraint for maximum nuclear power production in any period\nfor t in range(T):\n    model.addConstr(EnergyProducedNuke[t] <= MaxNuke, name=f\"max_nuclear_capacity_period_{t}\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Energy produced by oil in period t",
+            "symbol": "EnergyProducedOil",
+            "shape": [
+                "T"
+            ],
+            "status": "coded",
+            "code": "EnergyProducedOil = model.addVars(T, vtype=gp.GRB.CONTINUOUS, name=\"EnergyProducedOil\")"
+        },
+        {
+            "definition": "Energy produced by coal in period t",
+            "symbol": "EnergyProducedCoal",
+            "shape": [
+                "T"
+            ],
+            "status": "coded",
+            "code": "EnergyProducedCoal = model.addVars(T, vtype=gp.GRB.CONTINUOUS, name=\"EnergyProducedCoal\")"
+        },
+        {
+            "definition": "Energy produced by nuclear power in period t",
+            "symbol": "EnergyProducedNuke",
+            "shape": [
+                "T"
+            ],
+            "status": "coded",
+            "code": "EnergyProducedNuke = model.addVars(T, vtype=gp.GRB.CONTINUOUS, name=\"EnergyProducedNuke\")"
+        },
+        {
+            "definition": "The cost of oil energy per unit",
+            "symbol": "OilCostPerUnit",
+            "shape": [],
+            "status": "coded",
+            "code": "OilCostPerUnit = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"OilCostPerUnit\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total cost of the capacity expansion plan for oil, coal, and nuclear energy sources",
+            "status": "coded",
+            "formulation": "\\min \\left( \\sum_{t=1}^{T} \\left( \\textup{EnergyProducedOil}_{t} \\cdot \\textup{OilCostPerUnit} + \\textup{EnergyProducedCoal}_{t} \\cdot \\textup{CoalCost} + \\textup{EnergyProducedNuke}_{t} \\cdot \\textup{NukeCost} \\right) \\right)",
+            "related_variables": [
+                "EnergyProducedOil",
+                "EnergyProducedCoal",
+                "EnergyProducedNuke"
+            ],
+            "related_parameters": [
+                "CoalCost",
+                "NukeCost"
+            ],
+            "code": "# Set the objective function\nmodel.setObjective(gp.quicksum(\n    EnergyProducedOil[t] * OilCostPerUnit + \n    EnergyProducedCoal[t] * CoalCost +\n    EnergyProducedNuke[t] * NukeCost\n    for t in range(T)), gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 955.0000000012064,
+    "log_path": "logs/log_20250413090413_nlp4lp_3/",
+    "problem_path": "data/nlp4lp/3/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nlp4lp/3/data.json\", \"r\") as f:\n    data = json.load(f)\n\nT = data[\"T\"] # scalar parameter\nDemand = np.array(data[\"Demand\"]) # ['T']\nOilCap = np.array(data[\"OilCap\"]) # ['T']\nCoalCost = data[\"CoalCost\"] # scalar parameter\nNukeCost = data[\"NukeCost\"] # scalar parameter\nMaxNuke = data[\"MaxNuke\"] # scalar parameter\nCoalLife = data[\"CoalLife\"] # scalar parameter\nNukeLife = data[\"NukeLife\"] # scalar parameter\nEnergyProducedOil = model.addVars(T, vtype=gp.GRB.CONTINUOUS, name=\"EnergyProducedOil\")\nEnergyProducedCoal = model.addVars(T, vtype=gp.GRB.CONTINUOUS, name=\"EnergyProducedCoal\")\nEnergyProducedNuke = model.addVars(T, vtype=gp.GRB.CONTINUOUS, name=\"EnergyProducedNuke\")\nOilCostPerUnit = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"OilCostPerUnit\")\n\n# Meet the energy demand in each period T\nfor t in range(T):\n    model.addConstr(gp.quicksum([EnergyProducedOil[t], EnergyProducedCoal[t], EnergyProducedNuke[t]]) >= Demand[t], name=f\"energy_demand_{t}\")\n\n# Add constraints to not exceed the maximum oil capacity in each period T\nfor t in range(T):\n    model.addConstr(EnergyProducedOil[t] <= OilCap[t], name=f\"max_oil_capacity_{t}\")\n\n# Add the constraint for maximum nuclear power production in any period\nfor t in range(T):\n    model.addConstr(EnergyProducedNuke[t] <= MaxNuke, name=f\"max_nuclear_capacity_period_{t}\")\n\n# Set the objective function\nmodel.setObjective(gp.quicksum(\n    EnergyProducedOil[t] * OilCostPerUnit + \n    EnergyProducedCoal[t] * CoalCost +\n    EnergyProducedNuke[t] * NukeCost\n    for t in range(T)), gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

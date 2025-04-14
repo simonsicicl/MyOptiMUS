@@ -1,0 +1,194 @@
+{
+    "background": "The problem involves assigning student groups from various neighborhoods to different schools with the aim of minimizing the total distance traveled by all students, taking into consideration the capacity of the schools and distribution of student groups.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Total number of schools",
+            "symbol": "S",
+            "value": "",
+            "shape": [],
+            "code": "S = data[\"S\"] # scalar parameter"
+        },
+        {
+            "definition": "Total number of student groups",
+            "symbol": "G",
+            "value": "",
+            "shape": [],
+            "code": "G = data[\"G\"] # scalar parameter"
+        },
+        {
+            "definition": "Total number of neighborhoods",
+            "symbol": "N",
+            "value": "",
+            "shape": [],
+            "code": "N = data[\"N\"] # scalar parameter"
+        },
+        {
+            "definition": "Capacity of school s for student group g",
+            "symbol": "Capacity",
+            "value": "",
+            "shape": [
+                "S",
+                "G"
+            ],
+            "code": "Capacity = np.array(data[\"Capacity\"]) # ['S', 'G']"
+        },
+        {
+            "definition": "Population of student group g in neighborhood n",
+            "symbol": "Population",
+            "value": "",
+            "shape": [
+                "N",
+                "G"
+            ],
+            "code": "Population = np.array(data[\"Population\"]) # ['N', 'G']"
+        },
+        {
+            "definition": "Distance between neighborhood n and school s",
+            "symbol": "Distance",
+            "value": "",
+            "shape": [
+                "N",
+                "S"
+            ],
+            "code": "Distance = np.array(data[\"Distance\"]) # ['N', 'S']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Total number of students from each student group g assigned from neighborhood n to schools does not exceed the Population of group g in neighborhood n",
+            "status": "formulated",
+            "formulation": "\\sum_{s=1}^{\\textup{S}} \\textup{AssignedStudents}_{n, g, s} \\leq \\textup{Population}_{n, g} \\quad \\forall n \\in \\{1, \\dots, \\textup{N}\\}, \\forall g \\in \\{1, \\dots, \\textup{G}\\}",
+            "related_variables": [
+                "AssignedStudents"
+            ],
+            "related_parameters": [
+                "Population",
+                "S",
+                "N",
+                "G"
+            ]
+        },
+        {
+            "description": "Total number of students from each student group g, assigned from all neighborhoods n to school s, does not exceed the capacity of the school s for student group g.",
+            "status": "formulated",
+            "formulation": "\\sum_{n=1}^{\\textup{N}} \\textup{AssignedStudents}_{n,g,s} \\leq \\textup{Capacity}_{s,g} \\quad \\forall g \\in \\{1, ..., \\textup{G}\\}, \\forall s \\in \\{1, ..., \\textup{S}\\}",
+            "related_variables": [
+                "AssignedStudents"
+            ],
+            "related_parameters": [
+                "Capacity",
+                "N",
+                "G",
+                "S"
+            ]
+        },
+        {
+            "description": "Each student from group g in neighborhood n must be assigned to exactly one school s.",
+            "status": "formulated",
+            "formulation": "\\sum_{s=1}^{\\textup{S}} \\textup{AssignedStudents}_{n,g,s} = \\textup{Population}_{n,g}, \\quad \\forall n \\in \\{1, ..., \\textup{N}\\}, \\forall g \\in \\{1, ..., \\textup{G}\\}",
+            "related_variables": [
+                "AssignedStudents"
+            ],
+            "related_parameters": [
+                "Population",
+                "S",
+                "N",
+                "G"
+            ]
+        },
+        {
+            "description": "All populations, capacities, and distances are non-negative.",
+            "status": "formulated",
+            "formulation": "\\textup{AssignedStudents}_{n,g,s} \\geq 0, \\quad \\forall \\ n \\in [1,\\textup{N}], \\ g \\in [1,\\textup{G}], \\ s \\in [1,\\textup{S}]",
+            "related_variables": [
+                "AssignedStudents"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "The number of students assigned to school \\textup{s} from group \\textup{g} cannot exceed the capacity of that school for that group.",
+            "status": "formulated",
+            "formulation": "\\sum_{n=1}^{\\textup{N}} \\textup{AssignedStudents}_{n,g,s} \\leq \\textup{Capacity}_{s,g}, \\quad \\forall \\ g \\in [1,\\textup{G}], \\ s \\in [1,\\textup{S}]",
+            "related_variables": [
+                "AssignedStudents"
+            ],
+            "related_parameters": [
+                "Capacity"
+            ]
+        },
+        {
+            "description": "All students from each group \\textup{g} in neighborhood \\textup{n} are fully assigned to schools without exceeding their population.",
+            "status": "formulated",
+            "formulation": "\\sum_{s=1}^{\\textup{S}} \\textup{AssignedStudents}_{n,g,s} \\leq \\textup{Population}_{n,g}, \\quad \\forall \\ n \\in [1,\\textup{N}], \\ g \\in [1,\\textup{G}]",
+            "related_variables": [
+                "AssignedStudents"
+            ],
+            "related_parameters": [
+                "Population"
+            ]
+        },
+        {
+            "description": "All distances between neighborhoods and schools must be non-negative.",
+            "status": "formulated",
+            "formulation": "\\textup{Distance}_{n,s} \\geq 0, \\quad \\forall \\ n \\in [1,\\textup{N}], \\ s \\in [1,\\textup{S}]",
+            "related_variables": [],
+            "related_parameters": [
+                "Distance"
+            ]
+        },
+        {
+            "description": "The total number of students assigned from a neighborhood and group must equal the population of that group in that neighborhood",
+            "status": "formulated",
+            "formulation": "\\sum_{s=1}^S \\textup{AssignedStudents}_{n,g,s} = \\textup{Population}_{n,g}, \\quad \\forall n = 1, ..., N, \\quad \\forall g = 1, ..., G",
+            "related_variables": [
+                "AssignedStudents"
+            ],
+            "related_parameters": [
+                "Population"
+            ]
+        },
+        {
+            "description": "Ensure that the total assignment to each school's capacity by group does not exceed its capacity",
+            "status": "formulated",
+            "formulation": "\\sum_{n=1}^N \\textup{AssignedStudents}_{n,g,s} \\leq \\textup{Capacity}_{s,g}, \\quad \\forall s = 1, ..., S, \\quad \\forall g = 1, ..., G",
+            "related_variables": [
+                "AssignedStudents"
+            ],
+            "related_parameters": [
+                "Capacity"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of students from group g in neighborhood n assigned to school s",
+            "symbol": "AssignedStudents",
+            "shape": [
+                "N",
+                "G",
+                "S"
+            ],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total distance traveled by all students in their assignments to schools",
+            "status": "formulated",
+            "formulation": "\\textup{Min } \\sum_{n=1}^N \\sum_{g=1}^G \\sum_{s=1}^S \\textup{Distance}_{n,s} \\cdot \\textup{AssignedStudents}_{n,g,s}",
+            "related_variables": [
+                "AssignedStudents"
+            ],
+            "related_parameters": [
+                "Distance"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413153711_nlp4lp_11/",
+    "problem_path": "data/nlp4lp/11/"
+}

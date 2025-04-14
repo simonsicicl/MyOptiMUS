@@ -1,0 +1,182 @@
+{
+    "background": "A patient is undergoing radiation treatment with two beams aimed to deliver medicine doses to both a benign area and a tumor, with a goal to minimize radiation received by the pancreas while adhering to maximum and minimum dose limits for the skin and tumor respectively.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Dose of medicine delivered by Beam 1 per minute to the benign area of the pancreas",
+            "symbol": "DosePancreas1",
+            "value": 0.3,
+            "shape": [],
+            "code": "DosePancreas1 = data[\"DosePancreas1\"] # scalar parameter"
+        },
+        {
+            "definition": "Dose of medicine delivered by Beam 1 per minute to the benign area of the skin",
+            "symbol": "DoseSkin1",
+            "value": 0.2,
+            "shape": [],
+            "code": "DoseSkin1 = data[\"DoseSkin1\"] # scalar parameter"
+        },
+        {
+            "definition": "Dose of medicine delivered by Beam 2 per minute to the benign area of the pancreas",
+            "symbol": "DosePancreas2",
+            "value": 0.2,
+            "shape": [],
+            "code": "DosePancreas2 = data[\"DosePancreas2\"] # scalar parameter"
+        },
+        {
+            "definition": "Dose of medicine delivered by Beam 2 per minute to the benign area of the skin",
+            "symbol": "DoseSkin2",
+            "value": 0.1,
+            "shape": [],
+            "code": "DoseSkin2 = data[\"DoseSkin2\"] # scalar parameter"
+        },
+        {
+            "definition": "Dose of medicine delivered by Beam 1 per minute to the tumor",
+            "symbol": "DoseTumor1",
+            "value": 0.6,
+            "shape": [],
+            "code": "DoseTumor1 = data[\"DoseTumor1\"] # scalar parameter"
+        },
+        {
+            "definition": "Dose of medicine delivered by Beam 2 per minute to the tumor",
+            "symbol": "DoseTumor2",
+            "value": 0.4,
+            "shape": [],
+            "code": "DoseTumor2 = data[\"DoseTumor2\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum units of medicine the skin should receive",
+            "symbol": "MaxSkinDose",
+            "value": 4,
+            "shape": [],
+            "code": "MaxSkinDose = data[\"MaxSkinDose\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum units of medicine the tumor should receive",
+            "symbol": "MinTumorDose",
+            "value": 3,
+            "shape": [],
+            "code": "MinTumorDose = data[\"MinTumorDose\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Minutes of Beam 1 used is non-negative",
+            "status": "coded",
+            "formulation": "\\textup{MinutesBeam1} \\geq 0",
+            "related_variables": [
+                "MinutesBeam1"
+            ],
+            "related_parameters": [],
+            "code": "# Constraint: Minutes of Beam 1 used is non-negative\nmodel.addConstr(MinutesBeam1 >= 0, name=\"nonnegativity_MinutesBeam1\")"
+        },
+        {
+            "description": "Minutes of Beam 2 used must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{MinutesBeam2} \\geq 0",
+            "related_variables": [
+                "MinutesBeam2"
+            ],
+            "related_parameters": [],
+            "code": "model.addConstr(MinutesBeam2 >= 0, name=\"non_negativity_beam2\")"
+        },
+        {
+            "description": "The total dose to the skin from both beams should not exceed the maximum skin dose",
+            "status": "coded",
+            "formulation": "\\textup{DoseSkin1} \\times \\textup{MinutesBeam1} + \\textup{DoseSkin2} \\times \\textup{MinutesBeam2} \\leq \\textup{MaxSkinDose}",
+            "related_variables": [
+                "MinutesBeam1",
+                "MinutesBeam2"
+            ],
+            "related_parameters": [
+                "DoseSkin1",
+                "DoseSkin2",
+                "MaxSkinDose"
+            ],
+            "code": "# Add constraint for maximum skin dose from both beams\nmodel.addConstr(DoseSkin1 * MinutesBeam1 + DoseSkin2 * MinutesBeam2 <= MaxSkinDose, name=\"max_skin_dose_constraint\")"
+        },
+        {
+            "description": "The tumor must receive at least MinTumorDose units of medicine from both beams combined.",
+            "status": "coded",
+            "formulation": "\\textup{MinutesBeam1} \\cdot \\textup{DoseTumor1} + \\textup{MinutesBeam2} \\cdot \\textup{DoseTumor2} \\geq \\textup{MinTumorDose}",
+            "related_variables": [
+                "MinutesBeam1",
+                "MinutesBeam2"
+            ],
+            "related_parameters": [
+                "DoseTumor1",
+                "DoseTumor2",
+                "MinTumorDose"
+            ],
+            "code": "# Add constraint for minimum tumor dose\nmodel.addConstr(MinutesBeam1 * DoseTumor1 + MinutesBeam2 * DoseTumor2 >= MinTumorDose, name=\"min_tumor_dose\")"
+        },
+        {
+            "description": "The skin should not receive more than the maximum allowed dose",
+            "status": "coded",
+            "formulation": "\\textup{DoseSkin1} \\times \\textup{MinutesBeam1} + \\textup{DoseSkin2} \\times \\textup{MinutesBeam2} \\leq \\textup{MaxSkinDose}",
+            "related_variables": [
+                "MinutesBeam1",
+                "MinutesBeam2"
+            ],
+            "related_parameters": [
+                "DoseSkin1",
+                "DoseSkin2",
+                "MaxSkinDose"
+            ],
+            "code": "# Add constraint for the maximum allowed dose to the skin\nmodel.addConstr(DoseSkin1 * MinutesBeam1 + DoseSkin2 * MinutesBeam2 <= MaxSkinDose, name=\"max_skin_dose\")"
+        },
+        {
+            "description": "The tumor should receive at least the minimum required dose",
+            "status": "coded",
+            "formulation": "\\textup{DoseTumor1} \\times \\textup{MinutesBeam1} + \\textup{DoseTumor2} \\times \\textup{MinutesBeam2} \\geq \\textup{MinTumorDose}",
+            "related_variables": [
+                "MinutesBeam1",
+                "MinutesBeam2"
+            ],
+            "related_parameters": [
+                "DoseTumor1",
+                "DoseTumor2",
+                "MinTumorDose"
+            ],
+            "code": "# Ensure the tumor receives at least the minimum required dose\nmodel.addConstr(DoseTumor1 * MinutesBeam1 + DoseTumor2 * MinutesBeam2 >= MinTumorDose, name=\"min_tumor_dose\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Minutes of Beam 1 used in the treatment",
+            "symbol": "MinutesBeam1",
+            "shape": [],
+            "status": "coded",
+            "code": "MinutesBeam1 = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"MinutesBeam1\")"
+        },
+        {
+            "definition": "Minutes of Beam 2 used in the treatment",
+            "symbol": "MinutesBeam2",
+            "shape": [],
+            "status": "coded",
+            "code": "MinutesBeam2 = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"MinutesBeam2\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total medicine dose received by the pancreas",
+            "status": "coded",
+            "formulation": "\\textup{TotalPancreasDose} = \\textup{DosePancreas1} \\times \\textup{MinutesBeam1} + \\textup{DosePancreas2} \\times \\textup{MinutesBeam2}",
+            "related_variables": [
+                "MinutesBeam1",
+                "MinutesBeam2"
+            ],
+            "related_parameters": [
+                "DosePancreas1",
+                "DosePancreas2"
+            ],
+            "code": "# Set objective\nmodel.setObjective(DosePancreas1 * MinutesBeam1 + DosePancreas2 * MinutesBeam2, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413132229_nl4opt_prob_140/",
+    "problem_path": "data/nl4opt/prob_140/"
+}

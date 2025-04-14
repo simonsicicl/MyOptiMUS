@@ -1,0 +1,234 @@
+{
+    "background": "A chemistry teacher is planning to conduct experiments that produce green gas using red and blue liquids. Each experiment also produces a certain amount of smelly gas. The lab has limited quantities of red and blue liquids, and there is a maximum limit on the amount of smelly gas that can be produced.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Units of the red liquid mixed in experiment 1",
+            "symbol": "Red1",
+            "value": 3,
+            "shape": [],
+            "code": "Red1 = data[\"Red1\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of the blue liquid mixed in experiment 1",
+            "symbol": "Blue1",
+            "value": 4,
+            "shape": [],
+            "code": "Blue1 = data[\"Blue1\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of green gas produced in experiment 1",
+            "symbol": "Green1",
+            "value": 5,
+            "shape": [],
+            "code": "Green1 = data[\"Green1\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of smelly gas produced in experiment 1",
+            "symbol": "Smelly1",
+            "value": 1,
+            "shape": [],
+            "code": "Smelly1 = data[\"Smelly1\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of the red liquid mixed in experiment 2",
+            "symbol": "Red2",
+            "value": 5,
+            "shape": [],
+            "code": "Red2 = data[\"Red2\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of the blue liquid mixed in experiment 2",
+            "symbol": "Blue2",
+            "value": 3,
+            "shape": [],
+            "code": "Blue2 = data[\"Blue2\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of green gas produced in experiment 2",
+            "symbol": "Green2",
+            "value": 6,
+            "shape": [],
+            "code": "Green2 = data[\"Green2\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of smelly gas produced in experiment 2",
+            "symbol": "Smelly2",
+            "value": 2,
+            "shape": [],
+            "code": "Smelly2 = data[\"Smelly2\"] # scalar parameter"
+        },
+        {
+            "definition": "Total units of red liquid available",
+            "symbol": "TotalRed",
+            "value": 80,
+            "shape": [],
+            "code": "TotalRed = data[\"TotalRed\"] # scalar parameter"
+        },
+        {
+            "definition": "Total units of blue liquid available",
+            "symbol": "TotalBlue",
+            "value": 70,
+            "shape": [],
+            "code": "TotalBlue = data[\"TotalBlue\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum units of smelly gas allowed",
+            "symbol": "MaxSmelly",
+            "value": 10,
+            "shape": [],
+            "code": "MaxSmelly = data[\"MaxSmelly\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of experiment 1 must be non-negative (no negative experiments are allowed).",
+            "status": "coded",
+            "formulation": "\\textup{Experiment1Count} \\geq 0",
+            "related_variables": [
+                "Experiment1Count"
+            ],
+            "related_parameters": [],
+            "code": "# Ensure the number of experiment 1 is non-negative\nmodel.addConstr(Experiment1Count >= 0, name=\"non_negative_experiment1\")"
+        },
+        {
+            "description": "Number of experiment 2 must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{Experiment2Count} \\geq 0",
+            "related_variables": [
+                "Experiment2Count"
+            ],
+            "related_parameters": [],
+            "code": "# Add non-negativity constraint for Experiment2Count\nmodel.addConstr(Experiment2Count >= 0, name=\"non_negativity_experiment2\")"
+        },
+        {
+            "description": "The total red liquid used in both Experiment 1 and Experiment 2 cannot exceed the total available red liquid (TotalRed).",
+            "status": "coded",
+            "formulation": "\\\\textup{Red1} \\\\times \\\\textup{Experiment1Count} + \\\\textup{Red2} \\\\times \\\\textup{Experiment2Count} \\\\leq \\\\textup{TotalRed}",
+            "related_variables": [
+                "Experiment1Count",
+                "Experiment2Count"
+            ],
+            "related_parameters": [
+                "Red1",
+                "Red2",
+                "TotalRed"
+            ],
+            "code": "# Adding a constraint to ensure total red liquid usage does not exceed available red liquid\nmodel.addConstr(\n    Experiment1Count * Red1 + Experiment2Count * Red2 <= TotalRed,\n    name=\"red_liquid_limit\"\n)"
+        },
+        {
+            "description": "The total units of blue liquid used in both experiments cannot exceed \\textup{TotalBlue}",
+            "status": "coded",
+            "formulation": "(\\textup{Blue1} \\cdot \\textup{Experiment1Count}) + (\\textup{Blue2} \\cdot \\textup{Experiment2Count}) \\leq \\textup{TotalBlue}",
+            "related_variables": [
+                "Experiment1Count",
+                "Experiment2Count"
+            ],
+            "related_parameters": [
+                "Blue1",
+                "Blue2",
+                "TotalBlue"
+            ],
+            "code": "# Adding total blue liquid usage constraint\nmodel.addConstr((Blue1 * Experiment1Count) + (Blue2 * Experiment2Count) <= TotalBlue, name=\"total_blue_liquid_usage\")"
+        },
+        {
+            "description": "The total smelly gas produced from both experiments cannot exceed the maximum limit defined by \\textup{MaxSmelly}.",
+            "status": "coded",
+            "formulation": "\\textup{Smelly1} \\cdot \\textup{Experiment1Count} + \\textup{Smelly2} \\cdot \\textup{Experiment2Count} \\leq \\textup{MaxSmelly}",
+            "related_variables": [
+                "Experiment1Count",
+                "Experiment2Count"
+            ],
+            "related_parameters": [
+                "Smelly1",
+                "Smelly2",
+                "MaxSmelly"
+            ],
+            "code": "# Add smelly gas limit constraint\nmodel.addConstr(Smelly1 * Experiment1Count + Smelly2 * Experiment2Count <= MaxSmelly, name=\"smelly_gas_limit\")"
+        },
+        {
+            "description": "The total red liquid used cannot exceed the available amount",
+            "status": "coded",
+            "formulation": "\\textup{Red1} \\cdot \\textup{Experiment1Count} + \\textup{Red2} \\cdot \\textup{Experiment2Count} \\leq \\textup{TotalRed}",
+            "related_variables": [
+                "Experiment1Count",
+                "Experiment2Count"
+            ],
+            "related_parameters": [
+                "Red1",
+                "Red2",
+                "TotalRed"
+            ],
+            "code": "# Add constraint for total red liquid usage\nmodel.addConstr(Red1 * Experiment1Count + Red2 * Experiment2Count <= TotalRed, name=\"red_liquid_limit\")"
+        },
+        {
+            "description": "The total blue liquid used cannot exceed the available amount",
+            "status": "coded",
+            "formulation": "\\textup{Blue1} \\cdot \\textup{Experiment1Count} + \\textup{Blue2} \\cdot \\textup{Experiment2Count} \\leq \\textup{TotalBlue}",
+            "related_variables": [
+                "Experiment1Count",
+                "Experiment2Count"
+            ],
+            "related_parameters": [
+                "Blue1",
+                "Blue2",
+                "TotalBlue"
+            ],
+            "code": "# Add constraint for total blue liquid usage\nmodel.addConstr(Blue1 * Experiment1Count + Blue2 * Experiment2Count <= TotalBlue, name=\"blue_liquid_limit\")"
+        },
+        {
+            "description": "The total smelly gas produced cannot exceed the allowed limit",
+            "status": "coded",
+            "formulation": "\\textup{Smelly1} \\cdot \\textup{Experiment1Count} + \\textup{Smelly2} \\cdot \\textup{Experiment2Count} \\leq \\textup{MaxSmelly}",
+            "related_variables": [
+                "Experiment1Count",
+                "Experiment2Count"
+            ],
+            "related_parameters": [
+                "Smelly1",
+                "Smelly2",
+                "MaxSmelly"
+            ],
+            "code": "# Add constraint to limit the total smelly gas production\nmodel.addConstr(Smelly1 * Experiment1Count + Smelly2 * Experiment2Count <= MaxSmelly, name=\"smelly_gas_limit\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of experiments conducted for experiment 1",
+            "symbol": "Experiment1Count",
+            "shape": [],
+            "status": "coded",
+            "code": "Experiment1Count = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"Experiment1Count\")"
+        },
+        {
+            "definition": "The number of experiments conducted for experiment 2",
+            "symbol": "Experiment2Count",
+            "shape": [],
+            "status": "coded",
+            "code": "Experiment2Count = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"Experiment2Count\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total amount of green gas produced from both experiments",
+            "status": "coded",
+            "formulation": "\\max \\quad \\textup{Green1} \\cdot \\textup{Experiment1Count} + \\textup{Green2} \\cdot \\textup{Experiment2Count}",
+            "related_variables": [
+                "Experiment1Count",
+                "Experiment2Count"
+            ],
+            "related_parameters": [
+                "Green1",
+                "Green2"
+            ],
+            "code": "# Set objective\nmodel.setObjective(Green1 * Experiment1Count + Green2 * Experiment2Count, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 50.0,
+    "log_path": "logs/log_20250413160331_nl4opt_prob_142/",
+    "problem_path": "data/nl4opt/prob_142/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_142/data.json\", \"r\") as f:\n    data = json.load(f)\n\nRed1 = data[\"Red1\"] # scalar parameter\nBlue1 = data[\"Blue1\"] # scalar parameter\nGreen1 = data[\"Green1\"] # scalar parameter\nSmelly1 = data[\"Smelly1\"] # scalar parameter\nRed2 = data[\"Red2\"] # scalar parameter\nBlue2 = data[\"Blue2\"] # scalar parameter\nGreen2 = data[\"Green2\"] # scalar parameter\nSmelly2 = data[\"Smelly2\"] # scalar parameter\nTotalRed = data[\"TotalRed\"] # scalar parameter\nTotalBlue = data[\"TotalBlue\"] # scalar parameter\nMaxSmelly = data[\"MaxSmelly\"] # scalar parameter\nExperiment1Count = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"Experiment1Count\")\nExperiment2Count = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"Experiment2Count\")\n\n# Ensure the number of experiment 1 is non-negative\nmodel.addConstr(Experiment1Count >= 0, name=\"non_negative_experiment1\")\n\n# Add non-negativity constraint for Experiment2Count\nmodel.addConstr(Experiment2Count >= 0, name=\"non_negativity_experiment2\")\n\n# Adding a constraint to ensure total red liquid usage does not exceed available red liquid\nmodel.addConstr(\n    Experiment1Count * Red1 + Experiment2Count * Red2 <= TotalRed,\n    name=\"red_liquid_limit\"\n)\n\n# Adding total blue liquid usage constraint\nmodel.addConstr((Blue1 * Experiment1Count) + (Blue2 * Experiment2Count) <= TotalBlue, name=\"total_blue_liquid_usage\")\n\n# Add smelly gas limit constraint\nmodel.addConstr(Smelly1 * Experiment1Count + Smelly2 * Experiment2Count <= MaxSmelly, name=\"smelly_gas_limit\")\n\n# Add constraint for total red liquid usage\nmodel.addConstr(Red1 * Experiment1Count + Red2 * Experiment2Count <= TotalRed, name=\"red_liquid_limit\")\n\n# Add constraint for total blue liquid usage\nmodel.addConstr(Blue1 * Experiment1Count + Blue2 * Experiment2Count <= TotalBlue, name=\"blue_liquid_limit\")\n\n# Add constraint to limit the total smelly gas production\nmodel.addConstr(Smelly1 * Experiment1Count + Smelly2 * Experiment2Count <= MaxSmelly, name=\"smelly_gas_limit\")\n\n# Set objective\nmodel.setObjective(Green1 * Experiment1Count + Green2 * Experiment2Count, gp.GRB.MAXIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

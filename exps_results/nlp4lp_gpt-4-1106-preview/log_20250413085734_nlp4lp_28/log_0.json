@@ -1,0 +1,207 @@
+{
+    "background": "The objective is to maximize the total production in the last two years, taking into consideration the constraints of two different types of resources, manpower allocation, stock levels, capacities, and a limit on the total manpower available.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "The production inputs from resource type one to product k in year j",
+            "symbol": "InputOne",
+            "value": "",
+            "shape": [
+                "K",
+                "K"
+            ],
+            "code": "InputOne = np.array(data[\"InputOne\"]) # ['K', 'K']"
+        },
+        {
+            "definition": "The manpower allocated to resource type one for product k",
+            "symbol": "ManpowerOne",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "ManpowerOne = np.array(data[\"ManpowerOne\"]) # ['K']"
+        },
+        {
+            "definition": "The production inputs from resource type two to product k in year j",
+            "symbol": "InputTwo",
+            "value": "",
+            "shape": [
+                "K",
+                "K"
+            ],
+            "code": "InputTwo = np.array(data[\"InputTwo\"]) # ['K', 'K']"
+        },
+        {
+            "definition": "The manpower allocated to resource type two for product k",
+            "symbol": "ManpowerTwo",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "ManpowerTwo = np.array(data[\"ManpowerTwo\"]) # ['K']"
+        },
+        {
+            "definition": "Stock levels of product k at the start of the planning horizon",
+            "symbol": "Stock",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "Stock = np.array(data[\"Stock\"]) # ['K']"
+        },
+        {
+            "definition": "Production capacity for product k",
+            "symbol": "Capacity",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "Capacity = np.array(data[\"Capacity\"]) # ['K']"
+        },
+        {
+            "definition": "The upper limit of manpower",
+            "symbol": "ManpowerLimit",
+            "value": "",
+            "shape": [],
+            "code": "ManpowerLimit = data[\"ManpowerLimit\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The consumption of \\textup{InputOne} per year is non-negative and within its availability",
+            "status": "formulated",
+            "formulation": "\\forall k, j: 0 \\leq \\textup{InputOne}_{k,j} \\leq \\textup{Capacity}_{k}",
+            "related_variables": [
+                "InputOne"
+            ],
+            "related_parameters": [
+                "Capacity"
+            ]
+        },
+        {
+            "description": "The consumption of \\textup{InputTwo} per year is non-negative and within its availability",
+            "status": "formulated",
+            "formulation": "\\forall j \\in \\textup{Years}, \\forall k \\in \\textup{Products}: 0 \\leq \\textup{InputTwo}_{k, j} \\leq \\textup{Availability}_{k, j}",
+            "related_variables": [
+                "InputTwo"
+            ],
+            "related_parameters": [
+                "Availability"
+            ]
+        },
+        {
+            "description": "ManpowerOne allocation must be non-negative and not exceed ManpowerLimit",
+            "status": "formulated",
+            "formulation": "\\forall k: 0 \\leq \\textup{ManpowerOne}_k \\leq \\textup{ManpowerLimit}",
+            "related_variables": [
+                "ManpowerOne"
+            ],
+            "related_parameters": [
+                "ManpowerLimit"
+            ]
+        },
+        {
+            "description": "The allocated manpower for resource type two for each product must be non-negative and cannot exceed the upper limit of manpower",
+            "status": "formulated",
+            "formulation": "\\forall k: 0 \\leq \\textup{ManpowerTwo}_k \\leq \\textup{ManpowerLimit}",
+            "related_variables": [
+                "ManpowerTwo"
+            ],
+            "related_parameters": [
+                "ManpowerLimit"
+            ]
+        },
+        {
+            "description": "Stock levels of product k must be non-negative and can not exceed their initial levels plus the production capacity.",
+            "status": "formulated",
+            "formulation": "\\forall k \\in K, \\quad \\textup{Stock}_k + \\sum_{j=1}^{J} (\\textup{InputOne}_{kj} + \\textup{InputTwo}_{kj}) - \\textup{Production}_k \\leq \\textup{Stock}_k + \\textup{Capacity}_k, \\quad \\textup{Production}_k \\geq 0",
+            "related_variables": [
+                "Stock",
+                "Production",
+                "InputOne",
+                "InputTwo"
+            ],
+            "related_parameters": [
+                "Capacity"
+            ]
+        },
+        {
+            "description": "Production capacities for each product must be respected",
+            "status": "formulated",
+            "formulation": "\\textup{Production}_k \\leq \\textup{Capacity}_k \\quad \\forall k \\in K",
+            "related_variables": [
+                "Production"
+            ],
+            "related_parameters": [
+                "Capacity"
+            ]
+        },
+        {
+            "description": "The total manpower used must not exceed the upper limit, ManpowerLimit",
+            "status": "formulated",
+            "formulation": "\\sum_{k} (\\textup{ManpowerOne}_k + \\textup{ManpowerTwo}_k) \\leq \\textup{ManpowerLimit}",
+            "related_variables": [
+                "ManpowerOne",
+                "ManpowerTwo"
+            ],
+            "related_parameters": [
+                "ManpowerLimit"
+            ]
+        },
+        {
+            "description": "All variables of production, resources, and manpower must be non-negative",
+            "status": "formulated",
+            "formulation": "\\forall k, j: \\quad \\textup{Availability}_{kj} \\geq 0, \\quad \\textup{Production}_k \\geq 0",
+            "related_variables": [
+                "Availability",
+                "Production"
+            ],
+            "related_parameters": []
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The availability of resource type two for product k in year j",
+            "symbol": "Availability",
+            "shape": [
+                "K",
+                "K"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "The total production of product k over the planning horizon",
+            "symbol": "Production",
+            "shape": [
+                "K"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "The production of product k in year j",
+            "symbol": "ProductionYearly",
+            "shape": [
+                "K",
+                "J"
+            ],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total production of all products in the last two years of the planning horizon",
+            "status": "formulated",
+            "formulation": "\\max \\sum_{k \\in K} (\\textup{ProductionYearly}_{k, J-1} + \\textup{ProductionYearly}_{k, J})",
+            "related_variables": [
+                "ProductionYearly"
+            ],
+            "related_parameters": []
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413085734_nlp4lp_28/",
+    "problem_path": "data/nlp4lp/28/"
+}

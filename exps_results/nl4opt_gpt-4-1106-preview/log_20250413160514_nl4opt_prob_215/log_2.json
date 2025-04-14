@@ -1,0 +1,183 @@
+{
+    "background": "A repairman allocates his time to fix washing machines and freezers, each requiring its own inspection and fixing times, operating within the limits of his available total inspection and fixing times.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Minutes for inspection of a washing machine",
+            "symbol": "InspectionTimeWashingMachine",
+            "value": 30,
+            "shape": [],
+            "code": "InspectionTimeWashingMachine = data[\"InspectionTimeWashingMachine\"] # scalar parameter"
+        },
+        {
+            "definition": "Minutes for fixing a washing machine",
+            "symbol": "FixingTimeWashingMachine",
+            "value": 90,
+            "shape": [],
+            "code": "FixingTimeWashingMachine = data[\"FixingTimeWashingMachine\"] # scalar parameter"
+        },
+        {
+            "definition": "Minutes for inspection of a freezer",
+            "symbol": "InspectionTimeFreezer",
+            "value": 20,
+            "shape": [],
+            "code": "InspectionTimeFreezer = data[\"InspectionTimeFreezer\"] # scalar parameter"
+        },
+        {
+            "definition": "Minutes for fixing a freezer",
+            "symbol": "FixingTimeFreezer",
+            "value": 125,
+            "shape": [],
+            "code": "FixingTimeFreezer = data[\"FixingTimeFreezer\"] # scalar parameter"
+        },
+        {
+            "definition": "Total minutes available for inspection",
+            "symbol": "TotalInspectionTime",
+            "value": 5000,
+            "shape": [],
+            "code": "TotalInspectionTime = data[\"TotalInspectionTime\"] # scalar parameter"
+        },
+        {
+            "definition": "Total minutes available for fixing",
+            "symbol": "TotalFixingTime",
+            "value": 20000,
+            "shape": [],
+            "code": "TotalFixingTime = data[\"TotalFixingTime\"] # scalar parameter"
+        },
+        {
+            "definition": "Earnings from repairing a washing machine",
+            "symbol": "EarningsWashingMachine",
+            "value": 250,
+            "shape": [],
+            "code": "EarningsWashingMachine = data[\"EarningsWashingMachine\"] # scalar parameter"
+        },
+        {
+            "definition": "Earnings from repairing a freezer",
+            "symbol": "EarningsFreezer",
+            "value": 375,
+            "shape": [],
+            "code": "EarningsFreezer = data[\"EarningsFreezer\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of washing machines fixed by the repairman must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfWashingMachinesFixed} \\geq 0",
+            "related_variables": [
+                "NumberOfWashingMachinesFixed"
+            ],
+            "related_parameters": [],
+            "code": "# Since the variable NumberOfWashingMachinesFixed is already non-negative due to being integer type and there's no specific lower bound provided other than non-negativity, no additional constraint is needed."
+        },
+        {
+            "description": "The number of freezers fixed by the repairman is non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfFreezersFixed} \\geq 0",
+            "related_variables": [
+                "NumberOfFreezersFixed"
+            ],
+            "related_parameters": [],
+            "code": "# No code needed as the variable NumberOfFreezersFixed is already non-negative by definition\n# Setting a variable to be of INTEGER type in Gurobi ensures it's non-negative by default"
+        },
+        {
+            "description": "The total inspection time for all appliances must not exceed the total available inspection time",
+            "status": "coded",
+            "formulation": "\\textup{InspectionTimeWashingMachine} \\times \\textup{NumberOfWashingMachinesFixed} + \\textup{InspectionTimeFreezer} \\times \\textup{NumberOfFreezersFixed} \\leq \\textup{TotalInspectionTime}",
+            "related_variables": [
+                "NumberOfWashingMachinesFixed",
+                "NumberOfFreezersFixed"
+            ],
+            "related_parameters": [
+                "InspectionTimeWashingMachine",
+                "InspectionTimeFreezer",
+                "TotalInspectionTime"
+            ],
+            "code": "# Add constraint for the total inspection time\nmodel.addConstr(InspectionTimeWashingMachine * NumberOfWashingMachinesFixed + InspectionTimeFreezer * NumberOfFreezersFixed <= TotalInspectionTime, \"total_inspection_time\")"
+        },
+        {
+            "description": "The total fixing time for all appliances does not exceed TotalFixingTime minutes",
+            "status": "coded",
+            "formulation": "\\textup{FixingTimeWashingMachine} \\cdot \\textup{NumberOfWashingMachinesFixed} + \\textup{FixingTimeFreezer} \\cdot \\textup{NumberOfFreezersFixed} \\leq \\textup{TotalFixingTime}",
+            "related_variables": [
+                "NumberOfWashingMachinesFixed",
+                "NumberOfFreezersFixed"
+            ],
+            "related_parameters": [
+                "FixingTimeWashingMachine",
+                "FixingTimeFreezer",
+                "TotalFixingTime"
+            ],
+            "code": "# Add total fixing time constraint\nmodel.addConstr(\n    (FixingTimeWashingMachine * NumberOfWashingMachinesFixed) + \n    (FixingTimeFreezer * NumberOfFreezersFixed) <= \n    TotalFixingTime, \n    name=\"total_fixing_time\"\n)"
+        },
+        {
+            "description": "The total inspection time for washing machines and freezers should not exceed the total available inspection time",
+            "status": "coded",
+            "formulation": "\\textup{InspectionTimeWashingMachine} \\times \\textup{NumberOfWashingMachinesFixed} + \\textup{InspectionTimeFreezer} \\times \\textup{NumberOfFreezersFixed} \\leq \\textup{TotalInspectionTime}",
+            "related_variables": [
+                "NumberOfWashingMachinesFixed",
+                "NumberOfFreezersFixed"
+            ],
+            "related_parameters": [
+                "InspectionTimeWashingMachine",
+                "InspectionTimeFreezer",
+                "TotalInspectionTime"
+            ],
+            "code": "# Total inspection time constraint\nmodel.addConstr(InspectionTimeWashingMachine * NumberOfWashingMachinesFixed + InspectionTimeFreezer * NumberOfFreezersFixed <= TotalInspectionTime, \"total_inspection_time\")"
+        },
+        {
+            "description": "The total fixing time for washing machines and freezers should not exceed the total available fixing time",
+            "status": "coded",
+            "formulation": "\\textup{FixingTimeWashingMachine} \\times \\textup{NumberOfWashingMachinesFixed} + \\textup{FixingTimeFreezer} \\times \\textup{NumberOfFreezersFixed} \\leq \\textup{TotalFixingTime}",
+            "related_variables": [
+                "NumberOfWashingMachinesFixed",
+                "NumberOfFreezersFixed"
+            ],
+            "related_parameters": [
+                "FixingTimeWashingMachine",
+                "FixingTimeFreezer",
+                "TotalFixingTime"
+            ],
+            "code": "# Add constraint for the total fixing time for washing machines and freezers\nmodel.addConstr(FixingTimeWashingMachine * NumberOfWashingMachinesFixed + FixingTimeFreezer * NumberOfFreezersFixed <= TotalFixingTime, name=\"total_fixing_time\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of washing machines fixed by the repairman",
+            "symbol": "NumberOfWashingMachinesFixed",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfWashingMachinesFixed = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfWashingMachinesFixed\")"
+        },
+        {
+            "definition": "Number of freezers fixed by the repairman",
+            "symbol": "NumberOfFreezersFixed",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfFreezersFixed = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfFreezersFixed\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the repairman's total earnings from fixing washing machines and freezers",
+            "status": "coded",
+            "formulation": "\\textup{Maximize} \\quad Z = \\textup{EarningsWashingMachine} \\times \\textup{NumberOfWashingMachinesFixed} + \\textup{EarningsFreezer} \\times \\textup{NumberOfFreezersFixed}",
+            "related_variables": [
+                "NumberOfWashingMachinesFixed",
+                "NumberOfFreezersFixed"
+            ],
+            "related_parameters": [
+                "EarningsWashingMachine",
+                "EarningsFreezer"
+            ],
+            "code": "# Define the objective function\nmodel.setObjective(EarningsWashingMachine * NumberOfWashingMachinesFixed + EarningsFreezer * NumberOfFreezersFixed, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 60000.0,
+    "log_path": "logs/log_20250413160514_nl4opt_prob_215/",
+    "problem_path": "data/nl4opt/prob_215/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_215/data.json\", \"r\") as f:\n    data = json.load(f)\n\nInspectionTimeWashingMachine = data[\"InspectionTimeWashingMachine\"] # scalar parameter\nFixingTimeWashingMachine = data[\"FixingTimeWashingMachine\"] # scalar parameter\nInspectionTimeFreezer = data[\"InspectionTimeFreezer\"] # scalar parameter\nFixingTimeFreezer = data[\"FixingTimeFreezer\"] # scalar parameter\nTotalInspectionTime = data[\"TotalInspectionTime\"] # scalar parameter\nTotalFixingTime = data[\"TotalFixingTime\"] # scalar parameter\nEarningsWashingMachine = data[\"EarningsWashingMachine\"] # scalar parameter\nEarningsFreezer = data[\"EarningsFreezer\"] # scalar parameter\nNumberOfWashingMachinesFixed = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfWashingMachinesFixed\")\nNumberOfFreezersFixed = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfFreezersFixed\")\n\n# Since the variable NumberOfWashingMachinesFixed is already non-negative due to being integer type and there's no specific lower bound provided other than non-negativity, no additional constraint is needed.\n\n# No code needed as the variable NumberOfFreezersFixed is already non-negative by definition\n# Setting a variable to be of INTEGER type in Gurobi ensures it's non-negative by default\n\n# Add constraint for the total inspection time\nmodel.addConstr(InspectionTimeWashingMachine * NumberOfWashingMachinesFixed + InspectionTimeFreezer * NumberOfFreezersFixed <= TotalInspectionTime, \"total_inspection_time\")\n\n# Add total fixing time constraint\nmodel.addConstr(\n    (FixingTimeWashingMachine * NumberOfWashingMachinesFixed) + \n    (FixingTimeFreezer * NumberOfFreezersFixed) <= \n    TotalFixingTime, \n    name=\"total_fixing_time\"\n)\n\n# Total inspection time constraint\nmodel.addConstr(InspectionTimeWashingMachine * NumberOfWashingMachinesFixed + InspectionTimeFreezer * NumberOfFreezersFixed <= TotalInspectionTime, \"total_inspection_time\")\n\n# Add constraint for the total fixing time for washing machines and freezers\nmodel.addConstr(FixingTimeWashingMachine * NumberOfWashingMachinesFixed + FixingTimeFreezer * NumberOfFreezersFixed <= TotalFixingTime, name=\"total_fixing_time\")\n\n# Define the objective function\nmodel.setObjective(EarningsWashingMachine * NumberOfWashingMachinesFixed + EarningsFreezer * NumberOfFreezersFixed, gp.GRB.MAXIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

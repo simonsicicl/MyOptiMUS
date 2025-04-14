@@ -1,0 +1,183 @@
+{
+    "background": "A farmer wants to mix two types of animal feeds, Feed A and Feed B, to meet the minimum requirements of protein and fat at the minimum cost.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Cost per kilogram for Feed A",
+            "symbol": "CostA",
+            "value": 100,
+            "shape": [],
+            "code": "CostA = data[\"CostA\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost per kilogram for Feed B",
+            "symbol": "CostB",
+            "value": 80,
+            "shape": [],
+            "code": "CostB = data[\"CostB\"] # scalar parameter"
+        },
+        {
+            "definition": "Protein content per kilogram of Feed A",
+            "symbol": "ProteinA",
+            "value": 10,
+            "shape": [],
+            "code": "ProteinA = data[\"ProteinA\"] # scalar parameter"
+        },
+        {
+            "definition": "Protein content per kilogram of Feed B",
+            "symbol": "ProteinB",
+            "value": 7,
+            "shape": [],
+            "code": "ProteinB = data[\"ProteinB\"] # scalar parameter"
+        },
+        {
+            "definition": "Fat content per kilogram of Feed A",
+            "symbol": "FatA",
+            "value": 8,
+            "shape": [],
+            "code": "FatA = data[\"FatA\"] # scalar parameter"
+        },
+        {
+            "definition": "Fat content per kilogram of Feed B",
+            "symbol": "FatB",
+            "value": 15,
+            "shape": [],
+            "code": "FatB = data[\"FatB\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum required units of protein in the feed mixture",
+            "symbol": "MinProtein",
+            "value": 30,
+            "shape": [],
+            "code": "MinProtein = data[\"MinProtein\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum required units of fat in the feed mixture",
+            "symbol": "MinFat",
+            "value": 50,
+            "shape": [],
+            "code": "MinFat = data[\"MinFat\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Amount of Feed A is non-negative",
+            "status": "coded",
+            "formulation": "\\textup{FeedA} \\geq 0",
+            "related_variables": [
+                "FeedA"
+            ],
+            "related_parameters": [],
+            "code": "# Add non-negativity constraint for the amount of Feed A\nmodel.addConstr(FeedA >= 0, name=\"feedA_non_negativity\")"
+        },
+        {
+            "description": "The amount of Feed B used in the mixture must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{FeedB} \\geq 0",
+            "related_variables": [
+                "FeedB"
+            ],
+            "related_parameters": [],
+            "code": "model.addConstr(FeedB >= 0, name=\"FeedB_non_negative\")"
+        },
+        {
+            "description": "The mixture must contain at least MinProtein units of protein",
+            "status": "coded",
+            "formulation": "\\textup{ProteinA} \\cdot \\textup{FeedA} + \\textup{ProteinB} \\cdot \\textup{FeedB} \\geq \\textup{MinProtein}",
+            "related_variables": [
+                "FeedA",
+                "FeedB"
+            ],
+            "related_parameters": [
+                "ProteinA",
+                "ProteinB",
+                "MinProtein"
+            ],
+            "code": "# Add constraint to ensure mixture contains at least MinProtein units of protein\nmodel.addConstr(ProteinA * FeedA + ProteinB * FeedB >= MinProtein, name=\"min_protein\")"
+        },
+        {
+            "description": "The mixture must contain at least MinFat units of fat",
+            "status": "coded",
+            "formulation": "\\textup{FatA} \\cdot \\textup{FeedA} + \\textup{FatB} \\cdot \\textup{FeedB} \\geq \\textup{MinFat}",
+            "related_variables": [
+                "FeedA",
+                "FeedB"
+            ],
+            "related_parameters": [
+                "FatA",
+                "FatB",
+                "MinFat"
+            ],
+            "code": "# The mixture must contain at least MinFat units of fat\nmodel.addConstr(FatA * FeedA + FatB * FeedB >= MinFat, name=\"min_fat_requirement\")"
+        },
+        {
+            "description": "The mixture should meet the minimum required units of protein",
+            "status": "coded",
+            "formulation": "\\textup{ProteinA} \\cdot \\textup{FeedA} + \\textup{ProteinB} \\cdot \\textup{FeedB} \\geq \\textup{MinProtein}",
+            "related_variables": [
+                "FeedA",
+                "FeedB"
+            ],
+            "related_parameters": [
+                "ProteinA",
+                "ProteinB",
+                "MinProtein"
+            ],
+            "code": "# Add minimum protein constraint\nmodel.addConstr(ProteinA * FeedA + ProteinB * FeedB >= MinProtein, name=\"min_protein\")"
+        },
+        {
+            "description": "The mixture should meet the minimum required units of fat",
+            "status": "coded",
+            "formulation": "\\textup{FatA} \\cdot \\textup{FeedA} + \\textup{FatB} \\cdot \\textup{FeedB} \\geq \\textup{MinFat}",
+            "related_variables": [
+                "FeedA",
+                "FeedB"
+            ],
+            "related_parameters": [
+                "FatA",
+                "FatB",
+                "MinFat"
+            ],
+            "code": "# Add constraint: the mixture should meet the minimum required units of fat\nmodel.addConstr(FatA * FeedA + FatB * FeedB >= MinFat, name=\"min_fat_requirement\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Amount of Feed A to be used in the mixture",
+            "symbol": "FeedA",
+            "shape": [],
+            "status": "coded",
+            "code": "FeedA = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"FeedA\")"
+        },
+        {
+            "definition": "Amount of Feed B to be used in the mixture",
+            "symbol": "FeedB",
+            "shape": [],
+            "status": "coded",
+            "code": "FeedB = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"FeedB\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total cost of the mixture of Feed A and Feed B",
+            "status": "coded",
+            "formulation": "Minimize \\quad \\textup{CostA} \\cdot \\textup{FeedA} + \\textup{CostB} \\cdot \\textup{FeedB}",
+            "related_variables": [
+                "FeedA",
+                "FeedB"
+            ],
+            "related_parameters": [
+                "CostA",
+                "CostB"
+            ],
+            "code": "# Define the objective function\nmodel.setObjective(CostA * FeedA + CostB * FeedB, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 327.6595744680851,
+    "log_path": "logs/log_20250413144659_nl4opt_prob_18/",
+    "problem_path": "data/nl4opt/prob_18/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_18/data.json\", \"r\") as f:\n    data = json.load(f)\n\nCostA = data[\"CostA\"] # scalar parameter\nCostB = data[\"CostB\"] # scalar parameter\nProteinA = data[\"ProteinA\"] # scalar parameter\nProteinB = data[\"ProteinB\"] # scalar parameter\nFatA = data[\"FatA\"] # scalar parameter\nFatB = data[\"FatB\"] # scalar parameter\nMinProtein = data[\"MinProtein\"] # scalar parameter\nMinFat = data[\"MinFat\"] # scalar parameter\nFeedA = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"FeedA\")\nFeedB = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"FeedB\")\n\n# Add non-negativity constraint for the amount of Feed A\nmodel.addConstr(FeedA >= 0, name=\"feedA_non_negativity\")\n\nmodel.addConstr(FeedB >= 0, name=\"FeedB_non_negative\")\n\n# Add constraint to ensure mixture contains at least MinProtein units of protein\nmodel.addConstr(ProteinA * FeedA + ProteinB * FeedB >= MinProtein, name=\"min_protein\")\n\n# The mixture must contain at least MinFat units of fat\nmodel.addConstr(FatA * FeedA + FatB * FeedB >= MinFat, name=\"min_fat_requirement\")\n\n# Add minimum protein constraint\nmodel.addConstr(ProteinA * FeedA + ProteinB * FeedB >= MinProtein, name=\"min_protein\")\n\n# Add constraint: the mixture should meet the minimum required units of fat\nmodel.addConstr(FatA * FeedA + FatB * FeedB >= MinFat, name=\"min_fat_requirement\")\n\n# Define the objective function\nmodel.setObjective(CostA * FeedA + CostB * FeedB, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

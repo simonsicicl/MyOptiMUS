@@ -1,0 +1,206 @@
+{
+    "background": "A hospital prepares batches of medication patches and anti-biotic creams, requiring different amounts of time and materials, with a requirement to have at least twice as many anti-biotic creams as medication patches, subject to time and material constraints.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Time required to prepare a batch of medication patches",
+            "symbol": "TimeMedicationPatches",
+            "value": 3,
+            "shape": [],
+            "code": "TimeMedicationPatches = data[\"TimeMedicationPatches\"] # scalar parameter"
+        },
+        {
+            "definition": "Materials required to prepare a batch of medication patches",
+            "symbol": "MaterialsMedicationPatches",
+            "value": 5,
+            "shape": [],
+            "code": "MaterialsMedicationPatches = data[\"MaterialsMedicationPatches\"] # scalar parameter"
+        },
+        {
+            "definition": "Time required to prepare a batch of anti-biotic creams",
+            "symbol": "TimeAntiBioticCreams",
+            "value": 5,
+            "shape": [],
+            "code": "TimeAntiBioticCreams = data[\"TimeAntiBioticCreams\"] # scalar parameter"
+        },
+        {
+            "definition": "Materials required to prepare a batch of anti-biotic creams",
+            "symbol": "MaterialsAntiBioticCreams",
+            "value": 6,
+            "shape": [],
+            "code": "MaterialsAntiBioticCreams = data[\"MaterialsAntiBioticCreams\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum total number of batches of medication patches and anti-biotic creams due to storage",
+            "symbol": "MaxTotalBatches",
+            "value": 100,
+            "shape": [],
+            "code": "MaxTotalBatches = data[\"MaxTotalBatches\"] # scalar parameter"
+        },
+        {
+            "definition": "Total staff time available for preparation",
+            "symbol": "TotalStaffTime",
+            "value": 400,
+            "shape": [],
+            "code": "TotalStaffTime = data[\"TotalStaffTime\"] # scalar parameter"
+        },
+        {
+            "definition": "Total units of materials available",
+            "symbol": "TotalMaterials",
+            "value": 530,
+            "shape": [],
+            "code": "TotalMaterials = data[\"TotalMaterials\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of people treated by a batch of medication patches",
+            "symbol": "PeopleTreatedMedicationPatches",
+            "value": 3,
+            "shape": [],
+            "code": "PeopleTreatedMedicationPatches = data[\"PeopleTreatedMedicationPatches\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of people treated by a batch of anti-biotic creams",
+            "symbol": "PeopleTreatedAntiBioticCreams",
+            "value": 2,
+            "shape": [],
+            "code": "PeopleTreatedAntiBioticCreams = data[\"PeopleTreatedAntiBioticCreams\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of medication patches produced must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfMedicationPatches} \\geq 0",
+            "related_variables": [
+                "NumberOfMedicationPatches"
+            ],
+            "related_parameters": [],
+            "code": "# Since NumberOfMedicationPatches is already guaranteed to be non-negative by its variable type definition,\n# no additional constraint is needed.\n# The variable is an integer and Gurobi, by default, does not allow negative values for integer variables."
+        },
+        {
+            "description": "The number of anti-biotic creams produced must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfAntiBioticCreams} \\geq 0",
+            "related_variables": [
+                "NumberOfAntiBioticCreams"
+            ],
+            "related_parameters": [],
+            "code": "# Since the variable NumberOfAntiBioticCreams is already non-negative by its integer nature, no additional constraint is needed."
+        },
+        {
+            "description": "Anti-biotic creams must be at least twice the number of medication patches",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfAntiBioticCreams} \\geq 2 \\cdot \\textup{NumberOfMedicationPatches}",
+            "related_variables": [
+                "NumberOfAntiBioticCreams",
+                "NumberOfMedicationPatches"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint to ensure Anti-biotic creams are at least twice the number of medication patches\nmodel.addConstr(NumberOfAntiBioticCreams >= 2 * NumberOfMedicationPatches, name=\"AntibioticCreams_to_Patches\")"
+        },
+        {
+            "description": "Total number of batches for medication patches and anti-biotic creams must be at most MaxTotalBatches",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfMedicationPatches} + \\textup{NumberOfAntiBioticCreams} \\leq \\textup{MaxTotalBatches}",
+            "related_variables": [
+                "NumberOfMedicationPatches",
+                "NumberOfAntiBioticCreams"
+            ],
+            "related_parameters": [
+                "MaxTotalBatches"
+            ],
+            "code": ""
+        },
+        {
+            "description": "Total staff time used in producing batches of medication patches and anti-biotic creams must not exceed the TotalStaffTime available",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfMedicationPatches} \\cdot \\textup{TimeMedicationPatches} + \\textup{NumberOfAntiBioticCreams} \\cdot \\textup{TimeAntiBioticCreams} \\leq \\textup{TotalStaffTime}",
+            "related_variables": [
+                "NumberOfMedicationPatches",
+                "NumberOfAntiBioticCreams"
+            ],
+            "related_parameters": [
+                "TimeMedicationPatches",
+                "TimeAntiBioticCreams",
+                "TotalStaffTime"
+            ],
+            "code": "# Add staff time utilization constraint\nmodel.addConstr(\n    NumberOfMedicationPatches * TimeMedicationPatches +\n    NumberOfAntiBioticCreams * TimeAntiBioticCreams <= \n    TotalStaffTime,\n    name=\"staff_time_utilization\"\n)"
+        },
+        {
+            "description": "The total amount of materials used by the batches of medication patches and anti-biotic creams must not exceed the TotalMaterials units available",
+            "status": "coded",
+            "formulation": "\\textup{MaterialsMedicationPatches} \\cdot \\textup{NumberOfMedicationPatches} + \\textup{MaterialsAntiBioticCreams} \\cdot \\textup{NumberOfAntiBioticCreams} \\leq \\textup{TotalMaterials}",
+            "related_variables": [
+                "NumberOfMedicationPatches",
+                "NumberOfAntiBioticCreams"
+            ],
+            "related_parameters": [
+                "MaterialsMedicationPatches",
+                "MaterialsAntiBioticCreams",
+                "TotalMaterials"
+            ],
+            "code": "# Add materials usage constraint\nmodel.addConstr(MaterialsMedicationPatches * NumberOfMedicationPatches + MaterialsAntiBioticCreams * NumberOfAntiBioticCreams <= TotalMaterials, name=\"materials_usage\")"
+        },
+        {
+            "description": "Number of anti-biotic creams must be at least twice the number of medication patches",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfAntiBioticCreams} \\geq 2 \\cdot \\textup{NumberOfMedicationPatches}",
+            "related_variables": [
+                "NumberOfMedicationPatches",
+                "NumberOfAntiBioticCreams"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint to ensure the number of anti-biotic creams is at least twice the number of medication patches\nmodel.addConstr(NumberOfAntiBioticCreams >= 2 * NumberOfMedicationPatches, \n                name=\"creams_at_least_twice_patches\")"
+        },
+        {
+            "description": "There should be at least twice as many anti-biotic creams as medication patches",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfAntiBioticCreams} \\geq 2 \\times \\textup{NumberOfMedicationPatches}",
+            "related_variables": [
+                "NumberOfMedicationPatches",
+                "NumberOfAntiBioticCreams"
+            ],
+            "related_parameters": [],
+            "code": "model.addConstr(NumberOfAntiBioticCreams >= 2 * NumberOfMedicationPatches, \"antibiotic_cream_vs_med_patches\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of medication patches produced",
+            "symbol": "NumberOfMedicationPatches",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfMedicationPatches = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfMedicationPatches\")"
+        },
+        {
+            "definition": "The number of anti-biotic creams produced",
+            "symbol": "NumberOfAntiBioticCreams",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfAntiBioticCreams = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfAntiBioticCreams\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total number of people treated by the batches of medication patches and anti-biotic creams",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfMedicationPatches} \\times \\textup{PeopleTreatedMedicationPatches} + \\textup{NumberOfAntiBioticCreams} \\times \\textup{PeopleTreatedAntiBioticCreams}",
+            "related_variables": [
+                "NumberOfMedicationPatches",
+                "NumberOfAntiBioticCreams"
+            ],
+            "related_parameters": [
+                "PeopleTreatedMedicationPatches",
+                "PeopleTreatedAntiBioticCreams"
+            ],
+            "code": "# Define decision variables\nNumberOfMedicationPatches = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfMedicationPatches\")\nNumberOfAntiBioticCreams = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfAntiBioticCreams\")\n\n# Define parameters\nPeopleTreatedMedicationPatches = data[\"PeopleTreatedMedicationPatches\"]  # scalar parameter\nPeopleTreatedAntiBioticCreams = data[\"PeopleTreatedAntiBioticCreams\"]  # scalar parameter\n\n# Set objective function\nmodel.setObjective(NumberOfMedicationPatches * PeopleTreatedMedicationPatches + NumberOfAntiBioticCreams * PeopleTreatedAntiBioticCreams, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "runtime_error",
+    "solver_output_status": "runtime_error",
+    "error_message": "Traceback (most recent call last):\n  File \"c:\\Users\\Simon\\Desktop\\Courses\\ECE 570\\ECE570_Project\\MyOptiMUS\\evaluator.py\", line 45, in run\n    exec(last_line, local_env, local_env)\n  File \"<string>\", line 1\n    ```\n    ^\nSyntaxError: invalid syntax\n",
+    "obj_val": null,
+    "log_path": "logs/log_20250413175158_nl4opt_prob_272/",
+    "problem_path": "data/nl4opt/prob_272/",
+    "prep_code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_272/data.json\", \"r\") as f:\n    data = json.load(f)\n"
+}

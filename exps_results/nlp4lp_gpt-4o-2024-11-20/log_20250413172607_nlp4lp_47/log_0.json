@@ -1,0 +1,160 @@
+{
+    "background": "A manufacturer needs to determine the optimal monthly production quantities for different types of parts, taking into account machine time constraints, machine costs, sales prices, and minimum production requirements.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of parts",
+            "symbol": "P",
+            "value": "",
+            "shape": [],
+            "code": "P = data[\"P\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of machines",
+            "symbol": "M",
+            "value": "",
+            "shape": [],
+            "code": "M = data[\"M\"] # scalar parameter"
+        },
+        {
+            "definition": "Time required to produce one batch of part p on machine m",
+            "symbol": "TimeRequired",
+            "value": "",
+            "shape": [
+                "M",
+                "P"
+            ],
+            "code": "TimeRequired = np.array(data[\"TimeRequired\"]) # ['M', 'P']"
+        },
+        {
+            "definition": "Cost associated with using machine m",
+            "symbol": "MachineCosts",
+            "value": "",
+            "shape": [
+                "M"
+            ],
+            "code": "MachineCosts = np.array(data[\"MachineCosts\"]) # ['M']"
+        },
+        {
+            "definition": "Availability of machine m per month",
+            "symbol": "Availability",
+            "value": "",
+            "shape": [
+                "M"
+            ],
+            "code": "Availability = np.array(data[\"Availability\"]) # ['M']"
+        },
+        {
+            "definition": "Selling price of one batch of part p",
+            "symbol": "Prices",
+            "value": "",
+            "shape": [
+                "P"
+            ],
+            "code": "Prices = np.array(data[\"Prices\"]) # ['P']"
+        },
+        {
+            "definition": "Minimum number of batches of part p to be produced",
+            "symbol": "MinBatches",
+            "value": "",
+            "shape": [
+                "P"
+            ],
+            "code": "MinBatches = np.array(data[\"MinBatches\"]) # ['P']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of batches produced for each part must be non-negative.",
+            "status": "formulated",
+            "formulation": "\\textup{Batches}_p \\geq 0 \\quad \\forall \\, p = 1, ..., P",
+            "related_variables": [
+                "Batches"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Total time used on each machine does not exceed its availability.",
+            "status": "formulated",
+            "formulation": "\\sum_{p=1}^{\\textup{P}} \\textup{TimeRequired}_{m,p} \\cdot \\textup{Batches}_{p} \\leq \\textup{Availability}_{m}, \\quad \\forall m \\in \\{1, 2, ..., \\textup{M}\\}",
+            "related_variables": [
+                "Batches"
+            ],
+            "related_parameters": [
+                "TimeRequired",
+                "Availability",
+                "P",
+                "M"
+            ]
+        },
+        {
+            "description": "Ensure that at least MinBatches of each part are produced",
+            "status": "formulated",
+            "formulation": "\\textup{Batches}_{p} \\geq \\textup{MinBatches}_{p}, \\quad \\forall p \\in \\{1, 2, ..., \\textup{P}\\}",
+            "related_variables": [
+                "Batches"
+            ],
+            "related_parameters": [
+                "MinBatches"
+            ]
+        },
+        {
+            "description": "Ensure that the total time used on any machine does not exceed its monthly availability.",
+            "status": "formulated",
+            "formulation": "\\sum_{p=1}^{\\textup{P}} \\textup{TimeRequired}_{m,p} \\cdot \\textup{Batches}_{p} \\leq \\textup{Availability}_{m} \\quad \\forall m \\in \\{1, \\dots, \\textup{M}\\}",
+            "related_variables": [
+                "Batches"
+            ],
+            "related_parameters": [
+                "TimeRequired",
+                "Availability",
+                "M",
+                "P"
+            ]
+        },
+        {
+            "description": "Ensure that the minimum production requirements for each part are met.",
+            "status": "formulated",
+            "formulation": "\\textup{Batches}_{p} \\geq \\textup{MinBatches}_{p} \\quad \\forall p \\in \\{1, \\dots, \\textup{P}\\}",
+            "related_variables": [
+                "Batches"
+            ],
+            "related_parameters": [
+                "MinBatches",
+                "P"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of batches produced for each part",
+            "symbol": "Batches",
+            "shape": [
+                "P"
+            ],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize profit, defined as total revenue from sales minus the total operating costs of machines.",
+            "status": "formulated",
+            "formulation": "\\max \\quad \\sum_{p=1}^{\\textup{P}} \\textup{Prices}_{p} \\cdot \\textup{Batches}_{p} - \\sum_{m=1}^{\\textup{M}} \\textup{MachineCosts}_{m}",
+            "related_variables": [
+                "Batches"
+            ],
+            "related_parameters": [
+                "Prices",
+                "MachineCosts",
+                "P",
+                "M"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413172607_nlp4lp_47/",
+    "problem_path": "data/nlp4lp/47/"
+}

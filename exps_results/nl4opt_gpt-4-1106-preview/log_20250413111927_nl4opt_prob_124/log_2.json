@@ -1,0 +1,196 @@
+{
+    "background": "A boy is trying to meet his dietary requirements for magnesium and zinc through a combination of gummies and pills, with certain preferences and limitations on the amounts he can consume.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Units of magnesium contained in each gummy",
+            "symbol": "MgGummy",
+            "value": 3,
+            "shape": [],
+            "code": "MgGummy = data[\"MgGummy\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of zinc contained in each gummy",
+            "symbol": "ZnGummy",
+            "value": 4,
+            "shape": [],
+            "code": "ZnGummy = data[\"ZnGummy\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of magnesium contained in each pill",
+            "symbol": "MgPill",
+            "value": 2,
+            "shape": [],
+            "code": "MgPill = data[\"MgPill\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of zinc contained in each pill",
+            "symbol": "ZnPill",
+            "value": 5,
+            "shape": [],
+            "code": "ZnPill = data[\"ZnPill\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum amount of pills the boy must take",
+            "symbol": "MinPills",
+            "value": 10,
+            "shape": [],
+            "code": "MinPills = data[\"MinPills\"] # scalar parameter"
+        },
+        {
+            "definition": "The ratio of the minimum amount of gummies to pills required",
+            "symbol": "GummyPillRatio",
+            "value": 3,
+            "shape": [],
+            "code": "GummyPillRatio = data[\"GummyPillRatio\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum units of magnesium the boy can consume",
+            "symbol": "MaxMg",
+            "value": 200,
+            "shape": [],
+            "code": "MaxMg = data[\"MaxMg\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Number of gummies must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumGummies} \\geq 0",
+            "related_variables": [
+                "NumGummies"
+            ],
+            "related_parameters": [],
+            "code": "# Add non-negativity constraint for the number of gummies\nmodel.addConstr(NumGummies >= 0, name=\"non_negativity_NumGummies\")"
+        },
+        {
+            "description": "The number of pills the boy consumes must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumPills} \\geq 0",
+            "related_variables": [
+                "NumPills"
+            ],
+            "related_parameters": [],
+            "code": "# The number of pills the boy consumes must be non-negative\nmodel.addConstr(NumPills >= 0, name=\"num_pills_non_negative\")"
+        },
+        {
+            "description": "The boy must consume at least the minimum number of pills prescribed.",
+            "status": "coded",
+            "formulation": "\\textup{NumPills} \\geq \\textup{MinPills}",
+            "related_variables": [
+                "NumPills"
+            ],
+            "related_parameters": [
+                "MinPills"
+            ],
+            "code": "# Add constraint for minimum number of pills consumption\nmodel.addConstr(NumPills >= MinPills, name=\"min_pills_consumption\")"
+        },
+        {
+            "description": "The boy must eat at least GummyPillRatio times the number of gummies as pills",
+            "status": "coded",
+            "formulation": "\\textup{NumGummies} \\geq \\textup{GummyPillRatio} \\times \\textup{NumPills}",
+            "related_variables": [
+                "NumGummies",
+                "NumPills"
+            ],
+            "related_parameters": [
+                "GummyPillRatio"
+            ],
+            "code": "# Add constraint to ensure the boy eats at least GummyPillRatio times the number of gummies as pills\nmodel.addConstr(NumGummies >= GummyPillRatio * NumPills, name=\"gummy_pill_ratio\")"
+        },
+        {
+            "description": "Total magnesium from gummies and pills is at most MaxMg units",
+            "status": "coded",
+            "formulation": "\\textup{NumGummies} \\cdot \\textup{MgGummy} + \\textup{NumPills} \\cdot \\textup{MgPill} \\leq \\textup{MaxMg}",
+            "related_variables": [
+                "NumGummies",
+                "NumPills"
+            ],
+            "related_parameters": [
+                "MgGummy",
+                "MgPill",
+                "MaxMg"
+            ],
+            "code": "# Total magnesium from gummies and pills constraint\nmodel.addConstr(NumGummies * MgGummy + NumPills * MgPill <= MaxMg, name=\"max_magnesium\")"
+        },
+        {
+            "description": "The amount of magnesium from gummies and pills should not exceed the maximum units the boy can consume",
+            "status": "coded",
+            "formulation": "(\\textup{NumGummies} \\cdot \\textup{MgGummy} + \\textup{NumPills} \\cdot \\textup{MgPill}) \\leq \\textup{MaxMg}",
+            "related_variables": [
+                "NumGummies",
+                "NumPills"
+            ],
+            "related_parameters": [
+                "MgGummy",
+                "MgPill",
+                "MaxMg"
+            ],
+            "code": "# Add constraint for maximum magnesium intake from gummies and pills\nmodel.addConstr(NumGummies * MgGummy + NumPills * MgPill <= MaxMg, name=\"max_magnesium\")"
+        },
+        {
+            "description": "The number of pills must be at least the minimum amount required",
+            "status": "coded",
+            "formulation": "\\textup{NumPills} \\geq \\textup{MinPills}",
+            "related_variables": [
+                "NumPills"
+            ],
+            "related_parameters": [
+                "MinPills"
+            ],
+            "code": "# Add constraint for minimum number of pills\nmodel.addConstr(NumPills >= MinPills, name=\"min_pills_constraint\")"
+        },
+        {
+            "description": "The number of gummies must be at least three times the number of pills",
+            "status": "coded",
+            "formulation": "\\textup{NumGummies} \\geq \\textup{GummyPillRatio} \\cdot \\textup{NumPills}",
+            "related_variables": [
+                "NumGummies",
+                "NumPills"
+            ],
+            "related_parameters": [
+                "GummyPillRatio"
+            ],
+            "code": "# Constraint: The number of gummies must be at least three times the number of pills\nmodel.addConstr(NumGummies >= GummyPillRatio * NumPills, name=\"gummies_to_pills_ratio\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of gummies the boy consumes",
+            "symbol": "NumGummies",
+            "shape": [],
+            "status": "coded",
+            "code": "NumGummies = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumGummies\")"
+        },
+        {
+            "definition": "The number of pills the boy consumes",
+            "symbol": "NumPills",
+            "shape": [],
+            "status": "coded",
+            "code": "NumPills = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumPills\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the boy's zinc intake from gummies and pills",
+            "status": "coded",
+            "formulation": "\\max \\quad (\\textup{NumGummies} \\cdot \\textup{ZnGummy} + \\textup{NumPills} \\cdot \\textup{ZnPill})",
+            "related_variables": [
+                "NumGummies",
+                "NumPills"
+            ],
+            "related_parameters": [
+                "ZnGummy",
+                "ZnPill"
+            ],
+            "code": "# Define the objective function\nmodel.setObjective(NumGummies * ZnGummy + NumPills * ZnPill, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 306.0,
+    "log_path": "logs/log_20250413111927_nl4opt_prob_124/",
+    "problem_path": "data/nl4opt/prob_124/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_124/data.json\", \"r\") as f:\n    data = json.load(f)\n\nMgGummy = data[\"MgGummy\"] # scalar parameter\nZnGummy = data[\"ZnGummy\"] # scalar parameter\nMgPill = data[\"MgPill\"] # scalar parameter\nZnPill = data[\"ZnPill\"] # scalar parameter\nMinPills = data[\"MinPills\"] # scalar parameter\nGummyPillRatio = data[\"GummyPillRatio\"] # scalar parameter\nMaxMg = data[\"MaxMg\"] # scalar parameter\nNumGummies = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumGummies\")\nNumPills = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumPills\")\n\n# Add non-negativity constraint for the number of gummies\nmodel.addConstr(NumGummies >= 0, name=\"non_negativity_NumGummies\")\n\n# The number of pills the boy consumes must be non-negative\nmodel.addConstr(NumPills >= 0, name=\"num_pills_non_negative\")\n\n# Add constraint for minimum number of pills consumption\nmodel.addConstr(NumPills >= MinPills, name=\"min_pills_consumption\")\n\n# Add constraint to ensure the boy eats at least GummyPillRatio times the number of gummies as pills\nmodel.addConstr(NumGummies >= GummyPillRatio * NumPills, name=\"gummy_pill_ratio\")\n\n# Total magnesium from gummies and pills constraint\nmodel.addConstr(NumGummies * MgGummy + NumPills * MgPill <= MaxMg, name=\"max_magnesium\")\n\n# Add constraint for maximum magnesium intake from gummies and pills\nmodel.addConstr(NumGummies * MgGummy + NumPills * MgPill <= MaxMg, name=\"max_magnesium\")\n\n# Add constraint for minimum number of pills\nmodel.addConstr(NumPills >= MinPills, name=\"min_pills_constraint\")\n\n# Constraint: The number of gummies must be at least three times the number of pills\nmodel.addConstr(NumGummies >= GummyPillRatio * NumPills, name=\"gummies_to_pills_ratio\")\n\n# Define the objective function\nmodel.setObjective(NumGummies * ZnGummy + NumPills * ZnPill, gp.GRB.MAXIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

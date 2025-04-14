@@ -1,0 +1,176 @@
+{
+    "background": "Zeta Bakery sells strawberry and sugar cookies, with known profits for each type, and faces limitations on daily production capacity and demand.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Profit per strawberry cookie",
+            "symbol": "StrawberryProfit",
+            "value": 5.5,
+            "shape": [],
+            "code": "StrawberryProfit = data[\"StrawberryProfit\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit per sugar cookie",
+            "symbol": "SugarProfit",
+            "value": 12,
+            "shape": [],
+            "code": "SugarProfit = data[\"SugarProfit\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum demand for strawberry cookies",
+            "symbol": "MaxStrawberryDemand",
+            "value": 100,
+            "shape": [],
+            "code": "MaxStrawberryDemand = data[\"MaxStrawberryDemand\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum demand for sugar cookies",
+            "symbol": "MaxSugarDemand",
+            "value": 80,
+            "shape": [],
+            "code": "MaxSugarDemand = data[\"MaxSugarDemand\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum production capacity of the bakery",
+            "symbol": "MaxProductionCapacity",
+            "value": 100,
+            "shape": [],
+            "code": "MaxProductionCapacity = data[\"MaxProductionCapacity\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of strawberry cookies produced must be non-negative.",
+            "status": "coded",
+            "formulation": "x_{1} \\geq 0",
+            "related_variables": [
+                "x1"
+            ],
+            "related_parameters": [],
+            "code": "# Constraint: Number of strawberry cookies produced must be non-negative\nmodel.addConstr(x1 >= 0, \"strawberry_cookies_nonnegativity\")"
+        },
+        {
+            "description": "The number of sugar cookies produced must be non-negative",
+            "status": "coded",
+            "formulation": "x2 \\geq 0",
+            "related_variables": [
+                "x2"
+            ],
+            "related_parameters": [],
+            "code": "# The number of sugar cookies produced must be non-negative\nmodel.addConstr(x2 >= 0, name=\"sugar_cookies_nonnegativity\")"
+        },
+        {
+            "description": "Up to MaxStrawberryDemand strawberry cookies can be sold per day",
+            "status": "coded",
+            "formulation": "\\textup{x1} \\leq \\textup{MaxStrawberryDemand}",
+            "related_variables": [
+                "x1"
+            ],
+            "related_parameters": [
+                "MaxStrawberryDemand"
+            ],
+            "code": "# Constraint for maximum strawberry cookies demand per day\nmodel.addConstr(x1 <= MaxStrawberryDemand, name=\"max_strawberry_demand\")"
+        },
+        {
+            "description": "Up to the maximum daily sugar cookie demand must be met",
+            "status": "coded",
+            "formulation": "x2 \\leq \\textup{MaxSugarDemand}",
+            "related_variables": [
+                "x2"
+            ],
+            "related_parameters": [
+                "MaxSugarDemand"
+            ],
+            "code": "# Constraint for maximum daily sugar cookie demand\nmodel.addConstr(x2 <= MaxSugarDemand, name=\"max_sugar_demand\")"
+        },
+        {
+            "description": "The total number of cookies produced (strawberry and sugar) must not exceed the daily maximum production capacity of the bakery",
+            "status": "coded",
+            "formulation": "x1 + x2 \\leq \\textup{MaxProductionCapacity}",
+            "related_variables": [
+                "x1",
+                "x2"
+            ],
+            "related_parameters": [
+                "MaxProductionCapacity"
+            ],
+            "code": "# Add constraint: total number of strawberry and sugar cookies produced must not exceed daily maximum production capacity\nmodel.addConstr(x1 + x2 <= MaxProductionCapacity, \"max_production_capacity\")"
+        },
+        {
+            "description": "The production of strawberry and sugar cookies should not exceed the bakery's maximum production capacity",
+            "status": "coded",
+            "formulation": "x1 + x2 \\leq \\textup{MaxProductionCapacity}",
+            "related_variables": [
+                "x1",
+                "x2"
+            ],
+            "related_parameters": [
+                "MaxProductionCapacity"
+            ],
+            "code": "model.addConstr(x1 + x2 <= MaxProductionCapacity, name=\"max_production_capacity\")"
+        },
+        {
+            "description": "The production of strawberry cookies should not exceed the maximum demand for strawberry cookies",
+            "status": "coded",
+            "formulation": "x1 \\leq \\textup{MaxStrawberryDemand}",
+            "related_variables": [
+                "x1"
+            ],
+            "related_parameters": [
+                "MaxStrawberryDemand"
+            ],
+            "code": "model.addConstr(x1 <= MaxStrawberryDemand, name=\"max_strawberry_demand\")"
+        },
+        {
+            "description": "The production of sugar cookies should not exceed the maximum demand for sugar cookies",
+            "status": "coded",
+            "formulation": "x2 \\leq \\textup{MaxSugarDemand}",
+            "related_variables": [
+                "x2"
+            ],
+            "related_parameters": [
+                "MaxSugarDemand"
+            ],
+            "code": "# Add maximum sugar cookie demand constraint\nmodel.addConstr(x2 <= MaxSugarDemand, name=\"max_sugar_demand\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of strawberry cookies produced",
+            "symbol": "x1",
+            "shape": [],
+            "status": "coded",
+            "code": "x1 = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"x1\")"
+        },
+        {
+            "definition": "Number of sugar cookies produced",
+            "symbol": "x2",
+            "shape": [],
+            "status": "coded",
+            "code": "x2 = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"x2\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the bakery's profit from cookie production",
+            "status": "coded",
+            "formulation": "Maximize \\quad \\textup{StrawberryProfit} \\cdot x1 + \\textup{SugarProfit} \\cdot x2",
+            "related_variables": [
+                "x1",
+                "x2"
+            ],
+            "related_parameters": [
+                "StrawberryProfit",
+                "SugarProfit"
+            ],
+            "code": "# Set objective\nmodel.setObjective(StrawberryProfit * x1 + SugarProfit * x2, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 1070.0,
+    "log_path": "logs/log_20250413163434_nl4opt_prob_222/",
+    "problem_path": "data/nl4opt/prob_222/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_222/data.json\", \"r\") as f:\n    data = json.load(f)\n\nStrawberryProfit = data[\"StrawberryProfit\"] # scalar parameter\nSugarProfit = data[\"SugarProfit\"] # scalar parameter\nMaxStrawberryDemand = data[\"MaxStrawberryDemand\"] # scalar parameter\nMaxSugarDemand = data[\"MaxSugarDemand\"] # scalar parameter\nMaxProductionCapacity = data[\"MaxProductionCapacity\"] # scalar parameter\nx1 = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"x1\")\nx2 = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"x2\")\n\n# Constraint: Number of strawberry cookies produced must be non-negative\nmodel.addConstr(x1 >= 0, \"strawberry_cookies_nonnegativity\")\n\n# The number of sugar cookies produced must be non-negative\nmodel.addConstr(x2 >= 0, name=\"sugar_cookies_nonnegativity\")\n\n# Constraint for maximum strawberry cookies demand per day\nmodel.addConstr(x1 <= MaxStrawberryDemand, name=\"max_strawberry_demand\")\n\n# Constraint for maximum daily sugar cookie demand\nmodel.addConstr(x2 <= MaxSugarDemand, name=\"max_sugar_demand\")\n\n# Add constraint: total number of strawberry and sugar cookies produced must not exceed daily maximum production capacity\nmodel.addConstr(x1 + x2 <= MaxProductionCapacity, \"max_production_capacity\")\n\nmodel.addConstr(x1 + x2 <= MaxProductionCapacity, name=\"max_production_capacity\")\n\nmodel.addConstr(x1 <= MaxStrawberryDemand, name=\"max_strawberry_demand\")\n\n# Add maximum sugar cookie demand constraint\nmodel.addConstr(x2 <= MaxSugarDemand, name=\"max_sugar_demand\")\n\n# Set objective\nmodel.setObjective(StrawberryProfit * x1 + SugarProfit * x2, gp.GRB.MAXIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

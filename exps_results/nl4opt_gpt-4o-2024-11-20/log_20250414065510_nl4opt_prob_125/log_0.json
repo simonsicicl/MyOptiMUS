@@ -1,0 +1,187 @@
+{
+    "background": "A patient requires a combination of anxiety medication and anti-depressants with different effectiveness durations, subject to specific quantity requirements and ratio limits.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Time for anxiety medication to be effective",
+            "symbol": "TAnxiety",
+            "value": 3,
+            "shape": [],
+            "code": "TAnxiety = data[\"TAnxiety\"] # scalar parameter"
+        },
+        {
+            "definition": "Time for anti-depressant to be effective",
+            "symbol": "TAntiDepressant",
+            "value": 5,
+            "shape": [],
+            "code": "TAntiDepressant = data[\"TAntiDepressant\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum total units of medication required",
+            "symbol": "MinUnits",
+            "value": 100,
+            "shape": [],
+            "code": "MinUnits = data[\"MinUnits\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum units of anxiety medication required",
+            "symbol": "MinAnxiety",
+            "value": 30,
+            "shape": [],
+            "code": "MinAnxiety = data[\"MinAnxiety\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum ratio of anxiety medication units to anti-depressant units",
+            "symbol": "MaxAnxietyAntiDepressantRatio",
+            "value": 2,
+            "shape": [],
+            "code": "MaxAnxietyAntiDepressantRatio = data[\"MaxAnxietyAntiDepressantRatio\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The total units of medication (combination of anxiety medication and anti-depressants) must be at least MinUnits.",
+            "status": "formulated",
+            "formulation": "\\\\textup{AnxietyMedication} + \\\\textup{AntiDepressantMedication} \\\\geq \\\\textup{MinUnits}",
+            "related_variables": [
+                "AnxietyMedication",
+                "AntiDepressantMedication"
+            ],
+            "related_parameters": [
+                "MinUnits"
+            ]
+        },
+        {
+            "description": "The number of anxiety medication units must be at least equal to the given minimum, MinAnxiety.",
+            "status": "formulated",
+            "formulation": "\\textup{AnxietyMedication} \\geq \\textup{MinAnxiety}",
+            "related_variables": [
+                "AnxietyMedication"
+            ],
+            "related_parameters": [
+                "MinAnxiety"
+            ]
+        },
+        {
+            "description": "The quantity of anxiety medication units cannot exceed the maximum allowed ratio times the quantity of anti-depressant units.",
+            "status": "formulated",
+            "formulation": "\\textup{AnxietyMedication} \\leq \\textup{MaxAnxietyAntiDepressantRatio} \\cdot \\textup{AntiDepressantMedication}",
+            "related_variables": [
+                "AnxietyMedication",
+                "AntiDepressantMedication"
+            ],
+            "related_parameters": [
+                "MaxAnxietyAntiDepressantRatio"
+            ]
+        },
+        {
+            "description": "The number of units of anxiety medication to be prescribed must be non-negative.",
+            "status": "formulated",
+            "formulation": "\\\\textup{AnxietyMedication} \\\\geq 0",
+            "related_variables": [
+                "AnxietyMedication"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "The number of anti-depressant medication units prescribed must be non-negative.",
+            "status": "formulated",
+            "formulation": "\\textup{AntiDepressantMedication} \\geq 0",
+            "related_variables": [
+                "AntiDepressantMedication"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Ensure WeightedTime is calculated as the weighted average of effectiveness times based on the units of medication prescribed",
+            "status": "formulated",
+            "formulation": "\\textup{WeightedTime} = \\frac{\\textup{AnxietyMedication} \\times \\textup{TAnxiety} + \\textup{AntiDepressantMedication} \\times \\textup{TAntiDepressant}}{\\textup{AnxietyMedication} + \\textup{AntiDepressantMedication}}",
+            "related_variables": [
+                "WeightedTime",
+                "AnxietyMedication",
+                "AntiDepressantMedication"
+            ],
+            "related_parameters": [
+                "TAnxiety",
+                "TAntiDepressant"
+            ]
+        },
+        {
+            "description": "Ensure the total number of medication units prescribed meets the minimum requirement",
+            "status": "formulated",
+            "formulation": "\\textup{AnxietyMedication} + \\textup{AntiDepressantMedication} \\geq \\textup{MinUnits}",
+            "related_variables": [
+                "AnxietyMedication",
+                "AntiDepressantMedication"
+            ],
+            "related_parameters": [
+                "MinUnits"
+            ]
+        },
+        {
+            "description": "Ensure the minimum number of anxiety medication units is prescribed",
+            "status": "formulated",
+            "formulation": "\\textup{AnxietyMedication} \\geq \\textup{MinAnxiety}",
+            "related_variables": [
+                "AnxietyMedication"
+            ],
+            "related_parameters": [
+                "MinAnxiety"
+            ]
+        },
+        {
+            "description": "Ensure the ratio of anxiety medication units to anti-depressant medication units does not exceed the maximum allowed limit",
+            "status": "formulated",
+            "formulation": "\\textup{AnxietyMedication} \\leq \\textup{MaxAnxietyAntiDepressantRatio} \\times \\textup{AntiDepressantMedication}",
+            "related_variables": [
+                "AnxietyMedication",
+                "AntiDepressantMedication"
+            ],
+            "related_parameters": [
+                "MaxAnxietyAntiDepressantRatio"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of units of anxiety medication to be prescribed.",
+            "symbol": "AnxietyMedication",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "The number of units of anti-depressant medication to be prescribed.",
+            "symbol": "AntiDepressantMedication",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "The total weighted average time for the medications to be effective",
+            "symbol": "WeightedTime",
+            "shape": [],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total weighted time for the medication to be effective",
+            "status": "formulated",
+            "formulation": "\\textup{Minimize} \\quad \\textup{WeightedTime}",
+            "related_variables": [
+                "WeightedTime",
+                "AnxietyMedication",
+                "AntiDepressantMedication"
+            ],
+            "related_parameters": [
+                "TAnxiety",
+                "TAntiDepressant"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250414065510_nl4opt_prob_125/",
+    "problem_path": "data/nl4opt/prob_125/"
+}

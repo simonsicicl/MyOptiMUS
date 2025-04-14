@@ -1,0 +1,265 @@
+{
+    "background": "A manufacturer needs to decide the optimum number of batches of parts to produce each month to maximize profit, taking into account various factors such as time requirement, costs, machine availability, pricing, minimum production batches, and overtime considerations.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of machines",
+            "symbol": "NumMachines",
+            "value": "",
+            "shape": [],
+            "code": "NumMachines = data[\"NumMachines\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of part types",
+            "symbol": "NumParts",
+            "value": "",
+            "shape": [],
+            "code": "NumParts = data[\"NumParts\"] # scalar parameter"
+        },
+        {
+            "definition": "Time required to produce one batch of part p on machine m",
+            "symbol": "TimeRequired",
+            "value": "",
+            "shape": [
+                "NumMachines",
+                "NumParts"
+            ],
+            "code": "TimeRequired = np.array(data[\"TimeRequired\"]) # ['NumMachines', 'NumParts']"
+        },
+        {
+            "definition": "Cost of operating machine m for one month",
+            "symbol": "MachineCosts",
+            "value": "",
+            "shape": [
+                "NumMachines"
+            ],
+            "code": "MachineCosts = np.array(data[\"MachineCosts\"]) # ['NumMachines']"
+        },
+        {
+            "definition": "Number of hours machine m is available each month without overtime",
+            "symbol": "Availability",
+            "value": "",
+            "shape": [
+                "NumMachines"
+            ],
+            "code": "Availability = np.array(data[\"Availability\"]) # ['NumMachines']"
+        },
+        {
+            "definition": "Price received for selling one batch of part p",
+            "symbol": "Prices",
+            "value": "",
+            "shape": [
+                "NumParts"
+            ],
+            "code": "Prices = np.array(data[\"Prices\"]) # ['NumParts']"
+        },
+        {
+            "definition": "Minimum number of batches of part p to be produced",
+            "symbol": "MinBatches",
+            "value": "",
+            "shape": [
+                "NumParts"
+            ],
+            "code": "MinBatches = np.array(data[\"MinBatches\"]) # ['NumParts']"
+        },
+        {
+            "definition": "Standard cost for operating all machines during normal operating hours",
+            "symbol": "StandardCost",
+            "value": "",
+            "shape": [],
+            "code": "StandardCost = data[\"StandardCost\"] # scalar parameter"
+        },
+        {
+            "definition": "Extra cost for operating a machine in overtime per hour",
+            "symbol": "OvertimeCost",
+            "value": "",
+            "shape": [],
+            "code": "OvertimeCost = data[\"OvertimeCost\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of overtime hours available for machine m",
+            "symbol": "OvertimeHour",
+            "value": "",
+            "shape": [
+                "NumMachines"
+            ],
+            "code": "OvertimeHour = np.array(data[\"OvertimeHour\"]) # ['NumMachines']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Each part p requires TimeRequired[p] hours of machine time on machine m. The total machine time used for each machine must not exceed the available time for that machine without considering overtime.",
+            "status": "coded",
+            "formulation": "\\sum_{p=1}^{\\textup{NumParts}} \\textup{TimeRequired}_{m,p} \\cdot \\textup{BatchesProduced}_{p} \\leq \\textup{Availability}_m \\quad \\forall m \\in \\{1, ..., \\textup{NumMachines}\\}",
+            "related_variables": [
+                "BatchesProduced"
+            ],
+            "related_parameters": [
+                "NumParts",
+                "TimeRequired",
+                "Availability"
+            ],
+            "code": "# Add machine time availability constraints for each machine m\nfor m in range(NumMachines):\n    model.addConstr(\n        gp.quicksum(TimeRequired[m, p] * BatchesProduced[p] for p in range(NumParts)) <= Availability[m],\n        name=f\"machine_time_availability_{m}\"\n    )"
+        },
+        {
+            "description": "Each machine's available hours per month should not be exceeded by the sum of time required to produce the batches of each part type scheduled on that machine",
+            "status": "coded",
+            "formulation": "\\sum_{p=1}^{\\textup{NumParts}} (\\textup{TimeRequired}_{m,p} \\cdot \\textup{BatchesProduced}_{p}) \\leq \\textup{Availability}_m \\quad \\forall m \\in \\{1, \\ldots, \\textup{NumMachines}\\}",
+            "related_variables": [
+                "BatchesProduced"
+            ],
+            "related_parameters": [
+                "NumParts",
+                "TimeRequired",
+                "Availability"
+            ],
+            "code": "# Add machine availability constraints\nfor m in range(NumMachines):\n    model.addConstr(gp.quicksum(TimeRequired[m, p] * BatchesProduced[p] for p in range(NumParts)) <= Availability[m], name=f\"machine_availability_{m}\")"
+        },
+        {
+            "description": "At least MinBatches for p batches of each part p must be produced",
+            "status": "coded",
+            "formulation": "\\forall p \\in \\{1, \\ldots, \\textup{NumParts}\\}, \\quad \\textup{BatchesProduced}_p \\geq \\textup{MinBatches}_p",
+            "related_variables": [
+                "BatchesProduced"
+            ],
+            "related_parameters": [
+                "MinBatches",
+                "NumParts"
+            ],
+            "code": "# At least MinBatches for p batches of each part p must be produced\nfor p in range(NumParts):\n    model.addConstr(BatchesProduced[p] >= MinBatches[p], name=f\"min_batches_part_{p}\")"
+        },
+        {
+            "description": "Total operational hours for each machine including overtime cannot exceed available hours plus overtime hours",
+            "status": "coded",
+            "formulation": "\\sum_{p=1}^{\\textup{NumParts}} (\\textup{TimeRequired}_{mp} \\times \\textup{BatchesProduced}_{p}) \\leq \\textup{Availability}_m + \\textup{OvertimeHour}_m \\quad \\forall m \\in \\{1, ..., \\textup{NumMachines}\\}",
+            "related_variables": [
+                "BatchesProduced"
+            ],
+            "related_parameters": [
+                "TimeRequired",
+                "Availability",
+                "OvertimeHour"
+            ],
+            "code": "# Add constraints for operational hours including overtime for each machine\nfor m in range(NumMachines):\n    model.addConstr(\n        gp.quicksum(TimeRequired[m][p] * BatchesProduced[p] for p in range(NumParts)) \n        <= Availability[m] + OvertimeHour[m], \n        name=\"operational_hours_machine_{}\".format(m)\n    )"
+        },
+        {
+            "description": "Each part's batches produced must be non-negative",
+            "status": "coded",
+            "formulation": "\\forall p \\in \\{1, \\ldots, \\textup{NumParts}\\}, \\\\quad \\textup{BatchesProduced}_p \\geq 0",
+            "related_variables": [
+                "BatchesProduced"
+            ],
+            "related_parameters": [
+                "NumParts"
+            ],
+            "code": "# Add non-negativity constraints for batches produced of each part\nfor p in range(NumParts):\n    model.addConstr(BatchesProduced[p] >= 0, name=\"non_negative_batches_p{}\".format(p))"
+        },
+        {
+            "description": "Total time used on machine m for producing part p does not exceed regular plus overtime available hours",
+            "status": "coded",
+            "formulation": "\\sum_{p=1}^{\\textup{NumParts}} \\textup{TimeRequired}_{mp} \\cdot \\textup{BatchesProduced}_{p} = \\textup{RegularTimeUsed}_{m} + \\textup{OvertimeUsed}_{m} \\quad \\forall m \\in \\textup{NumMachines}",
+            "related_variables": [
+                "BatchesProduced",
+                "RegularTimeUsed",
+                "OvertimeUsed"
+            ],
+            "related_parameters": [
+                "NumMachines",
+                "NumParts",
+                "TimeRequired"
+            ],
+            "code": "# Add constraints for total time used on machines for producing parts\nfor m in range(NumMachines):\n    model.addConstr(gp.quicksum(TimeRequired[m, p] * BatchesProduced[p]\n                    for p in range(NumParts)) == RegularTimeUsed[m] + OvertimeUsed[m],\n                    name=f\"TotalTimeUsed_Machine{m}\")"
+        },
+        {
+            "description": "Regular time used on machine m for producing part p does not exceed the regular available hours",
+            "status": "coded",
+            "formulation": "\\textup{RegularTimeUsed}_{m} \\leq \\textup{Availability}_{m} \\quad \\forall m \\in \\textup{NumMachines}",
+            "related_variables": [
+                "RegularTimeUsed"
+            ],
+            "related_parameters": [
+                "NumMachines",
+                "Availability"
+            ],
+            "code": "# Add constraints for regular time used on each machine\nfor m in range(NumMachines):\n    model.addConstr(RegularTimeUsed[m] <= Availability[m], name=f\"regular_time_avail_machine_{m}\")"
+        },
+        {
+            "description": "Overtime used on machine m for producing part p does not exceed the overtime available hours",
+            "status": "coded",
+            "formulation": "\\textup{OvertimeUsed}_{m} \\leq \\textup{OvertimeHour}_{m} \\quad \\forall m \\in \\textup{NumMachines}",
+            "related_variables": [
+                "OvertimeUsed"
+            ],
+            "related_parameters": [
+                "NumMachines",
+                "OvertimeHour"
+            ],
+            "code": "# Add constraints to ensure overtime used does not exceed the available hours for each machine\nfor m in range(NumMachines):\n    model.addConstr(OvertimeUsed[m] <= OvertimeHour[m], name=f\"overtime_limit_machine_{m}\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of batches of part p produced",
+            "symbol": "BatchesProduced",
+            "shape": [
+                "NumParts"
+            ],
+            "status": "coded",
+            "code": "BatchesProduced = model.addVars(NumParts, vtype=gp.GRB.INTEGER, name=\"BatchesProduced\")"
+        },
+        {
+            "definition": "Total time used on machine m for producing part p",
+            "symbol": "TotalTimeUsed",
+            "shape": [
+                "NumMachines",
+                "NumParts"
+            ],
+            "status": "coded",
+            "code": "TotalTimeUsed = model.addVars(NumMachines, NumParts, vtype=gp.GRB.CONTINUOUS, name=\"TotalTimeUsed\")"
+        },
+        {
+            "definition": "Number of regular hours used on machine m for producing part p",
+            "symbol": "RegularTimeUsed",
+            "shape": [
+                "NumMachines"
+            ],
+            "status": "coded",
+            "code": "RegularTimeUsed = model.addVars(NumMachines, vtype=gp.GRB.CONTINUOUS, name=\"RegularTimeUsed\")"
+        },
+        {
+            "definition": "Number of overtime hours used on machine m for producing part p",
+            "symbol": "OvertimeUsed",
+            "shape": [
+                "NumMachines"
+            ],
+            "status": "coded",
+            "code": "OvertimeUsed = model.addVars(NumMachines, vtype=gp.GRB.CONTINUOUS, name=\"OvertimeUsed\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the profit from producing and selling batches of parts",
+            "status": "coded",
+            "formulation": "\\textup{Maximize} \\quad \\sum_{p=1}^{\\textup{NumParts}} (\\textup{Prices}_{p} \\cdot \\textup{BatchesProduced}_{p}) - \\textup{StandardCost} - \\sum_{m=1}^{\\textup{NumMachines}} (\\textup{MachineCosts}_{m} + \\textup{OvertimeCost} \\cdot \\textup{OvertimeUsed}_{m})",
+            "related_variables": [
+                "BatchesProduced",
+                "OvertimeUsed"
+            ],
+            "related_parameters": [
+                "NumParts",
+                "Prices",
+                "StandardCost",
+                "NumMachines",
+                "MachineCosts",
+                "OvertimeCost"
+            ],
+            "code": "# Set objective function\nmodel.setObjective(\n    gp.quicksum(Prices[p] * BatchesProduced[p] for p in range(NumParts)) -\n    StandardCost -\n    gp.quicksum(MachineCosts[m] + OvertimeCost * OvertimeUsed[m] for m in range(NumMachines)),\n    gp.GRB.MAXIMIZE\n)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413093416_nlp4lp_57/",
+    "problem_path": "data/nlp4lp/57/"
+}

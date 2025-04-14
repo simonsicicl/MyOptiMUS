@@ -1,0 +1,121 @@
+{
+    "background": "The Knapsack Problem involves selecting the most valuable combination of items to fit in a knapsack without exceeding its weight limit.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "symbol": "TotalItems",
+            "definition": "The total number of available items",
+            "shape": [],
+            "code": "TotalItems = data[\"TotalItems\"] # scalar parameter"
+        },
+        {
+            "symbol": "ItemValues",
+            "definition": "The value of each item",
+            "shape": [
+                "TotalItems"
+            ],
+            "code": "ItemValues = np.array(data[\"ItemValues\"]) # ['TotalItems']"
+        },
+        {
+            "symbol": "ItemWeights",
+            "definition": "The weight of each item",
+            "shape": [
+                "TotalItems"
+            ],
+            "code": "ItemWeights = np.array(data[\"ItemWeights\"]) # ['TotalItems']"
+        },
+        {
+            "symbol": "MaxKnapsackWeight",
+            "definition": "The maximum weight capacity of the knapsack",
+            "shape": [],
+            "code": "MaxKnapsackWeight = data[\"MaxKnapsackWeight\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The total weight of the selected items must not exceed MaxKnapsackWeight",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{\\textup{TotalItems}} \\textup{ItemWeights}_{i} \\cdot \\textup{ItemSelection}_{i} \\leq \\textup{MaxKnapsackWeight}",
+            "related_variables": [
+                "ItemSelection"
+            ],
+            "related_parameters": [
+                "ItemWeights",
+                "MaxKnapsackWeight",
+                "TotalItems"
+            ],
+            "code": "# Add constraint for the maximum weight capacity of the knapsack\nmodel.addConstr(gp.quicksum(ItemWeights[i] * ItemSelection[i] for i in range(TotalItems)) <= MaxKnapsackWeight, name=\"MaxKnapsackWeightConstraint\")"
+        },
+        {
+            "description": "Each item quantity must be non-negative",
+            "status": "runtime_error",
+            "formulation": "0 \\leq \\textup{ItemSelection}_i \\leq 1 \\quad \\forall i \\in \\{1, ..., \\textup{TotalItems}\\}",
+            "related_variables": [
+                "ItemSelection"
+            ],
+            "related_parameters": [
+                "TotalItems"
+            ],
+            "code": "```"
+        },
+        {
+            "description": "Limit the number of items selected to no more than TotalItems.",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{\\textup{TotalItems}} \\textup{ItemSelection}_{i} \\leq \\textup{TotalItems}",
+            "related_variables": [
+                "ItemSelection"
+            ],
+            "related_parameters": [
+                "TotalItems"
+            ],
+            "code": "# Limit the number of items selected to no more than TotalItems\nmodel.addConstr(gp.quicksum(ItemSelection[i] for i in range(TotalItems)) <= TotalItems, name=\"limit_total_items\")"
+        },
+        {
+            "description": "Total weight of selected items must not exceed the knapsack's weight capacity",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{\\textup{TotalItems}} (\\textup{ItemWeights}_i \\cdot \\textup{ItemSelection}_i) \\leq \\textup{MaxKnapsackWeight}",
+            "related_variables": [
+                "ItemSelection"
+            ],
+            "related_parameters": [
+                "ItemWeights",
+                "TotalItems",
+                "MaxKnapsackWeight"
+            ],
+            "code": "# Add knapsack weight capacity constraint\nknapsack_weight_constraint = gp.quicksum(ItemWeights[i] * ItemSelection[i] for i in range(TotalItems))\nmodel.addConstr(knapsack_weight_constraint <= MaxKnapsackWeight, name=\"knapsack_weight\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "A binary variable representing whether item i is selected (1) or not (0)",
+            "symbol": "ItemSelection",
+            "shape": [
+                "TotalItems"
+            ],
+            "status": "coded",
+            "code": "ItemSelection = model.addVars(TotalItems, vtype=gp.GRB.BINARY, name=\"ItemSelection\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total value of the items in the knapsack",
+            "status": "coded",
+            "formulation": "\\max \\sum_{i=1}^{\\textup{TotalItems}} (\\textup{ItemValues}_i \\cdot \\textup{ItemSelection}_i)",
+            "related_variables": [
+                "ItemSelection"
+            ],
+            "related_parameters": [
+                "ItemValues",
+                "TotalItems"
+            ],
+            "code": "# Define the objective function\nmodel.setObjective(gp.quicksum(ItemValues[i] * ItemSelection[i] for i in range(TotalItems)), gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "runtime_error",
+    "solver_output_status": "runtime_error",
+    "error_message": "Traceback (most recent call last):\n  File \"/Users/simonsici/Desktop/MyOptiMUS/evaluator.py\", line 45, in run\n    exec(last_line, local_env, local_env)\n  File \"<string>\", line 1\n    ```\n    ^\nSyntaxError: invalid syntax\n",
+    "obj_val": null,
+    "log_path": "logs/log_20250413135010_complexor_Knapsack/",
+    "problem_path": "data/complexor/Knapsack/",
+    "prep_code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/complexor/Knapsack/data.json\", \"r\") as f:\n    data = json.load(f)\n"
+}

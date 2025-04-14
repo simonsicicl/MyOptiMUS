@@ -1,0 +1,204 @@
+{
+    "background": "A mine sends ore to the surface using a combination of small and large wagons, with capacity limitations and a minimum ratio to maintain between them.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Capacity of a small wagon",
+            "symbol": "SmallWagonCapacity",
+            "value": 20,
+            "shape": [],
+            "code": "SmallWagonCapacity = data[\"SmallWagonCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Capacity of a large wagon",
+            "symbol": "LargeWagonCapacity",
+            "value": 50,
+            "shape": [],
+            "code": "LargeWagonCapacity = data[\"LargeWagonCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum ratio of the number of small wagons to the number of large wagons",
+            "symbol": "MinRatioSmallToLarge",
+            "value": 2,
+            "shape": [],
+            "code": "MinRatioSmallToLarge = data[\"MinRatioSmallToLarge\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of large wagons required",
+            "symbol": "MinLargeWagons",
+            "value": 10,
+            "shape": [],
+            "code": "MinLargeWagons = data[\"MinLargeWagons\"] # scalar parameter"
+        },
+        {
+            "definition": "Total units of ore that need to be taken to the surface",
+            "symbol": "TotalOre",
+            "value": 2000,
+            "shape": [],
+            "code": "TotalOre = data[\"TotalOre\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of small wagons is non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfSmallWagons} \\geq 0",
+            "related_variables": [
+                "NumberOfSmallWagons"
+            ],
+            "related_parameters": [],
+            "code": "# The non-negativity is inherent due to the variable being declared as continuous.\n# Constraint code not needed."
+        },
+        {
+            "description": "The number of large wagons is non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfLargeWagons} \\geq 0",
+            "related_variables": [
+                "NumberOfLargeWagons"
+            ],
+            "related_parameters": [],
+            "code": "# The non-negativity constraint is inherently satisfied as the variable \"NumberOfLargeWagons\" is defined with type CONTINUOUS, which is non-negative by default."
+        },
+        {
+            "description": "The number of small wagons must be at least MinRatioSmallToLarge times the number of large wagons.",
+            "status": "coded",
+            "formulation": "\\\\textup{NumberOfSmallWagons} \\\\geq \\\\textup{MinRatioSmallToLarge} \\\\cdot \\\\textup{NumberOfLargeWagons}",
+            "related_variables": [
+                "NumberOfSmallWagons",
+                "NumberOfLargeWagons"
+            ],
+            "related_parameters": [
+                "MinRatioSmallToLarge"
+            ],
+            "code": "# Add constraint to ensure the number of small wagons is at least MinRatioSmallToLarge times the number of large wagons\nmodel.addConstr(NumberOfSmallWagons >= MinRatioSmallToLarge * NumberOfLargeWagons, name=\"min_ratio_small_to_large\")"
+        },
+        {
+            "description": "The number of large wagons used must meet or exceed the minimum required number of large wagons.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfLargeWagons} \\geq \\textup{MinLargeWagons}",
+            "related_variables": [
+                "NumberOfLargeWagons"
+            ],
+            "related_parameters": [
+                "MinLargeWagons"
+            ],
+            "code": "# Add constraint ensuring the number of large wagons used meets or exceeds the minimum required\nmodel.addConstr(NumberOfLargeWagons >= MinLargeWagons, name=\"min_large_wagons\")"
+        },
+        {
+            "description": "The total ore transported must match the required total ore.",
+            "status": "coded",
+            "formulation": "\\\\textup{NumberOfSmallWagons} \\\\times \\\\textup{SmallWagonCapacity} + \\\\textup{NumberOfLargeWagons} \\\\times \\\\textup{LargeWagonCapacity} = \\\\textup{TotalOre}",
+            "related_variables": [
+                "NumberOfSmallWagons",
+                "NumberOfLargeWagons"
+            ],
+            "related_parameters": [
+                "SmallWagonCapacity",
+                "LargeWagonCapacity",
+                "TotalOre"
+            ],
+            "code": "# Add constraint ensuring total ore transported matches the required total ore\nmodel.addConstr(\n    NumberOfSmallWagons * SmallWagonCapacity + NumberOfLargeWagons * LargeWagonCapacity == TotalOre, \n    name=\"total_ore_constraint\"\n)"
+        },
+        {
+            "description": "The number of small wagons must be at least a certain ratio times the number of large wagons.",
+            "status": "coded",
+            "formulation": "\\\\textup{NumberOfSmallWagons} \\\\geq \\\\textup{MinRatioSmallToLarge} \\\\times \\\\textup{NumberOfLargeWagons}",
+            "related_variables": [
+                "NumberOfSmallWagons",
+                "NumberOfLargeWagons"
+            ],
+            "related_parameters": [
+                "MinRatioSmallToLarge"
+            ],
+            "code": "# Add constraint to ensure the number of small wagons is at least the minimum ratio times the number of large wagons\nmodel.addConstr(NumberOfSmallWagons >= MinRatioSmallToLarge * NumberOfLargeWagons, name=\"MinRatioSmallToLargeConstraint\")"
+        },
+        {
+            "description": "The number of large wagons must be at least the minimum required.",
+            "status": "coded",
+            "formulation": "\\\\textup{NumberOfLargeWagons} \\\\geq \\\\textup{MinLargeWagons}",
+            "related_variables": [
+                "NumberOfLargeWagons"
+            ],
+            "related_parameters": [
+                "MinLargeWagons"
+            ],
+            "code": "# Enforce the minimum required number of large wagons constraint\nmodel.addConstr(NumberOfLargeWagons >= MinLargeWagons, name=\"min_large_wagons_constraint\")"
+        },
+        {
+            "description": "Ensure the total ore transported meets or exceeds the demand.",
+            "status": "coded",
+            "formulation": "\\textup{SmallWagonCapacity} \\times \\textup{NumberOfSmallWagons} + \\textup{LargeWagonCapacity} \\times \\textup{NumberOfLargeWagons} \\geq \\textup{TotalOre}",
+            "related_variables": [
+                "NumberOfSmallWagons",
+                "NumberOfLargeWagons"
+            ],
+            "related_parameters": [
+                "SmallWagonCapacity",
+                "LargeWagonCapacity",
+                "TotalOre"
+            ],
+            "code": "# Add constraint to ensure the total ore transported meets or exceeds the demand\nmodel.addConstr(SmallWagonCapacity * NumberOfSmallWagons + LargeWagonCapacity * NumberOfLargeWagons >= TotalOre, name=\"ore_transport_demand\")"
+        },
+        {
+            "description": "Maintain the minimum ratio of small wagons to large wagons.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfSmallWagons} \\geq \\textup{MinRatioSmallToLarge} \\times \\textup{NumberOfLargeWagons}",
+            "related_variables": [
+                "NumberOfSmallWagons",
+                "NumberOfLargeWagons"
+            ],
+            "related_parameters": [
+                "MinRatioSmallToLarge"
+            ],
+            "code": "# Add constraint to maintain the minimum ratio of small wagons to large wagons\nmodel.addConstr(NumberOfSmallWagons >= MinRatioSmallToLarge * NumberOfLargeWagons, name=\"min_ratio_small_to_large\")"
+        },
+        {
+            "description": "Ensure the minimum number of large wagons is met.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfLargeWagons} \\geq \\textup{MinLargeWagons}",
+            "related_variables": [
+                "NumberOfLargeWagons"
+            ],
+            "related_parameters": [
+                "MinLargeWagons"
+            ],
+            "code": "# Add constraint to ensure the minimum number of large wagons is met\nmodel.addConstr(NumberOfLargeWagons >= MinLargeWagons, name=\"min_large_wagons\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of small wagons used to transport ore.",
+            "symbol": "NumberOfSmallWagons",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfSmallWagons = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfSmallWagons\")"
+        },
+        {
+            "definition": "The number of large wagons used to transport ore.",
+            "symbol": "NumberOfLargeWagons",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfLargeWagons = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfLargeWagons\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of wagons needed to transport ore.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfSmallWagons} + \\textup{NumberOfLargeWagons}",
+            "related_variables": [
+                "NumberOfSmallWagons",
+                "NumberOfLargeWagons"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(NumberOfSmallWagons + NumberOfLargeWagons, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 66.66666666666666,
+    "log_path": "logs/log_20250413162614_nl4opt_prob_167/",
+    "problem_path": "data/nl4opt/prob_167/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_167/data.json\", \"r\") as f:\n    data = json.load(f)\n\nSmallWagonCapacity = data[\"SmallWagonCapacity\"] # scalar parameter\nLargeWagonCapacity = data[\"LargeWagonCapacity\"] # scalar parameter\nMinRatioSmallToLarge = data[\"MinRatioSmallToLarge\"] # scalar parameter\nMinLargeWagons = data[\"MinLargeWagons\"] # scalar parameter\nTotalOre = data[\"TotalOre\"] # scalar parameter\nNumberOfSmallWagons = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfSmallWagons\")\nNumberOfLargeWagons = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfLargeWagons\")\n\n# The non-negativity is inherent due to the variable being declared as continuous.\n# Constraint code not needed.\n\n# The non-negativity constraint is inherently satisfied as the variable \"NumberOfLargeWagons\" is defined with type CONTINUOUS, which is non-negative by default.\n\n# Add constraint to ensure the number of small wagons is at least MinRatioSmallToLarge times the number of large wagons\nmodel.addConstr(NumberOfSmallWagons >= MinRatioSmallToLarge * NumberOfLargeWagons, name=\"min_ratio_small_to_large\")\n\n# Add constraint ensuring the number of large wagons used meets or exceeds the minimum required\nmodel.addConstr(NumberOfLargeWagons >= MinLargeWagons, name=\"min_large_wagons\")\n\n# Add constraint ensuring total ore transported matches the required total ore\nmodel.addConstr(\n    NumberOfSmallWagons * SmallWagonCapacity + NumberOfLargeWagons * LargeWagonCapacity == TotalOre, \n    name=\"total_ore_constraint\"\n)\n\n# Add constraint to ensure the number of small wagons is at least the minimum ratio times the number of large wagons\nmodel.addConstr(NumberOfSmallWagons >= MinRatioSmallToLarge * NumberOfLargeWagons, name=\"MinRatioSmallToLargeConstraint\")\n\n# Enforce the minimum required number of large wagons constraint\nmodel.addConstr(NumberOfLargeWagons >= MinLargeWagons, name=\"min_large_wagons_constraint\")\n\n# Add constraint to ensure the total ore transported meets or exceeds the demand\nmodel.addConstr(SmallWagonCapacity * NumberOfSmallWagons + LargeWagonCapacity * NumberOfLargeWagons >= TotalOre, name=\"ore_transport_demand\")\n\n# Add constraint to maintain the minimum ratio of small wagons to large wagons\nmodel.addConstr(NumberOfSmallWagons >= MinRatioSmallToLarge * NumberOfLargeWagons, name=\"min_ratio_small_to_large\")\n\n# Add constraint to ensure the minimum number of large wagons is met\nmodel.addConstr(NumberOfLargeWagons >= MinLargeWagons, name=\"min_large_wagons\")\n\n# Set objective\nmodel.setObjective(NumberOfSmallWagons + NumberOfLargeWagons, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

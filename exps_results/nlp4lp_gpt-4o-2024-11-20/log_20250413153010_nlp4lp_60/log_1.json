@@ -1,0 +1,215 @@
+{
+    "background": "A delivery person is required to determine the most time-efficient route for delivering a package within a grid of east-west and north-south streets.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of east-west streets",
+            "symbol": "N",
+            "value": "",
+            "shape": [],
+            "code": "N = data[\"N\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of north-south streets",
+            "symbol": "W",
+            "value": "",
+            "shape": [],
+            "code": "W = data[\"W\"] # scalar parameter"
+        },
+        {
+            "definition": "Time to cross street segment going west, for given street n and segment w",
+            "symbol": "WestTime",
+            "value": "",
+            "shape": [
+                "N",
+                "W-1"
+            ],
+            "code": "WestTime = np.array(data[\"WestTime\"]) # ['N', 'W-1']"
+        },
+        {
+            "definition": "Time to cross street segment going north, for given street n and segment w",
+            "symbol": "NorthTime",
+            "value": "",
+            "shape": [
+                "N-1",
+                "W"
+            ],
+            "code": "NorthTime = np.array(data[\"NorthTime\"]) # ['N-1', 'W']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The total number of east-west street segments used cannot exceed N.",
+            "status": "coded",
+            "formulation": "\\sum_{n=1}^{\\textup{N}} \\sum_{w=1}^{\\textup{W}-1} \\textup{EastWestUsed}_{n,w} \\leq \\textup{N}",
+            "related_variables": [
+                "EastWestUsed"
+            ],
+            "related_parameters": [
+                "N",
+                "W"
+            ],
+            "code": "# Add constraint to limit the total number of east-west street segments used\nmodel.addConstr(\n    gp.quicksum(EastWestUsed[n, w] for n in range(N) for w in range(W - 1)) <= N,\n    name=\"limit_east_west_segments\"\n)"
+        },
+        {
+            "description": "The number of north-south street segments used cannot exceed W",
+            "status": "coded",
+            "formulation": "\\sum_{n=1}^{\\textup{N}-1} \\sum_{w=1}^{\\textup{W}} \\textup{NorthSouthUsed}_{n,w} \\leq \\textup{W}",
+            "related_variables": [
+                "NorthSouthUsed"
+            ],
+            "related_parameters": [
+                "W",
+                "N"
+            ],
+            "code": "# Add constraint to ensure the number of north-south street segments used does not exceed W\nmodel.addConstr(\n    gp.quicksum(NorthSouthUsed[n, w] for n in range(N-1) for w in range(W)) <= W,\n    name=\"limit_north_south_segments\"\n)"
+        },
+        {
+            "description": "Enforce that east-west street segments are non-negative, aligning with their binary nature.",
+            "status": "coded",
+            "formulation": "\\textup{EastWestUsed}_{n,w} \\geq 0 \\quad \\forall \\quad n \\in \\{1, \\dots, \\textup{N}\\}, \\quad w \\in \\{1, \\dots, \\textup{W}-1\\}",
+            "related_variables": [
+                "EastWestUsed"
+            ],
+            "related_parameters": [
+                "N",
+                "W"
+            ],
+            "code": "# EastWestUsed is binary (non-negative by definition), so this constraint is not required."
+        },
+        {
+            "description": "The north-south street segments are non-negative, ensuring that the binary variable \\textup{NorthSouthUsed}[n, w] is valid.",
+            "status": "coded",
+            "formulation": "\\textup{NorthSouthUsed}_{n,w} \\geq 0 \\quad \\forall n \\in \\{1, \\dots, N-1\\}, \\quad \\forall w \\in \\{1, \\dots, W\\}",
+            "related_variables": [
+                "NorthSouthUsed"
+            ],
+            "related_parameters": [],
+            "code": "# No additional code needed as gurobipy automatically enforces non-negativity constraints for binary variables."
+        },
+        {
+            "description": "If an east-west segment is used in the route, it is marked as used.",
+            "status": "coded",
+            "formulation": "\\textup{EastWestUsed}_{n,w} \\geq \\textup{RouteDecision}_{n,w}^{\\textup{West}} \\quad \\forall \\quad n \\in [1, \\textup{N}], \\quad w \\in [1, \\textup{W}-1]",
+            "related_variables": [
+                "EastWestUsed",
+                "RouteDecision"
+            ],
+            "related_parameters": [
+                "N",
+                "W"
+            ],
+            "code": "# Add constraints to ensure EastWestUsed is marked if a RouteDecision is made\nfor n in range(N):\n    for w in range(W-1):\n        model.addConstr(EastWestUsed[n, w] >= RouteDecision[n, w], name=f\"east_west_segment_use_{n}_{w}\")"
+        },
+        {
+            "description": "If an east-west segment is not taken, it is not marked as used.",
+            "status": "coded",
+            "formulation": "\\textup{EastWestUsed}_{n,w} \\leq \\textup{RouteDecision}_{n,w}^{\\textup{West}} \\quad \\forall \\quad n \\in [1, \\textup{N}], \\quad w \\in [1, \\textup{W}-1]",
+            "related_variables": [
+                "EastWestUsed",
+                "RouteDecision"
+            ],
+            "related_parameters": [
+                "N",
+                "W"
+            ],
+            "code": "# Add constraints to ensure an east-west segment cannot be marked as used if it is not part of the route.\nfor n in range(N):\n    for w in range(W-1):\n        model.addConstr(EastWestUsed[n, w] <= RouteDecision[n, w], name=f\"EastWestSegmentNotUsed_{n}_{w}\")"
+        },
+        {
+            "description": "Activation constraint linking the NorthSouthUsed variable with the RouteDecision variable.",
+            "status": "coded",
+            "formulation": "\\textup{NorthSouthUsed}_{n,w} \\geq \\textup{RouteDecision}_{n,w} + \\textup{RouteDecision}_{n+1,w} - 1",
+            "related_variables": [
+                "NorthSouthUsed",
+                "RouteDecision"
+            ],
+            "related_parameters": [],
+            "code": "# Add activation constraints linking NorthSouthUsed and RouteDecision variables\nfor n in range(N-1):\n    for w in range(W-1):\n        model.addConstr(NorthSouthUsed[n, w] >= RouteDecision[n, w] + RouteDecision[n+1, w] - 1, name=f\"activation_constraint_{n}_{w}\")"
+        },
+        {
+            "description": "Flow conservation constraint to ensure the package enters and exits segments properly (one-to-one connectivity).",
+            "status": "coded",
+            "formulation": "\\sum_{w=1}^{\\textup{W-1}} \\textup{EastWestUsed}_{n, w} + \\sum_{w=1}^{\\textup{W}} \\textup{NorthSouthUsed}_{n, w} \\leq 1 \\quad \\forall \\quad n \\in [1, \\textup{N}], w \\in [1, \\textup{W}]",
+            "related_variables": [
+                "EastWestUsed",
+                "NorthSouthUsed"
+            ],
+            "related_parameters": [
+                "N",
+                "W"
+            ],
+            "code": "# Add flow conservation constraints\nfor n in range(N):\n    for w in range(W):\n        model.addConstr(\n            gp.quicksum(EastWestUsed[n, ww] for ww in range(W-1)) +\n            gp.quicksum(NorthSouthUsed[nn, w] for nn in range(N-1)) <= 1,\n            name=f\"flow_conservation_{n}_{w}\"\n        )"
+        },
+        {
+            "description": "Ensure that segments used in the route align with the overall route decision plan.",
+            "status": "coded",
+            "formulation": "\\textup{RouteDecision}_{n, w} \\geq \\textup{EastWestUsed}_{n, w} + \\textup{NorthSouthUsed}_{n, w} \\quad \\forall \\quad n \\in [1, \\textup{N}], w \\in [1, \\textup{W}]",
+            "related_variables": [
+                "EastWestUsed",
+                "NorthSouthUsed",
+                "RouteDecision"
+            ],
+            "related_parameters": [
+                "N",
+                "W"
+            ],
+            "code": "# Add constraints to ensure that segments used in the route align with the overall route decision plan\nfor n in range(N):\n    for w in range(W - 1):\n        model.addConstr(RouteDecision[n, w] >= EastWestUsed[n, w] + (NorthSouthUsed[n - 1, w] if n > 0 else 0) + (NorthSouthUsed[n, w] if n < N - 1 else 0), name=f\"route_decision_alignment_{n}_{w}\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Binary variable indicating whether an east-west street segment (n, w) is used in the delivery route.",
+            "symbol": "EastWestUsed",
+            "shape": [
+                "N",
+                "W-1"
+            ],
+            "status": "coded",
+            "code": "EastWestUsed = model.addVars(N, W-1, vtype=gp.GRB.BINARY, name=\"EastWestUsed\")"
+        },
+        {
+            "definition": "Binary variable indicating whether the route passes through east-west segment (n, w).",
+            "symbol": "RouteDecision",
+            "shape": [
+                "N",
+                "W-1"
+            ],
+            "status": "coded",
+            "code": "RouteDecision = model.addVars(N, W-1, vtype=gp.GRB.BINARY, name=\"RouteDecision\")"
+        },
+        {
+            "definition": "Binary variable indicating whether a north-south street segment (n, w) is used in the delivery route.",
+            "symbol": "NorthSouthUsed",
+            "shape": [
+                "N-1",
+                "W"
+            ],
+            "status": "coded",
+            "code": "NorthSouthUsed = model.addVars(N-1, W, vtype=gp.GRB.BINARY, name=\"NorthSouthUsed\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total travel time for the delivery route using east-west and north-south street segments.",
+            "status": "coded",
+            "formulation": "\\min \\quad \\sum_{n=1}^{\\textup{N}} \\sum_{w=1}^{\\textup{W-1}} \\textup{WestTime}_{n, w} \\cdot \\textup{EastWestUsed}_{n, w} + \\sum_{n=1}^{\\textup{N-1}} \\sum_{w=1}^{\\textup{W}} \\textup{NorthTime}_{n, w} \\cdot \\textup{NorthSouthUsed}_{n, w}",
+            "related_variables": [
+                "EastWestUsed",
+                "NorthSouthUsed"
+            ],
+            "related_parameters": [
+                "WestTime",
+                "NorthTime",
+                "N",
+                "W"
+            ],
+            "code": "# Set objective\nmodel.setObjective(\n    gp.quicksum(WestTime[n, w] * EastWestUsed[n, w] for n in range(N) for w in range(W-1)) +\n    gp.quicksum(NorthTime[n, w] * NorthSouthUsed[n, w] for n in range(N-1) for w in range(W)),\n    gp.GRB.MINIMIZE\n)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413153010_nlp4lp_60/",
+    "problem_path": "data/nlp4lp/60/"
+}

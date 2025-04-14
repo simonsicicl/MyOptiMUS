@@ -1,0 +1,255 @@
+{
+    "background": "The capacitated warehouse location problem involves determining the optimal locations for a set number of warehouses to service customers at minimum cost, taking into account warehouse capacities, operating costs, and customer demand.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "symbol": "NumberOfLocations",
+            "definition": "The total number of potential warehouse locations",
+            "shape": [],
+            "code": "NumberOfLocations = data[\"NumberOfLocations\"] # scalar parameter"
+        },
+        {
+            "symbol": "NumberOfCustomers",
+            "definition": "The total number of customers to be serviced",
+            "shape": [],
+            "code": "NumberOfCustomers = data[\"NumberOfCustomers\"] # scalar parameter"
+        },
+        {
+            "symbol": "CustomerDemand",
+            "definition": "The demand of each customer",
+            "shape": [
+                "NumberOfCustomers"
+            ],
+            "code": "CustomerDemand = np.array(data[\"CustomerDemand\"]) # ['NumberOfCustomers']"
+        },
+        {
+            "symbol": "ServiceAllocationCost",
+            "definition": "The cost of allocating service from each warehouse to each customer",
+            "shape": [
+                "NumberOfLocations",
+                "NumberOfCustomers"
+            ],
+            "code": "ServiceAllocationCost = np.array(data[\"ServiceAllocationCost\"]) # ['NumberOfLocations', 'NumberOfCustomers']"
+        },
+        {
+            "symbol": "WarehouseCapacity",
+            "definition": "The total capacity for each warehouse",
+            "shape": [
+                "NumberOfLocations"
+            ],
+            "code": "WarehouseCapacity = np.array(data[\"WarehouseCapacity\"]) # ['NumberOfLocations']"
+        },
+        {
+            "symbol": "MinimumDemandFromWarehouse",
+            "definition": "The lower limit on the demand that must be met from a warehouse if it is to be operational",
+            "shape": [
+                "NumberOfLocations"
+            ],
+            "code": "MinimumDemandFromWarehouse = np.array(data[\"MinimumDemandFromWarehouse\"]) # ['NumberOfLocations']"
+        },
+        {
+            "symbol": "MinimumOpenWarehouses",
+            "definition": "The minimum number of warehouses that need to be operational",
+            "shape": [],
+            "code": "MinimumOpenWarehouses = data[\"MinimumOpenWarehouses\"] # scalar parameter"
+        },
+        {
+            "symbol": "MaximumOpenWarehouses",
+            "definition": "The maximum number of warehouses that can be operational",
+            "shape": [],
+            "code": "MaximumOpenWarehouses = data[\"MaximumOpenWarehouses\"] # scalar parameter"
+        },
+        {
+            "symbol": "WarehouseFixedCost",
+            "definition": "The fixed operating cost of each warehouse",
+            "shape": [
+                "NumberOfLocations"
+            ],
+            "code": "WarehouseFixedCost = np.array(data[\"WarehouseFixedCost\"]) # ['NumberOfLocations']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Each customer demand must be met by the sum of products supplied from all warehouses.",
+            "status": "coded",
+            "formulation": "\\sum_{l=1}^{\\textup{NumberOfLocations}} \\textup{ProductsSupplied}_{l,c} \\geq \\textup{CustomerDemand}_c \\quad \\forall c \\in \\{1, ..., \\textup{NumberOfCustomers}\\}",
+            "related_variables": [
+                "ProductsSupplied"
+            ],
+            "related_parameters": [
+                "CustomerDemand",
+                "NumberOfLocations",
+                "NumberOfCustomers"
+            ],
+            "code": "# Add constraints to ensure customer demand is met by the sum of products supplied from all warehouses\nfor c in range(NumberOfCustomers):\n    model.addConstr(gp.quicksum(ProductsSupplied[l, c] for l in range(NumberOfLocations)) >= CustomerDemand[c], name=f\"demand_met_{c}\")"
+        },
+        {
+            "description": "Each warehouse can meet a maximum demand equal to its WarehouseCapacity",
+            "status": "coded",
+            "formulation": "\\sum_{c=1}^{\\textup{NumberOfCustomers}} \\textup{ProductsSupplied}_{l,c} \\leq \\textup{WarehouseCapacity}_l \\quad \\forall l \\in \\{1, ..., \\textup{NumberOfLocations}\\}",
+            "related_variables": [
+                "ProductsSupplied"
+            ],
+            "related_parameters": [
+                "NumberOfCustomers",
+                "WarehouseCapacity"
+            ],
+            "code": "# Warehouse capacity constraints\nfor l in range(NumberOfLocations):\n    model.addConstr(gp.quicksum(ProductsSupplied[l, c] for c in range(NumberOfCustomers)) <= WarehouseCapacity[l], name=f\"WarehouseCapacity{l}\")"
+        },
+        {
+            "description": "If a warehouse is open, it must meet at least the MinimumDemandFromWarehouse",
+            "status": "coded",
+            "formulation": "\\sum_{c=1}^{\\textup{NumberOfCustomers}} \\textup{ProductsSupplied}_{l,c} \\geq \\textup{WarehouseOpenStatus}_l \\times \\textup{MinimumDemandFromWarehouse}_l \\quad \\forall l = 1, \\ldots, \\textup{NumberOfLocations}",
+            "related_variables": [
+                "ProductsSupplied",
+                "WarehouseOpenStatus"
+            ],
+            "related_parameters": [
+                "MinimumDemandFromWarehouse",
+                "NumberOfCustomers",
+                "NumberOfLocations"
+            ],
+            "code": "# Add constraints to ensure that if a warehouse is open, it meets at least the MinimumDemandFromWarehouse\nfor l in range(NumberOfLocations):\n    model.addConstr(gp.quicksum(ProductsSupplied[l, c] for c in range(NumberOfCustomers)) >= WarehouseOpenStatus[l] * MinimumDemandFromWarehouse[l], name=f\"MinDemand_Warehouse{l}\")"
+        },
+        {
+            "description": "At least MinimumOpenWarehouses warehouses must be operational",
+            "status": "coded",
+            "formulation": "\\sum_{l=1}^{\\textup{NumberOfLocations}} \\textup{WarehouseOpenStatus}_l \\geq \\textup{MinimumOpenWarehouses}",
+            "related_variables": [
+                "WarehouseOpenStatus"
+            ],
+            "related_parameters": [
+                "MinimumOpenWarehouses"
+            ],
+            "code": "# Ensure that at least the minimum number of warehouses are open\nmodel.addConstr(gp.quicksum(WarehouseOpenStatus[l] for l in range(NumberOfLocations)) >= MinimumOpenWarehouses, name=\"min_warehouses_open\")"
+        },
+        {
+            "description": "At most, the number of operational warehouses cannot exceed 'MaximumOpenWarehouses'",
+            "status": "coded",
+            "formulation": "\\sum_{l=1}^{\\textup{NumberOfLocations}} \\textup{WarehouseOpenStatus}_{l} \\leq \\textup{MaximumOpenWarehouses}",
+            "related_variables": [
+                "WarehouseOpenStatus"
+            ],
+            "related_parameters": [
+                "NumberOfLocations",
+                "MaximumOpenWarehouses"
+            ],
+            "code": "# Add constraint for the maximum number of operational warehouses\nmodel.addConstr(gp.quicksum(WarehouseOpenStatus[l] for l in range(NumberOfLocations)) <= MaximumOpenWarehouses, name=\"MaxOperationalWarehouses\")"
+        },
+        {
+            "description": "Definition of WarehouseOpenStatus as a binary variable for each warehouse",
+            "status": "coded",
+            "formulation": "0 \\leq \\textup{WarehouseOpenStatus}_l \\leq 1, \\quad \\textup{WarehouseOpenStatus}_l \\in \\{0, 1\\} \\quad \\forall l = 1, \\ldots, \\textup{NumberOfLocations}",
+            "related_variables": [
+                "WarehouseOpenStatus"
+            ],
+            "related_parameters": [],
+            "code": "# Since WarehouseOpenStatus is already defined as a binary variable, no additional constraints are needed"
+        },
+        {
+            "description": "The supplied products cannot exceed the warehouse capacity",
+            "status": "coded",
+            "formulation": "\\sum_{c=1}^{\\textup{NumberOfCustomers}} \\textup{ProductsSupplied}_{lc} \\leq \\textup{WarehouseCapacity}_l \\cdot \\textup{WarehouseOpenStatus}_l \\quad \\textup{for all } l",
+            "related_variables": [
+                "ProductsSupplied",
+                "WarehouseOpenStatus"
+            ],
+            "related_parameters": [
+                "WarehouseCapacity"
+            ],
+            "code": "# Add warehouse capacity constraints\nfor l in range(NumberOfLocations):\n    model.addConstr(gp.quicksum(ProductsSupplied[l, c] for c in range(NumberOfCustomers)) <= WarehouseCapacity[l] * WarehouseOpenStatus[l], name=f\"warehouse_capacity_{l}\")"
+        },
+        {
+            "description": "The supply to each customer must meet their demand",
+            "status": "coded",
+            "formulation": "\\sum_{l=1}^{\\textup{NumberOfLocations}} \\textup{ProductsSupplied}_{lc} = \\textup{CustomerDemand}_c \\quad \\textup{for all } c",
+            "related_variables": [
+                "ProductsSupplied"
+            ],
+            "related_parameters": [
+                "CustomerDemand"
+            ],
+            "code": "# Ensure supply meets demand for each customer\nfor c in range(NumberOfCustomers):\n    model.addConstr(gp.quicksum(ProductsSupplied[l, c] for l in range(NumberOfLocations)) == CustomerDemand[c], \n                    name=f\"demand_constraint_{c}\")"
+        },
+        {
+            "description": "Warehouses must supply a minimum quantity or none if not open",
+            "status": "coded",
+            "formulation": "\\sum_{c=1}^{\\textup{NumberOfCustomers}} \\textup{ProductsSupplied}_{lc} \\geq \\textup{MinimumDemandFromWarehouse}_l \\cdot \\textup{WarehouseOpenStatus}_l \\quad \\textup{for all } l",
+            "related_variables": [
+                "ProductsSupplied",
+                "WarehouseOpenStatus"
+            ],
+            "related_parameters": [
+                "MinimumDemandFromWarehouse"
+            ],
+            "code": "# Warehouses must supply a minimum quantity or none if not open\nfor l in range(NumberOfLocations):\n    model.addConstr(gp.quicksum(ProductsSupplied[l, c] for c in range(NumberOfCustomers)) >= MinimumDemandFromWarehouse[l] * WarehouseOpenStatus[l], name=f\"min_demand_warehouse_{l}\")"
+        },
+        {
+            "description": "The minimum number of warehouses must be operational",
+            "status": "coded",
+            "formulation": "\\sum_{l=1}^{\\textup{NumberOfLocations}} \\textup{WarehouseOpenStatus}_l \\geq \\textup{MinimumOpenWarehouses}",
+            "related_variables": [
+                "WarehouseOpenStatus"
+            ],
+            "related_parameters": [
+                "MinimumOpenWarehouses"
+            ],
+            "code": "# Ensure the minimum number of warehouses are open\nmodel.addConstr(gp.quicksum(WarehouseOpenStatus[l] for l in range(NumberOfLocations)) >= MinimumOpenWarehouses, name=\"min_warehouses_open\")"
+        },
+        {
+            "description": "The maximum number of warehouses can be operational",
+            "status": "coded",
+            "formulation": "\\sum_{l=1}^{\\textup{NumberOfLocations}} \\textup{WarehouseOpenStatus}_l \\leq \\textup{MaximumOpenWarehouses}",
+            "related_variables": [
+                "WarehouseOpenStatus"
+            ],
+            "related_parameters": [
+                "MaximumOpenWarehouses"
+            ],
+            "code": "# Maximum number of warehouses open constraint\nmodel.addConstr(gp.quicksum(WarehouseOpenStatus[l] for l in range(NumberOfLocations)) <= MaximumOpenWarehouses, name=\"MaxOpenWarehouses\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Products supplied from warehouse 'l' to customer 'c'.",
+            "symbol": "ProductsSupplied",
+            "shape": [
+                "NumberOfLocations",
+                "NumberOfCustomers"
+            ],
+            "status": "coded",
+            "code": "ProductsSupplied = model.addVars(NumberOfLocations, NumberOfCustomers, vtype=gp.GRB.CONTINUOUS, name=\"ProductsSupplied\")"
+        },
+        {
+            "definition": "Binary status indicator for whether a warehouse is open (1) or closed (0)",
+            "symbol": "WarehouseOpenStatus",
+            "shape": [
+                "NumberOfLocations"
+            ],
+            "status": "coded",
+            "code": "WarehouseOpenStatus = model.addVars(NumberOfLocations, vtype=gp.GRB.BINARY, name=\"WarehouseOpenStatus\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total cost which includes the sum of service allocation costs for supplying products from warehouses to customers and the fixed operating costs for each open warehouse",
+            "status": "coded",
+            "formulation": "\\min \\left( \\sum_{l=1}^{\\textup{NumberOfLocations}} \\sum_{c=1}^{\\textup{NumberOfCustomers}} \\textup{ServiceAllocationCost}_{lc} \\cdot \\textup{ProductsSupplied}_{lc} + \\sum_{l=1}^{\\textup{NumberOfLocations}} \\textup{WarehouseFixedCost}_l \\cdot \\textup{WarehouseOpenStatus}_l \\right)",
+            "related_variables": [
+                "ProductsSupplied",
+                "WarehouseOpenStatus"
+            ],
+            "related_parameters": [
+                "ServiceAllocationCost",
+                "WarehouseFixedCost"
+            ],
+            "code": "# Set objective function\nobjective = gp.quicksum(ServiceAllocationCost[l, c] * ProductsSupplied[l, c] for l in range(NumberOfLocations) for c in range(NumberOfCustomers)) \\\n            + gp.quicksum(WarehouseFixedCost[l] * WarehouseOpenStatus[l] for l in range(NumberOfLocations))\nmodel.setObjective(objective, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413134331_complexor_CapacitatedWarehouseLocation/",
+    "problem_path": "data/complexor/CapacitatedWarehouseLocation/"
+}

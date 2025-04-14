@@ -1,0 +1,219 @@
+{
+    "background": "The Vehicle Routing Problem with Time Windows (VRPTW) aims to optimize the distribution of goods between depots and customers using a fleet of vehicles with limited capacity, ensuring customers' demands are met within specific time windows while respecting the vehicles' routing restrictions.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "symbol": "CustomerCount",
+            "definition": "The number of customers to be supplied",
+            "shape": [],
+            "code": "CustomerCount = data[\"CustomerCount\"] # scalar parameter"
+        },
+        {
+            "symbol": "VehicleCount",
+            "definition": "The number of vehicles available for distribution",
+            "shape": [],
+            "code": "VehicleCount = data[\"VehicleCount\"] # scalar parameter"
+        },
+        {
+            "symbol": "CustomerDemand",
+            "definition": "The demand of each customer",
+            "shape": [
+                "CustomerCount"
+            ],
+            "code": "CustomerDemand = np.array(data[\"CustomerDemand\"]) # ['CustomerCount']"
+        },
+        {
+            "symbol": "CustomerLBTW",
+            "definition": "The lower bound of the time window for each customer",
+            "shape": [
+                "CustomerCount"
+            ],
+            "code": "CustomerLBTW = np.array(data[\"CustomerLBTW\"]) # ['CustomerCount']"
+        },
+        {
+            "symbol": "CustomerUBTW",
+            "definition": "The upper bound of the time window for each customer",
+            "shape": [
+                "CustomerCount"
+            ],
+            "code": "CustomerUBTW = np.array(data[\"CustomerUBTW\"]) # ['CustomerCount']"
+        },
+        {
+            "symbol": "CustomerDistance",
+            "definition": "The distance from each customer to every other customer",
+            "shape": [
+                "CustomerCount",
+                "CustomerCount"
+            ],
+            "code": "CustomerDistance = np.array(data[\"CustomerDistance\"]) # ['CustomerCount', 'CustomerCount']"
+        },
+        {
+            "symbol": "CustomerServiceTime",
+            "definition": "The service time required for each customer",
+            "shape": [
+                "CustomerCount"
+            ],
+            "code": "CustomerServiceTime = np.array(data[\"CustomerServiceTime\"]) # ['CustomerCount']"
+        },
+        {
+            "symbol": "VehicleCapacity",
+            "definition": "The capacity of each vehicle",
+            "shape": [
+                "VehicleCount"
+            ],
+            "code": "VehicleCapacity = np.array(data[\"VehicleCapacity\"]) # ['VehicleCount']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The capacity of each vehicle must not be exceeded by the sum of the demands of the customers serviced by that vehicle",
+            "status": "coded",
+            "formulation": "\\sum_{j=1}^{\\textup{CustomerCount}} \\textup{CustomerDemand}_{j} \\cdot x_{ij} \\leq \\textup{VehicleCapacity}_{i}, \\quad \\forall i \\in \\{1, \\ldots, \\textup{VehicleCount}\\}",
+            "related_variables": [
+                "CustomerServedByVehicle"
+            ],
+            "related_parameters": [
+                "CustomerDemand",
+                "VehicleCapacity"
+            ],
+            "code": "# Add vehicle capacity constraints\nfor i in range(VehicleCount):\n    model.addConstr(gp.quicksum(CustomerDemand[j] * CustomerServedByVehicle[i, j] for j in range(CustomerCount)) <= VehicleCapacity[i], name=\"vehicle_capacity_{}\".format(i))"
+        },
+        {
+            "description": "Each customer must be served within their time window",
+            "status": "coded",
+            "formulation": "\\forall j : \\sum_{i=1}^{\\textup{VehicleCount}} \\textup{CustomerServedByVehicle}_{ij} \\cdot \\textup{ArrivalTime}_{ij} \\geq \\textup{CustomerLBTW}_j",
+            "related_variables": [
+                "CustomerServedByVehicle",
+                "ArrivalTime"
+            ],
+            "related_parameters": [
+                "VehicleCount",
+                "CustomerLBTW"
+            ],
+            "code": "# Ensure each customer is served within their time window\nfor j in range(CustomerCount):\n    model.addConstr(\n        gp.quicksum(CustomerServedByVehicle[i, j] * ArrivalTime[i, j] for i in range(VehicleCount)) >= CustomerLBTW[j],\n        name=f\"time_window_constr_for_customer_{j}\"\n    )"
+        },
+        {
+            "description": "The total number of used vehicles should not exceed the number of vehicles available",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{\\textup{VehicleCount}} \\textup{VehicleUsed}_{i} \\leq \\textup{VehicleCount}",
+            "related_variables": [
+                "VehicleUsed"
+            ],
+            "related_parameters": [
+                "VehicleCount"
+            ],
+            "code": "# Ensure the total used vehicles do not exceed the number of vehicles available\nmodel.addConstr(gp.quicksum(VehicleUsed[i] for i in range(VehicleCount)) <= VehicleCount, name=\"vehicle_limit\")"
+        },
+        {
+            "description": "The arrival time must be less than or equal to the upper bound of the customer's time window if the customer is served by a vehicle",
+            "status": "coded",
+            "formulation": "\\forall j : \\sum_{i=1}^{\\textup{VehicleCount}} \\textup{CustomerServedByVehicle}_{ij} \\cdot \\textup{ArrivalTime}_{ij} \\leq \\textup{CustomerUBTW}_j",
+            "related_variables": [
+                "CustomerServedByVehicle",
+                "ArrivalTime"
+            ],
+            "related_parameters": [
+                "VehicleCount",
+                "CustomerUBTW"
+            ],
+            "code": "# Add constraints for arrival time to be less than or equal to customer's time window upper bound if served\nfor j in range(CustomerCount):\n    for i in range(VehicleCount):\n        model.addConstr(CustomerServedByVehicle[i, j] * ArrivalTime[i, j] <= CustomerUBTW[j], \n                        name=\"cust_time_window_ub_{}_{}\".format(i, j))"
+        },
+        {
+            "description": "A vehicle is considered used if it serves at least one customer",
+            "status": "coded",
+            "formulation": "\\textup{VehicleUsed}_{i} \\geq \\textup{CustomerServedByVehicle}_{ij} \\quad \\forall i \\in \\{1, \\ldots, \\textup{VehicleCount}\\}, j \\in \\{1, \\ldots, \\textup{CustomerCount}\\}",
+            "related_variables": [
+                "VehicleUsed",
+                "CustomerServedByVehicle"
+            ],
+            "related_parameters": [
+                "VehicleCount",
+                "CustomerCount"
+            ],
+            "code": "# Define the constraint that a vehicle is considered used if it serves at least one customer\nfor i in range(VehicleCount):\n    for j in range(CustomerCount):\n        model.addConstr(VehicleUsed[i] >= CustomerServedByVehicle[i, j], name=f\"vehicle_usage_{i}_{j}\")"
+        },
+        {
+            "description": "Vehicles should serve customers within their time windows and respect vehicle capacities",
+            "status": "runtime_error",
+            "formulation": "\\begin{aligned} & \\textup{ArrivalTime}_{ij} \\geq \\textup{CustomerLBTW}_j \\cdot \\textup{CustomerServedByVehicle}_{ij} \\\\ & \\textup{ArrivalTime}_{ij} \\leq \\textup{CustomerUBTW}_j \\cdot \\textup{CustomerServedByVehicle}_{ij} \\\\ & \\sum_{j=1}^{\\textup{CustomerCount}} \\textup{CustomerDemand}_j \\cdot \\textup{CustomerServedByVehicle}_{ij} \\leq \\textup{VehicleCapacity}_i \\end{aligned}",
+            "related_variables": [
+                "CustomerServedByVehicle",
+                "ArrivalTime",
+                "VehicleUsed"
+            ],
+            "related_parameters": [
+                "CustomerCount",
+                "CustomerDemand",
+                "CustomerLBTW",
+                "CustomerUBTW",
+                "VehicleCapacity"
+            ],
+            "code": "```"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Binary variable, 1 if customer j is served by vehicle i, and 0 otherwise",
+            "symbol": "CustomerServedByVehicle",
+            "shape": [
+                "VehicleCount",
+                "CustomerCount"
+            ],
+            "status": "coded",
+            "code": "CustomerServedByVehicle = model.addVars(VehicleCount, CustomerCount, vtype=gp.GRB.BINARY, name=\"CustomerServedByVehicle\")"
+        },
+        {
+            "definition": "The time a vehicle arrives at a customer location",
+            "symbol": "ArrivalTime",
+            "shape": [
+                "VehicleCount",
+                "CustomerCount"
+            ],
+            "status": "coded",
+            "code": "ArrivalTime = model.addVars(VehicleCount, CustomerCount, vtype=gp.GRB.CONTINUOUS, name=\"ArrivalTime\")"
+        },
+        {
+            "definition": "Binary variable, 1 if vehicle i is used (serves at least one customer), and 0 otherwise",
+            "symbol": "VehicleUsed",
+            "shape": [
+                "VehicleCount"
+            ],
+            "status": "coded",
+            "code": "VehicleUsed = model.addVars(VehicleCount, vtype=gp.GRB.BINARY, name=\"VehicleUsed\")"
+        },
+        {
+            "definition": "Binary variable, 1 if vehicle i travels directly from customer j to customer k",
+            "symbol": "VehicleDirectTravel",
+            "shape": [
+                "VehicleCount",
+                "CustomerCount",
+                "CustomerCount"
+            ],
+            "status": "coded",
+            "code": "VehicleDirectTravel = model.addVars(VehicleCount, CustomerCount, CustomerCount, vtype=gp.GRB.BINARY, name=\"VehicleDirectTravel\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total travel distance and time for all vehicles while serving all customers within their time windows",
+            "status": "coded",
+            "formulation": "\\min \\sum_{i=1}^{\\textup{VehicleCount}} \\sum_{j=1}^{\\textup{CustomerCount}} \\sum_{k=1, k \\neq j}^{\\textup{CustomerCount}} \\textup{CustomerServedByVehicle}_{ij} \\cdot \\textup{CustomerServedByVehicle}_{ik} \\cdot \\textup{CustomerDistance}_{jk}",
+            "related_variables": [
+                "CustomerServedByVehicle"
+            ],
+            "related_parameters": [
+                "VehicleCount",
+                "CustomerCount",
+                "CustomerDistance"
+            ],
+            "code": "# Set objective\nmodel.setObjective(\n    gp.quicksum(\n        CustomerServedByVehicle[i, j] * \n        CustomerServedByVehicle[i, k] * \n        CustomerDistance[j, k]\n        for i in range(VehicleCount)\n        for j in range(CustomerCount)\n        for k in range(CustomerCount) if j != k\n    ),\n    gp.GRB.MINIMIZE\n)"
+        }
+    ],
+    "solution_status": "runtime_error",
+    "solver_output_status": "runtime_error",
+    "error_message": "Traceback (most recent call last):\n  File \"/Users/simonsici/Desktop/MyOptiMUS/evaluator.py\", line 45, in run\n    exec(last_line, local_env, local_env)\n  File \"<string>\", line 1\n    ```\n    ^\nSyntaxError: invalid syntax\n",
+    "obj_val": null,
+    "log_path": "logs/log_20250413144201_complexor_VRPTW/",
+    "problem_path": "data/complexor/VRPTW/",
+    "prep_code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/complexor/VRPTW/data.json\", \"r\") as f:\n    data = json.load(f)\n"
+}

@@ -1,0 +1,188 @@
+{
+    "background": "The problem is to identify the parameters of a linear model that fits the observed x and y data points in such a way that the maximum deviation of the observed y values from the predicted y values is minimized.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of observed data points",
+            "symbol": "NumObs",
+            "value": "",
+            "shape": [],
+            "code": "NumObs = data[\"NumObs\"] # scalar parameter"
+        },
+        {
+            "definition": "Observed values of y",
+            "symbol": "Y",
+            "value": "",
+            "shape": [
+                "NumObs"
+            ],
+            "code": "Y = np.array(data[\"Y\"]) # ['NumObs']"
+        },
+        {
+            "definition": "Observed values of x",
+            "symbol": "X",
+            "value": "",
+            "shape": [
+                "NumObs"
+            ],
+            "code": "X = np.array(data[\"X\"]) # ['NumObs']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The maximum deviation among all predicted and observed y values should be minimized",
+            "status": "coded",
+            "formulation": "\\max_{i=1,...,\\textup{NumObs}} \\textup{Deviation}_i",
+            "related_variables": [
+                "Deviation"
+            ],
+            "related_parameters": [
+                "NumObs",
+                "Y",
+                "X"
+            ],
+            "code": "# Add a constraint for the maximum deviation among all predicted and observed y values\nmaxDeviation = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"maxDeviation\")\nmodel.update()  # Integrate new variable\nfor i in range(NumObs):\n    model.addConstr(Deviation[i] <= maxDeviation, name=f\"max_deviation_constr_{i}\")\nmodel.setObjective(maxDeviation, gp.GRB.MINIMIZE)"
+        },
+        {
+            "description": "Minimize the maximum deviation among all observed data points",
+            "status": "coded",
+            "formulation": "\\min \\quad \\max_{k=1,...,\\textup{NumObs}} \\textup{Deviation}_k",
+            "related_variables": [
+                "Deviation"
+            ],
+            "related_parameters": [
+                "NumObs"
+            ],
+            "code": "# Since we aim to minimize the maximum deviation, we need an auxiliary variable to represent this maximum deviation\nmaxDeviation = model.addVar(vtype=gp.GRB.CONTINUOUS, lb=0.0, name=\"maxDeviation\")\n\n# Add constraints to ensure that the maxDeviation variable is greater than or equal to all Deviation variables\nfor k in range(NumObs):\n    model.addConstr(maxDeviation >= Deviation[k], name=f\"max_deviation_constraint_{k}\")\n\n# Set the objective to minimize the maximum deviation\nmodel.setObjective(maxDeviation, gp.GRB.MINIMIZE)"
+        },
+        {
+            "description": "Deviation should be greater than or equal to the difference between observed and predicted y values",
+            "status": "coded",
+            "formulation": "\\textup{Deviation}_i \\geq \\textup{Y}_i - (\\textup{Slope} \\cdot \\textup{X}_i + \\textup{Intercept}) \\quad \\forall i \\in \\{1,...,\\textup{NumObs}\\}",
+            "related_variables": [
+                "Deviation",
+                "Slope",
+                "Intercept"
+            ],
+            "related_parameters": [
+                "Y",
+                "X"
+            ],
+            "code": "# Add deviation constraints\nfor i in range(NumObs):\n    model.addConstr(Deviation[i] >= Y[i] - (Slope * X[i] + Intercept), name=f\"deviation_constr_{i}\")"
+        },
+        {
+            "description": "Deviation should be greater than or equal to the negative difference between observed and predicted y values",
+            "status": "coded",
+            "formulation": "\\textup{Deviation}_i \\geq -(\\textup{Y}_i - (\\textup{Slope} \\cdot \\textup{X}_i + \\textup{Intercept})) \\quad \\forall i \\in \\{1,...,\\textup{NumObs}\\}",
+            "related_variables": [
+                "Deviation",
+                "Slope",
+                "Intercept"
+            ],
+            "related_parameters": [
+                "Y",
+                "X"
+            ],
+            "code": "# Add constraints for deviation being greater than or equal to the negative difference between observed and predicted y values\nfor i in range(NumObs):\n    model.addConstr(Deviation[i] >= -(Y[i] - (Slope * X[i] + Intercept)), name=f\"deviation_constr_{i}\")"
+        },
+        {
+            "description": "Deviation is the absolute difference between predicted and observed y values for each data point",
+            "status": "coded",
+            "formulation": "\\textup{Deviation}_k \\geq \\textup{Slope} \\cdot \\textup{X}_k + \\textup{Intercept} - \\textup{Y}_k, \\quad k=1,...,\\textup{NumObs}",
+            "related_variables": [
+                "Deviation",
+                "Slope",
+                "Intercept"
+            ],
+            "related_parameters": [
+                "NumObs",
+                "Y",
+                "X"
+            ],
+            "code": "Deviation = model.addVars(NumObs, vtype=gp.GRB.CONTINUOUS, lb=0.0, name='Deviation')\nSlope = model.addVar(vtype=gp.GRB.CONTINUOUS, name='Slope')\nIntercept = model.addVar(vtype=gp.GRB.CONTINUOUS, name='Intercept')"
+        },
+        {
+            "description": "Deviation is the absolute difference between predicted and observed y values for each data point",
+            "status": "coded",
+            "formulation": "\\textup{Deviation}_k \\geq - (\\textup{Slope} \\cdot \\textup{X}_k + \\textup{Intercept} - \\textup{Y}_k), \\quad k=1,...,\\textup{NumObs}",
+            "related_variables": [
+                "Deviation",
+                "Slope",
+                "Intercept"
+            ],
+            "related_parameters": [
+                "NumObs",
+                "Y",
+                "X"
+            ],
+            "code": "# Add deviation constraints\nfor k in range(NumObs):\n    model.addConstr(Deviation[k] >= -(Slope * X[k] + Intercept - Y[k]), name=f\"deviation_constr_{k}\")"
+        },
+        {
+            "description": "The maximum deviation should be greater than or equal to the absolute deviation for each data point",
+            "status": "runtime_error",
+            "formulation": "\\textup{MaxDeviation} \\geq |\\textup{Y}_i - (\\textup{Slope} \\cdot \\textup{X}_i + \\textup{Intercept})| \\quad \\forall i \\in \\{1, \\ldots, \\textup{NumObs}\\}",
+            "related_variables": [
+                "MaxDeviation",
+                "Slope",
+                "Intercept"
+            ],
+            "related_parameters": [
+                "Y",
+                "X",
+                "NumObs"
+            ],
+            "code": "# Add constraint for maximum deviation to be greater than absolute deviation for each observation\nfor i in range(NumObs):\n    model.addConstr(MaxDeviation >= gp.abs_(Y[i] - (Slope * X[i] + Intercept)), name=f\"max_deviation_{i}\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The absolute difference between the predicted and observed y values for each data point",
+            "symbol": "Deviation",
+            "shape": [
+                "NumObs"
+            ],
+            "status": "coded",
+            "code": "Deviation = model.addVars(NumObs, vtype=gp.GRB.CONTINUOUS, lb=0.0, name=\"Deviation\")"
+        },
+        {
+            "definition": "The slope of the linear model",
+            "symbol": "Slope",
+            "shape": [],
+            "status": "coded",
+            "code": "Slope = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"Slope\")"
+        },
+        {
+            "definition": "The intercept of the linear model",
+            "symbol": "Intercept",
+            "shape": [],
+            "status": "coded",
+            "code": "Intercept = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"Intercept\")"
+        },
+        {
+            "definition": "Maximum absolute deviation between predicted and observed y values",
+            "symbol": "MaxDeviation",
+            "shape": [],
+            "status": "coded",
+            "code": "MaxDeviation = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"MaxDeviation\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the maximum deviation between predicted and observed y values for all observations",
+            "status": "coded",
+            "formulation": "\\min \\textup{MaxDeviation}",
+            "related_variables": [
+                "MaxDeviation"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(MaxDeviation, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "runtime_error",
+    "solver_output_status": "runtime_error",
+    "error_message": "Traceback (most recent call last):\n  File \"c:\\Users\\Simon\\Desktop\\Courses\\ECE 570\\ECE570_Project\\MyOptiMUS\\evaluator.py\", line 45, in run\n    exec(last_line, local_env, local_env)\n  File \"<string>\", line 3, in <module>\n  File \"src\\\\gurobipy\\\\_model.pyx\", line 3956, in gurobipy._model.Model.addConstr\ngurobipy._exception.GurobiError: General expressions can only be equal to a single var\n",
+    "obj_val": null,
+    "log_path": "logs/log_20250413090802_nlp4lp_32/",
+    "problem_path": "data/nlp4lp/32/",
+    "prep_code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nlp4lp/32/data.json\", \"r\") as f:\n    data = json.load(f)\n"
+}

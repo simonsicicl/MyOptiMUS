@@ -1,0 +1,219 @@
+{
+    "background": "A soda company sells soda in cans and glass bottles with different volumes, looking to maximize the total number of units produced while satisfying daily volume and ratio constraints.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Volume of soda a can holds",
+            "symbol": "CanVolume",
+            "value": 250,
+            "shape": [],
+            "code": "CanVolume = data[\"CanVolume\"] # scalar parameter"
+        },
+        {
+            "definition": "Volume of soda a glass bottle holds",
+            "symbol": "BottleVolume",
+            "value": 1000,
+            "shape": [],
+            "code": "BottleVolume = data[\"BottleVolume\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum total volume of soda to bottle every day",
+            "symbol": "MinTotalVolume",
+            "value": 1000000,
+            "shape": [],
+            "code": "MinTotalVolume = data[\"MinTotalVolume\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum ratio of the number of cans to the number of glass bottles",
+            "symbol": "CanBottleRatio",
+            "value": 3,
+            "shape": [],
+            "code": "CanBottleRatio = data[\"CanBottleRatio\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of glass bottles to produce",
+            "symbol": "MinBottles",
+            "value": 100,
+            "shape": [],
+            "code": "MinBottles = data[\"MinBottles\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The constraints ensuring non-negative production of soda cans and glass bottles.",
+            "status": "coded",
+            "formulation": "\\textup{NumCans} \\geq 0 \\quad \\textup{and} \\quad \\textup{NumBottles} \\geq 0",
+            "related_variables": [
+                "NumCans",
+                "NumBottles"
+            ],
+            "related_parameters": [],
+            "code": "# Add non-negativity constraints for production variables\nmodel.addConstr(NumCans >= 0, name=\"non_negative_NumCans\")\nmodel.addConstr(NumBottles >= 0, name=\"non_negative_NumBottles\")"
+        },
+        {
+            "description": "Number of glass bottles is non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumBottles} \\geq 0",
+            "related_variables": [
+                "NumBottles"
+            ],
+            "related_parameters": [],
+            "code": "# NumBottles is a continuous variable. Non-negativity is already ensured by default in Gurobi for continuous variables with no lower bounds explicitly set below zero."
+        },
+        {
+            "description": "The total soda volume from cans and bottles must be at least MinTotalVolume.",
+            "status": "coded",
+            "formulation": "\\textup{CanVolume} \\cdot \\textup{NumCans} + \\textup{BottleVolume} \\cdot \\textup{NumBottles} \\geq \\textup{MinTotalVolume}",
+            "related_variables": [
+                "NumCans",
+                "NumBottles"
+            ],
+            "related_parameters": [
+                "CanVolume",
+                "BottleVolume",
+                "MinTotalVolume"
+            ],
+            "code": "# Add constraint for total soda volume from cans and bottles\nmodel.addConstr(CanVolume * NumCans + BottleVolume * NumBottles >= MinTotalVolume, name=\"min_total_volume\")"
+        },
+        {
+            "description": "The number of cans should be at least CanBottleRatio times the number of glass bottles.",
+            "status": "coded",
+            "formulation": "\\textup{NumCans} \\geq \\textup{CanBottleRatio} \\cdot \\textup{NumBottles}",
+            "related_variables": [
+                "NumCans",
+                "NumBottles"
+            ],
+            "related_parameters": [
+                "CanBottleRatio"
+            ],
+            "code": "# Add constraint to ensure the number of cans is at least CanBottleRatio times the number of bottles\nmodel.addConstr(NumCans >= CanBottleRatio * NumBottles, name=\"cans_bottles_ratio\")"
+        },
+        {
+            "description": "At least MinBottles glass bottles are produced",
+            "status": "coded",
+            "formulation": "\\textup{NumBottles} \\geq \\textup{MinBottles}",
+            "related_variables": [
+                "NumBottles"
+            ],
+            "related_parameters": [
+                "MinBottles"
+            ],
+            "code": "# Add constraint to ensure at least MinBottles glass bottles are produced\nmodel.addConstr(NumBottles >= MinBottles, name=\"min_bottles_produced\")"
+        },
+        {
+            "description": "Minimum number of glass bottles to produce.",
+            "status": "coded",
+            "formulation": "\\textup{NumBottles} \\geq \\textup{MinBottles}",
+            "related_variables": [
+                "NumBottles"
+            ],
+            "related_parameters": [
+                "MinBottles"
+            ],
+            "code": "# Add minimum production constraint\nmodel.addConstr(NumBottles >= MinBottles, name=\"min_glass_bottles\")"
+        },
+        {
+            "description": "Total daily soda volume produced must meet or exceed the minimum required.",
+            "status": "coded",
+            "formulation": "\\textup{NumCans} \\cdot \\textup{CanVolume} + \\textup{NumBottles} \\cdot \\textup{BottleVolume} \\geq \\textup{MinTotalVolume}",
+            "related_variables": [
+                "NumCans",
+                "NumBottles"
+            ],
+            "related_parameters": [
+                "CanVolume",
+                "BottleVolume",
+                "MinTotalVolume"
+            ],
+            "code": "# Total daily soda volume constraint\nmodel.addConstr(NumCans * CanVolume + NumBottles * BottleVolume >= MinTotalVolume, \n                name=\"min_daily_soda_volume\")"
+        },
+        {
+            "description": "Minimum ratio of the number of cans to the number of bottles.",
+            "status": "coded",
+            "formulation": "\\textup{NumCans} \\geq \\textup{CanBottleRatio} \\cdot \\textup{NumBottles}",
+            "related_variables": [
+                "NumCans",
+                "NumBottles"
+            ],
+            "related_parameters": [
+                "CanBottleRatio"
+            ],
+            "code": "# Add minimum ratio constraint between NumCans and NumBottles\nmodel.addConstr(NumCans >= CanBottleRatio * NumBottles, name=\"min_can_bottle_ratio\")"
+        },
+        {
+            "description": "Ensure the total volume of soda produced meets the daily minimum volume requirement.",
+            "status": "coded",
+            "formulation": "\\\\textup{NumCans} \\\\times \\\\textup{CanVolume} + \\\\textup{NumBottles} \\\\times \\\\textup{BottleVolume} \\\\geq \\\\textup{MinTotalVolume}",
+            "related_variables": [
+                "NumCans",
+                "NumBottles"
+            ],
+            "related_parameters": [
+                "CanVolume",
+                "BottleVolume",
+                "MinTotalVolume"
+            ],
+            "code": "# Add constraint to ensure daily minimum volume requirement is met\nmodel.addConstr(\n    NumCans * CanVolume + NumBottles * BottleVolume >= MinTotalVolume,\n    name=\"min_volume_requirement\"\n)"
+        },
+        {
+            "description": "Ensure the number of cans produced is at least the specified multiple of the number of bottles produced.",
+            "status": "coded",
+            "formulation": "\\\\textup{NumCans} \\\\geq \\\\textup{CanBottleRatio} \\\\times \\\\textup{NumBottles}",
+            "related_variables": [
+                "NumCans",
+                "NumBottles"
+            ],
+            "related_parameters": [
+                "CanBottleRatio"
+            ],
+            "code": "# Add constraint to ensure the number of soda cans produced is at least the specified multiple of the number of bottles produced\nmodel.addConstr(NumCans >= CanBottleRatio * NumBottles, name=\"can_bottle_ratio_constraint\")"
+        },
+        {
+            "description": "Ensure the number of bottles produced meets the minimum production requirement.",
+            "status": "coded",
+            "formulation": "\\\\textup{NumBottles} \\\\geq \\\\textup{MinBottles}",
+            "related_variables": [
+                "NumBottles"
+            ],
+            "related_parameters": [
+                "MinBottles"
+            ],
+            "code": "# Add minimum production constraint for glass bottles\nmodel.addConstr(NumBottles >= MinBottles, name=\"min_bottles_production\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Total number of soda cans produced.",
+            "symbol": "NumCans",
+            "shape": [],
+            "status": "coded",
+            "code": "NumCans = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumCans\")"
+        },
+        {
+            "definition": "Total number of glass bottles produced.",
+            "symbol": "NumBottles",
+            "shape": [],
+            "status": "coded",
+            "code": "NumBottles = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumBottles\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total number of soda units (cans and bottles) produced.",
+            "status": "coded",
+            "formulation": "\\\\textup{Maximize} \\\\quad \\\\textup{NumCans} + \\\\textup{NumBottles}",
+            "related_variables": [
+                "NumCans",
+                "NumBottles"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(NumCans + NumBottles, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250414052751_nl4opt_prob_250/",
+    "problem_path": "data/nl4opt/prob_250/"
+}

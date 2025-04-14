@@ -1,0 +1,166 @@
+{
+    "background": "An accounting firm seeks to staff a project with full time and part time workers considering budget and hours worked constraints.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of hours per shift for full time workers",
+            "symbol": "FullTimeShiftHours",
+            "value": 8,
+            "shape": [],
+            "code": "FullTimeShiftHours = data[\"FullTimeShiftHours\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of hours per shift for part time workers",
+            "symbol": "PartTimeShiftHours",
+            "value": 4,
+            "shape": [],
+            "code": "PartTimeShiftHours = data[\"PartTimeShiftHours\"] # scalar parameter"
+        },
+        {
+            "definition": "Payment per shift for full time workers",
+            "symbol": "FullTimeShiftPay",
+            "value": 300,
+            "shape": [],
+            "code": "FullTimeShiftPay = data[\"FullTimeShiftPay\"] # scalar parameter"
+        },
+        {
+            "definition": "Payment per shift for part time workers",
+            "symbol": "PartTimeShiftPay",
+            "value": 100,
+            "shape": [],
+            "code": "PartTimeShiftPay = data[\"PartTimeShiftPay\"] # scalar parameter"
+        },
+        {
+            "definition": "Total required hours of labor for the project",
+            "symbol": "TotalLaborHours",
+            "value": 500,
+            "shape": [],
+            "code": "TotalLaborHours = data[\"TotalLaborHours\"] # scalar parameter"
+        },
+        {
+            "definition": "Total budget for labor on the project",
+            "symbol": "TotalBudget",
+            "value": 15000,
+            "shape": [],
+            "code": "TotalBudget = data[\"TotalBudget\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Number of full-time workers is non-negative",
+            "status": "coded",
+            "formulation": "\\textup{FullTimeWorkers} \\geq 0",
+            "related_variables": [
+                "FullTimeWorkers"
+            ],
+            "related_parameters": [],
+            "code": "# Non-negativity constraint for FullTimeWorkers\nmodel.addConstr(FullTimeWorkers >= 0, name=\"non_negative_full_time_workers\")"
+        },
+        {
+            "description": "The number of part-time workers is non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{PartTimeWorkers} \\\\geq 0",
+            "related_variables": [
+                "PartTimeWorkers"
+            ],
+            "related_parameters": [],
+            "code": "# No additional code needed since the variable \"PartTimeWorkers\" is already defined with non-negativity by default in Gurobi (continuous variables have a non-negative domain by default)."
+        },
+        {
+            "description": "The sum of labor hours of full-time and part-time workers must meet or exceed TotalLaborHours.",
+            "status": "coded",
+            "formulation": "\\textup{TotalLaborHours} \\leq (\\textup{FullTimeWorkers} \\times \\textup{FullTimeShiftHours}) + (\\textup{PartTimeWorkers} \\times \\textup{PartTimeShiftHours})",
+            "related_variables": [
+                "FullTimeWorkers",
+                "PartTimeWorkers"
+            ],
+            "related_parameters": [
+                "FullTimeShiftHours",
+                "PartTimeShiftHours",
+                "TotalLaborHours"
+            ],
+            "code": "# Add constraint to ensure total labor hours are met\nmodel.addConstr(\n    TotalLaborHours <= (FullTimeWorkers * FullTimeShiftHours) + (PartTimeWorkers * PartTimeShiftHours),\n    name=\"labor_hours_constraint\"\n)"
+        },
+        {
+            "description": "The total pay for all full-time and part-time workers must not exceed TotalBudget.",
+            "status": "coded",
+            "formulation": "\\textup{FullTimeShiftPay} \\cdot \\textup{FullTimeWorkers} + \\textup{PartTimeShiftPay} \\cdot \\textup{PartTimeWorkers} \\leq \\textup{TotalBudget}",
+            "related_variables": [
+                "FullTimeWorkers",
+                "PartTimeWorkers"
+            ],
+            "related_parameters": [
+                "FullTimeShiftPay",
+                "PartTimeShiftPay",
+                "TotalBudget"
+            ],
+            "code": "# Add total pay constraint to ensure it does not exceed TotalBudget\nmodel.addConstr(\n    FullTimeWorkers * FullTimeShiftPay + PartTimeWorkers * PartTimeShiftPay <= TotalBudget,\n    name=\"budget_constraint\"\n)"
+        },
+        {
+            "description": "Total labor hours worked by full-time and part-time workers must meet or exceed the required labor hours for the project",
+            "status": "coded",
+            "formulation": "\\textup{FullTimeShiftHours} \\cdot \\textup{FullTimeWorkers} + \\textup{PartTimeShiftHours} \\cdot \\textup{PartTimeWorkers} \\geq \\textup{TotalLaborHours}",
+            "related_variables": [
+                "FullTimeWorkers",
+                "PartTimeWorkers"
+            ],
+            "related_parameters": [
+                "FullTimeShiftHours",
+                "PartTimeShiftHours",
+                "TotalLaborHours"
+            ],
+            "code": "# Add labor hours constraint for full-time and part-time workers\nmodel.addConstr(\n    FullTimeShiftHours * FullTimeWorkers + PartTimeShiftHours * PartTimeWorkers >= TotalLaborHours,\n    name=\"labor_hours_constraint\"\n)"
+        },
+        {
+            "description": "Total labor cost of full-time and part-time workers must not exceed the project's budget",
+            "status": "coded",
+            "formulation": "\\textup{FullTimeShiftPay} \\cdot \\textup{FullTimeWorkers} + \\textup{PartTimeShiftPay} \\cdot \\textup{PartTimeWorkers} \\leq \\textup{TotalBudget}",
+            "related_variables": [
+                "FullTimeWorkers",
+                "PartTimeWorkers"
+            ],
+            "related_parameters": [
+                "FullTimeShiftPay",
+                "PartTimeShiftPay",
+                "TotalBudget"
+            ],
+            "code": "# Add labor cost budget constraint\nmodel.addConstr(\n    FullTimeShiftPay * FullTimeWorkers + PartTimeShiftPay * PartTimeWorkers <= TotalBudget,\n    name=\"labor_cost_budget\"\n)"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of full-time workers assigned to the project",
+            "symbol": "FullTimeWorkers",
+            "shape": [],
+            "status": "coded",
+            "code": "FullTimeWorkers = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"FullTimeWorkers\")"
+        },
+        {
+            "definition": "The number of part-time workers assigned to the project",
+            "symbol": "PartTimeWorkers",
+            "shape": [],
+            "status": "coded",
+            "code": "PartTimeWorkers = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"PartTimeWorkers\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of full-time and part-time workers scheduled for the project",
+            "status": "coded",
+            "formulation": "\\textup{Minimize:} \\quad \\textup{FullTimeWorkers} + \\textup{PartTimeWorkers}",
+            "related_variables": [
+                "FullTimeWorkers",
+                "PartTimeWorkers"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(FullTimeWorkers + PartTimeWorkers, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 100.0,
+    "log_path": "logs/log_20250414061836_nl4opt_prob_90/",
+    "problem_path": "data/nl4opt/prob_90/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_90/data.json\", \"r\") as f:\n    data = json.load(f)\n\nFullTimeShiftHours = data[\"FullTimeShiftHours\"] # scalar parameter\nPartTimeShiftHours = data[\"PartTimeShiftHours\"] # scalar parameter\nFullTimeShiftPay = data[\"FullTimeShiftPay\"] # scalar parameter\nPartTimeShiftPay = data[\"PartTimeShiftPay\"] # scalar parameter\nTotalLaborHours = data[\"TotalLaborHours\"] # scalar parameter\nTotalBudget = data[\"TotalBudget\"] # scalar parameter\nFullTimeWorkers = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"FullTimeWorkers\")\nPartTimeWorkers = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"PartTimeWorkers\")\n\n# Non-negativity constraint for FullTimeWorkers\nmodel.addConstr(FullTimeWorkers >= 0, name=\"non_negative_full_time_workers\")\n\n# No additional code needed since the variable \"PartTimeWorkers\" is already defined with non-negativity by default in Gurobi (continuous variables have a non-negative domain by default).\n\n# Add constraint to ensure total labor hours are met\nmodel.addConstr(\n    TotalLaborHours <= (FullTimeWorkers * FullTimeShiftHours) + (PartTimeWorkers * PartTimeShiftHours),\n    name=\"labor_hours_constraint\"\n)\n\n# Add total pay constraint to ensure it does not exceed TotalBudget\nmodel.addConstr(\n    FullTimeWorkers * FullTimeShiftPay + PartTimeWorkers * PartTimeShiftPay <= TotalBudget,\n    name=\"budget_constraint\"\n)\n\n# Add labor hours constraint for full-time and part-time workers\nmodel.addConstr(\n    FullTimeShiftHours * FullTimeWorkers + PartTimeShiftHours * PartTimeWorkers >= TotalLaborHours,\n    name=\"labor_hours_constraint\"\n)\n\n# Add labor cost budget constraint\nmodel.addConstr(\n    FullTimeShiftPay * FullTimeWorkers + PartTimeShiftPay * PartTimeWorkers <= TotalBudget,\n    name=\"labor_cost_budget\"\n)\n\n# Set objective\nmodel.setObjective(FullTimeWorkers + PartTimeWorkers, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

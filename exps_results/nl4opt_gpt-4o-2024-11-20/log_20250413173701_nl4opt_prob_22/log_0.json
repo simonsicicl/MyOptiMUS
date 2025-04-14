@@ -1,0 +1,268 @@
+{
+    "background": "A glass factory makes two types of glass panes: a regular glass pane and a tempered glass pane, both requiring time on heating and cooling machines with limited daily availability.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Maximum daily usage time of the heating and cooling machines",
+            "symbol": "MaxTime",
+            "value": 300,
+            "shape": [],
+            "code": "MaxTime = data[\"MaxTime\"] # scalar parameter"
+        },
+        {
+            "definition": "Time to make one regular glass pane in the heating machine",
+            "symbol": "TimeRegHeat",
+            "value": 3,
+            "shape": [],
+            "code": "TimeRegHeat = data[\"TimeRegHeat\"] # scalar parameter"
+        },
+        {
+            "definition": "Time to cool one regular glass pane in the cooling machine",
+            "symbol": "TimeRegCool",
+            "value": 5,
+            "shape": [],
+            "code": "TimeRegCool = data[\"TimeRegCool\"] # scalar parameter"
+        },
+        {
+            "definition": "Time to make one tempered glass pane in the heating machine",
+            "symbol": "TimeTempHeat",
+            "value": 5,
+            "shape": [],
+            "code": "TimeTempHeat = data[\"TimeTempHeat\"] # scalar parameter"
+        },
+        {
+            "definition": "Time to cool one tempered glass pane in the cooling machine",
+            "symbol": "TimeTempCool",
+            "value": 8,
+            "shape": [],
+            "code": "TimeTempCool = data[\"TimeTempCool\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit per regular glass pane",
+            "symbol": "ProfitReg",
+            "value": 8,
+            "shape": [],
+            "code": "ProfitReg = data[\"ProfitReg\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit per tempered glass pane",
+            "symbol": "ProfitTemp",
+            "value": 10,
+            "shape": [],
+            "code": "ProfitTemp = data[\"ProfitTemp\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of regular glass panes must be an integer.",
+            "status": "formulated",
+            "formulation": "\\textup{NumRegularGlassPanes} \\in \\mathbb{Z}",
+            "related_variables": [
+                "NumRegularGlassPanes"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Constraints that all tempered glass production must adhere to integrality.",
+            "status": "formulated",
+            "formulation": "\\textup{NumTemperedGlassPanes} \\in \\mathbb{Z}",
+            "related_variables": [
+                "NumTemperedGlassPanes"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "The number of regular glass panes produced daily must be non-negative.",
+            "status": "formulated",
+            "formulation": "\\\\textup{NumRegularGlassPanes} \\\\geq 0",
+            "related_variables": [
+                "NumRegularGlassPanes"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "The number of tempered glass panes produced daily must be non-negative.",
+            "status": "formulated",
+            "formulation": "\\textup{NumTemperedGlassPanes} \\geq 0",
+            "related_variables": [
+                "NumTemperedGlassPanes"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "The total time used in the heating machine by regular glass panes cannot exceed MaxTime minutes per day.",
+            "status": "formulated",
+            "formulation": "\\textup{TimeRegHeat} \\times \\textup{NumRegularGlassPanes} \\leq \\textup{MaxTime}",
+            "related_variables": [
+                "NumRegularGlassPanes"
+            ],
+            "related_parameters": [
+                "TimeRegHeat",
+                "MaxTime"
+            ]
+        },
+        {
+            "description": "The total time used in the cooling machine by regular glass panes cannot exceed MaxTime minutes per day.",
+            "status": "formulated",
+            "formulation": "\\\\textup{NumRegularGlassPanes} \\\\times \\\\textup{TimeRegCool} \\\\leq \\\\textup{MaxTime}",
+            "related_variables": [
+                "NumRegularGlassPanes"
+            ],
+            "related_parameters": [
+                "TimeRegCool",
+                "MaxTime"
+            ]
+        },
+        {
+            "description": "The total time used in the heating machine by tempered glass panes cannot exceed MaxTime minutes per day.",
+            "status": "formulated",
+            "formulation": "\\\\textup{TimeTempHeat} \\\\times \\\\textup{NumTemperedGlassPanes} \\\\leq \\\\textup{MaxTime}",
+            "related_variables": [
+                "NumTemperedGlassPanes"
+            ],
+            "related_parameters": [
+                "TimeTempHeat",
+                "MaxTime"
+            ]
+        },
+        {
+            "description": "The total time used in the cooling machine by tempered glass panes cannot exceed MaxTime minutes daily.",
+            "status": "formulated",
+            "formulation": "\\textup{NumTemperedGlassPanes} \\times \\textup{TimeTempCool} \\leq \\textup{MaxTime}",
+            "related_variables": [
+                "NumTemperedGlassPanes"
+            ],
+            "related_parameters": [
+                "TimeTempCool",
+                "MaxTime"
+            ]
+        },
+        {
+            "description": "The total time usage for heating and cooling machines by regular and tempered glass panes should not exceed the daily maximum allowable time.",
+            "status": "formulated",
+            "formulation": "\\textup{TimeRegHeat} \\cdot \\textup{NumRegularGlassPanes} + \\textup{TimeTempHeat} \\cdot \\textup{NumTemperedGlassPanes} \\leq \\textup{MaxTime}, \\\\ \\textup{TimeRegCool} \\cdot \\textup{NumRegularGlassPanes} + \\textup{TimeTempCool} \\cdot \\textup{NumTemperedGlassPanes} \\leq \\textup{MaxTime}",
+            "related_variables": [
+                "NumRegularGlassPanes",
+                "NumTemperedGlassPanes"
+            ],
+            "related_parameters": [
+                "TimeRegHeat",
+                "TimeTempHeat",
+                "TimeRegCool",
+                "TimeTempCool",
+                "MaxTime"
+            ]
+        },
+        {
+            "description": "The total time taken on both the heating and cooling machines for producing all regular and tempered glass panes must not exceed the maximum available time each day.",
+            "status": "formulated",
+            "formulation": "\\textup{TimeRegCool} \\cdot \\textup{NumRegularGlassPanes} + \\textup{TimeTempCool} \\cdot \\textup{NumTemperedGlassPanes} \\leq \\textup{MaxTime} \\quad \\\\ \\quad \\textup{TimeRegHeat} \\cdot \\textup{NumRegularGlassPanes} + \\textup{TimeTempHeat} \\cdot \\textup{NumTemperedGlassPanes} \\leq \\textup{MaxTime}",
+            "related_variables": [
+                "NumRegularGlassPanes",
+                "NumTemperedGlassPanes"
+            ],
+            "related_parameters": [
+                "TimeRegCool",
+                "TimeTempCool",
+                "TimeRegHeat",
+                "TimeTempHeat",
+                "MaxTime"
+            ]
+        },
+        {
+            "description": "Time constraints ensuring that the daily heating and cooling times for both regular and tempered glass panes do not exceed the maximum available time on the machines.",
+            "status": "formulated",
+            "formulation": "(\\textup{TimeRegHeat} \\times \\textup{NumRegularGlassPanes}) + (\\textup{TimeTempHeat} \\times \\textup{NumTemperedGlassPanes}) \\leq \\textup{MaxTime}, \\\\ (\\textup{TimeRegCool} \\times \\textup{NumRegularGlassPanes}) + (\\textup{TimeTempCool} \\times \\textup{NumTemperedGlassPanes}) \\leq \\textup{MaxTime}",
+            "related_variables": [
+                "NumRegularGlassPanes",
+                "NumTemperedGlassPanes"
+            ],
+            "related_parameters": [
+                "TimeRegHeat",
+                "TimeRegCool",
+                "TimeTempHeat",
+                "TimeTempCool",
+                "MaxTime"
+            ]
+        },
+        {
+            "description": "The total heating and cooling time for all glass panes cannot exceed the maximum daily machine usage time.",
+            "status": "formulated",
+            "formulation": "\\\\textup{TimeRegHeat} \\\\cdot \\\\textup{NumRegularGlassPanes} + \\\\textup{TimeRegCool} \\\\cdot \\\\textup{NumRegularGlassPanes} + \\\\textup{TimeTempHeat} \\\\cdot \\\\textup{NumTemperedGlassPanes} + \\\\textup{TimeTempCool} \\\\cdot \\\\textup{NumTemperedGlassPanes} \\\\leq \\\\textup{MaxTime}",
+            "related_variables": [
+                "NumRegularGlassPanes",
+                "NumTemperedGlassPanes"
+            ],
+            "related_parameters": [
+                "TimeRegHeat",
+                "TimeRegCool",
+                "TimeTempHeat",
+                "TimeTempCool",
+                "MaxTime"
+            ]
+        },
+        {
+            "description": "Ensure that the total time required for heating (both types of glass panes) does not exceed the maximum available time.",
+            "status": "formulated",
+            "formulation": "\\textup{TimeRegHeat} \\cdot \\textup{NumRegularGlassPanes} + \\textup{TimeTempHeat} \\cdot \\textup{NumTemperedGlassPanes} \\leq \\textup{MaxTime}",
+            "related_variables": [
+                "NumRegularGlassPanes",
+                "NumTemperedGlassPanes"
+            ],
+            "related_parameters": [
+                "TimeRegHeat",
+                "TimeTempHeat",
+                "MaxTime"
+            ]
+        },
+        {
+            "description": "Ensure that the total time required for cooling (both types of glass panes) does not exceed the maximum available time.",
+            "status": "formulated",
+            "formulation": "\\textup{TimeRegCool} \\cdot \\textup{NumRegularGlassPanes} + \\textup{TimeTempCool} \\cdot \\textup{NumTemperedGlassPanes} \\leq \\textup{MaxTime}",
+            "related_variables": [
+                "NumRegularGlassPanes",
+                "NumTemperedGlassPanes"
+            ],
+            "related_parameters": [
+                "TimeRegCool",
+                "TimeTempCool",
+                "MaxTime"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of regular glass panes produced daily.",
+            "symbol": "NumRegularGlassPanes",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "The number of tempered glass panes produced daily.",
+            "symbol": "NumTemperedGlassPanes",
+            "shape": [],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total profit from producing regular and tempered glass panes.",
+            "status": "formulated",
+            "formulation": "\\textup{Maximize} \\quad \\textup{ProfitReg} \\cdot \\textup{NumRegularGlassPanes} + \\textup{ProfitTemp} \\cdot \\textup{NumTemperedGlassPanes}",
+            "related_variables": [
+                "NumRegularGlassPanes",
+                "NumTemperedGlassPanes"
+            ],
+            "related_parameters": [
+                "ProfitReg",
+                "ProfitTemp"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413173701_nl4opt_prob_22/",
+    "problem_path": "data/nl4opt/prob_22/"
+}

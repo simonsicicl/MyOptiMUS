@@ -1,0 +1,192 @@
+{
+    "background": "A doctor's office uses electronic and regular thermometers to take patients' temperatures with different reading times and required usage ratios.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Time taken by the electronic thermometer for one reading",
+            "symbol": "TimeElectronic",
+            "value": 3,
+            "shape": [],
+            "code": "TimeElectronic = data[\"TimeElectronic\"] # scalar parameter"
+        },
+        {
+            "definition": "Time taken by the regular thermometer for one reading",
+            "symbol": "TimeRegular",
+            "value": 2,
+            "shape": [],
+            "code": "TimeRegular = data[\"TimeRegular\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum ratio of patients checked by the electronic thermometer to those checked by the regular thermometer",
+            "symbol": "RatioElectronicRegular",
+            "value": 2,
+            "shape": [],
+            "code": "RatioElectronicRegular = data[\"RatioElectronicRegular\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of patients checked by the regular thermometer",
+            "symbol": "MinPatientsRegular",
+            "value": 50,
+            "shape": [],
+            "code": "MinPatientsRegular = data[\"MinPatientsRegular\"] # scalar parameter"
+        },
+        {
+            "definition": "Total time the doctor's office is open",
+            "symbol": "TotalTime",
+            "value": 15000,
+            "shape": [],
+            "code": "TotalTime = data[\"TotalTime\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of patients checked by the electronic thermometer must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{PatientsCheckedElectronic} \\geq 0",
+            "related_variables": [
+                "PatientsCheckedElectronic"
+            ],
+            "related_parameters": [],
+            "code": "model.addConstr(PatientsCheckedElectronic >= 0, \"PatientsCheckedElectronic_non_negative\")"
+        },
+        {
+            "description": "The number of patients checked by the regular thermometer must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{PatientsCheckedRegular} \\geq 0",
+            "related_variables": [
+                "PatientsCheckedRegular"
+            ],
+            "related_parameters": [],
+            "code": "model.addConstr(PatientsCheckedRegular >= 0, \"PatientsCheckedNonNeg\")"
+        },
+        {
+            "description": "Total time used for electronic thermometer readings is at most TotalTime",
+            "status": "coded",
+            "formulation": "\\textup{PatientsCheckedElectronic} \\times \\textup{TimeElectronic} \\leq \\textup{TotalTime}",
+            "related_variables": [
+                "PatientsCheckedElectronic"
+            ],
+            "related_parameters": [
+                "TimeElectronic",
+                "TotalTime"
+            ],
+            "code": "# Add constraint for total time used by electronic thermometer\nmodel.addConstr(PatientsCheckedElectronic * TimeElectronic <= TotalTime, name=\"electronic_thermometer_time_limit\")"
+        },
+        {
+            "description": "Time used for regular thermometer readings is at most TotalTime",
+            "status": "coded",
+            "formulation": "\\textup{TimeRegular} \\cdot \\textup{PatientsCheckedRegular} \\leq \\textup{TotalTime}",
+            "related_variables": [
+                "PatientsCheckedRegular"
+            ],
+            "related_parameters": [
+                "TimeRegular",
+                "TotalTime"
+            ],
+            "code": "# Time used for regular thermometer readings is at most TotalTime\ntime_used_constraint = model.addConstr(PatientsCheckedRegular * TimeRegular <= TotalTime, name=\"time_used_regular\")"
+        },
+        {
+            "description": "At least RatioElectronicRegular times as many patients should be checked by electronic thermometer compared to regular thermometer",
+            "status": "runtime_error",
+            "formulation": "\\textup{PatientsCheckedElectronic} \\geq \\textup{RatioElectronicRegular} \\times \\textup{PatientsCheckedRegular}",
+            "related_variables": [
+                "PatientsCheckedElectronic",
+                "PatientsCheckedRegular"
+            ],
+            "related_parameters": [
+                "RatioElectronicRegular"
+            ],
+            "code": "```"
+        },
+        {
+            "description": "At least a certain number of patients should be checked by the regular thermometer",
+            "status": "coded",
+            "formulation": "\\textup{PatientsCheckedRegular} \\geq \\textup{MinPatientsRegular}",
+            "related_variables": [
+                "PatientsCheckedRegular"
+            ],
+            "related_parameters": [
+                "MinPatientsRegular"
+            ],
+            "code": "# At least a certain number of patients should be checked by the regular thermometer\nmodel.addConstr(PatientsCheckedRegular >= MinPatientsRegular, \"min_patients_regular_constraint\")"
+        },
+        {
+            "description": "Ensure that the total time used for checking patients with both thermometers does not exceed the TotalTime",
+            "status": "coded",
+            "formulation": "\\textup{TimeElectronic} \\times \\textup{PatientsCheckedElectronic} + \\textup{TimeRegular} \\times \\textup{PatientsCheckedRegular} \\leq \\textup{TotalTime}",
+            "related_variables": [
+                "PatientsCheckedElectronic",
+                "PatientsCheckedRegular"
+            ],
+            "related_parameters": [
+                "TimeElectronic",
+                "TimeRegular",
+                "TotalTime"
+            ],
+            "code": "# Ensure that the total time used for checking patients with both thermometers does not exceed the TotalTime\nmodel.addConstr(TimeElectronic * PatientsCheckedElectronic + TimeRegular * PatientsCheckedRegular <= TotalTime, name=\"total_checking_time\")"
+        },
+        {
+            "description": "Ensure that the ratio of the number of patients checked by the electronic thermometer to those checked by the regular thermometer is at least the minimum required",
+            "status": "coded",
+            "formulation": "\\textup{PatientsCheckedElectronic} \\geq \\textup{RatioElectronicRegular} \\times \\textup{PatientsCheckedRegular}",
+            "related_variables": [
+                "PatientsCheckedElectronic",
+                "PatientsCheckedRegular"
+            ],
+            "related_parameters": [
+                "RatioElectronicRegular"
+            ],
+            "code": "# Ensure that the ratio of the number of patients checked by the electronic thermometer to those checked by the regular thermometer is at least the minimum required\nmodel.addConstr(PatientsCheckedElectronic >= RatioElectronicRegular * PatientsCheckedRegular, name=\"ratio_electronic_regular\")"
+        },
+        {
+            "description": "Ensure that the minimum number of patients that need to be checked by the regular thermometer is satisfied",
+            "status": "coded",
+            "formulation": "\\textup{PatientsCheckedRegular} \\geq \\textup{MinPatientsRegular}",
+            "related_variables": [
+                "PatientsCheckedRegular"
+            ],
+            "related_parameters": [
+                "MinPatientsRegular"
+            ],
+            "code": "# Ensure that the minimum number of patients checked by the regular thermometer is satisfied\nmodel.addConstr(PatientsCheckedRegular >= MinPatientsRegular, name=\"min_patients_checked_regular\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of patients checked by the electronic thermometer",
+            "symbol": "PatientsCheckedElectronic",
+            "shape": [],
+            "status": "coded",
+            "code": "PatientsCheckedElectronic = model.addVar(vtype=gp.GRB.INTEGER, name=\"PatientsCheckedElectronic\")"
+        },
+        {
+            "definition": "Number of patients checked by the regular thermometer",
+            "symbol": "PatientsCheckedRegular",
+            "shape": [],
+            "status": "coded",
+            "code": "PatientsCheckedRegular = model.addVar(vtype=gp.GRB.INTEGER, name=\"PatientsCheckedRegular\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total number of patients whose temperature can be taken within the TotalTime",
+            "status": "coded",
+            "formulation": "\\max (\\textup{PatientsCheckedElectronic} + \\textup{PatientsCheckedRegular})",
+            "related_variables": [
+                "PatientsCheckedElectronic",
+                "PatientsCheckedRegular"
+            ],
+            "related_parameters": [
+                "TotalTime"
+            ],
+            "code": "# Set objective\nmodel.setObjective(PatientsCheckedElectronic + PatientsCheckedRegular, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "runtime_error",
+    "solver_output_status": "runtime_error",
+    "error_message": "Traceback (most recent call last):\n  File \"c:\\Users\\Simon\\Desktop\\Courses\\ECE 570\\ECE570_Project\\MyOptiMUS\\evaluator.py\", line 45, in run\n    exec(last_line, local_env, local_env)\n  File \"<string>\", line 1\n    ```\n    ^\nSyntaxError: invalid syntax\n",
+    "obj_val": null,
+    "log_path": "logs/log_20250413111317_nl4opt_prob_119/",
+    "problem_path": "data/nl4opt/prob_119/",
+    "prep_code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_119/data.json\", \"r\") as f:\n    data = json.load(f)\n"
+}

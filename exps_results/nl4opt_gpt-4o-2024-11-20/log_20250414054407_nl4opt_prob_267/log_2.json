@@ -1,0 +1,230 @@
+{
+    "background": "A handmade sports equipment manufacturing company produces basketballs and footballs with constraints on materials, labor hours, and the product mix ratio.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Units of materials required to make one basketball",
+            "symbol": "MaterialBasketball",
+            "value": 5,
+            "shape": [],
+            "code": "MaterialBasketball = data[\"MaterialBasketball\"] # scalar parameter"
+        },
+        {
+            "definition": "Hours required to make one basketball",
+            "symbol": "HourBasketball",
+            "value": 1,
+            "shape": [],
+            "code": "HourBasketball = data[\"HourBasketball\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of materials required to make one football",
+            "symbol": "MaterialFootball",
+            "value": 3,
+            "shape": [],
+            "code": "MaterialFootball = data[\"MaterialFootball\"] # scalar parameter"
+        },
+        {
+            "definition": "Hours required to make one football",
+            "symbol": "HourFootball",
+            "value": 2,
+            "shape": [],
+            "code": "HourFootball = data[\"HourFootball\"] # scalar parameter"
+        },
+        {
+            "definition": "Total available units of materials",
+            "symbol": "TotalMaterial",
+            "value": 1500,
+            "shape": [],
+            "code": "TotalMaterial = data[\"TotalMaterial\"] # scalar parameter"
+        },
+        {
+            "definition": "Total available working hours",
+            "symbol": "TotalHours",
+            "value": 750,
+            "shape": [],
+            "code": "TotalHours = data[\"TotalHours\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum ratio of basketballs to footballs",
+            "symbol": "BasketballFootballRatio",
+            "value": 3,
+            "shape": [],
+            "code": "BasketballFootballRatio = data[\"BasketballFootballRatio\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of footballs to produce",
+            "symbol": "MinFootballs",
+            "value": 50,
+            "shape": [],
+            "code": "MinFootballs = data[\"MinFootballs\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The total materials used cannot exceed the total available materials.",
+            "status": "coded",
+            "formulation": "\\textup{MaterialBasketball} \\times \\textup{BasketballsProduced} + \\textup{MaterialFootball} \\times \\textup{FootballsProduced} \\leq \\textup{TotalMaterial}",
+            "related_variables": [
+                "BasketballsProduced",
+                "FootballsProduced"
+            ],
+            "related_parameters": [
+                "MaterialBasketball",
+                "MaterialFootball",
+                "TotalMaterial"
+            ],
+            "code": "# Add material usage constraint\nmodel.addConstr(\n    MaterialBasketball * BasketballsProduced + MaterialFootball * FootballsProduced <= TotalMaterial,\n    name=\"material_usage_constraint\"\n)"
+        },
+        {
+            "description": "The total labor hours required to produce basketballs and footballs cannot exceed the total available working hours (TotalHours).",
+            "status": "coded",
+            "formulation": "\\textup{BasketballsProduced} \\\\cdot \\\\textup{HourBasketball} + \\textup{FootballsProduced} \\\\cdot \\\\textup{HourFootball} \\\\leq \\\\textup{TotalHours}",
+            "related_variables": [
+                "BasketballsProduced",
+                "FootballsProduced"
+            ],
+            "related_parameters": [
+                "HourBasketball",
+                "HourFootball",
+                "TotalHours"
+            ],
+            "code": "# Add total labor hour constraint\nmodel.addConstr(\n    BasketballsProduced * HourBasketball + FootballsProduced * HourFootball <= TotalHours,\n    name=\"total_labor_hour_constraint\"\n)"
+        },
+        {
+            "description": "The number of basketballs produced must be at least BasketballFootballRatio times the number of footballs produced.",
+            "status": "coded",
+            "formulation": "\\textup{BasketballsProduced} \\geq \\textup{BasketballFootballRatio} \\cdot \\textup{FootballsProduced}",
+            "related_variables": [
+                "BasketballsProduced",
+                "FootballsProduced"
+            ],
+            "related_parameters": [
+                "BasketballFootballRatio"
+            ],
+            "code": "# Add constraint ensuring basketballs produced are at least BasketballFootballRatio times footballs produced\nmodel.addConstr(BasketballsProduced >= BasketballFootballRatio * FootballsProduced, name=\"basketball_football_ratio\")"
+        },
+        {
+            "description": "The number of footballs produced must be at least \\textup{MinFootballs}.",
+            "status": "coded",
+            "formulation": "\\textup{FootballsProduced} \\geq \\textup{MinFootballs}",
+            "related_variables": [
+                "FootballsProduced"
+            ],
+            "related_parameters": [
+                "MinFootballs"
+            ],
+            "code": "# Add constraint to ensure the number of footballs produced is at least MinFootballs\nmodel.addConstr(FootballsProduced >= MinFootballs, name=\"min_footballs_produced\")"
+        },
+        {
+            "description": "The number of basketballs produced cannot be negative.",
+            "status": "coded",
+            "formulation": "\\textup{BasketballsProduced} \\geq 0",
+            "related_variables": [
+                "BasketballsProduced"
+            ],
+            "related_parameters": [],
+            "code": "# Adding constraint: The number of basketballs produced cannot be negative\nmodel.addConstr(BasketballsProduced >= 0, name=\"non_negative_constraint\")"
+        },
+        {
+            "description": "The number of footballs produced is non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{FootballsProduced} \\\\geq 0",
+            "related_variables": [
+                "FootballsProduced"
+            ],
+            "related_parameters": [],
+            "code": "# The variable \"FootballsProduced\" already has non-negativity implicitly enforced due to its default lower bound (0) in the Gurobi continuous variable declaration. No additional constraint is required."
+        },
+        {
+            "description": "The total material used must not exceed available material.",
+            "status": "coded",
+            "formulation": "\\textup{MaterialBasketball} \\cdot \\textup{BasketballsProduced} + \\textup{MaterialFootball} \\cdot \\textup{FootballsProduced} \\leq \\textup{TotalMaterial}",
+            "related_variables": [
+                "BasketballsProduced",
+                "FootballsProduced"
+            ],
+            "related_parameters": [
+                "MaterialBasketball",
+                "MaterialFootball",
+                "TotalMaterial"
+            ],
+            "code": "# Add constraint to ensure total material usage does not exceed available material\nmodel.addConstr(\n    BasketballsProduced * MaterialBasketball + FootballsProduced * MaterialFootball <= TotalMaterial,\n    name=\"material_usage_constraint\"\n)"
+        },
+        {
+            "description": "The total labor hours used must not exceed available hours.",
+            "status": "coded",
+            "formulation": "\\textup{HourBasketball} \\cdot \\textup{BasketballsProduced} + \\textup{HourFootball} \\cdot \\textup{FootballsProduced} \\leq \\textup{TotalHours}",
+            "related_variables": [
+                "BasketballsProduced",
+                "FootballsProduced"
+            ],
+            "related_parameters": [
+                "HourBasketball",
+                "HourFootball",
+                "TotalHours"
+            ],
+            "code": "# Add labor hour usage constraint\nmodel.addConstr(\n    BasketballsProduced * HourBasketball + FootballsProduced * HourFootball <= TotalHours, \n    name=\"labor_hours_constraint\"\n)"
+        },
+        {
+            "description": "At least the minimum number of footballs must be produced.",
+            "status": "coded",
+            "formulation": "\\textup{FootballsProduced} \\geq \\textup{MinFootballs}",
+            "related_variables": [
+                "FootballsProduced"
+            ],
+            "related_parameters": [
+                "MinFootballs"
+            ],
+            "code": "# Add minimum production constraint for footballs\nmodel.addConstr(FootballsProduced >= MinFootballs, name=\"min_footballs_production\")"
+        },
+        {
+            "description": "The number of basketballs produced must conform to the product mix ratio.",
+            "status": "coded",
+            "formulation": "\\textup{BasketballsProduced} \\geq \\textup{BasketballFootballRatio} \\cdot \\textup{FootballsProduced}",
+            "related_variables": [
+                "BasketballsProduced",
+                "FootballsProduced"
+            ],
+            "related_parameters": [
+                "BasketballFootballRatio"
+            ],
+            "code": "# Add product mix ratio constraint\nmodel.addConstr(BasketballsProduced >= BasketballFootballRatio * FootballsProduced, name=\"product_mix_ratio\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of basketballs produced",
+            "symbol": "BasketballsProduced",
+            "shape": [],
+            "status": "coded",
+            "code": "BasketballsProduced = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"BasketballsProduced\")"
+        },
+        {
+            "definition": "The number of footballs produced",
+            "symbol": "FootballsProduced",
+            "shape": [],
+            "status": "coded",
+            "code": "FootballsProduced = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"FootballsProduced\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total number of basketballs and footballs produced.",
+            "status": "coded",
+            "formulation": "\\textup{Maximize} \\quad \\textup{BasketballsProduced} + \\textup{FootballsProduced}",
+            "related_variables": [
+                "BasketballsProduced",
+                "FootballsProduced"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(BasketballsProduced + FootballsProduced, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 333.3333333333333,
+    "log_path": "logs/log_20250414054407_nl4opt_prob_267/",
+    "problem_path": "data/nl4opt/prob_267/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_267/data.json\", \"r\") as f:\n    data = json.load(f)\n\nMaterialBasketball = data[\"MaterialBasketball\"] # scalar parameter\nHourBasketball = data[\"HourBasketball\"] # scalar parameter\nMaterialFootball = data[\"MaterialFootball\"] # scalar parameter\nHourFootball = data[\"HourFootball\"] # scalar parameter\nTotalMaterial = data[\"TotalMaterial\"] # scalar parameter\nTotalHours = data[\"TotalHours\"] # scalar parameter\nBasketballFootballRatio = data[\"BasketballFootballRatio\"] # scalar parameter\nMinFootballs = data[\"MinFootballs\"] # scalar parameter\nBasketballsProduced = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"BasketballsProduced\")\nFootballsProduced = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"FootballsProduced\")\n\n# Add material usage constraint\nmodel.addConstr(\n    MaterialBasketball * BasketballsProduced + MaterialFootball * FootballsProduced <= TotalMaterial,\n    name=\"material_usage_constraint\"\n)\n\n# Add total labor hour constraint\nmodel.addConstr(\n    BasketballsProduced * HourBasketball + FootballsProduced * HourFootball <= TotalHours,\n    name=\"total_labor_hour_constraint\"\n)\n\n# Add constraint ensuring basketballs produced are at least BasketballFootballRatio times footballs produced\nmodel.addConstr(BasketballsProduced >= BasketballFootballRatio * FootballsProduced, name=\"basketball_football_ratio\")\n\n# Add constraint to ensure the number of footballs produced is at least MinFootballs\nmodel.addConstr(FootballsProduced >= MinFootballs, name=\"min_footballs_produced\")\n\n# Adding constraint: The number of basketballs produced cannot be negative\nmodel.addConstr(BasketballsProduced >= 0, name=\"non_negative_constraint\")\n\n# The variable \"FootballsProduced\" already has non-negativity implicitly enforced due to its default lower bound (0) in the Gurobi continuous variable declaration. No additional constraint is required.\n\n# Add constraint to ensure total material usage does not exceed available material\nmodel.addConstr(\n    BasketballsProduced * MaterialBasketball + FootballsProduced * MaterialFootball <= TotalMaterial,\n    name=\"material_usage_constraint\"\n)\n\n# Add labor hour usage constraint\nmodel.addConstr(\n    BasketballsProduced * HourBasketball + FootballsProduced * HourFootball <= TotalHours, \n    name=\"labor_hours_constraint\"\n)\n\n# Add minimum production constraint for footballs\nmodel.addConstr(FootballsProduced >= MinFootballs, name=\"min_footballs_production\")\n\n# Add product mix ratio constraint\nmodel.addConstr(BasketballsProduced >= BasketballFootballRatio * FootballsProduced, name=\"product_mix_ratio\")\n\n# Set objective\nmodel.setObjective(BasketballsProduced + FootballsProduced, gp.GRB.MAXIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

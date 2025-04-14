@@ -1,0 +1,195 @@
+{
+    "background": "A dog hospital has a limited supply of tooth medication and meat to produce small and large bones with certain preferences for small bones and a minimum requirement for large bones.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Total units of tooth medication available",
+            "symbol": "TotalMedication",
+            "value": 2000,
+            "shape": [],
+            "code": "TotalMedication = data[\"TotalMedication\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of tooth medication required for a small bone",
+            "symbol": "SmallMedication",
+            "value": 10,
+            "shape": [],
+            "code": "SmallMedication = data[\"SmallMedication\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of meat required for a small bone",
+            "symbol": "SmallMeat",
+            "value": 12,
+            "shape": [],
+            "code": "SmallMeat = data[\"SmallMeat\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of tooth medication required for a large bone",
+            "symbol": "LargeMedication",
+            "value": 15,
+            "shape": [],
+            "code": "LargeMedication = data[\"LargeMedication\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of meat required for a large bone",
+            "symbol": "LargeMeat",
+            "value": 15,
+            "shape": [],
+            "code": "LargeMeat = data[\"LargeMeat\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum percentage of total bones made that must be small",
+            "symbol": "MinSmallBonePercentage",
+            "value": 0.5,
+            "shape": [],
+            "code": "MinSmallBonePercentage = data[\"MinSmallBonePercentage\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of large bones to be made",
+            "symbol": "MinLargeBones",
+            "value": 30,
+            "shape": [],
+            "code": "MinLargeBones = data[\"MinLargeBones\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The total units of tooth medication used cannot exceed TotalMedication.",
+            "status": "coded",
+            "formulation": "\\textup{SmallBones} \\times \\textup{SmallMedication} + \\textup{LargeBones} \\times \\textup{LargeMedication} \\leq \\textup{TotalMedication}",
+            "related_variables": [
+                "SmallBones",
+                "LargeBones"
+            ],
+            "related_parameters": [
+                "SmallMedication",
+                "LargeMedication",
+                "TotalMedication"
+            ],
+            "code": "# Add constraint to limit total tooth medication usage\nmodel.addConstr(SmallBones * SmallMedication + LargeBones * LargeMedication <= TotalMedication, name=\"medication_limit\")"
+        },
+        {
+            "description": "At least MinSmallBonePercentage of all bones made must be small",
+            "status": "coded",
+            "formulation": "(1 - \\textup{MinSmallBonePercentage}) \\cdot \\textup{SmallBones} \\geq \\textup{MinSmallBonePercentage} \\cdot \\textup{LargeBones}",
+            "related_variables": [
+                "SmallBones",
+                "LargeBones"
+            ],
+            "related_parameters": [
+                "MinSmallBonePercentage"
+            ],
+            "code": "# Add constraint to ensure at least MinSmallBonePercentage of all bones produced are small\nmodel.addConstr((1 - MinSmallBonePercentage) * SmallBones >= MinSmallBonePercentage * LargeBones, name=\"min_small_bone_percentage\")"
+        },
+        {
+            "description": "Ensure that at least MinLargeBones large bones are produced.",
+            "status": "coded",
+            "formulation": "\\textup{LargeBones} \\geq \\textup{MinLargeBones}",
+            "related_variables": [
+                "LargeBones"
+            ],
+            "related_parameters": [
+                "MinLargeBones"
+            ],
+            "code": "# Add constraint to ensure at least MinLargeBones large bones are produced\nmodel.addConstr(LargeBones >= MinLargeBones, name=\"min_large_bones\")"
+        },
+        {
+            "description": "The number of small bones produced must be non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{SmallBones} \\\\geq 0",
+            "related_variables": [
+                "SmallBones"
+            ],
+            "related_parameters": [],
+            "code": "# No code is needed: Gurobi variables by default have non-negativity constraints unless otherwise specified (e.g., if set to unrestricted or negative bounds)."
+        },
+        {
+            "description": "The number of large bones produced is non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{LargeBones} \\\\geq 0",
+            "related_variables": [
+                "LargeBones"
+            ],
+            "related_parameters": [],
+            "code": "# The variable LargeBones is already coded as a continuous variable. No additional code is needed for non-negativity since Gurobi variables are non-negative by default unless specified otherwise."
+        },
+        {
+            "description": "The total tooth medication used cannot exceed the available supply.",
+            "status": "coded",
+            "formulation": "\\textup{SmallMedication} \\cdot \\textup{SmallBones} + \\textup{LargeMedication} \\cdot \\textup{LargeBones} \\leq \\textup{TotalMedication}",
+            "related_variables": [
+                "SmallBones",
+                "LargeBones"
+            ],
+            "related_parameters": [
+                "SmallMedication",
+                "LargeMedication",
+                "TotalMedication"
+            ],
+            "code": "# Add constraint for total tooth medication usage\nmodel.addConstr(SmallMedication * SmallBones + LargeMedication * LargeBones <= TotalMedication, name=\"medication_usage\")"
+        },
+        {
+            "description": "At least a fraction of the total bones produced must be small bones.",
+            "status": "coded",
+            "formulation": "(1 - \\textup{MinSmallBonePercentage}) \\cdot \\textup{SmallBones} \\geq \\textup{MinSmallBonePercentage} \\cdot \\textup{LargeBones}",
+            "related_variables": [
+                "SmallBones",
+                "LargeBones"
+            ],
+            "related_parameters": [
+                "MinSmallBonePercentage"
+            ],
+            "code": "# Add constraint to ensure a minimum fraction of total bones produced are small bones\nmodel.addConstr((1 - MinSmallBonePercentage) * SmallBones >= MinSmallBonePercentage * LargeBones, name=\"min_small_bones_percentage\")"
+        },
+        {
+            "description": "At least the minimum required number of large bones must be produced.",
+            "status": "coded",
+            "formulation": "\\textup{LargeBones} \\geq \\textup{MinLargeBones}",
+            "related_variables": [
+                "LargeBones"
+            ],
+            "related_parameters": [
+                "MinLargeBones"
+            ],
+            "code": "# Add constraint to ensure at least the minimum number of large bones are produced\nmodel.addConstr(LargeBones >= MinLargeBones, name=\"min_large_bones\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of small bones produced",
+            "symbol": "SmallBones",
+            "shape": [],
+            "status": "coded",
+            "code": "SmallBones = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"SmallBones\")"
+        },
+        {
+            "definition": "The number of large bones produced",
+            "symbol": "LargeBones",
+            "shape": [],
+            "status": "coded",
+            "code": "LargeBones = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"LargeBones\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total amount of meat used to produce small and large dog bones.",
+            "status": "coded",
+            "formulation": "\\textup{Minimize } \\quad \\textup{SmallMeat} \\cdot \\textup{SmallBones} + \\textup{LargeMeat} \\cdot \\textup{LargeBones}",
+            "related_variables": [
+                "SmallBones",
+                "LargeBones"
+            ],
+            "related_parameters": [
+                "SmallMeat",
+                "LargeMeat"
+            ],
+            "code": "# Set objective\nmodel.setObjective(SmallMeat * SmallBones + LargeMeat * LargeBones, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413152504_nl4opt_prob_103/",
+    "problem_path": "data/nl4opt/prob_103/"
+}

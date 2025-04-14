@@ -1,0 +1,215 @@
+{
+    "background": "The problem is to identify the parameters of a linear model that fits the observed x and y data points in such a way that the maximum deviation of the observed y values from the predicted y values is minimized.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of observed data points",
+            "symbol": "NumObs",
+            "value": "",
+            "shape": [],
+            "code": "NumObs = data[\"NumObs\"] # scalar parameter"
+        },
+        {
+            "definition": "Observed values of y",
+            "symbol": "Y",
+            "value": "",
+            "shape": [
+                "NumObs"
+            ],
+            "code": "Y = np.array(data[\"Y\"]) # ['NumObs']"
+        },
+        {
+            "definition": "Observed values of x",
+            "symbol": "X",
+            "value": "",
+            "shape": [
+                "NumObs"
+            ],
+            "code": "X = np.array(data[\"X\"]) # ['NumObs']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The constraints enforce the definition of the predicted values, their deviations from observed values, and the maximum deviation across all points.",
+            "status": "formulated",
+            "formulation": "\\textup{YPred}_{i} = a \\cdot \\textup{X}_{i} + b \\\\ \\textup{AbsDeviation}_{i} \\geq \\textup{YPred}_{i} - \\textup{Y}_{i} \\quad \\forall \\; i \\\\ \\textup{AbsDeviation}_{i} \\geq \\textup{Y}_{i} - \\textup{YPred}_{i} \\quad \\forall \\; i \\\\ \\textup{MaxDeviation} \\geq \\textup{AbsDeviation}_{i} \\quad \\forall \\; i",
+            "related_variables": [
+                "AbsDeviation",
+                "MaxDeviation",
+                "YPred",
+                "a",
+                "b"
+            ],
+            "related_parameters": [
+                "Y",
+                "X",
+                "NumObs"
+            ]
+        },
+        {
+            "description": "Minimize the maximum absolute deviation of observed values \\textup{Y} from predicted values \\textup{YPred}.",
+            "status": "formulated",
+            "formulation": "\\textup{Minimize } \\quad \\textup{MaxDeviation}",
+            "related_variables": [
+                "MaxDeviation"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Define the absolute deviation as the positive difference between observed \\textup{Y}_k and predicted \\textup{YPred}_k values for each \\textup{k}.",
+            "status": "formulated",
+            "formulation": "\\\\textup{AbsDeviation}_k \\geq \\textup{Y}_k - \\textup{YPred}_k, \\\\quad \\\\textup{AbsDeviation}_k \\geq \\textup{YPred}_k - \\textup{Y}_k \\quad \\\\forall k \\in \\\\{1, \\dots, \\textup{NumObs}\\\\}",
+            "related_variables": [
+                "AbsDeviation",
+                "YPred"
+            ],
+            "related_parameters": [
+                "Y",
+                "NumObs"
+            ]
+        },
+        {
+            "description": "Ensure that MaxDeviation is greater than or equal to the absolute deviation for all data points.",
+            "status": "formulated",
+            "formulation": "\\\\textup{MaxDeviation} \\geq \\textup{AbsDeviation}_k \\quad \\\\forall k \\in \\\\{1, \\dots, \\textup{NumObs}\\\\}",
+            "related_variables": [
+                "MaxDeviation",
+                "AbsDeviation"
+            ],
+            "related_parameters": [
+                "NumObs"
+            ]
+        },
+        {
+            "description": "Define the linear relationship between predicted values \\textup{YPred}_k and observed inputs \\textup{X}_k using the linear model parameters \\textup{a} and \\textup{b}.",
+            "status": "formulated",
+            "formulation": "\\\\textup{YPred}_k = a \\cdot \\textup{X}_k + b \\quad \\\\forall k \\in \\\\{1, \\dots, \\textup{NumObs}\\\\}",
+            "related_variables": [
+                "YPred"
+            ],
+            "related_parameters": [
+                "X",
+                "NumObs"
+            ]
+        },
+        {
+            "description": "Define the predicted y values based on the linear model.",
+            "status": "formulated",
+            "formulation": "\\textup{YPred}_{i} = a \\cdot \\textup{X}_{i} + b, \\quad \\forall i \\in [1, \\textup{NumObs}]",
+            "related_variables": [
+                "YPred",
+                "a",
+                "b"
+            ],
+            "related_parameters": [
+                "X",
+                "NumObs"
+            ]
+        },
+        {
+            "description": "Define the absolute deviation as the absolute difference between observed y and predicted y values.",
+            "status": "formulated",
+            "formulation": "\\textup{AbsDeviation}_{i} \\geq \\textup{Y}_{i} - \\textup{YPred}_{i}, \\quad \\forall i \\in [1, \\textup{NumObs}]",
+            "related_variables": [
+                "AbsDeviation",
+                "YPred"
+            ],
+            "related_parameters": [
+                "Y",
+                "NumObs"
+            ]
+        },
+        {
+            "description": "Define the absolute deviation as the absolute difference between predicted y and observed y values (reverse direction).",
+            "status": "formulated",
+            "formulation": "\\textup{AbsDeviation}_{i} \\geq \\textup{YPred}_{i} - \\textup{Y}_{i}, \\quad \\forall i \\in [1, \\textup{NumObs}]",
+            "related_variables": [
+                "AbsDeviation",
+                "YPred"
+            ],
+            "related_parameters": [
+                "Y",
+                "NumObs"
+            ]
+        },
+        {
+            "description": "The maximum absolute deviation must be greater than or equal to every individual absolute deviation.",
+            "status": "formulated",
+            "formulation": "\\textup{MaxDeviation} \\geq \\textup{AbsDeviation}_{i}, \\quad \\forall i \\in [1, \\textup{NumObs}]",
+            "related_variables": [
+                "MaxDeviation",
+                "AbsDeviation"
+            ],
+            "related_parameters": [
+                "NumObs"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The absolute deviation between the predicted and observed values for each data point.",
+            "symbol": "AbsDeviation",
+            "shape": [
+                "NumObs"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "The predicted y values based on the linear model.",
+            "symbol": "YPred",
+            "shape": [
+                "NumObs"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "The maximum absolute deviation across all points.",
+            "symbol": "MaxDeviation",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "The slope of the linear regression model.",
+            "symbol": "a",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "The intercept of the linear regression model.",
+            "symbol": "b",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "The absolute deviation between the predicted and observed values for each data point.",
+            "symbol": "AbsDeviation",
+            "shape": [
+                "NumObs"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "The maximum absolute deviation across all points.",
+            "symbol": "MaxDeviation",
+            "shape": [],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the maximum absolute deviation between the observed y values and the predicted y values.",
+            "status": "formulated",
+            "formulation": "\\min \\textup{MaxDeviation}",
+            "related_variables": [
+                "MaxDeviation"
+            ],
+            "related_parameters": []
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413152525_nlp4lp_32/",
+    "problem_path": "data/nlp4lp/32/"
+}

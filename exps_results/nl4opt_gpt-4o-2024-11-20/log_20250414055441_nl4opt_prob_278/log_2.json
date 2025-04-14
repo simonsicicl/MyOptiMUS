@@ -1,0 +1,166 @@
+{
+    "background": "A tourism company needs to manage its fleet of sedans and buses to serve a minimum number of customers while adhering to local pollution limits.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Seating capacity per sedan per day",
+            "symbol": "SedanCapacity",
+            "value": 50,
+            "shape": [],
+            "code": "SedanCapacity = data[\"SedanCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Pollution units per sedan",
+            "symbol": "SedanPollution",
+            "value": 10,
+            "shape": [],
+            "code": "SedanPollution = data[\"SedanPollution\"] # scalar parameter"
+        },
+        {
+            "definition": "Seating capacity per bus per day",
+            "symbol": "BusCapacity",
+            "value": 250,
+            "shape": [],
+            "code": "BusCapacity = data[\"BusCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Pollution units per bus",
+            "symbol": "BusPollution",
+            "value": 40,
+            "shape": [],
+            "code": "BusPollution = data[\"BusPollution\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum allowed pollution units per day",
+            "symbol": "MaxPollution",
+            "value": 800,
+            "shape": [],
+            "code": "MaxPollution = data[\"MaxPollution\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of customers to be served per day for profit",
+            "symbol": "MinCustomers",
+            "value": 4600,
+            "shape": [],
+            "code": "MinCustomers = data[\"MinCustomers\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of sedans in the fleet must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfSedans} \\geq 0",
+            "related_variables": [
+                "NumberOfSedans"
+            ],
+            "related_parameters": [],
+            "code": "# The variable \"NumberOfSedans\" is non-negative by default since it is a continuous variable."
+        },
+        {
+            "description": "The number of buses in the fleet must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfBuses} \\geq 0",
+            "related_variables": [
+                "NumberOfBuses"
+            ],
+            "related_parameters": [],
+            "code": "# Non-negativity of the NumberOfBuses is ensured by the default lower bound of 0 in gurobipy variables."
+        },
+        {
+            "description": "The total pollution emitted by sedans and buses in the fleet cannot exceed the maximum pollution limit \\textup{MaxPollution}.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfSedans} \\\\cdot \\\\textup{SedanPollution} + \\\\textup{NumberOfBuses} \\\\cdot \\\\textup{BusPollution} \\\\leq \\\\textup{MaxPollution}",
+            "related_variables": [
+                "NumberOfSedans",
+                "NumberOfBuses"
+            ],
+            "related_parameters": [
+                "SedanPollution",
+                "BusPollution",
+                "MaxPollution"
+            ],
+            "code": "# Add pollution limit constraint\nmodel.addConstr(\n    NumberOfSedans * SedanPollution + NumberOfBuses * BusPollution <= MaxPollution,\n    name=\"pollution_limit\"\n)"
+        },
+        {
+            "description": "The total capacity of sedans and buses must be at least the minimum number of customers to be served.",
+            "status": "coded",
+            "formulation": "\\\\textup{SedanCapacity} \\\\times \\\\textup{NumberOfSedans} + \\\\textup{BusCapacity} \\\\times \\\\textup{NumberOfBuses} \\\\geq \\\\textup{MinCustomers}",
+            "related_variables": [
+                "NumberOfSedans",
+                "NumberOfBuses"
+            ],
+            "related_parameters": [
+                "SedanCapacity",
+                "BusCapacity",
+                "MinCustomers"
+            ],
+            "code": "# Add constraint for total capacity of sedans and buses\nmodel.addConstr(\n    NumberOfSedans * SedanCapacity + NumberOfBuses * BusCapacity >= MinCustomers,\n    name=\"total_capacity_constraint\"\n)"
+        },
+        {
+            "description": "The fleet must serve at least the minimum number of customers per day.",
+            "status": "coded",
+            "formulation": "\\textup{SedanCapacity} \\cdot \\textup{NumberOfSedans} + \\textup{BusCapacity} \\cdot \\textup{NumberOfBuses} \\geq \\textup{MinCustomers}",
+            "related_variables": [
+                "NumberOfSedans",
+                "NumberOfBuses"
+            ],
+            "related_parameters": [
+                "SedanCapacity",
+                "BusCapacity",
+                "MinCustomers"
+            ],
+            "code": "# Add constraint for minimum number of customers served per day\nmodel.addConstr(SedanCapacity * NumberOfSedans + BusCapacity * NumberOfBuses >= MinCustomers, name=\"min_customers_served\")"
+        },
+        {
+            "description": "The fleet must stay within the pollution limit.",
+            "status": "coded",
+            "formulation": "\\textup{SedanPollution} \\cdot \\textup{NumberOfSedans} + \\textup{BusPollution} \\cdot \\textup{NumberOfBuses} \\leq \\textup{MaxPollution}",
+            "related_variables": [
+                "NumberOfSedans",
+                "NumberOfBuses"
+            ],
+            "related_parameters": [
+                "SedanPollution",
+                "BusPollution",
+                "MaxPollution"
+            ],
+            "code": "# Add pollution limit constraint\nmodel.addConstr(SedanPollution * NumberOfSedans + BusPollution * NumberOfBuses <= MaxPollution, name=\"pollution_limit\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of sedans in the fleet",
+            "symbol": "NumberOfSedans",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfSedans = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfSedans\")"
+        },
+        {
+            "definition": "Number of buses in the fleet",
+            "symbol": "NumberOfBuses",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfBuses = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfBuses\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of vehicles (sedans and buses) in the fleet.",
+            "status": "coded",
+            "formulation": "\\textup{Minimize} \\quad \\textup{NumberOfSedans} + \\textup{NumberOfBuses}",
+            "related_variables": [
+                "NumberOfSedans",
+                "NumberOfBuses"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(NumberOfSedans + NumberOfBuses, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 18.4,
+    "log_path": "logs/log_20250414055441_nl4opt_prob_278/",
+    "problem_path": "data/nl4opt/prob_278/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_278/data.json\", \"r\") as f:\n    data = json.load(f)\n\nSedanCapacity = data[\"SedanCapacity\"] # scalar parameter\nSedanPollution = data[\"SedanPollution\"] # scalar parameter\nBusCapacity = data[\"BusCapacity\"] # scalar parameter\nBusPollution = data[\"BusPollution\"] # scalar parameter\nMaxPollution = data[\"MaxPollution\"] # scalar parameter\nMinCustomers = data[\"MinCustomers\"] # scalar parameter\nNumberOfSedans = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfSedans\")\nNumberOfBuses = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfBuses\")\n\n# The variable \"NumberOfSedans\" is non-negative by default since it is a continuous variable.\n\n# Non-negativity of the NumberOfBuses is ensured by the default lower bound of 0 in gurobipy variables.\n\n# Add pollution limit constraint\nmodel.addConstr(\n    NumberOfSedans * SedanPollution + NumberOfBuses * BusPollution <= MaxPollution,\n    name=\"pollution_limit\"\n)\n\n# Add constraint for total capacity of sedans and buses\nmodel.addConstr(\n    NumberOfSedans * SedanCapacity + NumberOfBuses * BusCapacity >= MinCustomers,\n    name=\"total_capacity_constraint\"\n)\n\n# Add constraint for minimum number of customers served per day\nmodel.addConstr(SedanCapacity * NumberOfSedans + BusCapacity * NumberOfBuses >= MinCustomers, name=\"min_customers_served\")\n\n# Add pollution limit constraint\nmodel.addConstr(SedanPollution * NumberOfSedans + BusPollution * NumberOfBuses <= MaxPollution, name=\"pollution_limit\")\n\n# Set objective\nmodel.setObjective(NumberOfSedans + NumberOfBuses, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

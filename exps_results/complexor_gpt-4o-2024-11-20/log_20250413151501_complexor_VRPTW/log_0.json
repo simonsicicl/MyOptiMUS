@@ -1,0 +1,268 @@
+{
+    "background": "The Vehicle Routing Problem with Time Windows (VRPTW) aims to optimize the distribution of goods between depots and customers using a fleet of vehicles with limited capacity, ensuring customers' demands are met within specific time windows while respecting the vehicles' routing restrictions.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "symbol": "CustomerCount",
+            "definition": "The number of customers to be supplied",
+            "shape": [],
+            "code": "CustomerCount = data[\"CustomerCount\"] # scalar parameter"
+        },
+        {
+            "symbol": "VehicleCount",
+            "definition": "The number of vehicles available for distribution",
+            "shape": [],
+            "code": "VehicleCount = data[\"VehicleCount\"] # scalar parameter"
+        },
+        {
+            "symbol": "CustomerDemand",
+            "definition": "The demand of each customer",
+            "shape": [
+                "CustomerCount"
+            ],
+            "code": "CustomerDemand = np.array(data[\"CustomerDemand\"]) # ['CustomerCount']"
+        },
+        {
+            "symbol": "CustomerLBTW",
+            "definition": "The lower bound of the time window for each customer",
+            "shape": [
+                "CustomerCount"
+            ],
+            "code": "CustomerLBTW = np.array(data[\"CustomerLBTW\"]) # ['CustomerCount']"
+        },
+        {
+            "symbol": "CustomerUBTW",
+            "definition": "The upper bound of the time window for each customer",
+            "shape": [
+                "CustomerCount"
+            ],
+            "code": "CustomerUBTW = np.array(data[\"CustomerUBTW\"]) # ['CustomerCount']"
+        },
+        {
+            "symbol": "CustomerDistance",
+            "definition": "The distance from each customer to every other customer",
+            "shape": [
+                "CustomerCount",
+                "CustomerCount"
+            ],
+            "code": "CustomerDistance = np.array(data[\"CustomerDistance\"]) # ['CustomerCount', 'CustomerCount']"
+        },
+        {
+            "symbol": "CustomerServiceTime",
+            "definition": "The service time required for each customer",
+            "shape": [
+                "CustomerCount"
+            ],
+            "code": "CustomerServiceTime = np.array(data[\"CustomerServiceTime\"]) # ['CustomerCount']"
+        },
+        {
+            "symbol": "VehicleCapacity",
+            "definition": "The capacity of each vehicle",
+            "shape": [
+                "VehicleCount"
+            ],
+            "code": "VehicleCapacity = np.array(data[\"VehicleCapacity\"]) # ['VehicleCount']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The total demand assigned to each vehicle does not exceed its capacity.",
+            "status": "formulated",
+            "formulation": "\\sum_{j=1}^{\\textup{CustomerCount}} \\textup{CustomerDemand}_{j} \\cdot \\textup{CustomerAssigned}_{i,j} \\leq \\textup{VehicleCapacity}_{i}, \\quad \\forall i \\in \\{1,2,\\ldots, \\textup{VehicleCount}\\}",
+            "related_variables": [
+                "CustomerAssigned"
+            ],
+            "related_parameters": [
+                "CustomerDemand",
+                "VehicleCapacity",
+                "CustomerCount",
+                "VehicleCount"
+            ]
+        },
+        {
+            "description": "Each customer j must be served within the time window from CustomerLBTW_j to CustomerUBTW_j.",
+            "status": "formulated",
+            "formulation": "\\textup{CustomerLBTW}_{j} \\leq \\textup{CustomerServiceStartTime}_{j} \\leq \\textup{CustomerUBTW}_{j}, \\quad \\forall j \\in \\{1, \\dots, \\textup{CustomerCount}\\}",
+            "related_variables": [
+                "CustomerServiceStartTime"
+            ],
+            "related_parameters": [
+                "CustomerLBTW",
+                "CustomerUBTW",
+                "CustomerCount"
+            ]
+        },
+        {
+            "description": "The number of vehicles used must not exceed VehicleCount.",
+            "status": "formulated",
+            "formulation": "\\sum_{i=1}^{\\textup{VehicleCount}} \\textup{VehicleUsed}_{i} \\leq \\textup{VehicleCount}",
+            "related_variables": [
+                "VehicleUsed"
+            ],
+            "related_parameters": [
+                "VehicleCount"
+            ]
+        },
+        {
+            "description": "The binary assignment constraint ensures that each entry in \\textup{CustomerAssigned} represents a binary decision.",
+            "status": "formulated",
+            "formulation": "\\textup{CustomerAssigned}_{i,j} \\in \\{0,1\\}, \\quad \\forall i \\in \\{1,2,\\ldots, \\textup{VehicleCount}\\}, \\quad \\forall j \\in \\{1,2,\\ldots, \\textup{CustomerCount}\\}",
+            "related_variables": [
+                "CustomerAssigned"
+            ],
+            "related_parameters": [
+                "CustomerCount",
+                "VehicleCount"
+            ]
+        },
+        {
+            "description": "Time propagation constraint to ensure that if customer j is visited before customer k, the service at k respects the travel time and service time from j to k.",
+            "status": "formulated",
+            "formulation": "\\textup{CustomerServiceStartTime}_{k} \\geq \\textup{CustomerServiceStartTime}_{j} + \\textup{CustomerServiceTime}_{j} + \\textup{CustomerDistance}_{j,k}, \\quad \\forall j, k \\in \\{1, \\dots, \\textup{CustomerCount}\\}, \\ j \\neq k",
+            "related_variables": [
+                "CustomerServiceStartTime"
+            ],
+            "related_parameters": [
+                "CustomerServiceTime",
+                "CustomerDistance",
+                "CustomerCount"
+            ]
+        },
+        {
+            "description": "Ensure each VehicleUsed variable is activated only if the vehicle is assigned to at least one customer.",
+            "status": "formulated",
+            "formulation": "\\sum_{j=1}^{\\textup{CustomerCount}} \\textup{CustomerAssigned}_{i,j} \\leq \\textup{CustomerCount} \\cdot \\textup{VehicleUsed}_{i} \\quad \\forall i \\in \\{1, \\dots, \\textup{VehicleCount}\\}",
+            "related_variables": [
+                "VehicleUsed",
+                "CustomerAssigned"
+            ],
+            "related_parameters": [
+                "CustomerCount",
+                "VehicleCount"
+            ]
+        },
+        {
+            "description": "Ensure a route connection exists only if both customers are visited by the same vehicle.",
+            "status": "formulated",
+            "formulation": "\\textup{RouteConnection}_{j,k} \\leq \\sum_{i=1}^{\\textup{VehicleCount}} \\textup{CustomerAssigned}_{i,j} \\cdot \\textup{CustomerAssigned}_{i,k} \\quad \\forall \\ j, \\ k \\in \\{1, ..., \\textup{CustomerCount}\\}",
+            "related_variables": [
+                "RouteConnection",
+                "CustomerAssigned"
+            ],
+            "related_parameters": [
+                "CustomerCount",
+                "VehicleCount"
+            ]
+        },
+        {
+            "description": "Ensure each customer is visited exactly once by any vehicle.",
+            "status": "formulated",
+            "formulation": "\\sum_{i=1}^{\\textup{VehicleCount}} \\textup{CustomerAssigned}_{i,j} = 1 \\quad \\forall \\ j \\in \\{1, ..., \\textup{CustomerCount}\\}",
+            "related_variables": [
+                "CustomerAssigned"
+            ],
+            "related_parameters": [
+                "CustomerCount",
+                "VehicleCount"
+            ]
+        },
+        {
+            "description": "Ensure vehicle capacity is not exceeded across its assigned customers.",
+            "status": "formulated",
+            "formulation": "\\sum_{j=1}^{\\textup{CustomerCount}} \\textup{CustomerDemand}_{j} \\cdot \\textup{CustomerAssigned}_{i,j} \\leq \\textup{VehicleCapacity}_{i} \\quad \\forall \\ i \\in \\{1, ..., \\textup{VehicleCount}\\}",
+            "related_variables": [
+                "CustomerAssigned"
+            ],
+            "related_parameters": [
+                "CustomerDemand",
+                "VehicleCapacity",
+                "CustomerCount",
+                "VehicleCount"
+            ]
+        },
+        {
+            "description": "Enforce time window constraints for customer service start times.",
+            "status": "formulated",
+            "formulation": "\\textup{CustomerLBTW}_{j} \\leq \\textup{CustomerServiceStartTime}_{j} \\leq \\textup{CustomerUBTW}_{j} \\quad \\forall \\ j \\in \\{1, ..., \\textup{CustomerCount}\\}",
+            "related_variables": [
+                "CustomerServiceStartTime"
+            ],
+            "related_parameters": [
+                "CustomerLBTW",
+                "CustomerUBTW",
+                "CustomerCount"
+            ]
+        },
+        {
+            "description": "Ensure service start time accounts for travel time between connected customers.",
+            "status": "formulated",
+            "formulation": "\\textup{CustomerServiceStartTime}_{k} \\geq \\textup{CustomerServiceStartTime}_{j} + \\textup{CustomerServiceTime}_{j} + \\textup{CustomerDistance}_{j,k} \\cdot \\textup{RouteConnection}_{j,k} - M \\cdot (1 - \\textup{RouteConnection}_{j,k}) \\quad \\forall \\ j, k \\in \\{1, ..., \\textup{CustomerCount}\\}",
+            "related_variables": [
+                "CustomerServiceStartTime",
+                "RouteConnection"
+            ],
+            "related_parameters": [
+                "CustomerDistance",
+                "CustomerServiceTime",
+                "CustomerCount"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Binary variable indicating whether vehicle i is assigned to customer j.",
+            "symbol": "CustomerAssigned",
+            "shape": [
+                "VehicleCount",
+                "CustomerCount"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "The start time of service at each customer.",
+            "symbol": "CustomerServiceStartTime",
+            "shape": [
+                "CustomerCount"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "Binary variable indicating whether vehicle i is used.",
+            "symbol": "VehicleUsed",
+            "shape": [
+                "VehicleCount"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "Binary variable indicating whether there is a route from customer j to customer k.",
+            "symbol": "RouteConnection",
+            "shape": [
+                "CustomerCount",
+                "CustomerCount"
+            ],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total travel distance between customers while ensuring all customer demands are fulfilled within their respective time windows and vehicle capacity limits.",
+            "status": "formulated",
+            "formulation": "\\min \\sum_{i=1}^{\\textup{VehicleCount}} \\sum_{j=0}^{\\textup{CustomerCount}} \\sum_{k=0}^{\\textup{CustomerCount}} \\textup{CustomerDistance}_{j,k} \\cdot \\textup{RouteConnection}_{j,k}",
+            "related_variables": [
+                "RouteConnection"
+            ],
+            "related_parameters": [
+                "CustomerDistance",
+                "VehicleCount",
+                "CustomerCount"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413151501_complexor_VRPTW/",
+    "problem_path": "data/complexor/VRPTW/"
+}

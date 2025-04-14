@@ -1,0 +1,160 @@
+{
+    "background": "A theme park requires transportation for its visitors using scooters and rickshaws, with each mode having a specific capacity and a limit on the proportion of rickshaws to reduce pollution.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Carrying capacity of a scooter",
+            "symbol": "ScooterCapacity",
+            "value": 2,
+            "shape": [],
+            "code": "ScooterCapacity = data[\"ScooterCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Carrying capacity of a rickshaw",
+            "symbol": "RickshawCapacity",
+            "value": 3,
+            "shape": [],
+            "code": "RickshawCapacity = data[\"RickshawCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum proportion of vehicles that can be rickshaws",
+            "symbol": "MaxRickshawProportion",
+            "value": 0.4,
+            "shape": [],
+            "code": "MaxRickshawProportion = data[\"MaxRickshawProportion\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of visitors to be transported",
+            "symbol": "MinVisitors",
+            "value": 300,
+            "shape": [],
+            "code": "MinVisitors = data[\"MinVisitors\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of scooters must be non-negative",
+            "status": "coded",
+            "formulation": "NumScooters \\geq 0",
+            "related_variables": [
+                "NumScooters"
+            ],
+            "related_parameters": [],
+            "code": "# The number of scooters must be non-negative\nmodel.addConstr(NumScooters >= 0, name=\"non_negativity_scooters\")"
+        },
+        {
+            "description": "The number of rickshaws must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumRickshaws} \\geq 0",
+            "related_variables": [
+                "NumRickshaws"
+            ],
+            "related_parameters": [],
+            "code": "# No code needed as the variable is already defined with the proper type (INTEGER) and the non-negative constraint is implicit.\n# Gurobi integer variables are non-negative by default unless specified otherwise."
+        },
+        {
+            "description": "At most MaxRickshawProportion of the vehicles used can be rickshaws",
+            "status": "coded",
+            "formulation": "\\textup{NumRickshaws} \\leq \\textup{MaxRickshawProportion} \\cdot (\\textup{NumRickshaws} + \\textup{NumScooters})",
+            "related_variables": [
+                "NumRickshaws",
+                "NumScooters"
+            ],
+            "related_parameters": [
+                "MaxRickshawProportion"
+            ],
+            "code": "# At most MaxRickshawProportion of the vehicles used can be rickshaws\nmodel.addConstr(NumRickshaws <= MaxRickshawProportion * (NumRickshaws + NumScooters), name=\"MaxRickshawProportionConstraint\")"
+        },
+        {
+            "description": "At least MinVisitors need to be transported",
+            "status": "coded",
+            "formulation": "\\textup{NumScooters} \\cdot \\textup{ScooterCapacity} + \\textup{NumRickshaws} \\cdot \\textup{RickshawCapacity} \\geq \\textup{MinVisitors}",
+            "related_variables": [
+                "NumScooters",
+                "NumRickshaws"
+            ],
+            "related_parameters": [
+                "ScooterCapacity",
+                "RickshawCapacity",
+                "MinVisitors"
+            ],
+            "code": "# Add constraint to ensure at least MinVisitors are transported\nmodel.addConstr(NumScooters * ScooterCapacity + NumRickshaws * RickshawCapacity >= MinVisitors, \"min_visitors_requirement\")"
+        },
+        {
+            "description": "Rearranged constraint for the maximum proportion of rickshaws to be in standard LP form",
+            "status": "coded",
+            "formulation": "(1 - \\textup{MaxRickshawProportion}) \\cdot \\textup{NumRickshaws} \\leq \\textup{MaxRickshawProportion} \\cdot \\textup{NumScooters}",
+            "related_variables": [
+                "NumRickshaws",
+                "NumScooters"
+            ],
+            "related_parameters": [
+                "MaxRickshawProportion"
+            ],
+            "code": "# Rearranged maximum proportion constraint for rickshaws\nmodel.addConstr((1 - MaxRickshawProportion) * NumRickshaws <= MaxRickshawProportion * NumScooters, \"MaxRickshawProportionConstraint\")"
+        },
+        {
+            "description": "Ensure the minimum number of visitors are transported",
+            "status": "coded",
+            "formulation": "\\textup{NumScooters} \\cdot \\textup{ScooterCapacity} + \\textup{NumRickshaws} \\cdot \\textup{RickshawCapacity} \\geq \\textup{MinVisitors}",
+            "related_variables": [
+                "NumScooters",
+                "NumRickshaws"
+            ],
+            "related_parameters": [
+                "ScooterCapacity",
+                "RickshawCapacity",
+                "MinVisitors"
+            ],
+            "code": "# Ensure the minimum number of visitors are transported\nmodel.addConstr(NumScooters * ScooterCapacity + NumRickshaws * RickshawCapacity >= MinVisitors, name=\"min_visitors\")"
+        },
+        {
+            "description": "Limit the proportion of rickshaws to reduce pollution",
+            "status": "coded",
+            "formulation": "\\textup{NumRickshaws} \\leq \\textup{MaxRickshawProportion} \\cdot (\\textup{NumScooters} + \\textup{NumRickshaws})",
+            "related_variables": [
+                "NumScooters",
+                "NumRickshaws"
+            ],
+            "related_parameters": [
+                "MaxRickshawProportion"
+            ],
+            "code": "# Limit the proportion of rickshaws to reduce pollution\nmodel.addConstr(NumRickshaws <= MaxRickshawProportion * (NumScooters + NumRickshaws), name=\"limit_rickshaw_proportion\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of scooters being used for transportation",
+            "symbol": "NumScooters",
+            "shape": [],
+            "status": "coded",
+            "code": "NumScooters = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumScooters\")"
+        },
+        {
+            "definition": "The number of rickshaws being used for transportation",
+            "symbol": "NumRickshaws",
+            "shape": [],
+            "status": "coded",
+            "code": "NumRickshaws = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumRickshaws\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of scooters used for transportation",
+            "status": "coded",
+            "formulation": "\\min \\textup{NumScooters}",
+            "related_variables": [
+                "NumScooters"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(NumScooters, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 75.0,
+    "log_path": "logs/log_20250413142801_nl4opt_prob_168/",
+    "problem_path": "data/nl4opt/prob_168/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_168/data.json\", \"r\") as f:\n    data = json.load(f)\n\nScooterCapacity = data[\"ScooterCapacity\"] # scalar parameter\nRickshawCapacity = data[\"RickshawCapacity\"] # scalar parameter\nMaxRickshawProportion = data[\"MaxRickshawProportion\"] # scalar parameter\nMinVisitors = data[\"MinVisitors\"] # scalar parameter\nNumScooters = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumScooters\")\nNumRickshaws = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumRickshaws\")\n\n# The number of scooters must be non-negative\nmodel.addConstr(NumScooters >= 0, name=\"non_negativity_scooters\")\n\n# No code needed as the variable is already defined with the proper type (INTEGER) and the non-negative constraint is implicit.\n# Gurobi integer variables are non-negative by default unless specified otherwise.\n\n# At most MaxRickshawProportion of the vehicles used can be rickshaws\nmodel.addConstr(NumRickshaws <= MaxRickshawProportion * (NumRickshaws + NumScooters), name=\"MaxRickshawProportionConstraint\")\n\n# Add constraint to ensure at least MinVisitors are transported\nmodel.addConstr(NumScooters * ScooterCapacity + NumRickshaws * RickshawCapacity >= MinVisitors, \"min_visitors_requirement\")\n\n# Rearranged maximum proportion constraint for rickshaws\nmodel.addConstr((1 - MaxRickshawProportion) * NumRickshaws <= MaxRickshawProportion * NumScooters, \"MaxRickshawProportionConstraint\")\n\n# Ensure the minimum number of visitors are transported\nmodel.addConstr(NumScooters * ScooterCapacity + NumRickshaws * RickshawCapacity >= MinVisitors, name=\"min_visitors\")\n\n# Limit the proportion of rickshaws to reduce pollution\nmodel.addConstr(NumRickshaws <= MaxRickshawProportion * (NumScooters + NumRickshaws), name=\"limit_rickshaw_proportion\")\n\n# Set objective\nmodel.setObjective(NumScooters, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

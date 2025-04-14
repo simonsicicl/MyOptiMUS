@@ -1,0 +1,175 @@
+{
+    "background": "A toy store owner purchases and sells plush toys and dolls, looking to optimize inventory spending for maximum profit within estimated sales limits.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Cost of each plush toy for the store",
+            "symbol": "CostPlush",
+            "value": 3,
+            "shape": [],
+            "code": "CostPlush = data[\"CostPlush\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost of each doll for the store",
+            "symbol": "CostDoll",
+            "value": 2,
+            "shape": [],
+            "code": "CostDoll = data[\"CostDoll\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum amount the store owner can spend on inventory",
+            "symbol": "MaxInventory",
+            "value": 700,
+            "shape": [],
+            "code": "MaxInventory = data[\"MaxInventory\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit made from selling each plush toy",
+            "symbol": "ProfitPlush",
+            "value": 4,
+            "shape": [],
+            "code": "ProfitPlush = data[\"ProfitPlush\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit made from selling each doll",
+            "symbol": "ProfitDoll",
+            "value": 2,
+            "shape": [],
+            "code": "ProfitDoll = data[\"ProfitDoll\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum estimated number of plush toys sold each month",
+            "symbol": "MinPlushSold",
+            "value": 90,
+            "shape": [],
+            "code": "MinPlushSold = data[\"MinPlushSold\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum estimated number of plush toys sold each month",
+            "symbol": "MaxPlushSold",
+            "value": 190,
+            "shape": [],
+            "code": "MaxPlushSold = data[\"MaxPlushSold\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum ratio of the number of dolls sold to plush toys sold",
+            "symbol": "MaxDollsToPlushRatio",
+            "value": 2,
+            "shape": [],
+            "code": "MaxDollsToPlushRatio = data[\"MaxDollsToPlushRatio\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Total cost of plush toys and dolls should not exceed MaxInventory",
+            "status": "coded",
+            "formulation": "\\textup{CostPlush} \\times \\textup{PlushToysPurchased} + \\textup{CostDoll} \\times \\textup{DollsPurchased} \\leq \\textup{MaxInventory}",
+            "related_variables": [
+                "PlushToysPurchased",
+                "DollsPurchased"
+            ],
+            "related_parameters": [
+                "CostPlush",
+                "CostDoll",
+                "MaxInventory"
+            ],
+            "code": "# Add constraint for the total cost of plush toys and dolls not exceeding MaxInventory\nmodel.addConstr(CostPlush * PlushToysPurchased + CostDoll * DollsPurchased <= MaxInventory, name=\"max_inventory_constraint\")"
+        },
+        {
+            "description": "The number of plush toys sold must be at least the minimum estimated number sold per month",
+            "status": "coded",
+            "formulation": "\\textup{PlushToysPurchased} \\geq \\textup{MinPlushSold}",
+            "related_variables": [
+                "PlushToysPurchased"
+            ],
+            "related_parameters": [
+                "MinPlushSold"
+            ],
+            "code": "# Add constraint for minimum plush toys sold\nmodel.addConstr(PlushToysPurchased >= MinPlushSold, name=\"min_plush_sold_constraint\")"
+        },
+        {
+            "description": "The number of plush toys sold cannot exceed the maximum estimated number of plush toys sold per month",
+            "status": "coded",
+            "formulation": "\\textup{PlushToysPurchased} \\leq \\textup{MaxPlushSold}",
+            "related_variables": [
+                "PlushToysPurchased"
+            ],
+            "related_parameters": [
+                "MaxPlushSold"
+            ],
+            "code": ""
+        },
+        {
+            "description": "The number of dolls sold must be at most MaxDollsToPlushRatio times the number of plush toys sold",
+            "status": "coded",
+            "formulation": "\\textup{DollsPurchased} \\leq \\textup{MaxDollsToPlushRatio} \\times \\textup{PlushToysPurchased}",
+            "related_variables": [
+                "DollsPurchased",
+                "PlushToysPurchased"
+            ],
+            "related_parameters": [
+                "MaxDollsToPlushRatio"
+            ],
+            "code": "# Dolls to plush toys sold constraint\nmodel.addConstr(DollsPurchased <= MaxDollsToPlushRatio * PlushToysPurchased, name=\"dolls_to_plush_ratio\")"
+        },
+        {
+            "description": "Number of plush toys purchased must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{PlushToysPurchased} \\geq 0",
+            "related_variables": [
+                "PlushToysPurchased"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint for non-negativity of the number of plush toys purchased\nmodel.addConstr(PlushToysPurchased >= 0, name=\"non_negative_plush_toys_purchased\")"
+        },
+        {
+            "description": "The number of dolls purchased must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{DollsPurchased} \\geq 0",
+            "related_variables": [
+                "DollsPurchased"
+            ],
+            "related_parameters": [],
+            "code": "# Constraint: The number of dolls purchased must be non-negative\nmodel.addConstr(DollsPurchased >= 0, name=\"doll_purchase_non_negative\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of plush toys purchased by the store",
+            "symbol": "PlushToysPurchased",
+            "shape": [],
+            "status": "coded",
+            "code": "PlushToysPurchased = model.addVar(vtype=gp.GRB.INTEGER, name=\"PlushToysPurchased\")"
+        },
+        {
+            "definition": "Number of dolls purchased by the store",
+            "symbol": "DollsPurchased",
+            "shape": [],
+            "status": "coded",
+            "code": "DollsPurchased = model.addVar(vtype=gp.GRB.INTEGER, name=\"DollsPurchased\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total profit from selling plush toys and dolls",
+            "status": "coded",
+            "formulation": "\\textup{Profit} = \\textup{ProfitPlush} \\times \\textup{PlushToysPurchased} + \\textup{ProfitDoll} \\times \\textup{DollsPurchased}",
+            "related_variables": [
+                "PlushToysPurchased",
+                "DollsPurchased"
+            ],
+            "related_parameters": [
+                "ProfitPlush",
+                "ProfitDoll"
+            ],
+            "code": "# Define the objective function\nmodel.setObjective(ProfitPlush * PlushToysPurchased + ProfitDoll * DollsPurchased, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "runtime_error",
+    "solver_output_status": "runtime_error",
+    "error_message": "Traceback (most recent call last):\n  File \"c:\\Users\\Simon\\Desktop\\Courses\\ECE 570\\ECE570_Project\\MyOptiMUS\\evaluator.py\", line 45, in run\n    exec(last_line, local_env, local_env)\n  File \"<string>\", line 1\n    ```\n    ^\nSyntaxError: invalid syntax\n",
+    "obj_val": null,
+    "log_path": "logs/log_20250413155212_nl4opt_prob_206/",
+    "problem_path": "data/nl4opt/prob_206/",
+    "prep_code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_206/data.json\", \"r\") as f:\n    data = json.load(f)\n"
+}

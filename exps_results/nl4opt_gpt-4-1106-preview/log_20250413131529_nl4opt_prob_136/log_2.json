@@ -1,0 +1,214 @@
+{
+    "background": "A pharmaceutical company operates two labs to make heart and lung medication pills with limited labor hours and minimum production requirements for each type of pill.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of heart medication pills Lab 1 produces per hour",
+            "symbol": "HeartLab1",
+            "value": 20,
+            "shape": [],
+            "code": "HeartLab1 = data[\"HeartLab1\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of lung medication pills Lab 1 produces per hour",
+            "symbol": "LungLab1",
+            "value": 30,
+            "shape": [],
+            "code": "LungLab1 = data[\"LungLab1\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of heart medication pills Lab 2 produces per hour",
+            "symbol": "HeartLab2",
+            "value": 30,
+            "shape": [],
+            "code": "HeartLab2 = data[\"HeartLab2\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of lung medication pills Lab 2 produces per hour",
+            "symbol": "LungLab2",
+            "value": 40,
+            "shape": [],
+            "code": "LungLab2 = data[\"LungLab2\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of worker hours per session needed for Lab 1",
+            "symbol": "WorkerLab1",
+            "value": 3,
+            "shape": [],
+            "code": "WorkerLab1 = data[\"WorkerLab1\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of worker hours per session needed for Lab 2",
+            "symbol": "WorkerLab2",
+            "value": 5,
+            "shape": [],
+            "code": "WorkerLab2 = data[\"WorkerLab2\"] # scalar parameter"
+        },
+        {
+            "definition": "Total worker hours available",
+            "symbol": "TotalWorkerHours",
+            "value": 1500,
+            "shape": [],
+            "code": "TotalWorkerHours = data[\"TotalWorkerHours\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum required heart medication pills",
+            "symbol": "MinHeartPills",
+            "value": 20000,
+            "shape": [],
+            "code": "MinHeartPills = data[\"MinHeartPills\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum required lung medication pills",
+            "symbol": "MinLungPills",
+            "value": 30000,
+            "shape": [],
+            "code": "MinLungPills = data[\"MinLungPills\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of hours at Lab 1 must be non-negative",
+            "status": "coded",
+            "formulation": "HoursLab1 \\geq 0",
+            "related_variables": [
+                "HoursLab1"
+            ],
+            "related_parameters": [],
+            "code": "model.addConstr(HoursLab1 >= 0, name=\"non_negativity_Lab1\")"
+        },
+        {
+            "description": "Number of hours worked at Lab 2 cannot be negative",
+            "status": "coded",
+            "formulation": "\\textup{HoursLab2} \\geq 0",
+            "related_variables": [
+                "HoursLab2"
+            ],
+            "related_parameters": [],
+            "code": "model.addConstr(HoursLab2 >= 0, name=\"min_hours_at_lab_2\")"
+        },
+        {
+            "description": "Total worker hours for both Lab 1 and Lab 2 is at most TotalWorkerHours",
+            "status": "coded",
+            "formulation": "\\textup{HoursLab1} + \\textup{HoursLab2} \\leq \\textup{TotalWorkerHours}",
+            "related_variables": [
+                "HoursLab1",
+                "HoursLab2"
+            ],
+            "related_parameters": [
+                "TotalWorkerHours"
+            ],
+            "code": "# Add constraint for total worker hours for both labs to be at most TotalWorkerHours\nmodel.addConstr(HoursLab1 + HoursLab2 <= TotalWorkerHours, name=\"total_worker_hours\")"
+        },
+        {
+            "description": "Total production of heart medication pills must meet or exceed the minimum required amount",
+            "status": "coded",
+            "formulation": "\\textup{HeartLab1} \\times \\textup{HoursLab1} + \\textup{HeartLab2} \\times \\textup{HoursLab2} \\geq \\textup{MinHeartPills}",
+            "related_variables": [
+                "HoursLab1",
+                "HoursLab2"
+            ],
+            "related_parameters": [
+                "HeartLab1",
+                "HeartLab2",
+                "MinHeartPills"
+            ],
+            "code": "# Add constraint for total production of heart medication pills to meet or exceed minimum required amount\nmodel.addConstr(HeartLab1 * HoursLab1 + HeartLab2 * HoursLab2 >= MinHeartPills, name=\"min_heart_pills_req\")"
+        },
+        {
+            "description": "At least MinLungPills lung medication pills must be produced",
+            "status": "coded",
+            "formulation": "LungLab1 \\times \\textup{HoursLab1} + LungLab2 \\times \\textup{HoursLab2} \\geq \\textup{MinLungPills}",
+            "related_variables": [
+                "HoursLab1",
+                "HoursLab2"
+            ],
+            "related_parameters": [
+                "LungLab1",
+                "LungLab2",
+                "MinLungPills"
+            ],
+            "code": "# Add constraint for minimum production of lung medication pills\nmodel.addConstr(LungLab1 * HoursLab1 + LungLab2 * HoursLab2 >= MinLungPills, name=\"min_lung_pills_production\")"
+        },
+        {
+            "description": "Lab 1 and Lab 2 must produce at least the minimum required number of heart medication pills",
+            "status": "coded",
+            "formulation": "\\textup{HeartLab1} \\times \\textup{HoursLab1} + \\textup{HeartLab2} \\times \\textup{HoursLab2} \\geq \\textup{MinHeartPills}",
+            "related_variables": [
+                "HoursLab1",
+                "HoursLab2"
+            ],
+            "related_parameters": [
+                "HeartLab1",
+                "HeartLab2",
+                "MinHeartPills"
+            ],
+            "code": "# Ensure Lab 1 and Lab 2 produce at least the minimum required number of heart medication pills\nmodel.addConstr(HeartLab1 * HoursLab1 + HeartLab2 * HoursLab2 >= MinHeartPills, name=\"min_heart_pills_requirement\")"
+        },
+        {
+            "description": "Lab 1 and Lab 2 must produce at least the minimum required number of lung medication pills",
+            "status": "coded",
+            "formulation": "\\textup{LungLab1} \\times \\textup{HoursLab1} + \\textup{LungLab2} \\times \\textup{HoursLab2} \\geq \\textup{MinLungPills}",
+            "related_variables": [
+                "HoursLab1",
+                "HoursLab2"
+            ],
+            "related_parameters": [
+                "LungLab1",
+                "LungLab2",
+                "MinLungPills"
+            ],
+            "code": "# Add constraint for minimum production of lung medication pills from Lab 1 and Lab 2\nmodel.addConstr(LungLab1 * HoursLab1 + LungLab2 * HoursLab2 >= MinLungPills, name=\"min_lung_pills_production\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of hours worked at Lab 1",
+            "symbol": "HoursLab1",
+            "shape": [],
+            "status": "coded",
+            "code": "HoursLab1 = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"HoursLab1\")"
+        },
+        {
+            "definition": "Number of hours worked at Lab 2",
+            "symbol": "HoursLab2",
+            "shape": [],
+            "status": "coded",
+            "code": "HoursLab2 = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"HoursLab2\")"
+        },
+        {
+            "definition": "Total number of heart medication pills produced by both labs",
+            "symbol": "HeartPillsProduced",
+            "shape": [],
+            "status": "coded",
+            "code": "HeartPillsProduced = model.addVar(vtype=gp.GRB.INTEGER, name=\"HeartPillsProduced\")"
+        },
+        {
+            "definition": "Total number of lung medication pills produced by both labs",
+            "symbol": "LungPillsProduced",
+            "shape": [],
+            "status": "coded",
+            "code": "LungPillsProduced = model.addVar(vtype=gp.GRB.INTEGER, name=\"LungPillsProduced\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total time (worker hours) needed to meet medication pill production requirements",
+            "status": "coded",
+            "formulation": "\\min (\\textup{HoursLab1} + \\textup{HoursLab2})",
+            "related_variables": [
+                "HoursLab1",
+                "HoursLab2"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(HoursLab1 + HoursLab2, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 750.0,
+    "log_path": "logs/log_20250413131529_nl4opt_prob_136/",
+    "problem_path": "data/nl4opt/prob_136/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_136/data.json\", \"r\") as f:\n    data = json.load(f)\n\nHeartLab1 = data[\"HeartLab1\"] # scalar parameter\nLungLab1 = data[\"LungLab1\"] # scalar parameter\nHeartLab2 = data[\"HeartLab2\"] # scalar parameter\nLungLab2 = data[\"LungLab2\"] # scalar parameter\nWorkerLab1 = data[\"WorkerLab1\"] # scalar parameter\nWorkerLab2 = data[\"WorkerLab2\"] # scalar parameter\nTotalWorkerHours = data[\"TotalWorkerHours\"] # scalar parameter\nMinHeartPills = data[\"MinHeartPills\"] # scalar parameter\nMinLungPills = data[\"MinLungPills\"] # scalar parameter\nHoursLab1 = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"HoursLab1\")\nHoursLab2 = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"HoursLab2\")\nHeartPillsProduced = model.addVar(vtype=gp.GRB.INTEGER, name=\"HeartPillsProduced\")\nLungPillsProduced = model.addVar(vtype=gp.GRB.INTEGER, name=\"LungPillsProduced\")\n\nmodel.addConstr(HoursLab1 >= 0, name=\"non_negativity_Lab1\")\n\nmodel.addConstr(HoursLab2 >= 0, name=\"min_hours_at_lab_2\")\n\n# Add constraint for total worker hours for both labs to be at most TotalWorkerHours\nmodel.addConstr(HoursLab1 + HoursLab2 <= TotalWorkerHours, name=\"total_worker_hours\")\n\n# Add constraint for total production of heart medication pills to meet or exceed minimum required amount\nmodel.addConstr(HeartLab1 * HoursLab1 + HeartLab2 * HoursLab2 >= MinHeartPills, name=\"min_heart_pills_req\")\n\n# Add constraint for minimum production of lung medication pills\nmodel.addConstr(LungLab1 * HoursLab1 + LungLab2 * HoursLab2 >= MinLungPills, name=\"min_lung_pills_production\")\n\n# Ensure Lab 1 and Lab 2 produce at least the minimum required number of heart medication pills\nmodel.addConstr(HeartLab1 * HoursLab1 + HeartLab2 * HoursLab2 >= MinHeartPills, name=\"min_heart_pills_requirement\")\n\n# Add constraint for minimum production of lung medication pills from Lab 1 and Lab 2\nmodel.addConstr(LungLab1 * HoursLab1 + LungLab2 * HoursLab2 >= MinLungPills, name=\"min_lung_pills_production\")\n\n# Set objective\nmodel.setObjective(HoursLab1 + HoursLab2, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

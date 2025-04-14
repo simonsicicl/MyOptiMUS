@@ -1,0 +1,283 @@
+{
+    "background": "A recycling company aims to optimize the utilization of bins and workers for collecting recycling material from neighborhoods.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of workers required for a small bin",
+            "symbol": "SmallBinWorkers",
+            "value": 2,
+            "shape": [],
+            "code": "SmallBinWorkers = data[\"SmallBinWorkers\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of workers required for a large bin",
+            "symbol": "LargeBinWorkers",
+            "value": 5,
+            "shape": [],
+            "code": "LargeBinWorkers = data[\"LargeBinWorkers\"] # scalar parameter"
+        },
+        {
+            "definition": "Recycling material capacity of a small bin",
+            "symbol": "SmallBinCapacity",
+            "value": 25,
+            "shape": [],
+            "code": "SmallBinCapacity = data[\"SmallBinCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Recycling material capacity of a large bin",
+            "symbol": "LargeBinCapacity",
+            "value": 60,
+            "shape": [],
+            "code": "LargeBinCapacity = data[\"LargeBinCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Total number of workers available",
+            "symbol": "TotalWorkers",
+            "value": 100,
+            "shape": [],
+            "code": "TotalWorkers = data[\"TotalWorkers\"] # scalar parameter"
+        },
+        {
+            "definition": "Ratio of the number of small bins to large bins",
+            "symbol": "BinRatio",
+            "value": 3,
+            "shape": [],
+            "code": "BinRatio = data[\"BinRatio\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of small bins",
+            "symbol": "MinSmallBins",
+            "value": 10,
+            "shape": [],
+            "code": "MinSmallBins = data[\"MinSmallBins\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of large bins",
+            "symbol": "MinLargeBins",
+            "value": 4,
+            "shape": [],
+            "code": "MinLargeBins = data[\"MinLargeBins\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Each small bin requires a fixed number of workers given by the parameter SmallBinWorkers",
+            "status": "coded",
+            "formulation": "\\textup{NumSmallBins} \\times \\textup{SmallBinWorkers} \\leq \\textup{TotalWorkers}",
+            "related_variables": [
+                "NumSmallBins"
+            ],
+            "related_parameters": [
+                "SmallBinWorkers",
+                "TotalWorkers"
+            ],
+            "code": "# Add constraint that each small bin requires a fixed number of workers\nmodel.addConstr(NumSmallBins * SmallBinWorkers <= TotalWorkers, \"worker_constraint_for_small_bins\")"
+        },
+        {
+            "description": "Each large bin requires LargeBinWorkers workers.",
+            "status": "coded",
+            "formulation": "TotalLargeBinWorkers \\leq \\textup{TotalWorkers}",
+            "related_variables": [
+                "TotalLargeBinWorkers"
+            ],
+            "related_parameters": [
+                "TotalWorkers"
+            ],
+            "code": "# Ensure the total number of workers for large bins does not exceed the total available workers\nmodel.addConstr(TotalLargeBinWorkers <= TotalWorkers, name=\"large_bin_workers_constraint\")"
+        },
+        {
+            "description": "The total number of workers used cannot exceed the total number of workers available",
+            "status": "coded",
+            "formulation": "\\textup{NumSmallBins} \\times \\textup{SmallBinWorkers} + \\textup{TotalLargeBinWorkers} \\leq \\textup{TotalWorkers}",
+            "related_variables": [
+                "NumSmallBins",
+                "TotalLargeBinWorkers"
+            ],
+            "related_parameters": [
+                "SmallBinWorkers",
+                "TotalWorkers"
+            ],
+            "code": "# Add constraint for the total number of workers used cannot exceed the total number of workers available\nmodel.addConstr(NumSmallBins * SmallBinWorkers + TotalLargeBinWorkers <= TotalWorkers, name=\"worker_limit\")"
+        },
+        {
+            "description": "The number of small bins must be BinRatio times the number of large bins",
+            "status": "coded",
+            "formulation": "\\textup{NumSmallBins} = \\textup{BinRatio} \\times \\textup{NumLargeBins}",
+            "related_variables": [
+                "NumSmallBins",
+                "NumLargeBins"
+            ],
+            "related_parameters": [
+                "BinRatio"
+            ],
+            "code": "# Constraint: Number of small bins must be BinRatio times the number of large bins\nmodel.addConstr(NumSmallBins == BinRatio * NumLargeBins, name=\"small_large_bin_ratio\")"
+        },
+        {
+            "description": "At least a minimum number of small bins should be used",
+            "status": "coded",
+            "formulation": "\\textup{NumSmallBins} \\geq \\textup{MinSmallBins}",
+            "related_variables": [
+                "NumSmallBins"
+            ],
+            "related_parameters": [
+                "MinSmallBins"
+            ],
+            "code": "# Add constraint to ensure the minimum number of small bins is used\nmodel.addConstr(NumSmallBins >= MinSmallBins, name=\"min_small_bins\")"
+        },
+        {
+            "description": "At least the minimum number of large bins should be used",
+            "status": "coded",
+            "formulation": "\\textup{NumLargeBins} \\geq \\textup{MinLargeBins}",
+            "related_variables": [
+                "NumLargeBins"
+            ],
+            "related_parameters": [
+                "MinLargeBins"
+            ],
+            "code": "# Add constraint to ensure the minimum number of large bins is used\nmodel.addConstr(NumLargeBins >= MinLargeBins, name=\"min_large_bins\")"
+        },
+        {
+            "description": "Ensure the number of small bins is non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumSmallBins} \\geq 0",
+            "related_variables": [
+                "NumSmallBins"
+            ],
+            "related_parameters": [],
+            "code": "# The number of small bins is non-negative. Since the variable is defined as an integer, no need to add a constraint.\n# The integrality constraint is encoded in the variable definition, ensuring NumSmallBins >= 0."
+        },
+        {
+            "description": "The number of large bins must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumLargeBins} \\geq 0",
+            "related_variables": [
+                "NumLargeBins"
+            ],
+            "related_parameters": [],
+            "code": "# Since NumLargeBins has already been added as an integer variable and we want it to be non-negative,\n# we don't need to add a constraint for NumLargeBins >= 0 because Gurobi integer variables are\n# non-negative by default."
+        },
+        {
+            "description": "Calculate the total number of workers required for large bins.",
+            "status": "coded",
+            "formulation": "\\textup{TotalLargeBinWorkers} = \\textup{NumLargeBins} \\times \\textup{LargeBinWorkers}",
+            "related_variables": [
+                "NumLargeBins",
+                "TotalLargeBinWorkers"
+            ],
+            "related_parameters": [
+                "LargeBinWorkers"
+            ],
+            "code": "# Constraint for calculating the total number of workers required for large bins\nmodel.addConstr(TotalLargeBinWorkers == NumLargeBins * LargeBinWorkers, name=\"total_large_bin_workers\")"
+        },
+        {
+            "description": "Ensure the total number of workers employed does not exceed the available workers",
+            "status": "runtime_error",
+            "formulation": "\\textup{SmallBinWorkers} \\times \\textup{NumSmallBins} + \\textup{TotalLargeBinWorkers} \\leq \\textup{TotalWorkers}",
+            "related_variables": [
+                "NumSmallBins",
+                "TotalLargeBinWorkers"
+            ],
+            "related_parameters": [
+                "SmallBinWorkers",
+                "TotalWorkers"
+            ],
+            "code": "```"
+        },
+        {
+            "description": "Link the variable TotalLargeBinWorkers with NumLargeBins and corresponding workers needed",
+            "status": "coded",
+            "formulation": "\\textup{TotalLargeBinWorkers} = \\textup{LargeBinWorkers} \\times \\textup{NumLargeBins}",
+            "related_variables": [
+                "TotalLargeBinWorkers",
+                "NumLargeBins"
+            ],
+            "related_parameters": [
+                "LargeBinWorkers"
+            ],
+            "code": "# Link the TotalLargeBinWorkers variable with NumLargeBins and corresponding workers needed\nmodel.addConstr(TotalLargeBinWorkers == LargeBinWorkers * NumLargeBins, name=\"link_large_bin_workers\")"
+        },
+        {
+            "description": "Maintain the ratio of the number of small bins to large bins",
+            "status": "coded",
+            "formulation": "\\textup{NumSmallBins} \\leq \\textup{BinRatio} \\times \\textup{NumLargeBins}",
+            "related_variables": [
+                "NumSmallBins",
+                "NumLargeBins"
+            ],
+            "related_parameters": [
+                "BinRatio"
+            ],
+            "code": "# Maintain the ratio of the number of small bins to large bins\nmodel.addConstr(NumSmallBins <= BinRatio * NumLargeBins, name=\"bin_ratio_constraint\")"
+        },
+        {
+            "description": "Ensure the minimum number of small bins is maintained",
+            "status": "coded",
+            "formulation": "\\textup{NumSmallBins} \\geq \\textup{MinSmallBins}",
+            "related_variables": [
+                "NumSmallBins"
+            ],
+            "related_parameters": [
+                "MinSmallBins"
+            ],
+            "code": "# Ensure the minimum number of small bins is maintained\nmodel.addConstr(NumSmallBins >= MinSmallBins, \"min_small_bins_constraint\")"
+        },
+        {
+            "description": "Ensure the minimum number of large bins is maintained",
+            "status": "coded",
+            "formulation": "\\textup{NumLargeBins} \\geq \\textup{MinLargeBins}",
+            "related_variables": [
+                "NumLargeBins"
+            ],
+            "related_parameters": [
+                "MinLargeBins"
+            ],
+            "code": "# Ensure the minimum number of large bins is maintained\nmodel.addConstr(NumLargeBins >= MinLargeBins, \"min_large_bins_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of small bins",
+            "symbol": "NumSmallBins",
+            "shape": [],
+            "status": "coded",
+            "code": "NumSmallBins = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumSmallBins\")"
+        },
+        {
+            "definition": "Total number of workers required for large bins",
+            "symbol": "TotalLargeBinWorkers",
+            "shape": [],
+            "status": "coded",
+            "code": "TotalLargeBinWorkers = model.addVar(vtype=gp.GRB.INTEGER, name=\"TotalLargeBinWorkers\")"
+        },
+        {
+            "definition": "Number of large bins",
+            "symbol": "NumLargeBins",
+            "shape": [],
+            "status": "coded",
+            "code": "NumLargeBins = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumLargeBins\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total capacity of recycling material collected by small and large bins",
+            "status": "coded",
+            "formulation": "\\textup{Maximize} \\quad \\textup{TotalRecyclingCapacity} = \\textup{SmallBinCapacity} \\times \\textup{NumSmallBins} + \\textup{LargeBinCapacity} \\times \\textup{NumLargeBins}",
+            "related_variables": [
+                "NumSmallBins",
+                "NumLargeBins"
+            ],
+            "related_parameters": [
+                "SmallBinCapacity",
+                "LargeBinCapacity"
+            ],
+            "code": "# Set objective\nmodel.setObjective(SmallBinCapacity * NumSmallBins + LargeBinCapacity * NumLargeBins, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "runtime_error",
+    "solver_output_status": "runtime_error",
+    "error_message": "Traceback (most recent call last):\n  File \"c:\\Users\\Simon\\Desktop\\Courses\\ECE 570\\ECE570_Project\\MyOptiMUS\\evaluator.py\", line 45, in run\n    exec(last_line, local_env, local_env)\n  File \"<string>\", line 1\n    ```\n    ^\nSyntaxError: invalid syntax\n",
+    "obj_val": null,
+    "log_path": "logs/log_20250413143753_nl4opt_prob_174/",
+    "problem_path": "data/nl4opt/prob_174/",
+    "prep_code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_174/data.json\", \"r\") as f:\n    data = json.load(f)\n"
+}

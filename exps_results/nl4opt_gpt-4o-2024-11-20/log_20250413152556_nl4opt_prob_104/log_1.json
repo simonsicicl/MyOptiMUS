@@ -1,0 +1,195 @@
+{
+    "background": "A scientist must meet his dietary vitamin D and C requirements by drinking orange and apple juice, with a preference for apple juice and constraints on intake levels.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Units of vitamin D in one box of orange juice",
+            "symbol": "VitaminDOrange",
+            "value": 10,
+            "shape": [],
+            "code": "VitaminDOrange = data[\"VitaminDOrange\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of vitamin C in one box of orange juice",
+            "symbol": "VitaminCOrange",
+            "value": 8,
+            "shape": [],
+            "code": "VitaminCOrange = data[\"VitaminCOrange\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of vitamin D in one box of apple juice",
+            "symbol": "VitaminDApple",
+            "value": 12,
+            "shape": [],
+            "code": "VitaminDApple = data[\"VitaminDApple\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of vitamin C in one box of apple juice",
+            "symbol": "VitaminCApple",
+            "value": 6,
+            "shape": [],
+            "code": "VitaminCApple = data[\"VitaminCApple\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum ratio of boxes of apple juice to orange juice",
+            "symbol": "MinRatioAppleToOrange",
+            "value": 3,
+            "shape": [],
+            "code": "MinRatioAppleToOrange = data[\"MinRatioAppleToOrange\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of orange juice boxes the scientist must drink",
+            "symbol": "MinOrange",
+            "value": 3,
+            "shape": [],
+            "code": "MinOrange = data[\"MinOrange\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum units of vitamin C the scientist can consume",
+            "symbol": "MaxVitaminC",
+            "value": 300,
+            "shape": [],
+            "code": "MaxVitaminC = data[\"MaxVitaminC\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of orange juice boxes must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{OrangeJuiceBoxes} \\geq 0",
+            "related_variables": [
+                "OrangeJuiceBoxes"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint to ensure the number of orange juice boxes is non-negative\nmodel.addConstr(OrangeJuiceBoxes >= 0, name=\"non_negative_orange_juice_boxes\")"
+        },
+        {
+            "description": "The number of apple juice boxes must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{AppleJuiceBoxes} \\geq 0",
+            "related_variables": [
+                "AppleJuiceBoxes"
+            ],
+            "related_parameters": [],
+            "code": "# The constraint is already satisfied as the variable AppleJuiceBoxes is defined with a lower bound of 0."
+        },
+        {
+            "description": "The number of apple juice boxes must be at least MinRatioAppleToOrange times the number of orange juice boxes.",
+            "status": "coded",
+            "formulation": "\\\\textup{AppleJuiceBoxes} \\\\geq \\\\textup{MinRatioAppleToOrange} \\\\cdot \\\\textup{OrangeJuiceBoxes}",
+            "related_variables": [
+                "AppleJuiceBoxes",
+                "OrangeJuiceBoxes"
+            ],
+            "related_parameters": [
+                "MinRatioAppleToOrange"
+            ],
+            "code": "# Add constraint to ensure the number of apple juice boxes is at least MinRatioAppleToOrange times the number of orange juice boxes\nmodel.addConstr(AppleJuiceBoxes >= MinRatioAppleToOrange * OrangeJuiceBoxes, name=\"apple_orange_ratio\")"
+        },
+        {
+            "description": "The minimum number of orange juice boxes the scientist must consume is MinOrange.",
+            "status": "coded",
+            "formulation": "\\\\textup{OrangeJuiceBoxes} \\\\geq \\\\textup{MinOrange}",
+            "related_variables": [
+                "OrangeJuiceBoxes"
+            ],
+            "related_parameters": [
+                "MinOrange"
+            ],
+            "code": "# Add minimum consumption constraint for orange juice boxes\nmodel.addConstr(OrangeJuiceBoxes >= MinOrange, name=\"min_orange_consumption\")"
+        },
+        {
+            "description": "The total vitamin C from orange and apple juice must not exceed the maximum allowed value (MaxVitaminC).",
+            "status": "coded",
+            "formulation": "\\\\textup{VitaminCOrange} \\\\cdot \\\\textup{OrangeJuiceBoxes} + \\\\textup{VitaminCApple} \\\\cdot \\\\textup{AppleJuiceBoxes} \\\\leq \\\\textup{MaxVitaminC}",
+            "related_variables": [
+                "OrangeJuiceBoxes",
+                "AppleJuiceBoxes"
+            ],
+            "related_parameters": [
+                "VitaminCOrange",
+                "VitaminCApple",
+                "MaxVitaminC"
+            ],
+            "code": "# Add vitamin C consumption constraint\nmodel.addConstr(\n    OrangeJuiceBoxes * VitaminCOrange + AppleJuiceBoxes * VitaminCApple <= MaxVitaminC,\n    name=\"vitamin_c_constraint\"\n)"
+        },
+        {
+            "description": "The number of apple juice boxes consumed must be at least a specific ratio of the number of orange juice boxes.",
+            "status": "coded",
+            "formulation": "\\textup{AppleJuiceBoxes} \\geq \\textup{MinRatioAppleToOrange} \\cdot \\textup{OrangeJuiceBoxes}",
+            "related_variables": [
+                "OrangeJuiceBoxes",
+                "AppleJuiceBoxes"
+            ],
+            "related_parameters": [
+                "MinRatioAppleToOrange"
+            ],
+            "code": "# Add constraint to ensure the number of apple juice boxes is at least MinRatioAppleToOrange times the number of orange juice boxes\nmodel.addConstr(AppleJuiceBoxes >= MinRatioAppleToOrange * OrangeJuiceBoxes, name=\"min_ratio_apple_to_orange\")"
+        },
+        {
+            "description": "The number of orange juice boxes consumed must be at least a certain minimum value.",
+            "status": "coded",
+            "formulation": "\\textup{OrangeJuiceBoxes} \\geq \\textup{MinOrange}",
+            "related_variables": [
+                "OrangeJuiceBoxes"
+            ],
+            "related_parameters": [
+                "MinOrange"
+            ],
+            "code": "# Add constraint to ensure the minimum consumption of orange juice boxes\nmodel.addConstr(OrangeJuiceBoxes >= MinOrange, name=\"min_orange_constraint\")"
+        },
+        {
+            "description": "The total vitamin C intake from both juices must not exceed the maximum limit.",
+            "status": "coded",
+            "formulation": "\\textup{VitaminCOrange} \\cdot \\textup{OrangeJuiceBoxes} + \\textup{VitaminCApple} \\cdot \\textup{AppleJuiceBoxes} \\leq \\textup{MaxVitaminC}",
+            "related_variables": [
+                "OrangeJuiceBoxes",
+                "AppleJuiceBoxes"
+            ],
+            "related_parameters": [
+                "VitaminCOrange",
+                "VitaminCApple",
+                "MaxVitaminC"
+            ],
+            "code": "# Add vitamin C intake constraint\nmodel.addConstr(\n    VitaminCOrange * OrangeJuiceBoxes + VitaminCApple * AppleJuiceBoxes <= MaxVitaminC,\n    name=\"vitamin_c_intake\"\n)"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of orange juice boxes the scientist will consume.",
+            "symbol": "OrangeJuiceBoxes",
+            "shape": [],
+            "status": "coded",
+            "code": "OrangeJuiceBoxes = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"OrangeJuiceBoxes\")"
+        },
+        {
+            "definition": "The number of apple juice boxes the scientist will consume.",
+            "symbol": "AppleJuiceBoxes",
+            "shape": [],
+            "status": "coded",
+            "code": "AppleJuiceBoxes = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"AppleJuiceBoxes\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the scientist's total vitamin D intake.",
+            "status": "coded",
+            "formulation": "\\textup{Maximize} \\quad \\textup{VitaminDOrange} \\cdot \\textup{OrangeJuiceBoxes} + \\textup{VitaminDApple} \\cdot \\textup{AppleJuiceBoxes}",
+            "related_variables": [
+                "OrangeJuiceBoxes",
+                "AppleJuiceBoxes"
+            ],
+            "related_parameters": [
+                "VitaminDOrange",
+                "VitaminDApple"
+            ],
+            "code": "# Set objective\nmodel.setObjective(VitaminDOrange * OrangeJuiceBoxes + VitaminDApple * AppleJuiceBoxes, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413152556_nl4opt_prob_104/",
+    "problem_path": "data/nl4opt/prob_104/"
+}

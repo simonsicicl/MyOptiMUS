@@ -1,0 +1,255 @@
+{
+    "background": "A manufacturer needs to determine the quantity of batches for each part to produce monthly in order to maximize profit, with particular constraints on machines, parts, production time, costs, and sales parameters.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of machines",
+            "symbol": "M",
+            "value": "",
+            "shape": [],
+            "code": "M = data[\"M\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of parts",
+            "symbol": "P",
+            "value": "",
+            "shape": [],
+            "code": "P = data[\"P\"] # scalar parameter"
+        },
+        {
+            "definition": "Time required to produce a batch of part p on machine m",
+            "symbol": "TimeRequired",
+            "value": "",
+            "shape": [
+                "M",
+                "P"
+            ],
+            "code": "TimeRequired = np.array(data[\"TimeRequired\"]) # ['M', 'P']"
+        },
+        {
+            "definition": "Cost associated with running machine m",
+            "symbol": "MachineCosts",
+            "value": "",
+            "shape": [
+                "M"
+            ],
+            "code": "MachineCosts = np.array(data[\"MachineCosts\"]) # ['M']"
+        },
+        {
+            "definition": "Availability of machine m for production each month",
+            "symbol": "Availability",
+            "value": "",
+            "shape": [
+                "M"
+            ],
+            "code": "Availability = np.array(data[\"Availability\"]) # ['M']"
+        },
+        {
+            "definition": "Price obtained from selling a batch of part p",
+            "symbol": "Prices",
+            "value": "",
+            "shape": [
+                "P"
+            ],
+            "code": "Prices = np.array(data[\"Prices\"]) # ['P']"
+        },
+        {
+            "definition": "Minimum number of batches of part p that should be produced",
+            "symbol": "MinBatches",
+            "value": "",
+            "shape": [
+                "P"
+            ],
+            "code": "MinBatches = np.array(data[\"MinBatches\"]) # ['P']"
+        },
+        {
+            "definition": "Extra cost incurred when running machine m beyond regular operation",
+            "symbol": "ExtraCosts",
+            "value": "",
+            "shape": [
+                "M"
+            ],
+            "code": "ExtraCosts = np.array(data[\"ExtraCosts\"]) # ['M']"
+        },
+        {
+            "definition": "Maximum extra hours machine m can be run",
+            "symbol": "MaxExtra",
+            "value": "",
+            "shape": [
+                "M"
+            ],
+            "code": "MaxExtra = np.array(data[\"MaxExtra\"]) # ['M']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of batches of each part must be non-negative.",
+            "status": "formulated",
+            "formulation": "\\textup{BatchesProduced}_{p} \\geq 0, \\quad \\forall \\; p \\in \\{1, 2, \\dots, \\textup{P}\\}",
+            "related_variables": [
+                "BatchesProduced"
+            ],
+            "related_parameters": [
+                "P"
+            ]
+        },
+        {
+            "description": "Total production time across all machines does not exceed the product of machine availability and the number of machines.",
+            "status": "formulated",
+            "formulation": "\\sum_{m=1}^{\\textup{M}} \\sum_{p=1}^{\\textup{P}} \\textup{TimeRequired}_{m,p} \\cdot \\textup{BatchesProduced}_p \\leq \\sum_{m=1}^{\\textup{M}} \\textup{Availability}_m",
+            "related_variables": [
+                "BatchesProduced"
+            ],
+            "related_parameters": [
+                "TimeRequired",
+                "Availability",
+                "M",
+                "P"
+            ]
+        },
+        {
+            "description": "The number of batches produced for each part must meet or exceed the minimum required batches.",
+            "status": "formulated",
+            "formulation": "\\textup{BatchesProduced}_p \\geq \\textup{MinBatches}_p \\quad \\forall p \\in \\{1, 2, \\dots, P\\}",
+            "related_variables": [
+                "BatchesProduced"
+            ],
+            "related_parameters": [
+                "MinBatches"
+            ]
+        },
+        {
+            "description": "Total machine costs and extra costs should not exceed the sum of selling prices of all batches produced minus the production costs.",
+            "status": "formulated",
+            "formulation": "\\sum_{m=1}^{\\textup{M}} \\textup{MachineCosts}_{m} + \\sum_{m=1}^{\\textup{M}} \\textup{ExtraCosts}_{m} \\cdot \\textup{ExtraHoursUsed}_{m} \\leq \\sum_{p=1}^{\\textup{P}} \\textup{Prices}_{p} \\cdot \\textup{BatchesProduced}_{p} - \\sum_{p=1}^{\\textup{P}} \\textup{ProductionCosts}_{p}",
+            "related_variables": [
+                "BatchesProduced",
+                "ExtraHoursUsed",
+                "ProductionCosts"
+            ],
+            "related_parameters": [
+                "MachineCosts",
+                "ExtraCosts",
+                "Prices",
+                "BatchCost"
+            ]
+        },
+        {
+            "description": "Extra hours used for each machine cannot exceed the maximum extra hours allowed for that machine.",
+            "status": "formulated",
+            "formulation": "\\textup{ExtraHoursUsed}_m \\leq \\textup{MaxExtra}_m, \\quad \\forall m \\in [1,...,\\textup{M}]",
+            "related_variables": [
+                "ExtraHoursUsed"
+            ],
+            "related_parameters": [
+                "MaxExtra"
+            ]
+        },
+        {
+            "description": "Extra hours used should not exceed the maximum extra hours allowed for each machine.",
+            "status": "formulated",
+            "formulation": "\\textup{ExtraHoursUsed}_{m} \\leq \\textup{MaxExtra}_{m} \\quad \\forall \\ m \\in \\{1, \\dots, \\textup{M}\\}",
+            "related_variables": [
+                "ExtraHoursUsed"
+            ],
+            "related_parameters": [
+                "MaxExtra"
+            ]
+        },
+        {
+            "description": "Calculation of production costs for each part based on batches produced.",
+            "status": "formulated",
+            "formulation": "\\textup{ProductionCosts}_{p} = \\textup{BatchCost}_{p} \\cdot \\textup{BatchesProduced}_{p} \\quad \\forall \\ p \\in \\{1, \\dots, \\textup{P}\\}",
+            "related_variables": [
+                "ProductionCosts",
+                "BatchesProduced"
+            ],
+            "related_parameters": [
+                "BatchCost"
+            ]
+        },
+        {
+            "description": "Machine availability constraint ensuring that time used by machines for producing batches does not exceed their availability plus extra hours.",
+            "status": "formulated",
+            "formulation": "\\sum_{p=1}^{P} (\\textup{TimeRequired}_{m, p} \\cdot \\textup{BatchesProduced}_p) \\leq \\textup{Availability}_m + \\textup{ExtraHoursUsed}_m \\quad \\forall m",
+            "related_variables": [
+                "BatchesProduced",
+                "ExtraHoursUsed"
+            ],
+            "related_parameters": [
+                "TimeRequired",
+                "Availability"
+            ]
+        },
+        {
+            "description": "Production lower bound constraint ensuring that the number of batches produced for each part meets or exceeds the minimum requirement.",
+            "status": "formulated",
+            "formulation": "\\textup{BatchesProduced}_p \\geq \\textup{MinBatches}_p \\quad \\forall p",
+            "related_variables": [
+                "BatchesProduced"
+            ],
+            "related_parameters": [
+                "MinBatches"
+            ]
+        },
+        {
+            "description": "Non-negativity constraint ensuring that the number of batches produced and extra hours used are non-negative.",
+            "status": "formulated",
+            "formulation": "\\textup{BatchesProduced}_p \\geq 0 \\quad \\forall p, \\quad \\textup{ExtraHoursUsed}_m \\geq 0 \\quad \\forall m",
+            "related_variables": [
+                "BatchesProduced",
+                "ExtraHoursUsed"
+            ],
+            "related_parameters": []
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of batches produced for each part.",
+            "symbol": "BatchesProduced",
+            "shape": [
+                "P"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "Extra hours used for machine m, representing additional use beyond regular operation.",
+            "symbol": "ExtraHoursUsed",
+            "shape": [
+                "M"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "Total production cost for part p, based on the number of batches produced and per-batch production cost.",
+            "symbol": "ProductionCosts",
+            "shape": [
+                "P"
+            ],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the manufacturer's profit, which is the revenue from selling batches of parts minus production costs, machine running costs, and additional operational costs.",
+            "status": "formulated",
+            "formulation": "Max \\quad \\sum_{p=1}^{P} (\\textup{Prices}_p \\cdot \\textup{BatchesProduced}_p - \\textup{ProductionCosts}_p) - \\sum_{m=1}^{M} (\\textup{MachineCosts}_m + \\textup{ExtraCosts}_m \\cdot \\textup{ExtraHoursUsed}_m)",
+            "related_variables": [
+                "BatchesProduced",
+                "ExtraHoursUsed",
+                "ProductionCosts"
+            ],
+            "related_parameters": [
+                "Prices",
+                "MachineCosts",
+                "ExtraCosts"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413170755_nlp4lp_53/",
+    "problem_path": "data/nlp4lp/53/"
+}

@@ -1,0 +1,173 @@
+{
+    "background": "A patient is undergoing radiation treatment with two beams aimed to deliver medicine doses to both a benign area and a tumor, with a goal to minimize radiation received by the pancreas while adhering to maximum and minimum dose limits for the skin and tumor respectively.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Dose of medicine delivered by Beam 1 per minute to the benign area of the pancreas",
+            "symbol": "DosePancreas1",
+            "value": 0.3,
+            "shape": [],
+            "code": "DosePancreas1 = data[\"DosePancreas1\"] # scalar parameter"
+        },
+        {
+            "definition": "Dose of medicine delivered by Beam 1 per minute to the benign area of the skin",
+            "symbol": "DoseSkin1",
+            "value": 0.2,
+            "shape": [],
+            "code": "DoseSkin1 = data[\"DoseSkin1\"] # scalar parameter"
+        },
+        {
+            "definition": "Dose of medicine delivered by Beam 2 per minute to the benign area of the pancreas",
+            "symbol": "DosePancreas2",
+            "value": 0.2,
+            "shape": [],
+            "code": "DosePancreas2 = data[\"DosePancreas2\"] # scalar parameter"
+        },
+        {
+            "definition": "Dose of medicine delivered by Beam 2 per minute to the benign area of the skin",
+            "symbol": "DoseSkin2",
+            "value": 0.1,
+            "shape": [],
+            "code": "DoseSkin2 = data[\"DoseSkin2\"] # scalar parameter"
+        },
+        {
+            "definition": "Dose of medicine delivered by Beam 1 per minute to the tumor",
+            "symbol": "DoseTumor1",
+            "value": 0.6,
+            "shape": [],
+            "code": "DoseTumor1 = data[\"DoseTumor1\"] # scalar parameter"
+        },
+        {
+            "definition": "Dose of medicine delivered by Beam 2 per minute to the tumor",
+            "symbol": "DoseTumor2",
+            "value": 0.4,
+            "shape": [],
+            "code": "DoseTumor2 = data[\"DoseTumor2\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum units of medicine the skin should receive",
+            "symbol": "MaxSkinDose",
+            "value": 4,
+            "shape": [],
+            "code": "MaxSkinDose = data[\"MaxSkinDose\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum units of medicine the tumor should receive",
+            "symbol": "MinTumorDose",
+            "value": 3,
+            "shape": [],
+            "code": "MinTumorDose = data[\"MinTumorDose\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Ensure that the minutes of Beam 1 used is non-negative",
+            "status": "formulated",
+            "formulation": "\\\\textup{MinutesBeam1} \\\\geq 0",
+            "related_variables": [
+                "MinutesBeam1"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "The number of minutes Beam 2 is used is non-negative.",
+            "status": "formulated",
+            "formulation": "\\\\textup{MinutesBeam2} \\\\geq 0",
+            "related_variables": [
+                "MinutesBeam2"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "The total dose of medicine delivered to the skin from both beams must not exceed the maximum allowable dose (MaxSkinDose).",
+            "status": "formulated",
+            "formulation": "\\textup{DoseSkin1} \\times \\textup{MinutesBeam1} + \\textup{DoseSkin2} \\times \\textup{MinutesBeam2} \\leq \\textup{MaxSkinDose}",
+            "related_variables": [
+                "MinutesBeam1",
+                "MinutesBeam2"
+            ],
+            "related_parameters": [
+                "DoseSkin1",
+                "DoseSkin2",
+                "MaxSkinDose"
+            ]
+        },
+        {
+            "description": "The tumor receives at least MinTumorDose units of medicine from both beams combined.",
+            "status": "formulated",
+            "formulation": "\\textup{DoseTumor1} \\cdot \\textup{MinutesBeam1} + \\textup{DoseTumor2} \\cdot \\textup{MinutesBeam2} \\geq \\textup{MinTumorDose}",
+            "related_variables": [
+                "MinutesBeam1",
+                "MinutesBeam2"
+            ],
+            "related_parameters": [
+                "DoseTumor1",
+                "DoseTumor2",
+                "MinTumorDose"
+            ]
+        },
+        {
+            "description": "Ensure the tumor receives at least the minimum required dose.",
+            "status": "formulated",
+            "formulation": "\\\\textup{DoseTumor1} \\\\cdot \\\\textup{MinutesBeam1} + \\\\textup{DoseTumor2} \\\\cdot \\\\textup{MinutesBeam2} \\\\geq \\\\textup{MinTumorDose}",
+            "related_variables": [
+                "MinutesBeam1",
+                "MinutesBeam2"
+            ],
+            "related_parameters": [
+                "DoseTumor1",
+                "DoseTumor2",
+                "MinTumorDose"
+            ]
+        },
+        {
+            "description": "Ensure the skin does not receive more than the maximum allowed dose.",
+            "status": "formulated",
+            "formulation": "\\\\textup{DoseSkin1} \\\\cdot \\\\textup{MinutesBeam1} + \\\\textup{DoseSkin2} \\\\cdot \\\\textup{MinutesBeam2} \\\\leq \\\\textup{MaxSkinDose}",
+            "related_variables": [
+                "MinutesBeam1",
+                "MinutesBeam2"
+            ],
+            "related_parameters": [
+                "DoseSkin1",
+                "DoseSkin2",
+                "MaxSkinDose"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of minutes Beam 1 is used in the radiation treatment",
+            "symbol": "MinutesBeam1",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "The number of minutes Beam 2 is used in the radiation treatment",
+            "symbol": "MinutesBeam2",
+            "shape": [],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total medicine dose received by the pancreas.",
+            "status": "formulated",
+            "formulation": "\\\\textup{Minimize:} \\\\quad \\\\textup{DosePancreas1} \\\\cdot \\\\textup{MinutesBeam1} + \\\\textup{DosePancreas2} \\\\cdot \\\\textup{MinutesBeam2}",
+            "related_variables": [
+                "MinutesBeam1",
+                "MinutesBeam2"
+            ],
+            "related_parameters": [
+                "DosePancreas1",
+                "DosePancreas2"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413160135_nl4opt_prob_140/",
+    "problem_path": "data/nl4opt/prob_140/"
+}

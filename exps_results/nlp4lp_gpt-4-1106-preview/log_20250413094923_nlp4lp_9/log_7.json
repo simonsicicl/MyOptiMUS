@@ -1,0 +1,128 @@
+{
+    "background": "A linear programming task aimed at finding bounds on the fourth moment of a random variable Z, given its first and second moments.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of terms in the sequence",
+            "symbol": "K",
+            "value": "",
+            "shape": [],
+            "code": "K = data[\"K\"] # scalar parameter"
+        },
+        {
+            "definition": "Coefficients of the linear combination",
+            "symbol": "P",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "P = np.array(data[\"P\"]) # ['K']"
+        },
+        {
+            "definition": "Expected value of Z",
+            "symbol": "ExpectedZ",
+            "value": "",
+            "shape": [],
+            "code": "ExpectedZ = data[\"ExpectedZ\"] # scalar parameter"
+        },
+        {
+            "definition": "Expected value of Z squared",
+            "symbol": "ExpectedZSquared",
+            "value": "",
+            "shape": [],
+            "code": "ExpectedZSquared = data[\"ExpectedZSquared\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Variable K must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{K} \\geq 0",
+            "related_variables": [
+                "K"
+            ],
+            "related_parameters": [],
+            "code": "# Variable K is already non-negative by definition, no additional constraint needed."
+        },
+        {
+            "description": "The array P must contain only non-negative elements",
+            "status": "coded",
+            "formulation": "\\forall i \\in \\{1, ..., K\\}, \\quad P[i] \\geq 0",
+            "related_variables": [],
+            "related_parameters": [
+                "P",
+                "K"
+            ],
+            "code": "# Define decision variables for array P\\nvars_P = model.addVars(K, name='P', lb=0)\\n\\n# Non-negativity constraint for array P is now implicit in the variable definition with lb=0\\n# No need to add additional constraints."
+        },
+        {
+            "description": "Non-negative lower and upper bounds constraint for E[Z^4]",
+            "status": "coded",
+            "formulation": "E[Z^4] \\geq 0",
+            "related_variables": [],
+            "related_parameters": [
+                "ExpectedZ",
+                "ExpectedZSquared"
+            ],
+            "code": "# No need to add a constraint as the formulation \"E[Z^4] >= 0\" is inherently satisfied by the definition of expected value and non-negativity of powers\n# However, if you would like to include this in the model for some reason (e.g., as documentation), you can create an auxiliary variable and constrain it to be non-negative and represent E[Z^4]\n\n# First, ensure we import gurobipy as gp and read data from some source\n# from gurobipy import Model, GRB\n# data = some_data_source()\n\n# Assume ExpectedZ and ExpectedZSquared are read from 'data' and are both non-negative\n\nmodel = gp.Model(\"OptimizationModel\")\n\n# Define the auxiliary variable for E[Z^4] (assuming no other characteristics for the variable are needed)\nEZ4 = model.addVar(name=\"EZ4\", lb=0, vtype=gp.GRB.CONTINUOUS)\n\n# Here, we already know ExpectedZ and ExpectedZSquared from our data, but we don't necessarily have a value for E[Z^4].\n# If you do have a specific value in mind or a relationship involving E[Z^4], you could include an additional constraint.\n# Otherwise, you merely need to define the variable as being non-negative, which has been done above with lb=0 when defining EZ4."
+        },
+        {
+            "description": "Since the fourth moment of Z can be expressed as a polynomial expansion in terms of the lower moments and we are given the first and second moments, we can set up an auxiliary constraint to define the fourth moment based on these moments",
+            "status": "coded",
+            "formulation": "\\textup{ExpectedZToFourth} = \\sum_{k=1}^{K} p_k \\mathbb{E}[Z^4_k] \\leq \\left( \\textup{ExpectedZSquared} \\right)^2",
+            "related_variables": [
+                "ExpectedZToFourth"
+            ],
+            "related_parameters": [
+                "P",
+                "K",
+                "ExpectedZSquared"
+            ],
+            "code": "ExpectedZToFourth = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"ExpectedZToFourth\")\nmodel.update()  # Ensure variables are integrated into the model before using them in constraints\n\n# Define the auxiliary constraint for the fourth moment correctly\nmodel.addConstr(ExpectedZToFourth - ExpectedZSquared**2 <= 0, name=\"fourth_moment_constraint\")"
+        },
+        {
+            "description": "This auxiliary constraint ensures that the fourth moment is consistent with the given first and second moments",
+            "status": "coded",
+            "formulation": "\\textup{ExpectedZToFourth} \\geq \\left( \\textup{ExpectedZ} \\right)^4",
+            "related_variables": [
+                "ExpectedZToFourth"
+            ],
+            "related_parameters": [
+                "ExpectedZ"
+            ],
+            "code": "# Ensure that the fourth moment is consistent with the given first and second moments\nmodel.addConstr(ExpectedZToFourth >= ExpectedZ**4, name=\"consistency_fourth_moment\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The variable representing the expected value of Z raised to the fourth power",
+            "symbol": "ExpectedZToFourth",
+            "shape": [],
+            "status": "coded",
+            "code": "ExpectedZToFourth = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"ExpectedZToFourth\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Finding lower and upper bounds on the expected value of Z raised to the fourth power given the first and second moments of Z.",
+            "status": "coded",
+            "formulation": "\\min \\quad \\textup{ExpectedZToFourth} \\quad \\textup{or} \\quad \\max \\quad \\textup{ExpectedZToFourth}",
+            "related_variables": [
+                "ExpectedZToFourth"
+            ],
+            "related_parameters": [
+                "ExpectedZ",
+                "ExpectedZSquared"
+            ],
+            "code": "# Set objective for minimization\nmodel.setObjective(ExpectedZToFourth, gp.GRB.MINIMIZE)\n\n# Set objective for maximization\n# model.setObjective(ExpectedZToFourth, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": "Traceback (most recent call last):\n  File \"c:\\Users\\Simon\\Desktop\\Courses\\ECE 570\\ECE570_Project\\MyOptiMUS\\evaluator.py\", line 45, in run\n    exec(last_line, local_env, local_env)\n  File \"<string>\", line 2, in <module>\n  File \"src\\\\gurobipy\\\\_model.pyx\", line 4004, in gurobipy._model.Model.addConstr\n  File \"src\\\\gurobipy\\\\_model.pyx\", line 3667, in gurobipy._model.Model._addConstr\ngurobipy._exception.GurobiError: Variable not in model\n",
+    "obj_val": 81.0,
+    "log_path": "logs/log_20250413094923_nlp4lp_9/",
+    "problem_path": "data/nlp4lp/9/",
+    "prep_code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nlp4lp/9/data.json\", \"r\") as f:\n    data = json.load(f)\n",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nlp4lp/9/data.json\", \"r\") as f:\n    data = json.load(f)\n\nK = data[\"K\"] # scalar parameter\nP = np.array(data[\"P\"]) # ['K']\nExpectedZ = data[\"ExpectedZ\"] # scalar parameter\nExpectedZSquared = data[\"ExpectedZSquared\"] # scalar parameter\nExpectedZToFourth = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"ExpectedZToFourth\")\n\n# Variable K is already non-negative by definition, no additional constraint needed.\n\n# Define decision variables for array P\\nvars_P = model.addVars(K, name='P', lb=0)\\n\\n# Non-negativity constraint for array P is now implicit in the variable definition with lb=0\\n# No need to add additional constraints.\n\n# No need to add a constraint as the formulation \"E[Z^4] >= 0\" is inherently satisfied by the definition of expected value and non-negativity of powers\n# However, if you would like to include this in the model for some reason (e.g., as documentation), you can create an auxiliary variable and constrain it to be non-negative and represent E[Z^4]\n\n# First, ensure we import gurobipy as gp and read data from some source\n# from gurobipy import Model, GRB\n# data = some_data_source()\n\n# Assume ExpectedZ and ExpectedZSquared are read from 'data' and are both non-negative\n\nmodel = gp.Model(\"OptimizationModel\")\n\n# Define the auxiliary variable for E[Z^4] (assuming no other characteristics for the variable are needed)\nEZ4 = model.addVar(name=\"EZ4\", lb=0, vtype=gp.GRB.CONTINUOUS)\n\n# Here, we already know ExpectedZ and ExpectedZSquared from our data, but we don't necessarily have a value for E[Z^4].\n# If you do have a specific value in mind or a relationship involving E[Z^4], you could include an additional constraint.\n# Otherwise, you merely need to define the variable as being non-negative, which has been done above with lb=0 when defining EZ4.\n\nExpectedZToFourth = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"ExpectedZToFourth\")\nmodel.update()  # Ensure variables are integrated into the model before using them in constraints\n\n# Define the auxiliary constraint for the fourth moment correctly\nmodel.addConstr(ExpectedZToFourth - ExpectedZSquared**2 <= 0, name=\"fourth_moment_constraint\")\n\n# Ensure that the fourth moment is consistent with the given first and second moments\nmodel.addConstr(ExpectedZToFourth >= ExpectedZ**4, name=\"consistency_fourth_moment\")\n\n# Set objective for minimization\nmodel.setObjective(ExpectedZToFourth, gp.GRB.MINIMIZE)\n\n# Set objective for maximization\n# model.setObjective(ExpectedZToFourth, gp.GRB.MAXIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

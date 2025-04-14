@@ -1,0 +1,234 @@
+{
+    "background": "A sailor is planning his meals with a choice between crab cakes and lobster rolls, aiming to meet his nutritional needs while minimizing his intake of unsaturated fat.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Minimum units of vitamin A needed",
+            "symbol": "VitaminAmin",
+            "value": 80,
+            "shape": [],
+            "code": "VitaminAmin = data[\"VitaminAmin\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum units of vitamin C needed",
+            "symbol": "VitaminCmin",
+            "value": 100,
+            "shape": [],
+            "code": "VitaminCmin = data[\"VitaminCmin\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of vitamin A in a crab cake",
+            "symbol": "VitaminAcrab",
+            "value": 5,
+            "shape": [],
+            "code": "VitaminAcrab = data[\"VitaminAcrab\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of vitamin C in a crab cake",
+            "symbol": "VitaminCcrab",
+            "value": 7,
+            "shape": [],
+            "code": "VitaminCcrab = data[\"VitaminCcrab\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of vitamin A in a lobster roll",
+            "symbol": "VitaminAlobster",
+            "value": 8,
+            "shape": [],
+            "code": "VitaminAlobster = data[\"VitaminAlobster\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of vitamin C in a lobster roll",
+            "symbol": "VitaminClobster",
+            "value": 4,
+            "shape": [],
+            "code": "VitaminClobster = data[\"VitaminClobster\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum fraction of meals that can be lobster rolls",
+            "symbol": "LobsterFractionMax",
+            "value": 0.4,
+            "shape": [],
+            "code": "LobsterFractionMax = data[\"LobsterFractionMax\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of unsaturated fat in a crab cake",
+            "symbol": "FatCrab",
+            "value": 4,
+            "shape": [],
+            "code": "FatCrab = data[\"FatCrab\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of unsaturated fat in a lobster roll",
+            "symbol": "FatLobster",
+            "value": 6,
+            "shape": [],
+            "code": "FatLobster = data[\"FatLobster\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The sailor must consume at least VitaminAmin units of vitamin A.",
+            "status": "coded",
+            "formulation": "\\textup{VitaminAcrab} \\cdot \\textup{CrabCakes} + \\textup{VitaminAlobster} \\cdot \\textup{LobsterRolls} \\geq \\textup{VitaminAmin}",
+            "related_variables": [
+                "CrabCakes",
+                "LobsterRolls"
+            ],
+            "related_parameters": [
+                "VitaminAcrab",
+                "VitaminAlobster",
+                "VitaminAmin"
+            ],
+            "code": "# Add vitamin A intake constraint\nmodel.addConstr(\n    VitaminAcrab * CrabCakes + VitaminAlobster * LobsterRolls >= VitaminAmin,\n    name=\"vitamin_A_minimum\"\n)"
+        },
+        {
+            "description": "The sailor must consume at least VitaminCmin units of vitamin C.",
+            "status": "coded",
+            "formulation": "\\textup{VitaminCcrab} \\cdot \\textup{CrabCakes} + \\textup{VitaminClobster} \\cdot \\textup{LobsterRolls} \\geq \\textup{VitaminCmin}",
+            "related_variables": [
+                "CrabCakes",
+                "LobsterRolls"
+            ],
+            "related_parameters": [
+                "VitaminCmin",
+                "VitaminCcrab",
+                "VitaminClobster"
+            ],
+            "code": "# Add vitamin C intake constraint\nmodel.addConstr(\n    VitaminCcrab * CrabCakes + VitaminClobster * LobsterRolls >= VitaminCmin,\n    name=\"vitamin_c_intake\"\n)"
+        },
+        {
+            "description": "The number of lobster rolls consumed must not exceed LobsterFractionMax percentage of the total meals.",
+            "status": "coded",
+            "formulation": "(1 - \\textup{LobsterFractionMax}) \\cdot \\textup{LobsterRolls} \\leq \\textup{LobsterFractionMax} \\cdot \\textup{CrabCakes}",
+            "related_variables": [
+                "CrabCakes",
+                "LobsterRolls"
+            ],
+            "related_parameters": [
+                "LobsterFractionMax"
+            ],
+            "code": "# Add constraint linking LobsterRolls and CrabCakes based on LobsterFractionMax\nmodel.addConstr((1 - LobsterFractionMax) * LobsterRolls <= LobsterFractionMax * CrabCakes, \n                name=\"lobster_fraction_constraint\")"
+        },
+        {
+            "description": "The number of crab cakes consumed must be non-negative",
+            "status": "coded",
+            "formulation": "\\\\textup{CrabCakes} \\\\geq 0",
+            "related_variables": [
+                "CrabCakes"
+            ],
+            "related_parameters": [],
+            "code": "# The variable \"CrabCakes\" is already defined as non-negative due to its default non-negativity in Gurobi,\n# so no additional constraint code is required."
+        },
+        {
+            "description": "The number of lobster rolls eaten must be non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{LobsterRolls} \\\\geq 0",
+            "related_variables": [
+                "LobsterRolls"
+            ],
+            "related_parameters": [],
+            "code": "# No code is needed because non-negativity is inherent to the LobsterRolls variable as it is defined with no negative allowance (vtype=gp.GRB.CONTINUOUS)."
+        },
+        {
+            "description": "Ensure the sailor meets the minimum Vitamin A requirement.",
+            "status": "coded",
+            "formulation": "\\textup{VitaminAcrab} \\times \\textup{CrabCakes} + \\textup{VitaminAlobster} \\times \\textup{LobsterRolls} \\geq \\textup{VitaminAmin}",
+            "related_variables": [
+                "CrabCakes",
+                "LobsterRolls"
+            ],
+            "related_parameters": [
+                "VitaminAcrab",
+                "VitaminAlobster",
+                "VitaminAmin"
+            ],
+            "code": "# Add Vitamin A minimum requirement constraint\nmodel.addConstr(VitaminAcrab * CrabCakes + VitaminAlobster * LobsterRolls >= VitaminAmin, name=\"vitamin_a_requirement\")"
+        },
+        {
+            "description": "Ensure the sailor meets the minimum Vitamin C requirement.",
+            "status": "coded",
+            "formulation": "\\textup{VitaminCcrab} \\times \\textup{CrabCakes} + \\textup{VitaminClobster} \\times \\textup{LobsterRolls} \\geq \\textup{VitaminCmin}",
+            "related_variables": [
+                "CrabCakes",
+                "LobsterRolls"
+            ],
+            "related_parameters": [
+                "VitaminCcrab",
+                "VitaminClobster",
+                "VitaminCmin"
+            ],
+            "code": "# Add Vitamin C minimum requirement constraint\nmodel.addConstr(VitaminCcrab * CrabCakes + VitaminClobster * LobsterRolls >= VitaminCmin, name=\"vitamin_c_requirement\")"
+        },
+        {
+            "description": "Define TotalMeals as the sum of crab cakes and lobster rolls.",
+            "status": "coded",
+            "formulation": "\\textup{CrabCakes} + \\textup{LobsterRolls} = \\textup{TotalMeals}",
+            "related_variables": [
+                "CrabCakes",
+                "LobsterRolls",
+                "TotalMeals"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint to define TotalMeals as the sum of CrabCakes and LobsterRolls\nmodel.addConstr(CrabCakes + LobsterRolls == TotalMeals, name=\"TotalMeals_Definition\")"
+        },
+        {
+            "description": "Limit the fraction of lobster rolls relative to total meals.",
+            "status": "coded",
+            "formulation": "\\textup{LobsterRolls} \\leq \\textup{LobsterFractionMax} \\times \\textup{TotalMeals}",
+            "related_variables": [
+                "LobsterRolls",
+                "TotalMeals"
+            ],
+            "related_parameters": [
+                "LobsterFractionMax"
+            ],
+            "code": "# Add constraint to limit the fraction of lobster rolls relative to total meals\nmodel.addConstr(LobsterRolls <= LobsterFractionMax * TotalMeals, name=\"lobster_fraction_limit\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of crab cakes consumed",
+            "symbol": "CrabCakes",
+            "shape": [],
+            "status": "coded",
+            "code": "CrabCakes = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"CrabCakes\")"
+        },
+        {
+            "definition": "The number of lobster rolls consumed",
+            "symbol": "LobsterRolls",
+            "shape": [],
+            "status": "coded",
+            "code": "LobsterRolls = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"LobsterRolls\")"
+        },
+        {
+            "definition": "The total number of meals consumed.",
+            "symbol": "TotalMeals",
+            "shape": [],
+            "status": "coded",
+            "code": "TotalMeals = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TotalMeals\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the sailor's unsaturated fat intake from meals.",
+            "status": "coded",
+            "formulation": "\\textup{Minimize:} \\quad \\textup{FatCrab} \\times \\textup{CrabCakes} + \\textup{FatLobster} \\times \\textup{LobsterRolls}",
+            "related_variables": [
+                "CrabCakes",
+                "LobsterRolls"
+            ],
+            "related_parameters": [
+                "FatCrab",
+                "FatLobster"
+            ],
+            "code": "# Set objective\nmodel.setObjective(FatCrab * CrabCakes + FatLobster * LobsterRolls, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413153245_nl4opt_prob_111/",
+    "problem_path": "data/nl4opt/prob_111/"
+}

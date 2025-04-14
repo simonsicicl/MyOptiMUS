@@ -1,0 +1,252 @@
+{
+    "background": "The objective is to maximize the total production in the last two years, taking into consideration the constraints of two different types of resources, manpower allocation, stock levels, capacities, and a limit on the total manpower available.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "The production inputs from resource type one to product k in year j",
+            "symbol": "InputOne",
+            "value": "",
+            "shape": [
+                "K",
+                "K"
+            ],
+            "code": "InputOne = np.array(data[\"InputOne\"]) # ['K', 'K']"
+        },
+        {
+            "definition": "The manpower allocated to resource type one for product k",
+            "symbol": "ManpowerOne",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "ManpowerOne = np.array(data[\"ManpowerOne\"]) # ['K']"
+        },
+        {
+            "definition": "The production inputs from resource type two to product k in year j",
+            "symbol": "InputTwo",
+            "value": "",
+            "shape": [
+                "K",
+                "K"
+            ],
+            "code": "InputTwo = np.array(data[\"InputTwo\"]) # ['K', 'K']"
+        },
+        {
+            "definition": "The manpower allocated to resource type two for product k",
+            "symbol": "ManpowerTwo",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "ManpowerTwo = np.array(data[\"ManpowerTwo\"]) # ['K']"
+        },
+        {
+            "definition": "Stock levels of product k at the start of the planning horizon",
+            "symbol": "Stock",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "Stock = np.array(data[\"Stock\"]) # ['K']"
+        },
+        {
+            "definition": "Production capacity for product k",
+            "symbol": "Capacity",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "Capacity = np.array(data[\"Capacity\"]) # ['K']"
+        },
+        {
+            "definition": "The upper limit of manpower",
+            "symbol": "ManpowerLimit",
+            "value": "",
+            "shape": [],
+            "code": "ManpowerLimit = data[\"ManpowerLimit\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The consumption of InputOne per year is non-negative and within its availability.",
+            "status": "coded",
+            "formulation": "\\textup{InputOne}_{j,k} \\geq 0, \\quad \\forall j, k \\\\ \\textup{InputOne}_{j,k} \\leq \\textup{Availability}, \\quad \\forall j, k",
+            "related_variables": [],
+            "related_parameters": [
+                "InputOne"
+            ],
+            "code": "# Add constraints to ensure InputOne consumption is non-negative and within availability\nfor j in range(K):\n    for k in range(K):\n        model.addConstr(InputOne[j, k] >= 0, name=f\"non_negative_InputOne_{j}_{k}\")\n        model.addConstr(InputOne[j, k] <= Availability, name=f\"availability_InputOne_{j}_{k}\")"
+        },
+        {
+            "description": "The consumption of InputTwo per year must be non-negative and within its availability.",
+            "status": "coded",
+            "formulation": "\\textup{InputTwoConsumed}_{k,j} \\geq 0, \\quad \\textup{InputTwoConsumed}_{k,j} \\leq \\textup{InputTwo}_{k,j} \\quad \\forall \\; k, j",
+            "related_variables": [
+                "InputTwoConsumed"
+            ],
+            "related_parameters": [
+                "InputTwo"
+            ],
+            "code": "# Add constraints to ensure InputTwoConsumed is non-negative and within its availability\nfor k in range(K):\n    for j in range(K):\n        model.addConstr(InputTwoConsumed[k, j] >= 0, name=f\"InputTwoConsumed_nonneg_{k}_{j}\")\n        model.addConstr(InputTwoConsumed[k, j] <= InputTwo[k, j], name=f\"InputTwoConsumed_availability_{k}_{j}\")"
+        },
+        {
+            "description": "Manpower allocation for ManpowerOne must remain within its upper limit.",
+            "status": "coded",
+            "formulation": "\\sum_{k=1}^{K} \\textup{ManpowerOne}_{k} \\leq \\textup{ManpowerLimit}",
+            "related_variables": [
+                "ManpowerOne"
+            ],
+            "related_parameters": [
+                "ManpowerLimit"
+            ],
+            "code": "# Add manpower allocation constraint for ManpowerOne\nmodel.addConstr(gp.quicksum(ManpowerOne[k] for k in range(K)) <= ManpowerLimit, name=\"manpower_allocation_limit\")"
+        },
+        {
+            "description": "Manpower allocation for resource type two (ManpowerTwo) is non-negative and within its limit.",
+            "status": "coded",
+            "formulation": "\\\\textup{ManpowerTwo}_{k} \\\\geq 0 \\\\quad \\\\forall k \\\\quad\\\\textup{(Non-negativity constraint)} \\\\newline \\\\sum_{k} \\\\textup{ManpowerTwo}_{k} \\\\leq \\\\textup{ManpowerLimit} \\\\quad\\\\textup{(Manpower allocation limit constraint)}",
+            "related_variables": [
+                "ManpowerTwo"
+            ],
+            "related_parameters": [
+                "ManpowerLimit"
+            ],
+            "code": "# Manpower allocation constraints\n\n# ManpowerTwo should be non-negative\nfor k in range(len(ManpowerTwo)):\n    model.addConstr(ManpowerTwo[k] >= 0, name=f\"non_negative_manpowertwo_{k}\")\n\n# Total ManpowerTwo allocation should not exceed the defined limit\nmodel.addConstr(gp.quicksum(ManpowerTwo[k] for k in range(len(ManpowerTwo))) <= ManpowerLimit, name=\"manpowertwo_allocation_limit\")"
+        },
+        {
+            "description": "Stock levels for all products must be non-negative and within their capacities in all years.",
+            "status": "coded",
+            "formulation": "\\textup{Stock}_{j,k} \\geq 0 \\quad \\forall j, k \\\\\n\\textup{Stock}_{j,k} \\leq \\textup{Capacity}_{k} \\quad \\forall j, k",
+            "related_variables": [
+                "Stock",
+                "Production",
+                "Consumption"
+            ],
+            "related_parameters": [
+                "Capacity"
+            ],
+            "code": "# Add constraints for stock levels: non-negative and within capacity\nfor j in range(J):\n    for k in range(K):\n        model.addConstr(Stock[j, k] >= 0, name=f\"stock_non_negative_{j}_{k}\")\n        model.addConstr(Stock[j, k] <= Capacity[k], name=f\"stock_within_capacity_{j}_{k}\")"
+        },
+        {
+            "description": "The production levels of product k in year j must not exceed the production capacity for product k.",
+            "status": "coded",
+            "formulation": "\\textup{Production}_{j,k} \\leq \\textup{Capacity}_{k} \\quad \\forall j \\in J, \\forall k \\in K",
+            "related_variables": [
+                "Production"
+            ],
+            "related_parameters": [
+                "Capacity"
+            ],
+            "code": "# Add production capacity constraints\nfor j in range(J):\n    for k in range(K):\n        model.addConstr(Production[j, k] <= Capacity[k], name=f\"production_capacity_{j}_{k}\")"
+        },
+        {
+            "description": "The total manpower utilized across all products and time periods cannot exceed the upper limit, ManpowerLimit.",
+            "status": "coded",
+            "formulation": "\\sum_{j=1}^{J} \\sum_{k=1}^{K} \\textup{Production}_{j,k} \\cdot \\textup{ManpowerOne}_{k} + \\sum_{j=1}^{J} \\sum_{k=1}^{K} \\textup{Production}_{j,k} \\cdot \\textup{ManpowerTwo}_{k} \\leq \\textup{ManpowerLimit}",
+            "related_variables": [
+                "Production"
+            ],
+            "related_parameters": [
+                "ManpowerOne",
+                "ManpowerTwo",
+                "ManpowerLimit"
+            ],
+            "code": "# Add manpower utilization constraint\nmodel.addConstr(\n    gp.quicksum(Production[j, k] * (ManpowerOne[k] + ManpowerTwo[k]) for j in range(J) for k in range(K)) <= ManpowerLimit,\n    name=\"manpower_utilization_limit\"\n)"
+        },
+        {
+            "description": "Ensure all variables related to production, resources, and manpower are non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{InputTwoConsumed}_{k,k'} \\geq 0 \\quad \\forall \\quad k \\in \\{1, \\dots, K\\}, \\quad k' \\in \\{1, \\dots, K\\} \\\\ \\textup{Stock}_{j,k} \\geq 0 \\quad \\forall \\quad j \\in \\{1, \\dots, J\\}, \\quad k \\in \\{1, \\dots, K\\} \\\\ \\textup{Production}_{j,k} \\geq 0 \\quad \\forall \\quad j \\in \\{1, \\dots, J\\}, \\quad k \\in \\{1, \\dots, K\\} \\\\ \\textup{Consumption}_{j,k} \\geq 0 \\quad \\forall \\quad j \\in \\{1, \\dots, J\\}, \\quad k \\in \\{1, \\dots, K\\}",
+            "related_variables": [
+                "InputTwoConsumed",
+                "Stock",
+                "Production",
+                "Consumption"
+            ],
+            "related_parameters": [],
+            "code": "# Ensure all variables related to production, resources, and manpower are non-negative\nfor k in range(K):\n    for k_prime in range(K):\n        model.addConstr(InputTwoConsumed[k, k_prime] >= 0, name=f\"non_negative_InputTwoConsumed_{k}_{k_prime}\")\n\nfor j in range(J):\n    for k in range(K):\n        model.addConstr(Stock[j, k] >= 0, name=f\"non_negative_Stock_{j}_{k}\")\n        model.addConstr(Production[j, k] >= 0, name=f\"non_negative_Production_{j}_{k}\")\n        model.addConstr(Consumption[j, k] >= 0, name=f\"non_negative_Consumption_{j}_{k}\")"
+        },
+        {
+            "description": "Manpower allocation for ManpowerOne must be non-negative for all products.",
+            "status": "coded",
+            "formulation": "\\textup{ManpowerOne}_{k} \\geq 0 \\quad \\forall \\; k \\in \\{1, 2, \\dots, K\\}",
+            "related_variables": [
+                "ManpowerOne"
+            ],
+            "related_parameters": [],
+            "code": "# The variable ManpowerOne_{k} is simply constrained to be non-negative, which is inherently ensured in Gurobi as it defaults variables to non-negative."
+        },
+        {
+            "description": "Stock balances dynamically over the planning horizon.",
+            "status": "coded",
+            "formulation": "\\textup{Stock}_{j,k} = \\textup{Stock}_{j-1,k} + \\textup{Production}_{j,k} - \\textup{Consumption}_{j,k} \\quad (j>1) \\\\\n\\textup{Stock}_{1,k} = \\textup{InitialStock}_{k} + \\textup{Production}_{1,k} - \\textup{Consumption}_{1,k}",
+            "related_variables": [
+                "Stock",
+                "Production",
+                "Consumption"
+            ],
+            "related_parameters": [],
+            "code": "# Dynamic stock balance constraints\nfor k in range(K):\n    # Constraint for j=1\n    model.addConstr(\n        Stock[1, k] == InitialStock[k] + Production[1, k] - Consumption[1, k],\n        name=f\"stock_balance_initial_k{k}\",\n    )\n    # Constraints for j>1\n    for j in range(2, J + 1):\n        model.addConstr(\n            Stock[j, k] == Stock[j - 1, k] + Production[j, k] - Consumption[j, k],\n            name=f\"stock_balance_j{j}_k{k}\",\n        )"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The yearly consumption of resource type two for product k in year j.",
+            "symbol": "InputTwoConsumed",
+            "shape": [
+                "K",
+                "K"
+            ],
+            "status": "coded",
+            "code": "InputTwoConsumed = model.addVars(K, K, vtype=gp.GRB.CONTINUOUS, name=\"InputTwoConsumed\")"
+        },
+        {
+            "definition": "The stock of product k in year j.",
+            "symbol": "Stock",
+            "shape": [
+                "J",
+                "K"
+            ],
+            "status": "coded",
+            "code": "Stock = model.addVars(J, K, vtype=gp.GRB.CONTINUOUS, name=\"Stock\")"
+        },
+        {
+            "definition": "The production levels of product k in year j.",
+            "symbol": "Production",
+            "shape": [
+                "J",
+                "K"
+            ],
+            "status": "coded",
+            "code": "Production = model.addVars(J, K, vtype=gp.GRB.CONTINUOUS, name=\"Production\")"
+        },
+        {
+            "definition": "The consumption levels of product k in year j.",
+            "symbol": "Consumption",
+            "shape": [
+                "J",
+                "K"
+            ],
+            "status": "coded",
+            "code": "Consumption = model.addVars(J, K, vtype=gp.GRB.CONTINUOUS, name=\"Consumption\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total production in the last two years of the planning horizon.",
+            "status": "coded",
+            "formulation": "\\textup{Maximize} \\quad \\sum_{k=1}^{K} \\textup{Production}_{J-1,k} + \\sum_{k=1}^{K} \\textup{Production}_{J,k}",
+            "related_variables": [
+                "Production"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(gp.quicksum(Production[J-1, k] for k in range(K)) + gp.quicksum(Production[J, k] for k in range(K)), gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413154223_nlp4lp_28/",
+    "problem_path": "data/nlp4lp/28/"
+}

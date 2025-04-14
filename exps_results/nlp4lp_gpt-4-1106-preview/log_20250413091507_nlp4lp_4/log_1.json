@@ -1,0 +1,100 @@
+{
+    "background": "A hospital is trying to determine the minimal number of nurses to hire over a planning period to meet the daily demand for nursing staff.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of days",
+            "symbol": "T",
+            "value": "",
+            "shape": [],
+            "code": "T = data[\"T\"] # scalar parameter"
+        },
+        {
+            "definition": "The planning period for nurse staffing",
+            "symbol": "Period",
+            "value": "",
+            "shape": [],
+            "code": "Period = data[\"Period\"] # scalar parameter"
+        },
+        {
+            "definition": "Array of demands for nurses for days",
+            "symbol": "Demand",
+            "value": "",
+            "shape": [
+                "T"
+            ],
+            "code": "Demand = np.array(data[\"Demand\"]) # ['T']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Each day must have a non-negative number of nurses",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfNurses}[t] \\geq 0 \\quad \\forall t \\in \\{1, 2, \\ldots, T\\}",
+            "related_variables": [
+                "NumberOfNurses"
+            ],
+            "related_parameters": [
+                "T"
+            ],
+            "code": "# Ensure a non-negative number of nurses for each day\nfor t in range(T):\n    model.addConstr(NumberOfNurses[t] >= 0, name=f\"non_negative_nurses_day_{t}\")"
+        },
+        {
+            "description": "The number of nurses hired must meet or exceed the demand for each day of the planning period",
+            "status": "coded",
+            "formulation": "\\forall t \\in \\{1, \\ldots, T\\}, \\quad \\textup{NumberOfNurses}_t \\geq \\textup{Demand}_t",
+            "related_variables": [
+                "NumberOfNurses"
+            ],
+            "related_parameters": [
+                "T",
+                "Demand"
+            ],
+            "code": "```"
+        },
+        {
+            "description": "The number of nurses on each day must meet the daily demand",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfNurses}_{t} \\geq \\textup{Demand}_{t} \\quad \\forall t \\in \\{1, \\ldots, \\textup{T}\\}",
+            "related_variables": [
+                "NumberOfNurses"
+            ],
+            "related_parameters": [
+                "Demand",
+                "T"
+            ],
+            "code": "# Constraint: Number of nurses on each day must meet the daily demand\nfor t in range(T):\n    model.addConstr(NumberOfNurses[t] >= Demand[t], name=f\"demand_day_{t}\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Array representing the number of nurses for each day of the planning period",
+            "symbol": "NumberOfNurses",
+            "shape": [
+                "T"
+            ],
+            "status": "coded",
+            "code": "NumberOfNurses = model.addVars(T, vtype=gp.GRB.INTEGER, name=\"NumberOfNurses\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of nurses required over the planning period",
+            "status": "coded",
+            "formulation": "\\min \\sum_{t=1}^{\\textup{T}} \\textup{NumberOfNurses}_{t}",
+            "related_variables": [
+                "NumberOfNurses"
+            ],
+            "related_parameters": [
+                "T"
+            ],
+            "code": "# Set objective\nmodel.setObjective(gp.quicksum(NumberOfNurses[t] for t in range(T)), gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413091507_nlp4lp_4/",
+    "problem_path": "data/nlp4lp/4/"
+}

@@ -1,0 +1,194 @@
+{
+    "background": "A sports company produces multiple products using various raw materials. The amount of each raw material and the requirements for each product are known. Each product has an associated selling price, production cost, and market demand. The company aims to determine the number of each product to produce to maximize profit within the material limitations and market demand constraints.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of different raw materials",
+            "symbol": "N",
+            "value": "",
+            "shape": [],
+            "code": "N = data[\"N\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of different products",
+            "symbol": "M",
+            "value": "",
+            "shape": [],
+            "code": "M = data[\"M\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of raw material i available",
+            "symbol": "Available",
+            "value": "",
+            "shape": [
+                "N"
+            ],
+            "code": "Available = np.array(data[\"Available\"]) # ['N']"
+        },
+        {
+            "definition": "Amount of raw material i required to produce one unit of product j",
+            "symbol": "Requirements",
+            "value": "",
+            "shape": [
+                "N",
+                "M"
+            ],
+            "code": "Requirements = np.array(data[\"Requirements\"]) # ['N', 'M']"
+        },
+        {
+            "definition": "Price at which product j can be sold",
+            "symbol": "Prices",
+            "value": "",
+            "shape": [
+                "M"
+            ],
+            "code": "Prices = np.array(data[\"Prices\"]) # ['M']"
+        },
+        {
+            "definition": "Cost of producing one unit of product j",
+            "symbol": "Costs",
+            "value": "",
+            "shape": [
+                "M"
+            ],
+            "code": "Costs = np.array(data[\"Costs\"]) # ['M']"
+        },
+        {
+            "definition": "Demand for product j",
+            "symbol": "Demands",
+            "value": "",
+            "shape": [
+                "M"
+            ],
+            "code": "Demands = np.array(data[\"Demands\"]) # ['M']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The total raw material usage for each type of raw material must not exceed its available supply.",
+            "status": "coded",
+            "formulation": "\\sum_{j=1}^{M} \\textup{Requirements}[i, j] \\cdot \\textup{ProductsProduced}[j] \\leq \\textup{Available}[i], \\quad \\forall i \\in \\{1, 2, \\dots, N\\}",
+            "related_variables": [
+                "ProductsProduced"
+            ],
+            "related_parameters": [
+                "Requirements",
+                "Available",
+                "N",
+                "M"
+            ],
+            "code": "# Add raw material usage constraints\nfor i in range(N):\n    model.addConstr(\n        gp.quicksum(Requirements[i, j] * ProductsProduced[j] for j in range(M)) <= Available[i],\n        name=f\"raw_material_usage_{i}\"\n    )"
+        },
+        {
+            "description": "Each product's production must meet its raw material requirements per unit. The total raw material consumed across all products cannot exceed the available amount for each raw material.",
+            "status": "coded",
+            "formulation": "\\sum_{j=1}^{\\textup{M}} \\textup{Requirements}_{i,j} \\cdot \\textup{ProductsProduced}_{j} \\leq \\textup{Available}_{i} \\quad \\forall \\, i \\in \\{1, ..., \\textup{N}\\}",
+            "related_variables": [
+                "ProductsProduced"
+            ],
+            "related_parameters": [
+                "Requirements",
+                "Available"
+            ],
+            "code": "# Add raw material consumption constraints\nfor i in range(N):\n    model.addConstr(\n        gp.quicksum(Requirements[i, j] * ProductsProduced[j] for j in range(M)) <= Available[i],\n        name=f\"raw_material_constraint_{i}\"\n    )"
+        },
+        {
+            "description": "The production of each product should not exceed its market demand.",
+            "status": "coded",
+            "formulation": "\\textup{ProductsProduced}_{j} \\leq \\textup{Demands}_{j}, \\quad \\forall j \\in \\{1, 2, \\ldots, M\\}",
+            "related_variables": [
+                "ProductsProduced"
+            ],
+            "related_parameters": [
+                "Demands"
+            ],
+            "code": "# Add production-demand constraints\nfor j in range(M):\n    model.addConstr(ProductsProduced[j] <= Demands[j], name=f\"production_demand_{j}\")"
+        },
+        {
+            "description": "The number of units produced of each product must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{ProductsProduced}_{j} \\geq 0 \\quad \\forall \\, j \\in \\{1, 2, \\dots, M\\}",
+            "related_variables": [
+                "ProductsProduced"
+            ],
+            "related_parameters": [
+                "M"
+            ],
+            "code": "# Add non-negativity constraints for produced products\nfor j in range(M):\n    model.addConstr(ProductsProduced[j] >= 0, name=f\"non_negativity_product_{j}\")"
+        },
+        {
+            "description": "Ensure the total raw material consumption for all products does not exceed the available raw material quantity for each type.",
+            "status": "coded",
+            "formulation": "\\sum_{j=1}^{M} \\textup{Requirements}_{i, j} \\cdot \\textup{ProductsProduced}_{j} \\leq \\textup{Available}_{i}, \\quad \\forall i = 1, \\ldots, N",
+            "related_variables": [
+                "ProductsProduced"
+            ],
+            "related_parameters": [
+                "Requirements",
+                "Available",
+                "M",
+                "N"
+            ],
+            "code": "# Add raw material consumption constraints\nfor i in range(N):\n    model.addConstr(\n        gp.quicksum(Requirements[i, j] * ProductsProduced[j] for j in range(M)) <= Available[i],\n        name=f\"raw_material_constraint_{i}\"\n    )"
+        },
+        {
+            "description": "Ensure the number of each product produced does not exceed its respective market demand.",
+            "status": "coded",
+            "formulation": "\\textup{ProductsProduced}_{j} \\leq \\textup{Demands}_{j}, \\quad \\forall j = 1, \\ldots, M",
+            "related_variables": [
+                "ProductsProduced"
+            ],
+            "related_parameters": [
+                "Demands",
+                "M"
+            ],
+            "code": "# Add production-demand constraints\nfor j in range(M):\n    model.addConstr(ProductsProduced[j] <= Demands[j], name=f\"demand_constraint_{j}\")"
+        },
+        {
+            "description": "Ensure the production quantities are non-negative for all products.",
+            "status": "coded",
+            "formulation": "\\textup{ProductsProduced}_{j} \\geq 0, \\quad \\forall j = 1, \\ldots, M",
+            "related_variables": [
+                "ProductsProduced"
+            ],
+            "related_parameters": [
+                "M"
+            ],
+            "code": "# Add non-negativity constraints for production quantities\nfor j in range(M):\n    model.addConstr(ProductsProduced[j] >= 0, name=f\"non_negative_production_{j}\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of units of product j to produce",
+            "symbol": "ProductsProduced",
+            "shape": [
+                "M"
+            ],
+            "status": "coded",
+            "code": "ProductsProduced = model.addVars(M, vtype=gp.GRB.CONTINUOUS, name=\"ProductsProduced\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the profit for the month by determining the number of each product to produce.",
+            "status": "coded",
+            "formulation": "\\sum_{j=1}^{M} \\textup{ProductsProduced}_{j} \\cdot (\\textup{Prices}_{j} - \\textup{Costs}_{j})",
+            "related_variables": [
+                "ProductsProduced"
+            ],
+            "related_parameters": [
+                "Prices",
+                "Costs",
+                "M"
+            ],
+            "code": "# Set objective\nmodel.setObjective(gp.quicksum(ProductsProduced[j] * (Prices[j] - Costs[j]) for j in range(M)), gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 25500.0,
+    "log_path": "logs/log_20250413171504_nlp4lp_46/",
+    "problem_path": "data/nlp4lp/46/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nlp4lp/46/data.json\", \"r\") as f:\n    data = json.load(f)\n\nN = data[\"N\"] # scalar parameter\nM = data[\"M\"] # scalar parameter\nAvailable = np.array(data[\"Available\"]) # ['N']\nRequirements = np.array(data[\"Requirements\"]) # ['N', 'M']\nPrices = np.array(data[\"Prices\"]) # ['M']\nCosts = np.array(data[\"Costs\"]) # ['M']\nDemands = np.array(data[\"Demands\"]) # ['M']\nProductsProduced = model.addVars(M, vtype=gp.GRB.CONTINUOUS, name=\"ProductsProduced\")\n\n# Add raw material usage constraints\nfor i in range(N):\n    model.addConstr(\n        gp.quicksum(Requirements[i, j] * ProductsProduced[j] for j in range(M)) <= Available[i],\n        name=f\"raw_material_usage_{i}\"\n    )\n\n# Add raw material consumption constraints\nfor i in range(N):\n    model.addConstr(\n        gp.quicksum(Requirements[i, j] * ProductsProduced[j] for j in range(M)) <= Available[i],\n        name=f\"raw_material_constraint_{i}\"\n    )\n\n# Add production-demand constraints\nfor j in range(M):\n    model.addConstr(ProductsProduced[j] <= Demands[j], name=f\"production_demand_{j}\")\n\n# Add non-negativity constraints for produced products\nfor j in range(M):\n    model.addConstr(ProductsProduced[j] >= 0, name=f\"non_negativity_product_{j}\")\n\n# Add raw material consumption constraints\nfor i in range(N):\n    model.addConstr(\n        gp.quicksum(Requirements[i, j] * ProductsProduced[j] for j in range(M)) <= Available[i],\n        name=f\"raw_material_constraint_{i}\"\n    )\n\n# Add production-demand constraints\nfor j in range(M):\n    model.addConstr(ProductsProduced[j] <= Demands[j], name=f\"demand_constraint_{j}\")\n\n# Add non-negativity constraints for production quantities\nfor j in range(M):\n    model.addConstr(ProductsProduced[j] >= 0, name=f\"non_negative_production_{j}\")\n\n# Set objective\nmodel.setObjective(gp.quicksum(ProductsProduced[j] * (Prices[j] - Costs[j]) for j in range(M)), gp.GRB.MAXIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

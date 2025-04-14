@@ -1,0 +1,172 @@
+{
+    "background": "A student has to consume calcium and vitamin D pills with certain effectiveness times, and must meet minimum intake requirements and the condition that more calcium pills than vitamin D pills are consumed.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Effective time for each calcium pill",
+            "symbol": "Tc",
+            "value": 5,
+            "shape": [],
+            "code": "Tc = data[\"Tc\"] # scalar parameter"
+        },
+        {
+            "definition": "Effective time for each vitamin D pill",
+            "symbol": "Td",
+            "value": 6,
+            "shape": [],
+            "code": "Td = data[\"Td\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum total number of pills to be taken in a month",
+            "symbol": "Pmin",
+            "value": 130,
+            "shape": [],
+            "code": "Pmin = data[\"Pmin\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of vitamin D pills to be taken in a month",
+            "symbol": "Dmin",
+            "value": 40,
+            "shape": [],
+            "code": "Dmin = data[\"Dmin\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Constraints related to non-negativity of calcium pills and their relationship with vitamin D pills.",
+            "status": "coded",
+            "formulation": "\\\\textup{CalciumPills} \\\\geq 0 \\\\quad \\\\textup{CalciumPills} \\\\geq \\\\textup{VitaminDPills} + 1",
+            "related_variables": [
+                "CalciumPills",
+                "VitaminDPills"
+            ],
+            "related_parameters": [],
+            "code": "# Add non-negativity and calcium-vs-vitamin D constraints\nmodel.addConstr(CalciumPills >= 0, name=\"non_negative_calcium\")\nmodel.addConstr(CalciumPills >= VitaminDPills + 1, name=\"calcium_vs_vitamin_d\")"
+        },
+        {
+            "description": "The constraints ensuring non-negative vitamin D pills, minimum intake requirements, and relative calcium dominance.",
+            "status": "coded",
+            "formulation": "\\textup{VitaminDPills} \\geq 0 \\\\ \\textup{VitaminDPills} \\geq \\textup{Dmin} \\\\ \\textup{CalciumPills} + \\textup{VitaminDPills} \\geq \\textup{Pmin} \\\\ \\textup{CalciumPills} \\geq \\textup{VitaminDPills} + 1",
+            "related_variables": [
+                "CalciumPills",
+                "VitaminDPills"
+            ],
+            "related_parameters": [
+                "Dmin",
+                "Pmin"
+            ],
+            "code": "# Adding constraints for non-negative vitamin D pills, minimum intake, and relative calcium dominance\nmodel.addConstr(VitaminDPills >= 0, name=\"non_negative_vitamin_d\")\nmodel.addConstr(VitaminDPills >= Dmin, name=\"min_vitamin_d_intake\")\nmodel.addConstr(CalciumPills + VitaminDPills >= Pmin, name=\"min_total_pills\")\nmodel.addConstr(CalciumPills >= VitaminDPills + 1, name=\"calcium_dominance\")"
+        },
+        {
+            "description": "The total number of pills (sum of calcium and vitamin D pills) must be at least the minimum required number of pills (Pmin).",
+            "status": "coded",
+            "formulation": "\\\\textup{CalciumPills} + \\\\textup{VitaminDPills} \\\\geq \\\\textup{Pmin}",
+            "related_variables": [
+                "CalciumPills",
+                "VitaminDPills"
+            ],
+            "related_parameters": [
+                "Pmin"
+            ],
+            "code": "# Add constraint for the minimum total number of pills\nmodel.addConstr(CalciumPills + VitaminDPills >= Pmin, name=\"min_pills_constraint\")"
+        },
+        {
+            "description": "The number of vitamin D pills taken must be at least Dmin.",
+            "status": "coded",
+            "formulation": "\\textup{VitaminDPills} \\geq \\textup{Dmin}",
+            "related_variables": [
+                "VitaminDPills"
+            ],
+            "related_parameters": [
+                "Dmin"
+            ],
+            "code": "# Add constraint to ensure the number of vitamin D pills taken is at least Dmin\nmodel.addConstr(VitaminDPills >= Dmin, name=\"min_vitamin_d_pills\")"
+        },
+        {
+            "description": "The number of calcium pills consumed in a month must be strictly greater than the number of vitamin D pills consumed in a month.",
+            "status": "coded",
+            "formulation": "\\textup{CalciumPills} \\geq \\textup{VitaminDPills} + 1",
+            "related_variables": [
+                "CalciumPills",
+                "VitaminDPills"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint: CalciumPills must be strictly greater than VitaminDPills\nmodel.addConstr(CalciumPills >= VitaminDPills + 1, name=\"calcium_vs_vitaminD\")"
+        },
+        {
+            "description": "The total number of pills taken over a month must be at least the prescribed minimum.",
+            "status": "coded",
+            "formulation": "\\textup{CalciumPills} + \\textup{VitaminDPills} \\geq \\textup{Pmin}",
+            "related_variables": [
+                "CalciumPills",
+                "VitaminDPills"
+            ],
+            "related_parameters": [
+                "Pmin"
+            ],
+            "code": "# Add constraint ensuring total number of pills meets the minimum requirement\nmodel.addConstr(CalciumPills + VitaminDPills >= Pmin, name=\"min_pills_constraint\")"
+        },
+        {
+            "description": "The total number of vitamin D pills consumed in a month must be at least the prescribed minimum.",
+            "status": "coded",
+            "formulation": "\\textup{VitaminDPills} \\geq \\textup{Dmin}",
+            "related_variables": [
+                "VitaminDPills"
+            ],
+            "related_parameters": [
+                "Dmin"
+            ],
+            "code": "# Add constraint ensuring the minimum consumption of vitamin D pills in a month\nmodel.addConstr(VitaminDPills >= Dmin, name=\"min_vitamin_d_pills\")"
+        },
+        {
+            "description": "The number of calcium pills must be strictly greater than the number of vitamin D pills.",
+            "status": "coded",
+            "formulation": "\\textup{CalciumPills} \\geq \\textup{VitaminDPills} + 1",
+            "related_variables": [
+                "CalciumPills",
+                "VitaminDPills"
+            ],
+            "related_parameters": [],
+            "code": "# Ensure variables are integers to apply the strict inequality constraint properly\nCalciumPills.vtype = gp.GRB.INTEGER\nVitaminDPills.vtype = gp.GRB.INTEGER\n\n# Add the constraint: CalciumPills >= VitaminDPills + 1\nmodel.addConstr(CalciumPills >= VitaminDPills + 1, name=\"CalciumPills_greater_than_VitaminDPills\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of calcium pills consumed in a month.",
+            "symbol": "CalciumPills",
+            "shape": [],
+            "status": "coded",
+            "code": "CalciumPills = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"CalciumPills\")"
+        },
+        {
+            "definition": "The number of vitamin D pills consumed in a month.",
+            "symbol": "VitaminDPills",
+            "shape": [],
+            "status": "coded",
+            "code": "VitaminDPills = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"VitaminDPills\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total effectiveness time for all medication taken over a month.",
+            "status": "coded",
+            "formulation": "T_c \\cdot \\textup{CalciumPills} + T_d \\cdot \\textup{VitaminDPills}",
+            "related_variables": [
+                "CalciumPills",
+                "VitaminDPills"
+            ],
+            "related_parameters": [
+                "Tc",
+                "Td"
+            ],
+            "code": "# Set objective\nmodel.setObjective(Tc * CalciumPills + Td * VitaminDPills, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 690.0,
+    "log_path": "logs/log_20250413174859_nl4opt_prob_230/",
+    "problem_path": "data/nl4opt/prob_230/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_230/data.json\", \"r\") as f:\n    data = json.load(f)\n\nTc = data[\"Tc\"] # scalar parameter\nTd = data[\"Td\"] # scalar parameter\nPmin = data[\"Pmin\"] # scalar parameter\nDmin = data[\"Dmin\"] # scalar parameter\nCalciumPills = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"CalciumPills\")\nVitaminDPills = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"VitaminDPills\")\n\n# Add non-negativity and calcium-vs-vitamin D constraints\nmodel.addConstr(CalciumPills >= 0, name=\"non_negative_calcium\")\nmodel.addConstr(CalciumPills >= VitaminDPills + 1, name=\"calcium_vs_vitamin_d\")\n\n# Adding constraints for non-negative vitamin D pills, minimum intake, and relative calcium dominance\nmodel.addConstr(VitaminDPills >= 0, name=\"non_negative_vitamin_d\")\nmodel.addConstr(VitaminDPills >= Dmin, name=\"min_vitamin_d_intake\")\nmodel.addConstr(CalciumPills + VitaminDPills >= Pmin, name=\"min_total_pills\")\nmodel.addConstr(CalciumPills >= VitaminDPills + 1, name=\"calcium_dominance\")\n\n# Add constraint for the minimum total number of pills\nmodel.addConstr(CalciumPills + VitaminDPills >= Pmin, name=\"min_pills_constraint\")\n\n# Add constraint to ensure the number of vitamin D pills taken is at least Dmin\nmodel.addConstr(VitaminDPills >= Dmin, name=\"min_vitamin_d_pills\")\n\n# Add constraint: CalciumPills must be strictly greater than VitaminDPills\nmodel.addConstr(CalciumPills >= VitaminDPills + 1, name=\"calcium_vs_vitaminD\")\n\n# Add constraint ensuring total number of pills meets the minimum requirement\nmodel.addConstr(CalciumPills + VitaminDPills >= Pmin, name=\"min_pills_constraint\")\n\n# Add constraint ensuring the minimum consumption of vitamin D pills in a month\nmodel.addConstr(VitaminDPills >= Dmin, name=\"min_vitamin_d_pills\")\n\n# Ensure variables are integers to apply the strict inequality constraint properly\nCalciumPills.vtype = gp.GRB.INTEGER\nVitaminDPills.vtype = gp.GRB.INTEGER\n\n# Add the constraint: CalciumPills >= VitaminDPills + 1\nmodel.addConstr(CalciumPills >= VitaminDPills + 1, name=\"CalciumPills_greater_than_VitaminDPills\")\n\n# Set objective\nmodel.setObjective(Tc * CalciumPills + Td * VitaminDPills, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

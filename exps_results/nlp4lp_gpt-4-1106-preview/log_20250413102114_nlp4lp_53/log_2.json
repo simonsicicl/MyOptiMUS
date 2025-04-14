@@ -1,0 +1,238 @@
+{
+    "background": "A manufacturer needs to determine the quantity of batches for each part to produce monthly in order to maximize profit, with particular constraints on machines, parts, production time, costs, and sales parameters.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of machines",
+            "symbol": "M",
+            "value": "",
+            "shape": [],
+            "code": "M = data[\"M\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of parts",
+            "symbol": "P",
+            "value": "",
+            "shape": [],
+            "code": "P = data[\"P\"] # scalar parameter"
+        },
+        {
+            "definition": "Time required to produce a batch of part p on machine m",
+            "symbol": "TimeRequired",
+            "value": "",
+            "shape": [
+                "M",
+                "P"
+            ],
+            "code": "TimeRequired = np.array(data[\"TimeRequired\"]) # ['M', 'P']"
+        },
+        {
+            "definition": "Cost associated with running machine m",
+            "symbol": "MachineCosts",
+            "value": "",
+            "shape": [
+                "M"
+            ],
+            "code": "MachineCosts = np.array(data[\"MachineCosts\"]) # ['M']"
+        },
+        {
+            "definition": "Availability of machine m for production each month",
+            "symbol": "Availability",
+            "value": "",
+            "shape": [
+                "M"
+            ],
+            "code": "Availability = np.array(data[\"Availability\"]) # ['M']"
+        },
+        {
+            "definition": "Price obtained from selling a batch of part p",
+            "symbol": "Prices",
+            "value": "",
+            "shape": [
+                "P"
+            ],
+            "code": "Prices = np.array(data[\"Prices\"]) # ['P']"
+        },
+        {
+            "definition": "Minimum number of batches of part p that should be produced",
+            "symbol": "MinBatches",
+            "value": "",
+            "shape": [
+                "P"
+            ],
+            "code": "MinBatches = np.array(data[\"MinBatches\"]) # ['P']"
+        },
+        {
+            "definition": "Extra cost incurred when running machine m beyond regular operation",
+            "symbol": "ExtraCosts",
+            "value": "",
+            "shape": [
+                "M"
+            ],
+            "code": "ExtraCosts = np.array(data[\"ExtraCosts\"]) # ['M']"
+        },
+        {
+            "definition": "Maximum extra hours machine m can be run",
+            "symbol": "MaxExtra",
+            "value": "",
+            "shape": [
+                "M"
+            ],
+            "code": "MaxExtra = np.array(data[\"MaxExtra\"]) # ['M']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "All batches of each part must be non-negative",
+            "status": "coded",
+            "formulation": "\\forall p \\in \\{1, \\ldots, P\\}, \\quad \\textup{BatchesOfPart}[p] \\geq 0",
+            "related_variables": [
+                "BatchesOfPart"
+            ],
+            "related_parameters": [
+                "P"
+            ],
+            "code": "P = data[\"P\"] # scalar parameter\nBatchesOfPart = model.addVars(P, vtype=gp.GRB.INTEGER, name=\"BatchesOfPart\")\n\n# All batches of each part must be non-negative\nfor p in range(P):\n    model.addConstr(BatchesOfPart[p] >= 0, name=f\"nonnegativity_part_{p}\")"
+        },
+        {
+            "description": "Total production time does not exceed the product of machine availability and the number of machines for each machine",
+            "status": "coded",
+            "formulation": "\\forall m : \\quad \\sum_{p=1}^{P} \\textup{BatchesOfPart}_p \\times \\textup{TimeRequired}_{mp} \\leq \\textup{Availability}_m \\times M",
+            "related_variables": [
+                "BatchesOfPart"
+            ],
+            "related_parameters": [
+                "M",
+                "P",
+                "TimeRequired",
+                "Availability"
+            ],
+            "code": "# Add production time constraints for each machine\nfor m in range(M):\n    model.addConstr(gp.quicksum(BatchesOfPart[p] * TimeRequired[m, p] for p in range(P)) <= Availability[m] * M, name=f\"prod_time_machine_{m}\")"
+        },
+        {
+            "description": "Each part's production in batches must meet or exceed the minimum required",
+            "status": "coded",
+            "formulation": "\\forall p \\in \\{1, \\ldots, P\\}, \\quad \\textup{BatchesOfPart}_{p} \\geq \\textup{MinBatches}_{p}",
+            "related_variables": [
+                "BatchesOfPart"
+            ],
+            "related_parameters": [
+                "MinBatches"
+            ],
+            "code": "# Ensure each part's production in batches meets or exceeds the minimum required\nfor p in range(P):\n    model.addConstr(BatchesOfPart[p] >= MinBatches[p], name=f\"min_batches_part_{p}\")"
+        },
+        {
+            "description": "Total machine costs and extra costs should not exceed the sum of selling prices of all batches produced minus the production costs",
+            "status": "coded",
+            "formulation": "\\sum_{m=1}^{\\textup{M}} (\\textup{MachineCosts}_m + \\textup{ExtraCosts}_m) \\leq \\sum_{p=1}^{\\textup{P}} (\\textup{Prices}_p \\times \\textup{BatchesOfPart}_p) - \\sum_{m=1}^{\\textup{M}} \\sum_{p=1}^{\\textup{P}} (\\textup{TimeRequired}_{mp} \\times \\textup{BatchesOfPart}_p \\times \\textup{MachineCosts}_m)",
+            "related_variables": [
+                "BatchesOfPart"
+            ],
+            "related_parameters": [
+                "M",
+                "P",
+                "MachineCosts",
+                "ExtraCosts",
+                "Prices",
+                "TimeRequired"
+            ],
+            "code": "# Total machine costs and extra costs should not exceed sum of selling prices minus production costs\ntotal_costs_constr = gp.quicksum(MachineCosts[m] + ExtraCosts[m] for m in range(M))\nrevenue_constr = gp.quicksum(Prices[p] * BatchesOfPart[p] for p in range(P))\nproduction_cost_constr = gp.quicksum(TimeRequired[m, p] * BatchesOfPart[p] * MachineCosts[m] for m in range(M) for p in range(P))\n\nmodel.addConstr(total_costs_constr <= revenue_constr - production_cost_constr, \"Total_Costs_Limit\")"
+        },
+        {
+            "description": "Extra hours used on each machine m cannot exceed the maximum extra hours allowed",
+            "status": "coded",
+            "formulation": "\\sum_{p=1}^{P}(\\textup{BatchesOfPart}_{p} \\cdot \\textup{TimeRequired}_{mp}) - \\textup{Availability}_{m} \\leq \\textup{MaxExtra}_{m} \\quad \\forall m \\in \\{1, ..., M\\}",
+            "related_variables": [
+                "BatchesOfPart",
+                "TotalProductionTime"
+            ],
+            "related_parameters": [
+                "TimeRequired",
+                "Availability",
+                "MaxExtra"
+            ],
+            "code": "# Extra hours used on each machine constraint\nfor m in range(M):\n    model.addConstr(\n        gp.quicksum(BatchesOfPart[p] * TimeRequired[m, p] for p in range(P)) -\n        Availability[m] <= MaxExtra[m],\n        name=f\"MaxExtraHours_Machine_{m}\"\n    )"
+        },
+        {
+            "description": "Total production time on machine m must be less than or equal to machine availability plus extra hours worked, not exceeding maximum extra hours",
+            "status": "coded",
+            "formulation": "\\forall m \\in \\{ 1, \\dots , M \\} \\quad \\textup{TotalProductionTime}_m \\leq \\textup{Availability}_m + \\textup{ExtraHours}_m \\leq \\textup{Availability}_m + \\textup{MaxExtra}_m",
+            "related_variables": [
+                "TotalProductionTime",
+                "ExtraHours"
+            ],
+            "related_parameters": [
+                "Availability",
+                "MaxExtra"
+            ],
+            "code": "# Constraint: Total production time on machine m must be less than or equal to machine availability plus extra hours\n# without exceeding the maximum extra hours\nfor m in range(M):\n    model.addConstr(TotalProductionTime[m] <= Availability[m] + ExtraHours[m], name=\"TotalProdTime_Less_AvailPlusExtra_{}\".format(m))\n    model.addConstr(ExtraHours[m] <= MaxExtra[m], name=\"ExtraHours_Less_MaxExtra_{}\".format(m))"
+        },
+        {
+            "description": "Total production time on each machine is the sum of time required to produce all batches of parts on that machine",
+            "status": "coded",
+            "formulation": "\\forall m \\in \\{ 1, \\dots , M \\} \\quad \\textup{TotalProductionTime}_m = \\sum_{p=1}^{P} \\textup{TimeRequired}_{m,p} \\times \\textup{BatchesOfPart}_p",
+            "related_variables": [
+                "TotalProductionTime",
+                "BatchesOfPart"
+            ],
+            "related_parameters": [
+                "TimeRequired"
+            ],
+            "code": "# Total production time for each machine is the sum of time required to produce all batches of parts on that machine\nfor m in range(M):\n    model.addConstr(TotalProductionTime[m] == gp.quicksum(TimeRequired[m, p] * BatchesOfPart[p] for p in range(P)), name=f\"TotalProductionTime_machine_{m}\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of batches for each part produced",
+            "symbol": "BatchesOfPart",
+            "shape": [
+                "P"
+            ],
+            "status": "coded",
+            "code": "BatchesOfPart = model.addVars(P, vtype=gp.GRB.INTEGER, name=\"BatchesOfPart\")"
+        },
+        {
+            "definition": "Total production time on machine m",
+            "symbol": "TotalProductionTime",
+            "shape": [
+                "M"
+            ],
+            "status": "coded",
+            "code": "TotalProductionTime = model.addVars(M, vtype=gp.GRB.CONTINUOUS, name=\"TotalProductionTime\")"
+        },
+        {
+            "definition": "Extra hours machine m is run beyond regular operation per month",
+            "symbol": "ExtraHours",
+            "shape": [
+                "M"
+            ],
+            "status": "coded",
+            "code": "ExtraHours = model.addVars(M, vtype=gp.GRB.CONTINUOUS, name=\"ExtraHours\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize manufacturer's total profit from part production considering production and extra operation costs",
+            "status": "coded",
+            "formulation": "\\max \\quad \\sum_{p=1}^{P} \\textup{Prices}_p \\times \\textup{BatchesOfPart}_p - \\sum_{m=1}^{M} (\\textup{MachineCosts}_m \\times \\textup{TotalProductionTime}_m + \\textup{ExtraCosts}_m \\times \\textup{ExtraHours}_m)",
+            "related_variables": [
+                "BatchesOfPart",
+                "TotalProductionTime",
+                "ExtraHours"
+            ],
+            "related_parameters": [
+                "Prices",
+                "MachineCosts",
+                "ExtraCosts"
+            ],
+            "code": "# Set objective\nmodel.setObjective(gp.quicksum(Prices[p] * BatchesOfPart[p] for p in range(P)) -\n                   gp.quicksum((MachineCosts[m] * TotalProductionTime[m] +\n                                ExtraCosts[m] * ExtraHours[m]) for m in range(M)),\n                   gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 9750.0,
+    "log_path": "logs/log_20250413102114_nlp4lp_53/",
+    "problem_path": "data/nlp4lp/53/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nlp4lp/53/data.json\", \"r\") as f:\n    data = json.load(f)\n\nM = data[\"M\"] # scalar parameter\nP = data[\"P\"] # scalar parameter\nTimeRequired = np.array(data[\"TimeRequired\"]) # ['M', 'P']\nMachineCosts = np.array(data[\"MachineCosts\"]) # ['M']\nAvailability = np.array(data[\"Availability\"]) # ['M']\nPrices = np.array(data[\"Prices\"]) # ['P']\nMinBatches = np.array(data[\"MinBatches\"]) # ['P']\nExtraCosts = np.array(data[\"ExtraCosts\"]) # ['M']\nMaxExtra = np.array(data[\"MaxExtra\"]) # ['M']\nBatchesOfPart = model.addVars(P, vtype=gp.GRB.INTEGER, name=\"BatchesOfPart\")\nTotalProductionTime = model.addVars(M, vtype=gp.GRB.CONTINUOUS, name=\"TotalProductionTime\")\nExtraHours = model.addVars(M, vtype=gp.GRB.CONTINUOUS, name=\"ExtraHours\")\n\nP = data[\"P\"] # scalar parameter\nBatchesOfPart = model.addVars(P, vtype=gp.GRB.INTEGER, name=\"BatchesOfPart\")\n\n# All batches of each part must be non-negative\nfor p in range(P):\n    model.addConstr(BatchesOfPart[p] >= 0, name=f\"nonnegativity_part_{p}\")\n\n# Add production time constraints for each machine\nfor m in range(M):\n    model.addConstr(gp.quicksum(BatchesOfPart[p] * TimeRequired[m, p] for p in range(P)) <= Availability[m] * M, name=f\"prod_time_machine_{m}\")\n\n# Ensure each part's production in batches meets or exceeds the minimum required\nfor p in range(P):\n    model.addConstr(BatchesOfPart[p] >= MinBatches[p], name=f\"min_batches_part_{p}\")\n\n# Total machine costs and extra costs should not exceed sum of selling prices minus production costs\ntotal_costs_constr = gp.quicksum(MachineCosts[m] + ExtraCosts[m] for m in range(M))\nrevenue_constr = gp.quicksum(Prices[p] * BatchesOfPart[p] for p in range(P))\nproduction_cost_constr = gp.quicksum(TimeRequired[m, p] * BatchesOfPart[p] * MachineCosts[m] for m in range(M) for p in range(P))\n\nmodel.addConstr(total_costs_constr <= revenue_constr - production_cost_constr, \"Total_Costs_Limit\")\n\n# Extra hours used on each machine constraint\nfor m in range(M):\n    model.addConstr(\n        gp.quicksum(BatchesOfPart[p] * TimeRequired[m, p] for p in range(P)) -\n        Availability[m] <= MaxExtra[m],\n        name=f\"MaxExtraHours_Machine_{m}\"\n    )\n\n# Constraint: Total production time on machine m must be less than or equal to machine availability plus extra hours\n# without exceeding the maximum extra hours\nfor m in range(M):\n    model.addConstr(TotalProductionTime[m] <= Availability[m] + ExtraHours[m], name=\"TotalProdTime_Less_AvailPlusExtra_{}\".format(m))\n    model.addConstr(ExtraHours[m] <= MaxExtra[m], name=\"ExtraHours_Less_MaxExtra_{}\".format(m))\n\n# Total production time for each machine is the sum of time required to produce all batches of parts on that machine\nfor m in range(M):\n    model.addConstr(TotalProductionTime[m] == gp.quicksum(TimeRequired[m, p] * BatchesOfPart[p] for p in range(P)), name=f\"TotalProductionTime_machine_{m}\")\n\n# Set objective\nmodel.setObjective(gp.quicksum(Prices[p] * BatchesOfPart[p] for p in range(P)) -\n                   gp.quicksum((MachineCosts[m] * TotalProductionTime[m] +\n                                ExtraCosts[m] * ExtraHours[m]) for m in range(M)),\n                   gp.GRB.MAXIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

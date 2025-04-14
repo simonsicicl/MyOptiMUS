@@ -1,0 +1,130 @@
+{
+    "background": "Determine the selection of items to include in a knapsack that has a fixed capacity, where each item has an associated value and size.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Total Capacity of the Knapsack",
+            "symbol": "C",
+            "value": "",
+            "shape": [],
+            "code": "C = data[\"C\"] # scalar parameter"
+        },
+        {
+            "definition": "Value of item k",
+            "symbol": "Value",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "Value = np.array(data[\"Value\"]) # ['K']"
+        },
+        {
+            "definition": "Size of item k",
+            "symbol": "Size",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "Size = np.array(data[\"Size\"]) # ['K']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The total size of the items selected in the knapsack must not exceed the capacity C.",
+            "status": "coded",
+            "formulation": "\\sum_{k=1}^{K} \\textup{Size}_{k} \\cdot \\textup{IsSelected}_{k} \\leq \\textup{C}",
+            "related_variables": [
+                "IsSelected"
+            ],
+            "related_parameters": [
+                "Size",
+                "C"
+            ],
+            "code": "# Add knapsack capacity constraint\nmodel.addConstr(gp.quicksum(Size[k] * IsSelected[k] for k in range(K)) <= C, name=\"knapsack_capacity\")"
+        },
+        {
+            "description": "Each item can either be included or not in the knapsack and cannot be fractioned.",
+            "status": "coded",
+            "formulation": "\\textup{IsSelected}_k \\in \\{0, 1\\} \\quad \\forall k \\in \\{1, \\dots, K\\}",
+            "related_variables": [
+                "IsSelected"
+            ],
+            "related_parameters": [],
+            "code": "# No additional code needed: The variable IsSelected has already been defined as binary."
+        },
+        {
+            "description": "The total knapsack capacity \\textup{C} must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{C} \\geq 0",
+            "related_variables": [],
+            "related_parameters": [
+                "C"
+            ],
+            "code": "# No constraints need to be added, as the parameter \"C\" is defined and checked directly in the data. Constraint enforced by data validation."
+        },
+        {
+            "description": "Each item k has a non-negative size.",
+            "status": "coded",
+            "formulation": "\\textup{Size}_{k} \\geq 0, \\quad \\forall k \\in \\{1, \\dots, \\textup{K}\\}",
+            "related_variables": [],
+            "related_parameters": [
+                "Size"
+            ],
+            "code": "# No code is needed for this constraint since it is an implicit requirement (non-negative sizes are handled outside gurobipy constraints or automatically by parameter definitions)"
+        },
+        {
+            "description": "The associated value of each item k must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{Value}[k] \\geq 0, \\quad \\forall k \\in K",
+            "related_variables": [],
+            "related_parameters": [
+                "Value"
+            ],
+            "code": "# Add non-negativity constraints for the Value parameter\nfor k in range(K):\n    model.addConstr(Value[k] >= 0, name=f\"non_negative_value_{k}\")"
+        },
+        {
+            "description": "Ensure the total size of selected items does not exceed the capacity of the knapsack.",
+            "status": "coded",
+            "formulation": "\\sum_{k=1}^{K} \\textup{Size}_k \\cdot \\textup{IsSelected}_k \\leq \\textup{C}",
+            "related_variables": [
+                "IsSelected"
+            ],
+            "related_parameters": [
+                "Size",
+                "C"
+            ],
+            "code": "# Add constraint to ensure the total size of selected items does not exceed the knapsack capacity\nmodel.addConstr(\n    gp.quicksum(Size[k] * IsSelected[k] for k in range(K)) <= C,\n    name=\"knapsack_capacity\"\n)"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "A binary decision variable that is 1 if item k is selected and 0 otherwise.",
+            "symbol": "IsSelected",
+            "shape": [
+                "K"
+            ],
+            "status": "coded",
+            "code": "IsSelected = model.addVars(K, vtype=gp.GRB.BINARY, name=\"IsSelected\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total value of selected items in the knapsack.",
+            "status": "coded",
+            "formulation": "\\text{Maximize} \\quad \\sum_{k=1}^{K} \\textup{Value}_k \\cdot \\textup{IsSelected}_k",
+            "related_variables": [
+                "IsSelected"
+            ],
+            "related_parameters": [
+                "Value"
+            ],
+            "code": "# Set objective\nmodel.setObjective(gp.quicksum(Value[k] * IsSelected[k] for k in range(K)), gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413155313_nlp4lp_36/",
+    "problem_path": "data/nlp4lp/36/"
+}

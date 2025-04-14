@@ -1,0 +1,166 @@
+{
+    "background": "An office is planning to purchase two types of printers, premium and regular models, for their headquarters. They have certain page output and ink usage requirements, and prefer premium over regular models.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Speed of printing for the premium model",
+            "symbol": "PremiumSpeed",
+            "value": 30,
+            "shape": [],
+            "code": "PremiumSpeed = data[\"PremiumSpeed\"] # scalar parameter"
+        },
+        {
+            "definition": "Speed of printing for the regular model",
+            "symbol": "RegularSpeed",
+            "value": 20,
+            "shape": [],
+            "code": "RegularSpeed = data[\"RegularSpeed\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of ink used per minute by the premium model",
+            "symbol": "PremiumInkUse",
+            "value": 4,
+            "shape": [],
+            "code": "PremiumInkUse = data[\"PremiumInkUse\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of ink used per minute by the regular model",
+            "symbol": "RegularInkUse",
+            "value": 3,
+            "shape": [],
+            "code": "RegularInkUse = data[\"RegularInkUse\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum pages to be printed per minute by the office",
+            "symbol": "MinPages",
+            "value": 200,
+            "shape": [],
+            "code": "MinPages = data[\"MinPages\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum units of ink to be used per minute by the office",
+            "symbol": "MaxInk",
+            "value": 35,
+            "shape": [],
+            "code": "MaxInk = data[\"MaxInk\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Number of premium printers must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfPremiumPrinters} \\geq 0",
+            "related_variables": [
+                "NumberOfPremiumPrinters"
+            ],
+            "related_parameters": [],
+            "code": "# Add non-negativity constraint for the number of premium printers\nmodel.addConstr(NumberOfPremiumPrinters >= 0, name=\"premium_printers_nonnegativity\")"
+        },
+        {
+            "description": "The number of regular printers must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfRegularPrinters} \\geq 0",
+            "related_variables": [
+                "NumberOfRegularPrinters"
+            ],
+            "related_parameters": [],
+            "code": "# Constraint to ensure the number of regular printers is non-negative\nmodel.addConstr(NumberOfRegularPrinters >= 0, name=\"non_negative_regular_printers\")"
+        },
+        {
+            "description": "The total printing speed must be at least MinPages pages per minute",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfPremiumPrinters} \\times \\textup{PremiumSpeed} + \\textup{NumberOfRegularPrinters} \\times \\textup{RegularSpeed} \\geq \\textup{MinPages}",
+            "related_variables": [
+                "NumberOfPremiumPrinters",
+                "NumberOfRegularPrinters"
+            ],
+            "related_parameters": [
+                "PremiumSpeed",
+                "RegularSpeed",
+                "MinPages"
+            ],
+            "code": "# Add minimum total printing speed constraint\nmodel.addConstr((NumberOfPremiumPrinters * PremiumSpeed) + (NumberOfRegularPrinters * RegularSpeed) >= MinPages, name=\"min_printing_speed\")"
+        },
+        {
+            "description": "Total ink usage by all premium and regular printers must not exceed MaxInk units per minute",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfPremiumPrinters} \\times \\textup{PremiumInkUse} + \\textup{NumberOfRegularPrinters} \\times \\textup{RegularInkUse} \\leq \\textup{MaxInk}",
+            "related_variables": [
+                "NumberOfPremiumPrinters",
+                "NumberOfRegularPrinters"
+            ],
+            "related_parameters": [
+                "PremiumInkUse",
+                "RegularInkUse",
+                "MaxInk"
+            ],
+            "code": "# Add constraint for the total ink usage not to exceed MaxInk\nink_usage = NumberOfPremiumPrinters * PremiumInkUse + NumberOfRegularPrinters * RegularInkUse\nmodel.addConstr(ink_usage <= MaxInk, name=\"total_ink_usage\")"
+        },
+        {
+            "description": "Ensure that the minimum pages required by the office are printed per minute",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfPremiumPrinters} \\cdot \\textup{PremiumSpeed} + \\textup{NumberOfRegularPrinters} \\cdot \\textup{RegularSpeed} \\geq \\textup{MinPages}",
+            "related_variables": [
+                "NumberOfPremiumPrinters",
+                "NumberOfRegularPrinters"
+            ],
+            "related_parameters": [
+                "PremiumSpeed",
+                "RegularSpeed",
+                "MinPages"
+            ],
+            "code": "# Ensure that the minimum pages required by the office are printed per minute\nmodel.addConstr(NumberOfPremiumPrinters * PremiumSpeed + NumberOfRegularPrinters * RegularSpeed >= MinPages, \n                name=\"MinPagesConstraint\")"
+        },
+        {
+            "description": "Ensure that the maximum units of ink used per minute by the office are not exceeded",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfPremiumPrinters} \\cdot \\textup{PremiumInkUse} + \\textup{NumberOfRegularPrinters} \\cdot \\textup{RegularInkUse} \\leq \\textup{MaxInk}",
+            "related_variables": [
+                "NumberOfPremiumPrinters",
+                "NumberOfRegularPrinters"
+            ],
+            "related_parameters": [
+                "PremiumInkUse",
+                "RegularInkUse",
+                "MaxInk"
+            ],
+            "code": "# Ensure that the maximum units of ink used per minute by the office are not exceeded\nmodel.addConstr(NumberOfPremiumPrinters * PremiumInkUse + NumberOfRegularPrinters * RegularInkUse <= MaxInk, name=\"max_ink_usage\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of premium printers in the office",
+            "symbol": "NumberOfPremiumPrinters",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfPremiumPrinters = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfPremiumPrinters\")"
+        },
+        {
+            "definition": "Number of regular printers in the office",
+            "symbol": "NumberOfRegularPrinters",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfRegularPrinters = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfRegularPrinters\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of printers purchased",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfPremiumPrinters} + \\textup{NumberOfRegularPrinters}",
+            "related_variables": [
+                "NumberOfPremiumPrinters",
+                "NumberOfRegularPrinters"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(NumberOfPremiumPrinters + NumberOfRegularPrinters, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 7.0,
+    "log_path": "logs/log_20250414051623_nl4opt_prob_97/",
+    "problem_path": "data/nl4opt/prob_97/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_97/data.json\", \"r\") as f:\n    data = json.load(f)\n\nPremiumSpeed = data[\"PremiumSpeed\"] # scalar parameter\nRegularSpeed = data[\"RegularSpeed\"] # scalar parameter\nPremiumInkUse = data[\"PremiumInkUse\"] # scalar parameter\nRegularInkUse = data[\"RegularInkUse\"] # scalar parameter\nMinPages = data[\"MinPages\"] # scalar parameter\nMaxInk = data[\"MaxInk\"] # scalar parameter\nNumberOfPremiumPrinters = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfPremiumPrinters\")\nNumberOfRegularPrinters = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfRegularPrinters\")\n\n# Add non-negativity constraint for the number of premium printers\nmodel.addConstr(NumberOfPremiumPrinters >= 0, name=\"premium_printers_nonnegativity\")\n\n# Constraint to ensure the number of regular printers is non-negative\nmodel.addConstr(NumberOfRegularPrinters >= 0, name=\"non_negative_regular_printers\")\n\n# Add minimum total printing speed constraint\nmodel.addConstr((NumberOfPremiumPrinters * PremiumSpeed) + (NumberOfRegularPrinters * RegularSpeed) >= MinPages, name=\"min_printing_speed\")\n\n# Add constraint for the total ink usage not to exceed MaxInk\nink_usage = NumberOfPremiumPrinters * PremiumInkUse + NumberOfRegularPrinters * RegularInkUse\nmodel.addConstr(ink_usage <= MaxInk, name=\"total_ink_usage\")\n\n# Ensure that the minimum pages required by the office are printed per minute\nmodel.addConstr(NumberOfPremiumPrinters * PremiumSpeed + NumberOfRegularPrinters * RegularSpeed >= MinPages, \n                name=\"MinPagesConstraint\")\n\n# Ensure that the maximum units of ink used per minute by the office are not exceeded\nmodel.addConstr(NumberOfPremiumPrinters * PremiumInkUse + NumberOfRegularPrinters * RegularInkUse <= MaxInk, name=\"max_ink_usage\")\n\n# Set objective\nmodel.setObjective(NumberOfPremiumPrinters + NumberOfRegularPrinters, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

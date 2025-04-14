@@ -1,0 +1,168 @@
+{
+    "background": "A family wants to invest its total budget into two types of real estate: apartments and townhouses.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Total investment amount available",
+            "symbol": "TotalInvestment",
+            "value": 600000,
+            "shape": [],
+            "code": "TotalInvestment = data[\"TotalInvestment\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum amount that can be invested in apartments",
+            "symbol": "MaxApartments",
+            "value": 200000,
+            "shape": [],
+            "code": "MaxApartments = data[\"MaxApartments\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum ratio of the money invested in apartments to that in townhouses",
+            "symbol": "MinInvestmentRatio",
+            "value": 0.5,
+            "shape": [],
+            "code": "MinInvestmentRatio = data[\"MinInvestmentRatio\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit rate for apartments",
+            "symbol": "ProfitRateApts",
+            "value": 0.1,
+            "shape": [],
+            "code": "ProfitRateApts = data[\"ProfitRateApts\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit rate for townhouses",
+            "symbol": "ProfitRateTH",
+            "value": 0.15,
+            "shape": [],
+            "code": "ProfitRateTH = data[\"ProfitRateTH\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Investments in apartments and townhouses must be non-negative",
+            "status": "coded",
+            "formulation": "InvestmentApts \\geq 0 \\quad \\textup{and} \\quad InvestmentTH \\geq 0",
+            "related_variables": [
+                "InvestmentApts",
+                "InvestmentTH"
+            ],
+            "related_parameters": [],
+            "code": "# Ensure that investments in apartments and townhouses are non-negative\nmodel.addConstr(InvestmentApts >= 0, name=\"Invest_Apts_nonneg\")\nmodel.addConstr(InvestmentTH >= 0, name=\"Invest_TH_nonneg\")"
+        },
+        {
+            "description": "Total investment in apartments and townhouses must not exceed the available investment amount.",
+            "status": "coded",
+            "formulation": "\\textup{InvestmentApts} + \\textup{InvestmentTH} \\leq \\textup{TotalInvestment}",
+            "related_variables": [
+                "InvestmentApts",
+                "InvestmentTH"
+            ],
+            "related_parameters": [
+                "TotalInvestment"
+            ],
+            "code": "# Add constraint for total investment in apartments and townhouses not exceeding the available amount\nmodel.addConstr(InvestmentApts + InvestmentTH <= TotalInvestment, name=\"investment_limit\")"
+        },
+        {
+            "description": "Investment in apartments should not exceed the maximum allowed amount",
+            "status": "coded",
+            "formulation": "\\textup{InvestmentApts} \\leq \\textup{MaxApartments}",
+            "related_variables": [
+                "InvestmentApts"
+            ],
+            "related_parameters": [
+                "MaxApartments"
+            ],
+            "code": "model.addConstr(InvestmentApts <= MaxApartments, name=\"max_investment_apartments_constraint\")"
+        },
+        {
+            "description": "Investment in apartments must be at least MinInvestmentRatio times the investment in townhouses",
+            "status": "coded",
+            "formulation": "\\textup{InvestmentApts} \\geq \\textup{MinInvestmentRatio} \\times \\textup{InvestmentTH}",
+            "related_variables": [
+                "InvestmentApts",
+                "InvestmentTH"
+            ],
+            "related_parameters": [
+                "MinInvestmentRatio"
+            ],
+            "code": "# Investment in apartments must be at least MinInvestmentRatio times the investment in townhouses\nmodel.addConstr(InvestmentApts >= MinInvestmentRatio * InvestmentTH, name=\"min_investment_ratio\")"
+        },
+        {
+            "description": "The money invested in apartments should not exceed the maximum amount for apartments",
+            "status": "coded",
+            "formulation": "\\textup{InvestmentApts} \\leq \\textup{MaxApartments}",
+            "related_variables": [
+                "InvestmentApts"
+            ],
+            "related_parameters": [
+                "MaxApartments"
+            ],
+            "code": "# Add constraint to ensure money invested in apartments doesn't exceed the maximum amount\nmodel.addConstr(InvestmentApts <= MaxApartments, name=\"investment_apt_limit\")"
+        },
+        {
+            "description": "The ratio of the money invested in apartments should be at least the minimum ratio with respect to the money invested in townhouses",
+            "status": "coded",
+            "formulation": "\\textup{InvestmentApts} \\geq \\textup{MinInvestmentRatio} \\cdot \\textup{InvestmentTH}",
+            "related_variables": [
+                "InvestmentApts",
+                "InvestmentTH"
+            ],
+            "related_parameters": [
+                "MinInvestmentRatio"
+            ],
+            "code": "# Add constraint for the ratio of money invested in apartments to townhouses\nmodel.addConstr(InvestmentApts >= MinInvestmentRatio * InvestmentTH, name=\"investment_ratio\")"
+        },
+        {
+            "description": "The sum of the money invested in apartments and townhouses should not exceed the total investment available",
+            "status": "coded",
+            "formulation": "\\textup{InvestmentApts} + \\textup{InvestmentTH} \\leq \\textup{TotalInvestment}",
+            "related_variables": [
+                "InvestmentApts",
+                "InvestmentTH"
+            ],
+            "related_parameters": [
+                "TotalInvestment"
+            ],
+            "code": "# Constraint: Sum of money invested in apartments and townhouses should not exceed total investment\nmodel.addConstr(InvestmentApts + InvestmentTH <= TotalInvestment, name=\"investment_limit\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Amount of money invested in apartments",
+            "symbol": "InvestmentApts",
+            "shape": [],
+            "status": "coded",
+            "code": "InvestmentApts = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"InvestmentApts\")"
+        },
+        {
+            "definition": "Amount of money invested in townhouses",
+            "symbol": "InvestmentTH",
+            "shape": [],
+            "status": "coded",
+            "code": "InvestmentTH = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"InvestmentTH\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total profit from investing in apartments and townhouses",
+            "status": "coded",
+            "formulation": "\\max (\\textup{ProfitRateApts} \\cdot \\textup{InvestmentApts} + \\textup{ProfitRateTH} \\cdot \\textup{InvestmentTH})",
+            "related_variables": [
+                "InvestmentApts",
+                "InvestmentTH"
+            ],
+            "related_parameters": [
+                "ProfitRateApts",
+                "ProfitRateTH"
+            ],
+            "code": "# Define objective function\nmodel.setObjective(ProfitRateApts * InvestmentApts + ProfitRateTH * InvestmentTH, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413171039_nl4opt_prob_25/",
+    "problem_path": "data/nl4opt/prob_25/"
+}

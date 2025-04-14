@@ -1,0 +1,184 @@
+{
+    "background": "The problem involves the distribution of electricity from multiple power plants to multiple cities, with the goal of minimizing the transmission costs while respecting the supply and demand constraints of the power plants and cities respectively.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of power plants",
+            "symbol": "P",
+            "value": "",
+            "shape": [],
+            "code": "P = data[\"P\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of cities",
+            "symbol": "C",
+            "value": "",
+            "shape": [],
+            "code": "C = data[\"C\"] # scalar parameter"
+        },
+        {
+            "definition": "Electricity supply capacity of power plant p",
+            "symbol": "Supply",
+            "value": "",
+            "shape": [
+                "P"
+            ],
+            "code": "Supply = np.array(data[\"Supply\"]) # ['P']"
+        },
+        {
+            "definition": "Electricity demand of city c",
+            "symbol": "Demand",
+            "value": "",
+            "shape": [
+                "C"
+            ],
+            "code": "Demand = np.array(data[\"Demand\"]) # ['C']"
+        },
+        {
+            "definition": "Transmission cost from power plant p to city c",
+            "symbol": "TransmissionCosts",
+            "value": "",
+            "shape": [
+                "P",
+                "C"
+            ],
+            "code": "TransmissionCosts = np.array(data[\"TransmissionCosts\"]) # ['P', 'C']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The total electricity transferred from each power plant to all cities must not exceed the supply capacity of that power plant.",
+            "status": "formulated",
+            "formulation": "\\sum_{c=1}^{\\textup{C}} \\textup{ElectricityTransferred}_{p,c} \\leq \\textup{Supply}_{p}, \\quad \\forall p \\in \\{1, \\dots, \\textup{P}\\}",
+            "related_variables": [
+                "ElectricityTransferred"
+            ],
+            "related_parameters": [
+                "Supply",
+                "C",
+                "P"
+            ]
+        },
+        {
+            "description": "Each city's electricity demand must be satisfied by the total electricity transferred from all power plants.",
+            "status": "formulated",
+            "formulation": "\\sum_{p=1}^{\\textup{P}} \\textup{ElectricityTransferred}_{p, c} = \\textup{Demand}_{c} \\quad \\forall c \\in \\{1, 2, \\dots, \\textup{C}\\}",
+            "related_variables": [
+                "ElectricityTransferred"
+            ],
+            "related_parameters": [
+                "P",
+                "C",
+                "Demand"
+            ]
+        },
+        {
+            "description": "The total electricity supplied to each city must meet its demand.",
+            "status": "formulated",
+            "formulation": "\\sum_{p=1}^{\\textup{P}} \\textup{ElectricityTransferred}_{p, c} = \\textup{Demand}_{c}, \\quad \\forall c \\in \\{1, 2, \\dots, \\textup{C}\\}",
+            "related_variables": [
+                "ElectricityTransferred"
+            ],
+            "related_parameters": [
+                "Demand",
+                "P",
+                "C"
+            ]
+        },
+        {
+            "description": "The total electricity transferred from each power plant cannot exceed its supply capacity.",
+            "status": "formulated",
+            "formulation": "\\sum_{c=1}^{C} \\textup{ElectricityTransferred}_{p,c} \\leq \\textup{Supply}_{p} \\quad \\forall \\, p \\in P",
+            "related_variables": [
+                "ElectricityTransferred"
+            ],
+            "related_parameters": [
+                "Supply",
+                "P",
+                "C"
+            ]
+        },
+        {
+            "description": "Electricity sent from any power plant to any city is non-negative",
+            "status": "formulated",
+            "formulation": "\\textup{ElectricityTransferred}_{\\textup{p,c}} \\geq 0, \\quad \\forall\\ \\textup{p} \\in \\{1, 2, ..., P\\}, \\ \\textup{c} \\in \\{1, 2, ..., C\\}",
+            "related_variables": [
+                "ElectricityTransferred"
+            ],
+            "related_parameters": [
+                "P",
+                "C"
+            ]
+        },
+        {
+            "description": "The total electricity transferred from each power plant should not exceed its supply capacity",
+            "status": "formulated",
+            "formulation": "\\sum_{c=1}^{C} \\textup{ElectricityTransferred}_{p,c} \\leq \\textup{Supply}_{p}, \\quad \\forall p=1,\\dots,P.",
+            "related_variables": [
+                "ElectricityTransferred"
+            ],
+            "related_parameters": [
+                "Supply",
+                "P",
+                "C"
+            ]
+        },
+        {
+            "description": "The total electricity received by each city should meet its electricity demand",
+            "status": "formulated",
+            "formulation": "\\sum_{p=1}^{P} \\textup{ElectricityTransferred}_{p,c} = \\textup{Demand}_{c}, \\quad \\forall c=1,\\dots,C.",
+            "related_variables": [
+                "ElectricityTransferred"
+            ],
+            "related_parameters": [
+                "Demand",
+                "P",
+                "C"
+            ]
+        },
+        {
+            "description": "Electricity transferred from any power plant to any city cannot be negative",
+            "status": "formulated",
+            "formulation": "\\textup{ElectricityTransferred}_{p,c} \\geq 0, \\quad \\forall p=1,\\dots,P, \\quad \\forall c=1,\\dots,C.",
+            "related_variables": [
+                "ElectricityTransferred"
+            ],
+            "related_parameters": [
+                "P",
+                "C"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The amount of electricity transferred from power plant p to city c.",
+            "symbol": "ElectricityTransferred",
+            "shape": [
+                "P",
+                "C"
+            ],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total transmission cost from power plants to cities",
+            "status": "formulated",
+            "formulation": "\\sum_{p=1}^{P} \\sum_{c=1}^{C} \\textup{TransmissionCosts}_{p,c} \\\\cdot \\textup{ElectricityTransferred}_{p,c}",
+            "related_variables": [
+                "ElectricityTransferred"
+            ],
+            "related_parameters": [
+                "TransmissionCosts",
+                "P",
+                "C"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413171145_nlp4lp_55/",
+    "problem_path": "data/nlp4lp/55/"
+}

@@ -1,0 +1,126 @@
+{
+    "background": "Identifying the shortest route for a traveler to visit a certain number of towns and return to the original starting town.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of towns to visit",
+            "symbol": "N",
+            "value": "",
+            "shape": [],
+            "code": "N = data[\"N\"] # scalar parameter"
+        },
+        {
+            "definition": "Index of the start city",
+            "symbol": "StartCity",
+            "value": "",
+            "shape": [],
+            "code": "StartCity = data[\"StartCity\"] # scalar parameter"
+        },
+        {
+            "definition": "Distance from city i to city j",
+            "symbol": "Distances",
+            "value": "",
+            "shape": [
+                "N",
+                "N"
+            ],
+            "code": "Distances = np.array(data[\"Distances\"]) # ['N', 'N']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Each town must be visited exactly once.",
+            "status": "coded",
+            "formulation": "\\sum_{j=1, j \\neq i}^{N} \\textup{Visit}_{ij} = 1 \\quad \\forall i \\in \\{1, ..., N\\}, \\quad i \\neq \\textup{StartCity}",
+            "related_variables": [
+                "Visit"
+            ],
+            "related_parameters": [
+                "N",
+                "StartCity"
+            ],
+            "code": "```"
+        },
+        {
+            "description": "The traveler must return to StartCity after visiting all other towns",
+            "status": "coded",
+            "formulation": "\\sum_{j=1, j \\neq \\textup{StartCity}}^{N} \\textup{Visit}_{\\textup{StartCity},j} = 1 \\quad \\text{and} \\quad \\sum_{i=1, i \\neq \\textup{StartCity}}^{N} \\textup{Visit}_{i,\\textup{StartCity}} = 1",
+            "related_variables": [
+                "Visit"
+            ],
+            "related_parameters": [
+                "N",
+                "StartCity"
+            ],
+            "code": "# Constraint for returning to StartCity after visiting all other towns\nmodel.addConstr(gp.quicksum(Visit[StartCity, j] for j in range(N) if j != StartCity) == 1, name=\"return_from_others_to_StartCity\")\nmodel.addConstr(gp.quicksum(Visit[i, StartCity] for i in range(N) if i != StartCity) == 1, name=\"return_to_StartCity_from_others\")"
+        },
+        {
+            "description": "The distance between any two towns is non-negative",
+            "status": "coded",
+            "formulation": "\\forall i, j \\in \\{1, ..., \\textup{N}\\}, \\quad \\textup{Distances}_{ij} \\geq 0",
+            "related_variables": [],
+            "related_parameters": [
+                "Distances"
+            ],
+            "code": "# The distance between any two towns is non-negative - this is an inherent property.\n# Hence, no code needed to enforce this as a constraint in the optimization model.\n# Distances are parameters and not variables and should be ensured non-negative when inputted."
+        },
+        {
+            "description": "Each town must have exactly one departure.",
+            "status": "coded",
+            "formulation": "\\sum_{i=1, i \\neq j}^{N} \\textup{Visit}_{ij} = 1 \\quad \\forall j \\in \\{1, ..., N\\}, \\quad j \\neq \\textup{StartCity}",
+            "related_variables": [
+                "Visit"
+            ],
+            "related_parameters": [
+                "N",
+                "StartCity"
+            ],
+            "code": "# Each town must have exactly one departure, except for the start city\nfor j in range(N):\n    if j != StartCity:\n        model.addConstr(gp.quicksum(Visit[i, j] for i in range(N) if i != j) == 1,\n                        name=f\"one_departure_town_{j}\")"
+        },
+        {
+            "description": "Binary variable denoting if town i is visited after town j.",
+            "status": "coded",
+            "formulation": "\\textup{Visit}_{ij} \\in \\{0, 1\\} \\quad \\forall i, j \\in \\{1, ..., N\\}, \\quad i \\neq j",
+            "related_variables": [
+                "Visit"
+            ],
+            "related_parameters": [
+                "N"
+            ],
+            "code": "# No code needed since the constraint is already defined by the variables' binary nature and only requires the variables to be distinct.\n# The given variable definition `Visit` is binary and accounts for i != j implicitly in its structure."
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Binary variable indicating whether the traveler visits town j immediately after town i.",
+            "symbol": "Visit",
+            "shape": [
+                "N",
+                "N"
+            ],
+            "status": "coded",
+            "code": "Visit = model.addVars(N, N, vtype=gp.GRB.BINARY, name=\"Visit\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total travel distance for the route",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{N} \\sum_{j=1, j \\neq i}^{N} \\textup{Distances}_{ij} \\cdot \\textup{Visit}_{ij}",
+            "related_variables": [
+                "Visit"
+            ],
+            "related_parameters": [
+                "N",
+                "Distances"
+            ],
+            "code": "# Objective: Minimize the total travel distance\nmodel.setObjective(gp.quicksum(Distances[i, j] * Visit[i, j] for i in range(N) for j in range(N) if i != j), gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413094650_nlp4lp_66/",
+    "problem_path": "data/nlp4lp/66/"
+}

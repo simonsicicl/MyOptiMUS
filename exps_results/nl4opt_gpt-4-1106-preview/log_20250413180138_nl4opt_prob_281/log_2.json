@@ -1,0 +1,140 @@
+{
+    "background": "A body wash requires a mixture of coconut oil and lavender, each taking a certain time to become efficient, with restrictions on the minimum amount of coconut oil, the maximum combined units of both ingredients, and the coconut oil to lavender ratio.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Time in minutes for one unit of coconut oil to be effective",
+            "symbol": "CoconutOilTime",
+            "value": 0.7,
+            "shape": [],
+            "code": "CoconutOilTime = data[\"CoconutOilTime\"] # scalar parameter"
+        },
+        {
+            "definition": "Time in minutes for one unit of lavender to be effective",
+            "symbol": "LavenderTime",
+            "value": 0.9,
+            "shape": [],
+            "code": "LavenderTime = data[\"LavenderTime\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum required units of coconut oil",
+            "symbol": "MinCoconutOilUnits",
+            "value": 300,
+            "shape": [],
+            "code": "MinCoconutOilUnits = data[\"MinCoconutOilUnits\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum allowed units of both ingredients combined",
+            "symbol": "MaxCombinedUnits",
+            "value": 550,
+            "shape": [],
+            "code": "MaxCombinedUnits = data[\"MaxCombinedUnits\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum allowed ratio of units of coconut oil to units of lavender",
+            "symbol": "MaxOilLavenderRatio",
+            "value": 3,
+            "shape": [],
+            "code": "MaxOilLavenderRatio = data[\"MaxOilLavenderRatio\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Coconut oil units must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{CoconutOilUnits} \\geq 0",
+            "related_variables": [
+                "CoconutOilUnits"
+            ],
+            "related_parameters": [],
+            "code": "# Add non-negativity constraint for coconut oil units\nmodel.addConstr(CoconutOilUnits >= 0, name=\"coconut_oil_nonnegativity\")"
+        },
+        {
+            "description": "Lavender units must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{LavenderUnits} \\geq 0",
+            "related_variables": [
+                "LavenderUnits"
+            ],
+            "related_parameters": [],
+            "code": "# Lavender units must be non-negative\nmodel.addConstr(LavenderUnits >= 0, name=\"lavender_non_negative\")"
+        },
+        {
+            "description": "At least a minimum number of coconut oil units must be added to the body wash",
+            "status": "coded",
+            "formulation": "\\textup{CoconutOilUnits} \\geq \\textup{MinCoconutOilUnits}",
+            "related_variables": [
+                "CoconutOilUnits"
+            ],
+            "related_parameters": [
+                "MinCoconutOilUnits"
+            ],
+            "code": "# Ensure that a minimum amount of coconut oil units is added to the body wash\nmodel.addConstr(CoconutOilUnits >= MinCoconutOilUnits, name=\"min_coconut_oil\")"
+        },
+        {
+            "description": "The sum of the coconut oil and lavender units must not exceed the maximum combined units allowed",
+            "status": "coded",
+            "formulation": "\\textup{CoconutOilUnits} + \\textup{LavenderUnits} \\leq \\textup{MaxCombinedUnits}",
+            "related_variables": [
+                "CoconutOilUnits",
+                "LavenderUnits"
+            ],
+            "related_parameters": [
+                "MaxCombinedUnits"
+            ],
+            "code": "# Add constraint for maximum combined units of coconut oil and lavender\nmodel.addConstr(CoconutOilUnits + LavenderUnits <= MaxCombinedUnits, name=\"max_combined_units_constraint\")"
+        },
+        {
+            "description": "The ratio of CoconutOilUnits to LavenderUnits must not exceed MaxOilLavenderRatio",
+            "status": "coded",
+            "formulation": "\\textup{CoconutOilUnits} \\leq \\textup{MaxOilLavenderRatio} \\cdot \\textup{LavenderUnits}",
+            "related_variables": [
+                "CoconutOilUnits",
+                "LavenderUnits"
+            ],
+            "related_parameters": [
+                "MaxOilLavenderRatio"
+            ],
+            "code": "# Constraint: The ratio of CoconutOilUnits to LavenderUnits must not exceed MaxOilLavenderRatio\nmodel.addConstr(CoconutOilUnits <= MaxOilLavenderRatio * LavenderUnits, \"Ratio_CoconutOil_to_Lavender\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Amount of coconut oil used in the body wash",
+            "symbol": "CoconutOilUnits",
+            "shape": [],
+            "status": "coded",
+            "code": "CoconutOilUnits = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"CoconutOilUnits\")"
+        },
+        {
+            "definition": "Amount of lavender used in the body wash",
+            "symbol": "LavenderUnits",
+            "shape": [],
+            "status": "coded",
+            "code": "LavenderUnits = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"LavenderUnits\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total effective time for the body wash mixture",
+            "status": "coded",
+            "formulation": "\\textup{CoconutOilUnits} \\times \\textup{CoconutOilTime} + \\textup{LavenderUnits} \\times \\textup{LavenderTime}",
+            "related_variables": [
+                "CoconutOilUnits",
+                "LavenderUnits"
+            ],
+            "related_parameters": [
+                "CoconutOilTime",
+                "LavenderTime"
+            ],
+            "code": "# Define the objective function\nmodel.setObjective(CoconutOilUnits * CoconutOilTime + LavenderUnits * LavenderTime, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 300.0,
+    "log_path": "logs/log_20250413180138_nl4opt_prob_281/",
+    "problem_path": "data/nl4opt/prob_281/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_281/data.json\", \"r\") as f:\n    data = json.load(f)\n\nCoconutOilTime = data[\"CoconutOilTime\"] # scalar parameter\nLavenderTime = data[\"LavenderTime\"] # scalar parameter\nMinCoconutOilUnits = data[\"MinCoconutOilUnits\"] # scalar parameter\nMaxCombinedUnits = data[\"MaxCombinedUnits\"] # scalar parameter\nMaxOilLavenderRatio = data[\"MaxOilLavenderRatio\"] # scalar parameter\nCoconutOilUnits = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"CoconutOilUnits\")\nLavenderUnits = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"LavenderUnits\")\n\n# Add non-negativity constraint for coconut oil units\nmodel.addConstr(CoconutOilUnits >= 0, name=\"coconut_oil_nonnegativity\")\n\n# Lavender units must be non-negative\nmodel.addConstr(LavenderUnits >= 0, name=\"lavender_non_negative\")\n\n# Ensure that a minimum amount of coconut oil units is added to the body wash\nmodel.addConstr(CoconutOilUnits >= MinCoconutOilUnits, name=\"min_coconut_oil\")\n\n# Add constraint for maximum combined units of coconut oil and lavender\nmodel.addConstr(CoconutOilUnits + LavenderUnits <= MaxCombinedUnits, name=\"max_combined_units_constraint\")\n\n# Constraint: The ratio of CoconutOilUnits to LavenderUnits must not exceed MaxOilLavenderRatio\nmodel.addConstr(CoconutOilUnits <= MaxOilLavenderRatio * LavenderUnits, \"Ratio_CoconutOil_to_Lavender\")\n\n# Define the objective function\nmodel.setObjective(CoconutOilUnits * CoconutOilTime + LavenderUnits * LavenderTime, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

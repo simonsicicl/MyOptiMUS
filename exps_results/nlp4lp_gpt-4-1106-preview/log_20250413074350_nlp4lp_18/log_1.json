@@ -1,0 +1,213 @@
+{
+    "background": "An investor needs to sell shares of an asset they purchased in order to raise a certain amount of money, taking into account taxes and transaction costs. The aim is to maximize the expected value of the remaining portfolio for the next year.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of different shares",
+            "symbol": "N",
+            "value": "",
+            "shape": [],
+            "code": "N = data[\"N\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of each share initially bought",
+            "symbol": "Bought",
+            "value": "",
+            "shape": [
+                "N"
+            ],
+            "code": "Bought = np.array(data[\"Bought\"]) # ['N']"
+        },
+        {
+            "definition": "Purchase price of each share",
+            "symbol": "BuyPrice",
+            "value": "",
+            "shape": [
+                "N"
+            ],
+            "code": "BuyPrice = np.array(data[\"BuyPrice\"]) # ['N']"
+        },
+        {
+            "definition": "Current market price of each share",
+            "symbol": "CurrentPrice",
+            "value": "",
+            "shape": [
+                "N"
+            ],
+            "code": "CurrentPrice = np.array(data[\"CurrentPrice\"]) # ['N']"
+        },
+        {
+            "definition": "Expected future market price of each share",
+            "symbol": "FuturePrice",
+            "value": "",
+            "shape": [
+                "N"
+            ],
+            "code": "FuturePrice = np.array(data[\"FuturePrice\"]) # ['N']"
+        },
+        {
+            "definition": "Transaction cost rate per share sold",
+            "symbol": "TransactionRate",
+            "value": "",
+            "shape": [],
+            "code": "TransactionRate = data[\"TransactionRate\"] # scalar parameter"
+        },
+        {
+            "definition": "Capital gains tax rate on the profit from selling shares",
+            "symbol": "TaxRate",
+            "value": "",
+            "shape": [],
+            "code": "TaxRate = data[\"TaxRate\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of money the investor needs to raise",
+            "symbol": "K",
+            "value": "",
+            "shape": [],
+            "code": "K = data[\"K\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The shares sold by the investor must be non-negative",
+            "status": "coded",
+            "formulation": "\\forall i \\in \\{1, \\ldots, N\\}, \\quad \\textup{SharesSold}_{i} \\geq 0",
+            "related_variables": [
+                "SharesSold"
+            ],
+            "related_parameters": [
+                "N"
+            ],
+            "code": "# Ensure that shares sold by the investor are non-negative\nfor i in range(N):\n    model.addConstr(SharesSold[i] >= 0, name=f\"non_negativity_shares_sold_{i}\")"
+        },
+        {
+            "description": "Number of shares sold must be less than or equal to the number of shares bought for each asset",
+            "status": "coded",
+            "formulation": "\\forall i \\in \\{1, \\ldots, N\\}, \\quad \\textup{SharesSold}_{i} \\leq \\textup{Bought}_{i}",
+            "related_variables": [
+                "SharesSold"
+            ],
+            "related_parameters": [
+                "Bought"
+            ],
+            "code": "# Add constraints that ensure number of shares sold is less than or equal to the shares bought for each asset\nfor i in range(N):\n    model.addConstr(SharesSold[i] <= Bought[i], name=f\"shares_limit_{i}\")"
+        },
+        {
+            "description": "The net amount raised from selling shares after deducting taxes and transaction costs must be at least K",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{N}(\\textup{CurrentPrice}_i \\times \\textup{SharesSold}_i - \\textup{TransactionRate} \\times \\textup{SharesSold}_i \\times \\textup{CurrentPrice}_i - \\textup{TaxRate} \\times \\textup{SharesSold}_i \\times \\max(0, \\textup{CurrentPrice}_i - \\textup{BuyPrice}_i)) \\geq \\textup{K}",
+            "related_variables": [
+                "SharesSold"
+            ],
+            "related_parameters": [
+                "CurrentPrice",
+                "TransactionRate",
+                "TaxRate",
+                "BuyPrice",
+                "K"
+            ],
+            "code": "# Net amount raised from selling shares constraint\nnet_amount_expr = gp.quicksum((CurrentPrice[i] * SharesSold[i] -\n                               TransactionRate * SharesSold[i] * CurrentPrice[i] -\n                               TaxRate * SharesSold[i] * max(0, CurrentPrice[i] - BuyPrice[i]))\n                              for i in range(N))\nmodel.addConstr(net_amount_expr >= K, name=\"net_amount_raised\")"
+        },
+        {
+            "description": "Capital gains tax is applied only to the profit per share, which is the positive difference between the current price and the buy price.",
+            "status": "coded",
+            "formulation": "\\textup{TaxableAmount}_i = \\max(\\textup{CurrentPrice}_i - \\textup{BuyPrice}_i, 0) \\times \\textup{SharesSold}_i \\quad \\forall i \\in \\{1, \\ldots, N\\}",
+            "related_variables": [
+                "TaxableAmount",
+                "SharesSold"
+            ],
+            "related_parameters": [
+                "CurrentPrice",
+                "BuyPrice"
+            ],
+            "code": "# Taxable amount computation constraints based on profit per share\nfor i in range(N):\n    model.addConstr(TaxableAmount[i] == gp.max_(CurrentPrice[i] - BuyPrice[i], 0) * SharesSold[i], name=f\"taxable_amount_{i}\")"
+        },
+        {
+            "description": "Calculate the taxable amount for each share sold; the taxable amount is the positive difference between the current price and the buy price",
+            "status": "coded",
+            "formulation": "TaxableAmount_i = \\max(0, \\textup{CurrentPrice}_i - \\textup{BuyPrice}_i) \\; \\forall i \\in \\{1, ..., N\\}",
+            "related_variables": [
+                "TaxableAmount",
+                "SharesSold"
+            ],
+            "related_parameters": [
+                "CurrentPrice",
+                "BuyPrice"
+            ],
+            "code": "# Add constraint for taxable amount calculation for each share sold\nfor i in range(N):\n    model.addConstr(TaxableAmount[i] == gp.max_(0, CurrentPrice[i] - BuyPrice[i]), name=\"taxable_amount_calculation\")"
+        },
+        {
+            "description": "Ensure investor raises at least the amount of money they need after accounting for taxes and transaction costs",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{\\textup{N}} \\textup{SharesSold}_i * (\\textup{CurrentPrice}_i - \\textup{TaxableAmount}_i * \\textup{TaxRate} - \\textup{TransactionRate} * \\textup{CurrentPrice}_i) \\geq \\textup{K}",
+            "related_variables": [
+                "SharesSold",
+                "CurrentPrice",
+                "TaxableAmount"
+            ],
+            "related_parameters": [
+                "N",
+                "TransactionRate",
+                "TaxRate",
+                "K"
+            ],
+            "code": "# Ensure investor raises at least the amount of money they need after accounting for taxes and transaction costs\ninvestor_constraint = gp.quicksum(\n    SharesSold[i] * (CurrentPrice[i] - TaxableAmount[i] * TaxRate - TransactionRate * CurrentPrice[i])\n    for i in range(N)\n) >= K\nmodel.addConstr(investor_constraint, name=\"investor_funds_raised\")"
+        },
+        {
+            "description": "Calculate the taxable amount for each share sold as the positive difference between the current price and the purchase price",
+            "status": "coded",
+            "formulation": "\\textup{TaxableAmount}_i = \\max(0, \\textup{CurrentPrice}_i - \\textup{BuyPrice}_i) \\quad \\forall i \\in \\{1, ..., \\textup{N}\\}",
+            "related_variables": [
+                "TaxableAmount",
+                "CurrentPrice",
+                "BuyPrice"
+            ],
+            "related_parameters": [
+                "N"
+            ],
+            "code": "# Add constraints to calculate the taxable amount for each share sold\nCurrentPrice = model.addVars(N, vtype=gp.GRB.CONTINUOUS, name=\"CurrentPrice\")\nBuyPrice = model.addVars(N, vtype=gp.GRB.CONTINUOUS, name=\"BuyPrice\")\nfor i in range(N):\n    model.addConstr(TaxableAmount[i] == gp.max_(0, CurrentPrice[i] - BuyPrice[i]), name=f\"taxable_amount_{i}\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of shares sold for each asset",
+            "symbol": "SharesSold",
+            "shape": [
+                "N"
+            ],
+            "status": "coded",
+            "code": "SharesSold = model.addVars(N, vtype=gp.GRB.INTEGER, name=\"SharesSold\")"
+        },
+        {
+            "definition": "Taxable amount for each share sold (the positive difference between the current price and the buy price)",
+            "symbol": "TaxableAmount",
+            "shape": [
+                "N"
+            ],
+            "status": "coded",
+            "code": "TaxableAmount = model.addVars(N, vtype=gp.GRB.CONTINUOUS, name=\"TaxableAmount\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the expected value of the investor's remaining portfolio next year after selling some shares",
+            "status": "coded",
+            "formulation": "\\textup{Maximize} \\quad \\sum_{i=1}^{\\textup{N}} (\\textup{Bought}_i - \\textup{SharesSold}_i) * \\textup{FuturePrice}_i",
+            "related_variables": [
+                "SharesSold",
+                "Bought",
+                "FuturePrice"
+            ],
+            "related_parameters": [
+                "N"
+            ],
+            "code": "# Set objective\nmodel.setObjective(gp.quicksum((Bought[i] - SharesSold[i]) * FuturePrice[i] for i in range(N)), gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413074350_nlp4lp_18/",
+    "problem_path": "data/nlp4lp/18/"
+}

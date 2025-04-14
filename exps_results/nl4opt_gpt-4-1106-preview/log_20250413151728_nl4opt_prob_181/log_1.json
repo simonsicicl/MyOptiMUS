@@ -1,0 +1,195 @@
+{
+    "background": "A tropical city needs to transport mail to islands using submarines and boats with different capacities and fuel consumption, under trip quantity constraints.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Mail carrying capacity of a submarine per trip",
+            "symbol": "SubmarineCapacity",
+            "value": 100,
+            "shape": [],
+            "code": "SubmarineCapacity = data[\"SubmarineCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Fuel consumption of a submarine per trip",
+            "symbol": "SubmarineFuel",
+            "value": 30,
+            "shape": [],
+            "code": "SubmarineFuel = data[\"SubmarineFuel\"] # scalar parameter"
+        },
+        {
+            "definition": "Mail carrying capacity of a boat per trip",
+            "symbol": "BoatCapacity",
+            "value": 80,
+            "shape": [],
+            "code": "BoatCapacity = data[\"BoatCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Fuel consumption of a boat per trip",
+            "symbol": "BoatFuel",
+            "value": 25,
+            "shape": [],
+            "code": "BoatFuel = data[\"BoatFuel\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of submarine trips allowed",
+            "symbol": "MaxSubmarineTrips",
+            "value": 6,
+            "shape": [],
+            "code": "MaxSubmarineTrips = data[\"MaxSubmarineTrips\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum proportion of total trips that must be by boat",
+            "symbol": "MinBoatTripProportion",
+            "value": 0.5,
+            "shape": [],
+            "code": "MinBoatTripProportion = data[\"MinBoatTripProportion\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of pieces of mail to be transported",
+            "symbol": "MinMail",
+            "value": 1000,
+            "shape": [],
+            "code": "MinMail = data[\"MinMail\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of submarine trips must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{SubmarineTrips} \\geq 0",
+            "related_variables": [
+                "SubmarineTrips"
+            ],
+            "related_parameters": [],
+            "code": "# Since SubmarineTrips has been defined as an integer variable, no explicit constraint is needed to ensure non-negativity\n# Gurobi automatically enforces that integer variables are non-negative by default, hence no additional code is necessary"
+        },
+        {
+            "description": "Number of boat trips is non-negative",
+            "status": "coded",
+            "formulation": "\\textup{BoatTrips} \\geq 0",
+            "related_variables": [
+                "BoatTrips"
+            ],
+            "related_parameters": [],
+            "code": "# Since BoatTrips variable should be non-negative, and it is already defined as an integer variable,\n# no additional code is needed for this constraint as the non-negativity is inherently enforced by the variable definition in Gurobi."
+        },
+        {
+            "description": "There can be at most MaxSubmarineTrips submarine trips",
+            "status": "coded",
+            "formulation": "\\textup{SubmarineTrips} \\leq \\textup{MaxSubmarineTrips}",
+            "related_variables": [
+                "SubmarineTrips"
+            ],
+            "related_parameters": [
+                "MaxSubmarineTrips"
+            ],
+            "code": "# Add constraint for the maximum number of submarine trips allowed\nmodel.addConstr(SubmarineTrips <= MaxSubmarineTrips, \"max_submarine_trips\")"
+        },
+        {
+            "description": "Ensure at least a certain proportion of the trips are by boat",
+            "status": "coded",
+            "formulation": "\\textup{BoatTrips} - \\textup{MinBoatTripProportion} \\times \\textup{BoatTrips} \\geq \\textup{MinBoatTripProportion} \\times \\textup{SubmarineTrips}",
+            "related_variables": [
+                "BoatTrips",
+                "SubmarineTrips"
+            ],
+            "related_parameters": [
+                "MinBoatTripProportion"
+            ],
+            "code": "# Ensure at least a certain proportion of the trips are by boat\nMinBoatTripProportion = data[\"MinBoatTripProportion\"]  # scalar parameter\nmodel.addConstr(BoatTrips - MinBoatTripProportion * BoatTrips >= MinBoatTripProportion * SubmarineTrips, \"min_boat_trip_proportion_constraint\")"
+        },
+        {
+            "description": "At least MinMail pieces of mail need to be transported",
+            "status": "coded",
+            "formulation": "\\textup{SubmarineTrips} \\cdot \\textup{SubmarineCapacity} + \\textup{BoatTrips} \\cdot \\textup{BoatCapacity} \\geq \\textup{MinMail}",
+            "related_variables": [
+                "SubmarineTrips",
+                "BoatTrips"
+            ],
+            "related_parameters": [
+                "SubmarineCapacity",
+                "BoatCapacity",
+                "MinMail"
+            ],
+            "code": "# Constraint: At least MinMail pieces of mail need to be transported\nmodel.addConstr(SubmarineTrips * SubmarineCapacity + BoatTrips * BoatCapacity >= MinMail, name=\"min_mail_transportation\")"
+        },
+        {
+            "description": "Minimum number of pieces of mail to be transported",
+            "status": "coded",
+            "formulation": "\\textup{SubmarineCapacity} \\cdot \\textup{SubmarineTrips} + \\textup{BoatCapacity} \\cdot \\textup{BoatTrips} \\geq \\textup{MinMail}",
+            "related_variables": [
+                "SubmarineTrips",
+                "BoatTrips"
+            ],
+            "related_parameters": [
+                "SubmarineCapacity",
+                "BoatCapacity",
+                "MinMail"
+            ],
+            "code": "# Add minimum mail transport constraint\nmodel.addConstr(SubmarineCapacity * SubmarineTrips + BoatCapacity * BoatTrips >= MinMail, name=\"min_mail_transport\")"
+        },
+        {
+            "description": "Maximum number of submarine trips allowed",
+            "status": "coded",
+            "formulation": "\\textup{SubmarineTrips} \\leq \\textup{MaxSubmarineTrips}",
+            "related_variables": [
+                "SubmarineTrips"
+            ],
+            "related_parameters": [
+                "MaxSubmarineTrips"
+            ],
+            "code": "# Add maximum number of submarine trips constraint\nmodel.addConstr(SubmarineTrips <= MaxSubmarineTrips, name=\"max_submarine_trips\")"
+        },
+        {
+            "description": "Minimum proportion of total trips that must be by boat",
+            "status": "coded",
+            "formulation": "\\textup{BoatTrips} \\geq \\textup{MinBoatTripProportion} \\cdot (\\textup{BoatTrips} + \\textup{SubmarineTrips})",
+            "related_variables": [
+                "BoatTrips",
+                "SubmarineTrips"
+            ],
+            "related_parameters": [
+                "MinBoatTripProportion"
+            ],
+            "code": "# Add minimum boat trip proportion constraint\nmodel.addConstr(BoatTrips >= MinBoatTripProportion * (BoatTrips + SubmarineTrips), name=\"min_boat_trip_proportion\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of submarine trips",
+            "symbol": "SubmarineTrips",
+            "shape": [],
+            "status": "coded",
+            "code": "SubmarineTrips = model.addVar(vtype=gp.GRB.INTEGER, name=\"SubmarineTrips\")"
+        },
+        {
+            "definition": "Number of boat trips",
+            "symbol": "BoatTrips",
+            "shape": [],
+            "status": "coded",
+            "code": "BoatTrips = model.addVar(vtype=gp.GRB.INTEGER, name=\"BoatTrips\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total amount of gas used for transporting mail",
+            "status": "coded",
+            "formulation": "Minimize: \\quad \\textup{SubmarineFuel} \\cdot \\textup{SubmarineTrips} + \\textup{BoatFuel} \\cdot \\textup{BoatTrips}",
+            "related_variables": [
+                "SubmarineTrips",
+                "BoatTrips"
+            ],
+            "related_parameters": [
+                "SubmarineFuel",
+                "BoatFuel"
+            ],
+            "code": "# Set objective\nmodel.setObjective(SubmarineFuel * SubmarineTrips + BoatFuel * BoatTrips, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413151728_nl4opt_prob_181/",
+    "problem_path": "data/nl4opt/prob_181/"
+}

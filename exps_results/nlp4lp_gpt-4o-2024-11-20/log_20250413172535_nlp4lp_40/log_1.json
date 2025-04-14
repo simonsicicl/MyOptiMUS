@@ -1,0 +1,135 @@
+{
+    "background": "The problem is to determine the optimal quantities of K different spare parts to produce in a month to maximize profit using S machines, keeping in mind the time constraints and capacities of each machine.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of different spare parts",
+            "symbol": "K",
+            "value": "",
+            "shape": [],
+            "code": "K = data[\"K\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of machines capable of making the spare parts",
+            "symbol": "S",
+            "value": "",
+            "shape": [],
+            "code": "S = data[\"S\"] # scalar parameter"
+        },
+        {
+            "definition": "Time taken to make spare part k on machine s",
+            "symbol": "Time",
+            "value": "",
+            "shape": [
+                "K",
+                "S"
+            ],
+            "code": "Time = np.array(data[\"Time\"]) # ['K', 'S']"
+        },
+        {
+            "definition": "Profit obtained from making spare part k",
+            "symbol": "Profit",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "Profit = np.array(data[\"Profit\"]) # ['K']"
+        },
+        {
+            "definition": "Capacity of machine s for the spare parts",
+            "symbol": "Capacity",
+            "value": "",
+            "shape": [
+                "S"
+            ],
+            "code": "Capacity = np.array(data[\"Capacity\"]) # ['S']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Quantities of each spare part must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{QuantityOfSparePart}_{k} \\geq 0, \\quad \\forall k \\in \\{1, 2, ..., \\textup{K} \\}",
+            "related_variables": [
+                "QuantityOfSparePart"
+            ],
+            "related_parameters": [
+                "K"
+            ],
+            "code": "# Add non-negativity constraint for QuantityOfSparePart\nfor k in range(K):\n    model.addConstr(QuantityOfSparePart[k] >= 0, name=f\"non_negativity_sparePart_{k}\")"
+        },
+        {
+            "description": "The total production time for all spare parts on each machine must not exceed the machine's available time capacity.",
+            "status": "coded",
+            "formulation": "\\sum_{k=1}^{K} \\textup{Time}_{k, s} \\cdot \\textup{QuantityOfSparePart}_{k} \\leq \\textup{Capacity}_{s}, \\quad \\forall s = 1, 2, \\dots, S",
+            "related_variables": [
+                "QuantityOfSparePart"
+            ],
+            "related_parameters": [
+                "Time",
+                "Capacity"
+            ],
+            "code": "# Add machine time capacity constraints\nfor s in range(S):\n    model.addConstr(gp.quicksum(Time[k, s] * QuantityOfSparePart[k] for k in range(K)) <= Capacity[s], name=f\"machine_time_capacity_{s}\")"
+        },
+        {
+            "description": "For each machine, the total time required to produce all spare parts must not exceed the machine's time capacity.",
+            "status": "coded",
+            "formulation": "\\sum_{k=1}^{K} \\textup{Time}_{k, s} \\cdot \\textup{QuantityOfSparePart}_{k} \\leq \\textup{Capacity}_{s}, \\quad \\forall s \\in \\{1, \\dots, S\\}",
+            "related_variables": [
+                "QuantityOfSparePart"
+            ],
+            "related_parameters": [
+                "Time",
+                "Capacity"
+            ],
+            "code": "# Add machine time capacity constraints\nfor s in range(S):\n    model.addConstr(\n        gp.quicksum(Time[k, s] * QuantityOfSparePart[k] for k in range(K)) <= Capacity[s],\n        name=f\"machine_time_capacity_{s}\"\n    )"
+        },
+        {
+            "description": "Ensure that the total time required to produce spare parts on each machine s does not exceed its capacity.",
+            "status": "coded",
+            "formulation": "\\sum_{k=1}^{K} \\textup{Time}_{k,s} \\\\cdot \\textup{QuantityOfSparePart}_{k} \\\\leq \\textup{Capacity}_{s}, \\quad \\forall s \\\\in \\{1, 2, \\\\dots, S\\}",
+            "related_variables": [
+                "QuantityOfSparePart"
+            ],
+            "related_parameters": [
+                "Time",
+                "Capacity",
+                "K",
+                "S"
+            ],
+            "code": "# Add constraints on machine capacity\nfor s in range(S):\n    model.addConstr(\n        gp.quicksum(Time[k, s] * QuantityOfSparePart[k] for k in range(K)) <= Capacity[s],\n        name=f\"machine_capacity_{s}\"\n    )"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of spare parts k to produce",
+            "symbol": "QuantityOfSparePart",
+            "shape": [
+                "K"
+            ],
+            "status": "coded",
+            "code": "QuantityOfSparePart = model.addVars(K, vtype=gp.GRB.CONTINUOUS, name=\"QuantityOfSparePart\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total profit from producing the spare parts.",
+            "status": "coded",
+            "formulation": " \\textup{Maximize } \\sum_{k=1}^{K} \\textup{Profit}_{k} \\\\cdot \\textup{QuantityOfSparePart}_{k}",
+            "related_variables": [
+                "QuantityOfSparePart"
+            ],
+            "related_parameters": [
+                "Profit",
+                "K"
+            ],
+            "code": "# Set objective\nmodel.setObjective(gp.quicksum(Profit[k] * QuantityOfSparePart[k] for k in range(K)), gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413172535_nlp4lp_40/",
+    "problem_path": "data/nlp4lp/40/"
+}

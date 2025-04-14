@@ -1,0 +1,213 @@
+{
+    "background": "A clinic offers blood pressure measurements using both automatic and manual machines with different time requirements, and aims to maximize patient throughput under operational constraints.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Time taken by the automatic machine per patient",
+            "symbol": "TAuto",
+            "value": 10,
+            "shape": [],
+            "code": "TAuto = data[\"TAuto\"] # scalar parameter"
+        },
+        {
+            "definition": "Time taken by the manual machine per patient",
+            "symbol": "TManual",
+            "value": 15,
+            "shape": [],
+            "code": "TManual = data[\"TManual\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum ratio of patients processed by the manual machine to those processed by the automatic machine",
+            "symbol": "RatioManualToAuto",
+            "value": 2,
+            "shape": [],
+            "code": "RatioManualToAuto = data[\"RatioManualToAuto\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of patients that can be processed by the automatic machine",
+            "symbol": "MinPatientsAuto",
+            "value": 20,
+            "shape": [],
+            "code": "MinPatientsAuto = data[\"MinPatientsAuto\"] # scalar parameter"
+        },
+        {
+            "definition": "Total clinic operation time in minutes",
+            "symbol": "TotalTime",
+            "value": 20000,
+            "shape": [],
+            "code": "TotalTime = data[\"TotalTime\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The time spent on automatic machine measurements must be non-negative.",
+            "status": "formulated",
+            "formulation": "\\textup{TimeAuto} \\geq 0",
+            "related_variables": [
+                "TimeAuto"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "The total time spent on manual machine measurements must be non-negative.",
+            "status": "formulated",
+            "formulation": "\\\\textup{TimeManual} \\\\geq 0",
+            "related_variables": [
+                "TimeManual"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "The total operational time of the clinic cannot exceed TotalTime minutes.",
+            "status": "formulated",
+            "formulation": "\\textup{TimeAuto} + \\textup{TimeManual} \\leq \\textup{TotalTime}",
+            "related_variables": [
+                "TimeAuto",
+                "TimeManual"
+            ],
+            "related_parameters": [
+                "TotalTime"
+            ]
+        },
+        {
+            "description": "At least RatioManualToAuto times as many patients must be processed manually than automatically",
+            "status": "formulated",
+            "formulation": "\\textup{PatientsManual} \\geq \\textup{RatioManualToAuto} \\cdot \\textup{PatientsAuto}",
+            "related_variables": [
+                "PatientsManual",
+                "PatientsAuto"
+            ],
+            "related_parameters": [
+                "RatioManualToAuto"
+            ]
+        },
+        {
+            "description": "At least MinPatientsAuto patients must be processed using the automatic machine",
+            "status": "formulated",
+            "formulation": "\\textup{PatientsAuto} \\geq \\textup{MinPatientsAuto}",
+            "related_variables": [
+                "PatientsAuto"
+            ],
+            "related_parameters": [
+                "MinPatientsAuto"
+            ]
+        },
+        {
+            "description": "The total time spent on automatic measurements is equal to the number of patients processed by the automatic machine multiplied by the time taken per patient.",
+            "status": "formulated",
+            "formulation": "\\textup{TimeAuto} = \\textup{PatientsAuto} \\cdot \\textup{TAuto}",
+            "related_variables": [
+                "TimeAuto",
+                "PatientsAuto"
+            ],
+            "related_parameters": [
+                "TAuto"
+            ]
+        },
+        {
+            "description": "Ensure TimeAuto is calculated based on the number of patients processed by the automatic machine and the time per patient.",
+            "status": "formulated",
+            "formulation": "\\textup{TimeAuto} = \\textup{TAuto} \\cdot \\textup{PatientsAuto}",
+            "related_variables": [
+                "TimeAuto",
+                "PatientsAuto"
+            ],
+            "related_parameters": [
+                "TAuto"
+            ]
+        },
+        {
+            "description": "Ensure TimeManual is calculated based on the number of patients processed by the manual machine and the time per patient.",
+            "status": "formulated",
+            "formulation": "\\textup{TimeManual} = \\textup{TManual} \\cdot \\textup{PatientsManual}",
+            "related_variables": [
+                "TimeManual",
+                "PatientsManual"
+            ],
+            "related_parameters": [
+                "TManual"
+            ]
+        },
+        {
+            "description": "The total processing time spent on both machines must not exceed the clinic's operational hours",
+            "status": "formulated",
+            "formulation": "\\textup{PatientsAuto} \\times \\textup{TAuto} + \\textup{PatientsManual} \\times \\textup{TManual} \\leq \\textup{TotalTime}",
+            "related_variables": [
+                "PatientsAuto",
+                "PatientsManual"
+            ],
+            "related_parameters": [
+                "TAuto",
+                "TManual",
+                "TotalTime"
+            ]
+        },
+        {
+            "description": "The number of patients processed by the automatic machine must meet the minimum threshold",
+            "status": "formulated",
+            "formulation": "\\textup{PatientsAuto} \\geq \\textup{MinPatientsAuto}",
+            "related_variables": [
+                "PatientsAuto"
+            ],
+            "related_parameters": [
+                "MinPatientsAuto"
+            ]
+        },
+        {
+            "description": "The number of patients processed by the manual machine must be at least the prescribed multiple of those processed by the automatic machine",
+            "status": "formulated",
+            "formulation": "\\textup{PatientsManual} \\geq \\textup{RatioManualToAuto} \\times \\textup{PatientsAuto}",
+            "related_variables": [
+                "PatientsAuto",
+                "PatientsManual"
+            ],
+            "related_parameters": [
+                "RatioManualToAuto"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of patients processed by the automatic machine",
+            "symbol": "PatientsAuto",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "The total time spent on automatic machine measurements",
+            "symbol": "TimeAuto",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "The total time spent on manual machine measurements",
+            "symbol": "TimeManual",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "The number of patients processed by the manual machine",
+            "symbol": "PatientsManual",
+            "shape": [],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total number of patients processed by the automatic and manual machines",
+            "status": "formulated",
+            "formulation": "\\textup{Maximize: TotalPatients} = \\textup{PatientsAuto} + \\textup{PatientsManual}",
+            "related_variables": [
+                "PatientsAuto",
+                "PatientsManual"
+            ],
+            "related_parameters": []
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413153009_nl4opt_prob_109/",
+    "problem_path": "data/nl4opt/prob_109/"
+}

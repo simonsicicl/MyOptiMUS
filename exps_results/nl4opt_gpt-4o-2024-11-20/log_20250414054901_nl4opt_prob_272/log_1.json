@@ -1,0 +1,287 @@
+{
+    "background": "A hospital prepares batches of medication patches and anti-biotic creams, requiring different amounts of time and materials, with a requirement to have at least twice as many anti-biotic creams as medication patches, subject to time and material constraints.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Time required to prepare a batch of medication patches",
+            "symbol": "TimeMedicationPatches",
+            "value": 3,
+            "shape": [],
+            "code": "TimeMedicationPatches = data[\"TimeMedicationPatches\"] # scalar parameter"
+        },
+        {
+            "definition": "Materials required to prepare a batch of medication patches",
+            "symbol": "MaterialsMedicationPatches",
+            "value": 5,
+            "shape": [],
+            "code": "MaterialsMedicationPatches = data[\"MaterialsMedicationPatches\"] # scalar parameter"
+        },
+        {
+            "definition": "Time required to prepare a batch of anti-biotic creams",
+            "symbol": "TimeAntiBioticCreams",
+            "value": 5,
+            "shape": [],
+            "code": "TimeAntiBioticCreams = data[\"TimeAntiBioticCreams\"] # scalar parameter"
+        },
+        {
+            "definition": "Materials required to prepare a batch of anti-biotic creams",
+            "symbol": "MaterialsAntiBioticCreams",
+            "value": 6,
+            "shape": [],
+            "code": "MaterialsAntiBioticCreams = data[\"MaterialsAntiBioticCreams\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum total number of batches of medication patches and anti-biotic creams due to storage",
+            "symbol": "MaxTotalBatches",
+            "value": 100,
+            "shape": [],
+            "code": "MaxTotalBatches = data[\"MaxTotalBatches\"] # scalar parameter"
+        },
+        {
+            "definition": "Total staff time available for preparation",
+            "symbol": "TotalStaffTime",
+            "value": 400,
+            "shape": [],
+            "code": "TotalStaffTime = data[\"TotalStaffTime\"] # scalar parameter"
+        },
+        {
+            "definition": "Total units of materials available",
+            "symbol": "TotalMaterials",
+            "value": 530,
+            "shape": [],
+            "code": "TotalMaterials = data[\"TotalMaterials\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of people treated by a batch of medication patches",
+            "symbol": "PeopleTreatedMedicationPatches",
+            "value": 3,
+            "shape": [],
+            "code": "PeopleTreatedMedicationPatches = data[\"PeopleTreatedMedicationPatches\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of people treated by a batch of anti-biotic creams",
+            "symbol": "PeopleTreatedAntiBioticCreams",
+            "value": 2,
+            "shape": [],
+            "code": "PeopleTreatedAntiBioticCreams = data[\"PeopleTreatedAntiBioticCreams\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Ensure the number of medication patches produced is non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{MedicationPatches} \\geq 0",
+            "related_variables": [
+                "MedicationPatches"
+            ],
+            "related_parameters": [],
+            "code": "# No additional code required because the variable \"MedicationPatches\" is already non-negative due to its default lower bound (0) in Gurobi."
+        },
+        {
+            "description": "Number of anti-biotic creams is non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{AntibioticCreams} \\geq 0",
+            "related_variables": [
+                "AntibioticCreams"
+            ],
+            "related_parameters": [],
+            "code": "# Since the variable AntibioticCreams is defined with gp.GRB.CONTINUOUS, \n# it inherently satisfies the non-negativity constraint."
+        },
+        {
+            "description": "The number of batches of anti-biotic creams must be at least twice the number of medication patches.",
+            "status": "coded",
+            "formulation": "\\\\textup{AntibioticCreams} \\\\geq 2 \\\\cdot \\\\textup{MedicationPatches}",
+            "related_variables": [
+                "AntibioticCreams",
+                "MedicationPatches"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint: The number of batches of anti-biotic creams must be at least twice the number of medication patches\nmodel.addConstr(AntibioticCreams >= 2 * MedicationPatches, name=\"antibiotic_creams_minimum\")"
+        },
+        {
+            "description": "The total number of batches of medication patches and anti-biotic creams cannot exceed MaxTotalBatches.",
+            "status": "coded",
+            "formulation": "\\textup{MedicationPatches} + \\textup{AntibioticCreams} \\leq \\textup{MaxTotalBatches}",
+            "related_variables": [
+                "MedicationPatches",
+                "AntibioticCreams"
+            ],
+            "related_parameters": [
+                "MaxTotalBatches"
+            ],
+            "code": "model.addConstr(MedicationPatches + AntibioticCreams <= MaxTotalBatches, name=\"total_batches_constraint\")"
+        },
+        {
+            "description": "Total staff time used for production must not exceed the available staff time (TotalStaffTime).",
+            "status": "coded",
+            "formulation": "\\textup{MedicationPatches} \\times \\textup{TimeMedicationPatches} + \\textup{AntibioticCreams} \\times \\textup{TimeAntiBioticCreams} \\leq \\textup{TotalStaffTime}",
+            "related_variables": [
+                "MedicationPatches",
+                "AntibioticCreams"
+            ],
+            "related_parameters": [
+                "TimeMedicationPatches",
+                "TimeAntiBioticCreams",
+                "TotalStaffTime"
+            ],
+            "code": "# Add total staff time constraint\nmodel.addConstr(\n    MedicationPatches * TimeMedicationPatches + AntibioticCreams * TimeAntiBioticCreams <= TotalStaffTime,\n    name=\"total_staff_time_constraint\"\n)"
+        },
+        {
+            "description": "The total materials required by medication patches and anti-biotic creams should not exceed the available TotalMaterials.",
+            "status": "coded",
+            "formulation": "\\textup{MaterialsMedicationPatches} \\\\cdot \\textup{MedicationPatches} + \\textup{MaterialsAntiBioticCreams} \\\\cdot \\textup{AntibioticCreams} \\\\leq \\textup{TotalMaterials}",
+            "related_variables": [
+                "MedicationPatches",
+                "AntibioticCreams"
+            ],
+            "related_parameters": [
+                "MaterialsMedicationPatches",
+                "MaterialsAntiBioticCreams",
+                "TotalMaterials"
+            ],
+            "code": "# Add material usage constraint\nmodel.addConstr(\n    MedicationPatches * MaterialsMedicationPatches + AntibioticCreams * MaterialsAntiBioticCreams <= TotalMaterials, \n    name=\"material_usage_constraint\"\n)"
+        },
+        {
+            "description": "At least twice as many anti-biotic creams as medication patches.",
+            "status": "coded",
+            "formulation": "\\textup{AntibioticCreams} \\geq 2 \\cdot \\textup{MedicationPatches}",
+            "related_variables": [
+                "AntibioticCreams",
+                "MedicationPatches"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint ensuring at least twice as many anti-biotic creams as medication patches\nmodel.addConstr(AntibioticCreams >= 2 * MedicationPatches, name=\"antibioticcream_medpatch_ratio\")"
+        },
+        {
+            "description": "Total preparation time cannot exceed available staff time.",
+            "status": "coded",
+            "formulation": "3 \\cdot \\textup{MedicationPatches} + 5 \\cdot \\textup{AntibioticCreams} \\leq \\textup{TotalStaffTime}",
+            "related_variables": [
+                "MedicationPatches",
+                "AntibioticCreams"
+            ],
+            "related_parameters": [
+                "TotalStaffTime"
+            ],
+            "code": "# Add constraint for total preparation time\nmodel.addConstr(\n    3 * MedicationPatches + 5 * AntibioticCreams <= TotalStaffTime, \n    name=\"total_preparation_time_constraint\"\n)"
+        },
+        {
+            "description": "Total materials used cannot exceed available materials.",
+            "status": "coded",
+            "formulation": "5 \\cdot \\textup{MedicationPatches} + 6 \\cdot \\textup{AntibioticCreams} \\leq \\textup{TotalMaterials}",
+            "related_variables": [
+                "MedicationPatches",
+                "AntibioticCreams"
+            ],
+            "related_parameters": [
+                "TotalMaterials"
+            ],
+            "code": "# Add materials usage constraint\nmodel.addConstr(5 * MedicationPatches + 6 * AntibioticCreams <= TotalMaterials, name=\"materials_constraint\")"
+        },
+        {
+            "description": "Total batches prepared cannot exceed maximum storage capacity.",
+            "status": "coded",
+            "formulation": "\\textup{MedicationPatches} + \\textup{AntibioticCreams} \\leq \\textup{MaxTotalBatches}",
+            "related_variables": [
+                "MedicationPatches",
+                "AntibioticCreams"
+            ],
+            "related_parameters": [
+                "MaxTotalBatches"
+            ],
+            "code": "# Add constraint: Total batches of medication patches and antibiotic creams cannot exceed maximum storage capacity\nmodel.addConstr(MedicationPatches + AntibioticCreams <= MaxTotalBatches, name=\"max_storage_capacity\")"
+        },
+        {
+            "description": "Staff time constraint for preparation of both medication patches and anti-biotic creams.",
+            "status": "coded",
+            "formulation": "\\textup{TimeMedicationPatches} \\cdot \\textup{MedicationPatches} + \\textup{TimeAntiBioticCreams} \\cdot \\textup{AntibioticCreams} \\leq \\textup{TotalStaffTime}",
+            "related_variables": [
+                "MedicationPatches",
+                "AntibioticCreams"
+            ],
+            "related_parameters": [
+                "TimeMedicationPatches",
+                "TimeAntiBioticCreams",
+                "TotalStaffTime"
+            ],
+            "code": "# Add staff time constraint\nmodel.addConstr(\n    TimeMedicationPatches * MedicationPatches + TimeAntiBioticCreams * AntibioticCreams <= TotalStaffTime,\n    name=\"staff_time_constraint\"\n)"
+        },
+        {
+            "description": "Material usage constraint for preparation of both medication patches and anti-biotic creams.",
+            "status": "coded",
+            "formulation": "\\textup{MaterialsMedicationPatches} \\cdot \\textup{MedicationPatches} + \\textup{MaterialsAntiBioticCreams} \\cdot \\textup{AntibioticCreams} \\leq \\textup{TotalMaterials}",
+            "related_variables": [
+                "MedicationPatches",
+                "AntibioticCreams"
+            ],
+            "related_parameters": [
+                "MaterialsMedicationPatches",
+                "MaterialsAntiBioticCreams",
+                "TotalMaterials"
+            ],
+            "code": "# Add material usage constraint\nmodel.addConstr(\n    MedicationPatches * MaterialsMedicationPatches + AntibioticCreams * MaterialsAntiBioticCreams <= TotalMaterials,\n    name=\"material_usage_constraint\"\n)"
+        },
+        {
+            "description": "Production constraint to not exceed the total number of batches due to storage limitations.",
+            "status": "coded",
+            "formulation": "\\textup{MedicationPatches} + \\textup{AntibioticCreams} \\leq \\textup{MaxTotalBatches}",
+            "related_variables": [
+                "MedicationPatches",
+                "AntibioticCreams"
+            ],
+            "related_parameters": [
+                "MaxTotalBatches"
+            ],
+            "code": "# Add production constraint to not exceed total number of batches\nmodel.addConstr(MedicationPatches + AntibioticCreams <= MaxTotalBatches, name=\"production_constraint\")"
+        },
+        {
+            "description": "Proportional constraint to ensure at least twice as many anti-biotic creams as medication patches.",
+            "status": "coded",
+            "formulation": "\\textup{AntibioticCreams} \\geq 2 \\cdot \\textup{MedicationPatches}",
+            "related_variables": [
+                "MedicationPatches",
+                "AntibioticCreams"
+            ],
+            "related_parameters": [],
+            "code": "# Add proportional constraint to ensure at least twice as many anti-biotic creams as medication patches\nmodel.addConstr(AntibioticCreams >= 2 * MedicationPatches, name=\"proportional_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of batches of medication patches to produce.",
+            "symbol": "MedicationPatches",
+            "shape": [],
+            "status": "coded",
+            "code": "MedicationPatches = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"MedicationPatches\")"
+        },
+        {
+            "definition": "The number of batches of anti-biotic creams to produce.",
+            "symbol": "AntibioticCreams",
+            "shape": [],
+            "status": "coded",
+            "code": "AntibioticCreams = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"AntibioticCreams\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the number of people treated using the batches of medication patches and anti-biotic creams.",
+            "status": "coded",
+            "formulation": "\\textup{PeopleTreatedMedicationPatches} \\cdot \\textup{MedicationPatches} + \\textup{PeopleTreatedAntiBioticCreams} \\cdot \\textup{AntibioticCreams}",
+            "related_variables": [
+                "MedicationPatches",
+                "AntibioticCreams"
+            ],
+            "related_parameters": [
+                "PeopleTreatedMedicationPatches",
+                "PeopleTreatedAntiBioticCreams"
+            ],
+            "code": "# Set objective\nmodel.setObjective(PeopleTreatedMedicationPatches * MedicationPatches + PeopleTreatedAntiBioticCreams * AntibioticCreams, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250414054901_nl4opt_prob_272/",
+    "problem_path": "data/nl4opt/prob_272/"
+}

@@ -1,0 +1,201 @@
+{
+    "background": "Children can go to school either by van or by minibus. Each mode of transportation has a certain capacity and associated pollution. The goal is to transport kids to school while minimizing pollution and adhering to the given constraints regarding the capacities and the transport vehicle limits.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Capacity of a van",
+            "symbol": "VanCapacity",
+            "value": 6,
+            "shape": [],
+            "code": "VanCapacity = data[\"VanCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Pollution produced by a van",
+            "symbol": "VanPollution",
+            "value": 7,
+            "shape": [],
+            "code": "VanPollution = data[\"VanPollution\"] # scalar parameter"
+        },
+        {
+            "definition": "Capacity of a minibus",
+            "symbol": "MinibusCapacity",
+            "value": 10,
+            "shape": [],
+            "code": "MinibusCapacity = data[\"MinibusCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Pollution produced by a minibus",
+            "symbol": "MinibusPollution",
+            "value": 10,
+            "shape": [],
+            "code": "MinibusPollution = data[\"MinibusPollution\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of kids that need transportation",
+            "symbol": "MinKids",
+            "value": 150,
+            "shape": [],
+            "code": "MinKids = data[\"MinKids\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of minibuses allowed",
+            "symbol": "MaxMinibuses",
+            "value": 10,
+            "shape": [],
+            "code": "MaxMinibuses = data[\"MaxMinibuses\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The total capacity of vans and minibuses must be sufficient to transport at least the minimum required number of kids",
+            "status": "coded",
+            "formulation": "\\textup{VanCapacity} \\cdot \\textup{NumberOfVans} + \\textup{MinibusCapacity} \\cdot \\textup{NumberOfMinibuses} \\geq \\textup{MinKids}",
+            "related_variables": [
+                "NumberOfVans",
+                "NumberOfMinibuses"
+            ],
+            "related_parameters": [
+                "VanCapacity",
+                "MinibusCapacity",
+                "MinKids"
+            ],
+            "code": "# Define the constraint for minimum required number of kids to transport\nmodel.addConstr(VanCapacity * NumberOfVans + MinibusCapacity * NumberOfMinibuses >= MinKids, name=\"min_kids_transport\")"
+        },
+        {
+            "description": "Number of minibuses used must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfMinibuses} \\geq 0",
+            "related_variables": [
+                "NumberOfMinibuses"
+            ],
+            "related_parameters": [],
+            "code": "model.addConstr(NumberOfMinibuses >= 0, \"minibuses_non_negative\")"
+        },
+        {
+            "description": "The number of vans used must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfVans} \\geq 0",
+            "related_variables": [
+                "NumberOfVans"
+            ],
+            "related_parameters": [],
+            "code": "# Since NumberOfVans is already defined as a non-negative integer variable, no additional constraint is needed\n# The non-negativity constraint is inherently applied by the variable type definition"
+        },
+        {
+            "description": "Each van can transport up to the van capacity of kids",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfVans} \\times \\textup{VanCapacity} \\geq \\textup{MinKids}",
+            "related_variables": [
+                "NumberOfVans"
+            ],
+            "related_parameters": [
+                "VanCapacity",
+                "MinKids"
+            ],
+            "code": "NumberOfVans = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfVans\")\nVanCapacity = data[\"VanCapacity\"] # assuming data dictionary is given and has the capacity value\nMinKids = data[\"MinKids\"] # assuming data dictionary is given and has the minimum kids value\n\n# Constraint for the capacity of vans in transporting kids\nmodel.addConstr(NumberOfVans * VanCapacity >= MinKids, name=\"van_capacity_constraint\")"
+        },
+        {
+            "description": "Each minibus can transport up to its capacity of kids",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfMinibuses} \\times \\textup{MinibusCapacity} \\geq \\textup{MinKids}",
+            "related_variables": [
+                "NumberOfMinibuses"
+            ],
+            "related_parameters": [
+                "MinibusCapacity",
+                "MinKids"
+            ],
+            "code": "# Capacity constraint for kids transportation with minibuses\nmodel.addConstr(NumberOfMinibuses * MinibusCapacity >= MinKids, name=\"minibus_capacity_constraint\")"
+        },
+        {
+            "description": "No more than the maximum number of minibuses can be used",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfMinibuses} \\leq \\textup{MaxMinibuses}",
+            "related_variables": [
+                "NumberOfMinibuses"
+            ],
+            "related_parameters": [
+                "MaxMinibuses"
+            ],
+            "code": "# Add constraint for the maximum number of minibuses used\nmodel.addConstr(NumberOfMinibuses <= MaxMinibuses, \"max_minibuses_constraint\")"
+        },
+        {
+            "description": "The number of minibuses used cannot exceed the maximum number of minibuses allowed",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfMinibuses} \\leq \\textup{MaxMinibuses}",
+            "related_variables": [
+                "NumberOfMinibuses"
+            ],
+            "related_parameters": [
+                "MaxMinibuses"
+            ],
+            "code": "# Minibuses constraint: The number of minibuses used cannot exceed the maximum number of minibuses allowed\nmodel.addConstr(NumberOfMinibuses <= MaxMinibuses, \"minibus_limit\")"
+        },
+        {
+            "description": "Ensure the total capacity of vans and minibuses is sufficient to transport at least the minimum number of kids",
+            "status": "coded",
+            "formulation": "\\textup{VanCapacity} \\cdot \\textup{NumberOfVans} + \\textup{MinibusCapacity} \\cdot \\textup{NumberOfMinibuses} \\geq \\textup{MinKids}",
+            "related_variables": [
+                "NumberOfVans",
+                "NumberOfMinibuses"
+            ],
+            "related_parameters": [
+                "VanCapacity",
+                "MinibusCapacity",
+                "MinKids"
+            ],
+            "code": "# Ensure the total capacity of vans and minibuses is sufficient to transport at least the minimum number of kids\nmodel.addConstr(VanCapacity * NumberOfVans + MinibusCapacity * NumberOfMinibuses >= MinKids, \"CapacityForKids\")"
+        },
+        {
+            "description": "Limit the number of minibuses used to not exceed the maximum allowed",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfMinibuses} \\leq \\textup{MaxMinibuses}",
+            "related_variables": [
+                "NumberOfMinibuses"
+            ],
+            "related_parameters": [
+                "MaxMinibuses"
+            ],
+            "code": "# Limit the number of minibuses used constraint\nmodel.addConstr(NumberOfMinibuses <= MaxMinibuses, name=\"max_minibuses_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of vans used to transport kids",
+            "symbol": "NumberOfVans",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfVans = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfVans\")"
+        },
+        {
+            "definition": "Number of minibuses used to transport kids",
+            "symbol": "NumberOfMinibuses",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfMinibuses = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfMinibuses\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total amount of pollution produced by vans and minibuses used to transport kids to school",
+            "status": "coded",
+            "formulation": "\\textup{Minimize} \\quad \\textup{VanPollution} \\cdot \\textup{NumberOfVans} + \\textup{MinibusPollution} \\cdot \\textup{NumberOfMinibuses}",
+            "related_variables": [
+                "NumberOfVans",
+                "NumberOfMinibuses"
+            ],
+            "related_parameters": [
+                "VanPollution",
+                "MinibusPollution"
+            ],
+            "code": "# Set objective\nmodel.setObjective(VanPollution * NumberOfVans + MinibusPollution * NumberOfMinibuses, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 3,
+    "error_message": null,
+    "obj_val": "infeasible",
+    "log_path": "logs/log_20250413143646_nl4opt_prob_173/",
+    "problem_path": "data/nl4opt/prob_173/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_173/data.json\", \"r\") as f:\n    data = json.load(f)\n\nVanCapacity = data[\"VanCapacity\"] # scalar parameter\nVanPollution = data[\"VanPollution\"] # scalar parameter\nMinibusCapacity = data[\"MinibusCapacity\"] # scalar parameter\nMinibusPollution = data[\"MinibusPollution\"] # scalar parameter\nMinKids = data[\"MinKids\"] # scalar parameter\nMaxMinibuses = data[\"MaxMinibuses\"] # scalar parameter\nNumberOfVans = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfVans\")\nNumberOfMinibuses = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfMinibuses\")\n\n# Define the constraint for minimum required number of kids to transport\nmodel.addConstr(VanCapacity * NumberOfVans + MinibusCapacity * NumberOfMinibuses >= MinKids, name=\"min_kids_transport\")\n\nmodel.addConstr(NumberOfMinibuses >= 0, \"minibuses_non_negative\")\n\n# Since NumberOfVans is already defined as a non-negative integer variable, no additional constraint is needed\n# The non-negativity constraint is inherently applied by the variable type definition\n\nNumberOfVans = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfVans\")\nVanCapacity = data[\"VanCapacity\"] # assuming data dictionary is given and has the capacity value\nMinKids = data[\"MinKids\"] # assuming data dictionary is given and has the minimum kids value\n\n# Constraint for the capacity of vans in transporting kids\nmodel.addConstr(NumberOfVans * VanCapacity >= MinKids, name=\"van_capacity_constraint\")\n\n# Capacity constraint for kids transportation with minibuses\nmodel.addConstr(NumberOfMinibuses * MinibusCapacity >= MinKids, name=\"minibus_capacity_constraint\")\n\n# Add constraint for the maximum number of minibuses used\nmodel.addConstr(NumberOfMinibuses <= MaxMinibuses, \"max_minibuses_constraint\")\n\n# Minibuses constraint: The number of minibuses used cannot exceed the maximum number of minibuses allowed\nmodel.addConstr(NumberOfMinibuses <= MaxMinibuses, \"minibus_limit\")\n\n# Ensure the total capacity of vans and minibuses is sufficient to transport at least the minimum number of kids\nmodel.addConstr(VanCapacity * NumberOfVans + MinibusCapacity * NumberOfMinibuses >= MinKids, \"CapacityForKids\")\n\n# Limit the number of minibuses used constraint\nmodel.addConstr(NumberOfMinibuses <= MaxMinibuses, name=\"max_minibuses_constraint\")\n\n# Set objective\nmodel.setObjective(VanPollution * NumberOfVans + MinibusPollution * NumberOfMinibuses, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

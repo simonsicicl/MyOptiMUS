@@ -1,0 +1,164 @@
+{
+    "background": "The problem involves blending different market alloys into a final product that meets certain elemental composition requirements at minimum cost.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "symbol": "AlloysOnMarket",
+            "definition": "The number of different alloys available on the market",
+            "shape": [],
+            "code": "AlloysOnMarket = data[\"AlloysOnMarket\"] # scalar parameter"
+        },
+        {
+            "symbol": "RequiredElements",
+            "definition": "The number of elements required in the desired alloy blend",
+            "shape": [],
+            "code": "RequiredElements = data[\"RequiredElements\"] # scalar parameter"
+        },
+        {
+            "symbol": "CompositionDataPercentage",
+            "definition": "The composition data indicating the percentage of each required element in each available alloy",
+            "shape": [
+                "RequiredElements",
+                "AlloysOnMarket"
+            ],
+            "code": "CompositionDataPercentage = np.array(data[\"CompositionDataPercentage\"]) # ['RequiredElements', 'AlloysOnMarket']"
+        },
+        {
+            "symbol": "DesiredBlendPercentage",
+            "definition": "The desired percentage of each required element in the final alloy blend",
+            "shape": [
+                "RequiredElements"
+            ],
+            "code": "DesiredBlendPercentage = np.array(data[\"DesiredBlendPercentage\"]) # ['RequiredElements']"
+        },
+        {
+            "symbol": "AlloyPrice",
+            "definition": "The price of each alloy available on the market",
+            "shape": [
+                "AlloysOnMarket"
+            ],
+            "code": "AlloyPrice = np.array(data[\"AlloyPrice\"]) # ['AlloysOnMarket']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Non-negativity constraint ensuring that the quantity of each alloy used is non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{QuantityUsed}_{j} \\geq 0, \\quad \\forall \\, j \\in \\{1, \\dots, \\textup{AlloysOnMarket}\\}",
+            "related_variables": [
+                "QuantityUsed"
+            ],
+            "related_parameters": [
+                "AlloysOnMarket"
+            ],
+            "code": "# Add non-negativity constraints for QuantityUsed\nfor j in range(AlloysOnMarket):\n    model.addConstr(QuantityUsed[j] >= 0, name=f\"non_negativity_QuantityUsed_{j}\")"
+        },
+        {
+            "description": "Ensure the final blend meets the required percentage for each of the RequiredElements.",
+            "status": "coded",
+            "formulation": "\\frac{\\sum_{j=1}^{\\textup{AlloysOnMarket}} \\textup{CompositionDataPercentage}_{ij} \\cdot \\textup{QuantityUsed}_{j}}{\\textup{TotalQuantityUsed}} = \\textup{DesiredBlendPercentage}_{i}, \\quad \\forall \\ i = 1, \\dots, \\textup{RequiredElements}",
+            "related_variables": [
+                "QuantityUsed",
+                "TotalQuantityUsed"
+            ],
+            "related_parameters": [
+                "CompositionDataPercentage",
+                "DesiredBlendPercentage",
+                "AlloysOnMarket",
+                "RequiredElements"
+            ],
+            "code": "# Add constraints to ensure the final blend meets the required percentage for each RequiredElement\nfor i in range(RequiredElements):\n    model.addConstr(\n        gp.quicksum(CompositionDataPercentage[i, j] * QuantityUsed[j] for j in range(AlloysOnMarket)) / TotalQuantityUsed == DesiredBlendPercentage[i],\n        name=f\"blend_percentage_req_{i}\"\n    )"
+        },
+        {
+            "description": "Ensure the quantity of each alloy used does not exceed its availability on the market.",
+            "status": "coded",
+            "formulation": "\\textup{QuantityUsed}_{i} \\leq \\textup{Availability}_{i}, \\quad \\forall i \\in \\textup{AlloysOnMarket}",
+            "related_variables": [
+                "QuantityUsed"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraints to ensure alloy usage does not exceed market availability\nfor i in AlloysOnMarket:\n    model.addConstr(QuantityUsed[i] <= Availability[i], name=f\"alloy_availability_{i}\")"
+        },
+        {
+            "description": "Define total quantity used in the blend.",
+            "status": "coded",
+            "formulation": "\\textup{TotalQuantityUsed} = \\sum_{j=1}^{\\textup{AlloysOnMarket}} \\textup{QuantityUsed}_{j}",
+            "related_variables": [
+                "QuantityUsed",
+                "TotalQuantityUsed"
+            ],
+            "related_parameters": [
+                "AlloysOnMarket"
+            ],
+            "code": "# Add constraint to define TotalQuantityUsed as the sum of QuantityUsed over all alloys\nmodel.addConstr(TotalQuantityUsed == gp.quicksum(QuantityUsed[j] for j in range(AlloysOnMarket)), name=\"TotalQuantityUsed_Definition\")"
+        },
+        {
+            "description": "Ensure the blend meets the desired percentage of each required element.",
+            "status": "coded",
+            "formulation": "\\sum_{j=1}^{\\textup{AlloysOnMarket}} \\textup{CompositionDataPercentage}_{i,j} \\cdot \\textup{QuantityUsed}_{j} = \\textup{DesiredBlendPercentage}_{i} \\cdot \\textup{TotalQuantityUsed}, \\quad \\forall i \\in \\{1, \\dots, \\textup{RequiredElements}\\}",
+            "related_variables": [
+                "QuantityUsed",
+                "TotalQuantityUsed"
+            ],
+            "related_parameters": [
+                "CompositionDataPercentage",
+                "DesiredBlendPercentage",
+                "RequiredElements",
+                "AlloysOnMarket"
+            ],
+            "code": "# Add constraints to ensure the blend meets the desired percentage of each required element\nfor i in range(RequiredElements):\n    model.addConstr(\n        gp.quicksum(CompositionDataPercentage[i, j] * QuantityUsed[j] for j in range(AlloysOnMarket)) ==\n        DesiredBlendPercentage[i] * TotalQuantityUsed,\n        name=f\"blend_percentage_element_{i}\"\n    )"
+        },
+        {
+            "description": "Define the total quantity used as the sum of quantities of all alloys.",
+            "status": "coded",
+            "formulation": "\\textup{TotalQuantityUsed} = \\sum_{j=1}^{\\textup{AlloysOnMarket}} \\textup{QuantityUsed}_{j}",
+            "related_variables": [
+                "QuantityUsed",
+                "TotalQuantityUsed"
+            ],
+            "related_parameters": [
+                "AlloysOnMarket"
+            ],
+            "code": "# Add constraint to define TotalQuantityUsed as the sum of quantities of all alloys used\nmodel.addConstr(TotalQuantityUsed == gp.quicksum(QuantityUsed[j] for j in range(AlloysOnMarket)), name=\"Total_Quantity_Constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Quantity of each alloy used in the final blend",
+            "symbol": "QuantityUsed",
+            "shape": [
+                "AlloysOnMarket"
+            ],
+            "status": "coded",
+            "code": "QuantityUsed = model.addVars(AlloysOnMarket, vtype=gp.GRB.CONTINUOUS, name=\"QuantityUsed\")"
+        },
+        {
+            "definition": "Total quantity of all alloys used in the final blend",
+            "symbol": "TotalQuantityUsed",
+            "shape": [],
+            "status": "coded",
+            "code": "TotalQuantityUsed = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TotalQuantityUsed\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total cost of producing the alloy with the desired blend percentages.",
+            "status": "coded",
+            "formulation": "\\textup{Minimize} \\quad \\sum_{j=1}^{\\textup{AlloysOnMarket}} \\textup{AlloyPrice}_{j} \\cdot \\textup{QuantityUsed}_{j}",
+            "related_variables": [
+                "QuantityUsed"
+            ],
+            "related_parameters": [
+                "AlloyPrice",
+                "AlloysOnMarket"
+            ],
+            "code": "# Set objective\nmodel.setObjective(gp.quicksum(AlloyPrice[j] * QuantityUsed[j] for j in range(AlloysOnMarket)), gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413145444_complexor_BlendingProblem/",
+    "problem_path": "data/complexor/BlendingProblem/"
+}

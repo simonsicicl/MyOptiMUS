@@ -1,0 +1,203 @@
+{
+    "background": "The goal is to maximize total net income from producing various products with constraints on initial cash, machine hours, and production costs. Part of the income is to be reinvested, and there is an option to upgrade machinery.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of products",
+            "symbol": "P",
+            "value": "",
+            "shape": [],
+            "code": "P = data[\"P\"] # scalar parameter"
+        },
+        {
+            "definition": "Initial cash available for investment",
+            "symbol": "Cash",
+            "value": "",
+            "shape": [],
+            "code": "Cash = data[\"Cash\"] # scalar parameter"
+        },
+        {
+            "definition": "Hours required to produce one unit of product i",
+            "symbol": "Hour",
+            "value": "",
+            "shape": [
+                "P"
+            ],
+            "code": "Hour = np.array(data[\"Hour\"]) # ['P']"
+        },
+        {
+            "definition": "Cost to produce one unit of product i",
+            "symbol": "Cost",
+            "value": "",
+            "shape": [
+                "P"
+            ],
+            "code": "Cost = np.array(data[\"Cost\"]) # ['P']"
+        },
+        {
+            "definition": "Selling price for one unit of product i",
+            "symbol": "Price",
+            "value": "",
+            "shape": [
+                "P"
+            ],
+            "code": "Price = np.array(data[\"Price\"]) # ['P']"
+        },
+        {
+            "definition": "Percentage of income to reinvest for product i",
+            "symbol": "InvestPercentage",
+            "value": "",
+            "shape": [
+                "P"
+            ],
+            "code": "InvestPercentage = np.array(data[\"InvestPercentage\"]) # ['P']"
+        },
+        {
+            "definition": "Hours required for upgrading the machinery",
+            "symbol": "UpgradeHours",
+            "value": "",
+            "shape": [],
+            "code": "UpgradeHours = data[\"UpgradeHours\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost associated with upgrading the machinery",
+            "symbol": "UpgradeCost",
+            "value": "",
+            "shape": [],
+            "code": "UpgradeCost = data[\"UpgradeCost\"] # scalar parameter"
+        },
+        {
+            "definition": "Total available machine hours",
+            "symbol": "AvailableHours",
+            "value": "",
+            "shape": [],
+            "code": "AvailableHours = data[\"AvailableHours\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Initial cash available does not exceed Cash, including the cost of production for all products and the cost for upgrading machinery.",
+            "status": "formulated",
+            "formulation": "\\sum_{i=1}^{P} \\textup{UnitsProduced}_i \\cdot \\textup{Cost}_i + \\textup{UpgradeBinary} \\cdot \\textup{UpgradeCost} \\leq \\textup{Cash}",
+            "related_variables": [
+                "UnitsProduced",
+                "UpgradeBinary"
+            ],
+            "related_parameters": [
+                "Cost",
+                "UpgradeCost",
+                "Cash"
+            ]
+        },
+        {
+            "description": "Total production hours for all products and potential upgrading should not exceed the total available machine hours",
+            "status": "formulated",
+            "formulation": "\\sum_{i=1}^{\\textup{P}} (\\textup{UnitsProduced}_i \\times \\textup{Hour}_i) + \\textup{UpgradeBinary} \\times \\textup{UpgradeHours} \\leq \\textup{AvailableHours}",
+            "related_variables": [
+                "UnitsProduced",
+                "UpgradeBinary"
+            ],
+            "related_parameters": [
+                "P",
+                "Hour",
+                "UpgradeHours",
+                "AvailableHours"
+            ]
+        },
+        {
+            "description": "Total production and upgrade costs must not exceed available cash",
+            "status": "formulated",
+            "formulation": "\\sum_{i=1}^{P}(\\textup{Cost}_i \\times \\textup{UnitsProduced}_i) + \\textup{UpgradeBinary} \\times \\textup{UpgradeCost} \\leq \\textup{Cash}",
+            "related_variables": [
+                "UnitsProduced",
+                "UpgradeBinary"
+            ],
+            "related_parameters": [
+                "Cost",
+                "UpgradeCost",
+                "Cash"
+            ]
+        },
+        {
+            "description": "Cost to upgrade machinery does not exceed available cash",
+            "status": "formulated",
+            "formulation": "\\textup{UpgradeCost} \\cdot \\textup{UpgradeBinary} \\leq \\textup{Cash}",
+            "related_variables": [
+                "UpgradeBinary"
+            ],
+            "related_parameters": [
+                "UpgradeCost",
+                "Cash"
+            ]
+        },
+        {
+            "description": "Production hours for upgrading machinery do not exceed AvailableHours",
+            "status": "formulated",
+            "formulation": "\\sum_{i=1}^{\\textup{P}} (\\textup{UnitsProduced}_i \\times \\textup{Hour}_i) + (\\textup{UpgradeBinary} \\times \\textup{UpgradeHours}) \\leq \\textup{AvailableHours}",
+            "related_variables": [
+                "UnitsProduced",
+                "UpgradeBinary"
+            ],
+            "related_parameters": [
+                "Hour",
+                "UpgradeHours",
+                "AvailableHours",
+                "P"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of units of product i produced",
+            "symbol": "UnitsProduced",
+            "shape": [
+                "P"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "Binary variable indicating if machinery is upgraded (1) or not (0)",
+            "symbol": "UpgradeBinary",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "Total net income from each product i after considering selling price, cost, and reinvestment",
+            "symbol": "Income",
+            "shape": [
+                "P"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "Total net income after considering all products and the cost of machinery upgrade",
+            "symbol": "TotalNetIncome",
+            "shape": [],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize total net income considering production, selling price, cost, and reinvestment with the option to upgrade machinery",
+            "status": "formulated",
+            "formulation": "\\max \\quad \\sum_{i=1}^{P} (\\textup{UnitsProduced}_{i} \\cdot (\\textup{Price}_{i} - \\textup{Cost}_{i}) - \\textup{UnitsProduced}_{i} \\cdot (\\textup{Price}_{i} - \\textup{Cost}_{i}) \\cdot \\textup{InvestPercentage}_{i}) - \\textup{UpgradeCost} \\cdot \\textup{UpgradeBinary}",
+            "related_variables": [
+                "UnitsProduced",
+                "UpgradeBinary"
+            ],
+            "related_parameters": [
+                "P",
+                "Cost",
+                "Price",
+                "InvestPercentage",
+                "UpgradeCost"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413073911_nlp4lp_15/",
+    "problem_path": "data/nlp4lp/15/"
+}

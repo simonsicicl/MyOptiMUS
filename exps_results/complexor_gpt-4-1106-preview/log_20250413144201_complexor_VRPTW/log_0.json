@@ -1,0 +1,207 @@
+{
+    "background": "The Vehicle Routing Problem with Time Windows (VRPTW) aims to optimize the distribution of goods between depots and customers using a fleet of vehicles with limited capacity, ensuring customers' demands are met within specific time windows while respecting the vehicles' routing restrictions.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "symbol": "CustomerCount",
+            "definition": "The number of customers to be supplied",
+            "shape": [],
+            "code": "CustomerCount = data[\"CustomerCount\"] # scalar parameter"
+        },
+        {
+            "symbol": "VehicleCount",
+            "definition": "The number of vehicles available for distribution",
+            "shape": [],
+            "code": "VehicleCount = data[\"VehicleCount\"] # scalar parameter"
+        },
+        {
+            "symbol": "CustomerDemand",
+            "definition": "The demand of each customer",
+            "shape": [
+                "CustomerCount"
+            ],
+            "code": "CustomerDemand = np.array(data[\"CustomerDemand\"]) # ['CustomerCount']"
+        },
+        {
+            "symbol": "CustomerLBTW",
+            "definition": "The lower bound of the time window for each customer",
+            "shape": [
+                "CustomerCount"
+            ],
+            "code": "CustomerLBTW = np.array(data[\"CustomerLBTW\"]) # ['CustomerCount']"
+        },
+        {
+            "symbol": "CustomerUBTW",
+            "definition": "The upper bound of the time window for each customer",
+            "shape": [
+                "CustomerCount"
+            ],
+            "code": "CustomerUBTW = np.array(data[\"CustomerUBTW\"]) # ['CustomerCount']"
+        },
+        {
+            "symbol": "CustomerDistance",
+            "definition": "The distance from each customer to every other customer",
+            "shape": [
+                "CustomerCount",
+                "CustomerCount"
+            ],
+            "code": "CustomerDistance = np.array(data[\"CustomerDistance\"]) # ['CustomerCount', 'CustomerCount']"
+        },
+        {
+            "symbol": "CustomerServiceTime",
+            "definition": "The service time required for each customer",
+            "shape": [
+                "CustomerCount"
+            ],
+            "code": "CustomerServiceTime = np.array(data[\"CustomerServiceTime\"]) # ['CustomerCount']"
+        },
+        {
+            "symbol": "VehicleCapacity",
+            "definition": "The capacity of each vehicle",
+            "shape": [
+                "VehicleCount"
+            ],
+            "code": "VehicleCapacity = np.array(data[\"VehicleCapacity\"]) # ['VehicleCount']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The capacity of each vehicle must not be exceeded by the sum of the demands of the customers serviced by that vehicle",
+            "status": "formulated",
+            "formulation": "\\sum_{j=1}^{\\textup{CustomerCount}} \\textup{CustomerDemand}_{j} \\cdot x_{ij} \\leq \\textup{VehicleCapacity}_{i}, \\quad \\forall i \\in \\{1, \\ldots, \\textup{VehicleCount}\\}",
+            "related_variables": [
+                "CustomerServedByVehicle"
+            ],
+            "related_parameters": [
+                "CustomerDemand",
+                "VehicleCapacity"
+            ]
+        },
+        {
+            "description": "Each customer must be served within their time window",
+            "status": "formulated",
+            "formulation": "\\forall j : \\sum_{i=1}^{\\textup{VehicleCount}} \\textup{CustomerServedByVehicle}_{ij} \\cdot \\textup{ArrivalTime}_{ij} \\geq \\textup{CustomerLBTW}_j",
+            "related_variables": [
+                "CustomerServedByVehicle",
+                "ArrivalTime"
+            ],
+            "related_parameters": [
+                "VehicleCount",
+                "CustomerLBTW"
+            ]
+        },
+        {
+            "description": "The total number of used vehicles should not exceed the number of vehicles available",
+            "status": "formulated",
+            "formulation": "\\sum_{i=1}^{\\textup{VehicleCount}} \\textup{VehicleUsed}_{i} \\leq \\textup{VehicleCount}",
+            "related_variables": [
+                "VehicleUsed"
+            ],
+            "related_parameters": [
+                "VehicleCount"
+            ]
+        },
+        {
+            "description": "The arrival time must be less than or equal to the upper bound of the customer's time window if the customer is served by a vehicle",
+            "status": "formulated",
+            "formulation": "\\forall j : \\sum_{i=1}^{\\textup{VehicleCount}} \\textup{CustomerServedByVehicle}_{ij} \\cdot \\textup{ArrivalTime}_{ij} \\leq \\textup{CustomerUBTW}_j",
+            "related_variables": [
+                "CustomerServedByVehicle",
+                "ArrivalTime"
+            ],
+            "related_parameters": [
+                "VehicleCount",
+                "CustomerUBTW"
+            ]
+        },
+        {
+            "description": "A vehicle is considered used if it serves at least one customer",
+            "status": "formulated",
+            "formulation": "\\textup{VehicleUsed}_{i} \\geq \\textup{CustomerServedByVehicle}_{ij} \\quad \\forall i \\in \\{1, \\ldots, \\textup{VehicleCount}\\}, j \\in \\{1, \\ldots, \\textup{CustomerCount}\\}",
+            "related_variables": [
+                "VehicleUsed",
+                "CustomerServedByVehicle"
+            ],
+            "related_parameters": [
+                "VehicleCount",
+                "CustomerCount"
+            ]
+        },
+        {
+            "description": "Vehicles should serve customers within their time windows and respect vehicle capacities",
+            "status": "formulated",
+            "formulation": "\\begin{aligned} & \\textup{ArrivalTime}_{ij} \\geq \\textup{CustomerLBTW}_j \\cdot \\textup{CustomerServedByVehicle}_{ij} \\\\ & \\textup{ArrivalTime}_{ij} \\leq \\textup{CustomerUBTW}_j \\cdot \\textup{CustomerServedByVehicle}_{ij} \\\\ & \\sum_{j=1}^{\\textup{CustomerCount}} \\textup{CustomerDemand}_j \\cdot \\textup{CustomerServedByVehicle}_{ij} \\leq \\textup{VehicleCapacity}_i \\end{aligned}",
+            "related_variables": [
+                "CustomerServedByVehicle",
+                "ArrivalTime",
+                "VehicleUsed"
+            ],
+            "related_parameters": [
+                "CustomerCount",
+                "CustomerDemand",
+                "CustomerLBTW",
+                "CustomerUBTW",
+                "VehicleCapacity"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Binary variable, 1 if customer j is served by vehicle i, and 0 otherwise",
+            "symbol": "CustomerServedByVehicle",
+            "shape": [
+                "VehicleCount",
+                "CustomerCount"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "The time a vehicle arrives at a customer location",
+            "symbol": "ArrivalTime",
+            "shape": [
+                "VehicleCount",
+                "CustomerCount"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "Binary variable, 1 if vehicle i is used (serves at least one customer), and 0 otherwise",
+            "symbol": "VehicleUsed",
+            "shape": [
+                "VehicleCount"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "Binary variable, 1 if vehicle i travels directly from customer j to customer k",
+            "symbol": "VehicleDirectTravel",
+            "shape": [
+                "VehicleCount",
+                "CustomerCount",
+                "CustomerCount"
+            ],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total travel distance and time for all vehicles while serving all customers within their time windows",
+            "status": "formulated",
+            "formulation": "\\min \\sum_{i=1}^{\\textup{VehicleCount}} \\sum_{j=1}^{\\textup{CustomerCount}} \\sum_{k=1, k \\neq j}^{\\textup{CustomerCount}} \\textup{CustomerServedByVehicle}_{ij} \\cdot \\textup{CustomerServedByVehicle}_{ik} \\cdot \\textup{CustomerDistance}_{jk}",
+            "related_variables": [
+                "CustomerServedByVehicle"
+            ],
+            "related_parameters": [
+                "VehicleCount",
+                "CustomerCount",
+                "CustomerDistance"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413144201_complexor_VRPTW/",
+    "problem_path": "data/complexor/VRPTW/"
+}

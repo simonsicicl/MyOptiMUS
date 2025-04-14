@@ -1,0 +1,178 @@
+{
+    "background": "A meat shop needs to ship burger patties using refrigerated trucks and vans with specific capacities and costs, following certain restrictions regarding movement in the city and budget.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Maximum capacity of a truck",
+            "symbol": "TruckCapacity",
+            "value": 1000,
+            "shape": [],
+            "code": "TruckCapacity = data[\"TruckCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost per truck trip",
+            "symbol": "TruckCost",
+            "value": 300,
+            "shape": [],
+            "code": "TruckCost = data[\"TruckCost\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum capacity of a van",
+            "symbol": "VanCapacity",
+            "value": 500,
+            "shape": [],
+            "code": "VanCapacity = data[\"VanCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost per van trip",
+            "symbol": "VanCost",
+            "value": 100,
+            "shape": [],
+            "code": "VanCost = data[\"VanCost\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of patties to ship",
+            "symbol": "MinPatties",
+            "value": 50000,
+            "shape": [],
+            "code": "MinPatties = data[\"MinPatties\"] # scalar parameter"
+        },
+        {
+            "definition": "Budget for shipments",
+            "symbol": "Budget",
+            "value": 12500,
+            "shape": [],
+            "code": "Budget = data[\"Budget\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Number of trucks and vans used must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumTrucks} \\geq 0 \\quad \\textup{and} \\quad \\textup{NumVans} \\geq 0",
+            "related_variables": [
+                "NumTrucks",
+                "NumVans"
+            ],
+            "related_parameters": [],
+            "code": "# Ensure the number of trucks and vans used is non-negative\nmodel.addConstr(NumTrucks >= 0, name=\"num_trucks_non_negative\")\nmodel.addConstr(NumVans >= 0, name=\"num_vans_non_negative\")"
+        },
+        {
+            "description": "Ensure that the number of vans used is non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumVans} \\geq 0",
+            "related_variables": [
+                "NumVans"
+            ],
+            "related_parameters": [],
+            "code": "# The number of vans used is non-negative by the variable definition (integer variable by default is >= 0)\n# No additional constraints are needed"
+        },
+        {
+            "description": "The number of trucks must not exceed the number of vans",
+            "status": "coded",
+            "formulation": "\\textup{NumTrucks} \\leq \\textup{NumVans}",
+            "related_variables": [
+                "NumTrucks",
+                "NumVans"
+            ],
+            "related_parameters": [],
+            "code": "model.addConstr(NumTrucks <= NumVans, name=\"Trucks_leq_Vans\")"
+        },
+        {
+            "description": "At least MinPatties patties need to be shipped",
+            "status": "coded",
+            "formulation": "\\textup{NumTrucks} \\times \\textup{TruckCapacity} + \\textup{NumVans} \\times \\textup{VanCapacity} \\geq \\textup{MinPatties}",
+            "related_variables": [
+                "NumTrucks",
+                "NumVans"
+            ],
+            "related_parameters": [
+                "TruckCapacity",
+                "VanCapacity",
+                "MinPatties"
+            ],
+            "code": "# Ensure at least MinPatties patties are shipped\nmodel.addConstr(NumTrucks * TruckCapacity + NumVans * VanCapacity >= MinPatties, name=\"min_patties_shipped\")"
+        },
+        {
+            "description": "Total cost of trucks and vans must not exceed budget",
+            "status": "coded",
+            "formulation": "\\textup{TruckCost} \\times \\textup{NumTrucks} + \\textup{VanCost} \\times \\textup{NumVans} \\leq \\textup{Budget}",
+            "related_variables": [
+                "NumTrucks",
+                "NumVans"
+            ],
+            "related_parameters": [
+                "TruckCost",
+                "VanCost",
+                "Budget"
+            ],
+            "code": "# Constraint: Total cost of trucks and vans must not exceed budget\nmodel.addConstr(TruckCost * NumTrucks + VanCost * NumVans <= Budget, name=\"budget_constraint\")"
+        },
+        {
+            "description": "Ensure that the minimum number of patties are shipped",
+            "status": "coded",
+            "formulation": "\\textup{NumTrucks} \\times \\textup{TruckCapacity} + \\textup{NumVans} \\times \\textup{VanCapacity} \\geq \\textup{MinPatties}",
+            "related_variables": [
+                "NumTrucks",
+                "NumVans"
+            ],
+            "related_parameters": [
+                "TruckCapacity",
+                "VanCapacity",
+                "MinPatties"
+            ],
+            "code": "# Ensure the minimum number of patties are shipped\nmodel.addConstr(NumTrucks * TruckCapacity + NumVans * VanCapacity >= MinPatties, name=\"min_patties_shipped\")"
+        },
+        {
+            "description": "Ensure that the budget is not exceeded",
+            "status": "coded",
+            "formulation": "\\textup{NumTrucks} \\times \\textup{TruckCost} + \\textup{NumVans} \\times \\textup{VanCost} \\leq \\textup{Budget}",
+            "related_variables": [
+                "NumTrucks",
+                "NumVans"
+            ],
+            "related_parameters": [
+                "TruckCost",
+                "VanCost",
+                "Budget"
+            ],
+            "code": "# Ensure that the budget is not exceeded\nmodel.addConstr(NumTrucks * TruckCost + NumVans * VanCost <= Budget, \"budget_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of refrigerated trucks used",
+            "symbol": "NumTrucks",
+            "shape": [],
+            "status": "coded",
+            "code": "NumTrucks = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumTrucks\")"
+        },
+        {
+            "definition": "Number of vans used",
+            "symbol": "NumVans",
+            "shape": [],
+            "status": "coded",
+            "code": "NumVans = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumVans\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of trips for shipping the patties",
+            "status": "coded",
+            "formulation": "\\textup{Minimize: } \\quad \\textup{NumTrucks} + \\textup{NumVans}",
+            "related_variables": [
+                "NumTrucks",
+                "NumVans"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(NumTrucks + NumVans, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 75.0,
+    "log_path": "logs/log_20250413134947_nl4opt_prob_159/",
+    "problem_path": "data/nl4opt/prob_159/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_159/data.json\", \"r\") as f:\n    data = json.load(f)\n\nTruckCapacity = data[\"TruckCapacity\"] # scalar parameter\nTruckCost = data[\"TruckCost\"] # scalar parameter\nVanCapacity = data[\"VanCapacity\"] # scalar parameter\nVanCost = data[\"VanCost\"] # scalar parameter\nMinPatties = data[\"MinPatties\"] # scalar parameter\nBudget = data[\"Budget\"] # scalar parameter\nNumTrucks = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumTrucks\")\nNumVans = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumVans\")\n\n# Ensure the number of trucks and vans used is non-negative\nmodel.addConstr(NumTrucks >= 0, name=\"num_trucks_non_negative\")\nmodel.addConstr(NumVans >= 0, name=\"num_vans_non_negative\")\n\n# The number of vans used is non-negative by the variable definition (integer variable by default is >= 0)\n# No additional constraints are needed\n\nmodel.addConstr(NumTrucks <= NumVans, name=\"Trucks_leq_Vans\")\n\n# Ensure at least MinPatties patties are shipped\nmodel.addConstr(NumTrucks * TruckCapacity + NumVans * VanCapacity >= MinPatties, name=\"min_patties_shipped\")\n\n# Constraint: Total cost of trucks and vans must not exceed budget\nmodel.addConstr(TruckCost * NumTrucks + VanCost * NumVans <= Budget, name=\"budget_constraint\")\n\n# Ensure the minimum number of patties are shipped\nmodel.addConstr(NumTrucks * TruckCapacity + NumVans * VanCapacity >= MinPatties, name=\"min_patties_shipped\")\n\n# Ensure that the budget is not exceeded\nmodel.addConstr(NumTrucks * TruckCost + NumVans * VanCost <= Budget, \"budget_constraint\")\n\n# Set objective\nmodel.setObjective(NumTrucks + NumVans, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

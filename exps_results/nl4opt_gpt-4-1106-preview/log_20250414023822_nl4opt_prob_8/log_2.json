@@ -1,0 +1,178 @@
+{
+    "background": "Jacob is investing in two companies: a clothing company and a tech company.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Total amount of money available for investment",
+            "symbol": "TotalInvestment",
+            "value": 3000,
+            "shape": [],
+            "code": "TotalInvestment = data[\"TotalInvestment\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum investment ratio in the favorite clothing company over the tech company",
+            "symbol": "InvestmentRatio",
+            "value": 4,
+            "shape": [],
+            "code": "InvestmentRatio = data[\"InvestmentRatio\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum investment in the favorite tech company",
+            "symbol": "MaxTechInvestment",
+            "value": 500,
+            "shape": [],
+            "code": "MaxTechInvestment = data[\"MaxTechInvestment\"] # scalar parameter"
+        },
+        {
+            "definition": "Annual return rate of the favorite clothing company",
+            "symbol": "ReturnRateClothing",
+            "value": 0.07,
+            "shape": [],
+            "code": "ReturnRateClothing = data[\"ReturnRateClothing\"] # scalar parameter"
+        },
+        {
+            "definition": "Annual return rate of the favorite tech company",
+            "symbol": "ReturnRateTech",
+            "value": 0.1,
+            "shape": [],
+            "code": "ReturnRateTech = data[\"ReturnRateTech\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Clothing investment must be at least a certain ratio of the tech investment",
+            "status": "coded",
+            "formulation": "\\textup{ClothingInvestment} \\geq \\textup{InvestmentRatio} \\times \\textup{TechInvestment}",
+            "related_variables": [
+                "ClothingInvestment",
+                "TechInvestment"
+            ],
+            "related_parameters": [
+                "InvestmentRatio"
+            ],
+            "code": "# Add constraint to ensure ClothingInvestment is at least a certain ratio of TechInvestment\nmodel.addConstr(ClothingInvestment >= InvestmentRatio * TechInvestment, name=\"investment_ratio_constraint\")"
+        },
+        {
+            "description": "Tech investment must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{TechInvestment} \\geq 0",
+            "related_variables": [
+                "TechInvestment"
+            ],
+            "related_parameters": [],
+            "code": "# Ensure TechInvestment is non-negative\nTechInvestment_lb = model.addConstr(TechInvestment >= 0, name=\"TechInvestment_non_negative\")"
+        },
+        {
+            "description": "Clothing investment must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{ClothingInvestment} \\geq 0",
+            "related_variables": [
+                "ClothingInvestment"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint for non-negative clothing investment\nmodel.addConstr(ClothingInvestment >= 0, name=\"non_negative_investment\")"
+        },
+        {
+            "description": "Jacob can invest at most MaxTechInvestment in the tech company",
+            "status": "coded",
+            "formulation": "\\textup{TechInvestment} \\leq \\textup{MaxTechInvestment}",
+            "related_variables": [
+                "TechInvestment"
+            ],
+            "related_parameters": [
+                "MaxTechInvestment"
+            ],
+            "code": "# Constraint: Jacob can invest at most MaxTechInvestment in the tech company\nmodel.addConstr(TechInvestment <= MaxTechInvestment, name=\"max_tech_investment\")"
+        },
+        {
+            "description": "Total investment in clothing and tech companies must be equal to the total amount available for investment",
+            "status": "coded",
+            "formulation": "\\textup{ClothingInvestment} + \\textup{TechInvestment} = \\textup{TotalInvestment}",
+            "related_variables": [
+                "ClothingInvestment",
+                "TechInvestment"
+            ],
+            "related_parameters": [
+                "TotalInvestment"
+            ],
+            "code": "# Total investment constraint: investment in clothing and tech companies must equal total investment\nmodel.addConstr(ClothingInvestment + TechInvestment == TotalInvestment, name=\"total_investment_constraint\")"
+        },
+        {
+            "description": "The sum of investments can't exceed the total amount of money available",
+            "status": "coded",
+            "formulation": "\\textup{ClothingInvestment} + \\textup{TechInvestment} \\leq \\textup{TotalInvestment}",
+            "related_variables": [
+                "ClothingInvestment",
+                "TechInvestment"
+            ],
+            "related_parameters": [
+                "TotalInvestment"
+            ],
+            "code": "model.addConstr(ClothingInvestment + TechInvestment <= TotalInvestment, name=\"investment_limit\")"
+        },
+        {
+            "description": "The investment in the clothing company must be at least four times that of the tech company",
+            "status": "coded",
+            "formulation": "\\textup{ClothingInvestment} \\geq 4 \\times \\textup{TechInvestment}",
+            "related_variables": [
+                "ClothingInvestment",
+                "TechInvestment"
+            ],
+            "related_parameters": [
+                "InvestmentRatio"
+            ],
+            "code": "# Add constraint for investment in clothing company to be at least four times that of the tech company\nmodel.addConstr(ClothingInvestment >= 4 * TechInvestment, name=\"investment_ratio_constraint\")"
+        },
+        {
+            "description": "The investment in the tech company can't exceed the maximum allowed investment",
+            "status": "coded",
+            "formulation": "\\textup{TechInvestment} \\leq \\textup{MaxTechInvestment}",
+            "related_variables": [
+                "TechInvestment"
+            ],
+            "related_parameters": [
+                "MaxTechInvestment"
+            ],
+            "code": "# Constraint: The investment in the tech company can't exceed the maximum allowed investment\nmodel.addConstr(TechInvestment <= MaxTechInvestment, name=\"max_tech_investment_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Amount of money invested in the favorite clothing company",
+            "symbol": "ClothingInvestment",
+            "shape": [],
+            "status": "coded",
+            "code": "ClothingInvestment = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"ClothingInvestment\")"
+        },
+        {
+            "definition": "Amount of money invested in the favorite tech company",
+            "symbol": "TechInvestment",
+            "shape": [],
+            "status": "coded",
+            "code": "TechInvestment = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TechInvestment\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize Jacob's total profit from investments in both the clothing and the tech companies",
+            "status": "coded",
+            "formulation": "\\max \\quad (\\textup{ClothingInvestment} \\times \\textup{ReturnRateClothing} + \\textup{TechInvestment} \\times \\textup{ReturnRateTech})",
+            "related_variables": [
+                "ClothingInvestment",
+                "TechInvestment"
+            ],
+            "related_parameters": [
+                "ReturnRateClothing",
+                "ReturnRateTech"
+            ],
+            "code": "# Set the objective function\nmodel.setObjective(ClothingInvestment * ReturnRateClothing + TechInvestment * ReturnRateTech, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 225.00000000000003,
+    "log_path": "logs/log_20250414023822_nl4opt_prob_8/",
+    "problem_path": "data/nl4opt/prob_8/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_8/data.json\", \"r\") as f:\n    data = json.load(f)\n\nTotalInvestment = data[\"TotalInvestment\"] # scalar parameter\nInvestmentRatio = data[\"InvestmentRatio\"] # scalar parameter\nMaxTechInvestment = data[\"MaxTechInvestment\"] # scalar parameter\nReturnRateClothing = data[\"ReturnRateClothing\"] # scalar parameter\nReturnRateTech = data[\"ReturnRateTech\"] # scalar parameter\nClothingInvestment = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"ClothingInvestment\")\nTechInvestment = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TechInvestment\")\n\n# Add constraint to ensure ClothingInvestment is at least a certain ratio of TechInvestment\nmodel.addConstr(ClothingInvestment >= InvestmentRatio * TechInvestment, name=\"investment_ratio_constraint\")\n\n# Ensure TechInvestment is non-negative\nTechInvestment_lb = model.addConstr(TechInvestment >= 0, name=\"TechInvestment_non_negative\")\n\n# Add constraint for non-negative clothing investment\nmodel.addConstr(ClothingInvestment >= 0, name=\"non_negative_investment\")\n\n# Constraint: Jacob can invest at most MaxTechInvestment in the tech company\nmodel.addConstr(TechInvestment <= MaxTechInvestment, name=\"max_tech_investment\")\n\n# Total investment constraint: investment in clothing and tech companies must equal total investment\nmodel.addConstr(ClothingInvestment + TechInvestment == TotalInvestment, name=\"total_investment_constraint\")\n\nmodel.addConstr(ClothingInvestment + TechInvestment <= TotalInvestment, name=\"investment_limit\")\n\n# Add constraint for investment in clothing company to be at least four times that of the tech company\nmodel.addConstr(ClothingInvestment >= 4 * TechInvestment, name=\"investment_ratio_constraint\")\n\n# Constraint: The investment in the tech company can't exceed the maximum allowed investment\nmodel.addConstr(TechInvestment <= MaxTechInvestment, name=\"max_tech_investment_constraint\")\n\n# Set the objective function\nmodel.setObjective(ClothingInvestment * ReturnRateClothing + TechInvestment * ReturnRateTech, gp.GRB.MAXIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

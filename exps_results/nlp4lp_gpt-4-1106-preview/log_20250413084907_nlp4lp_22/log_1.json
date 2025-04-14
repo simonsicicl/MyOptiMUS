@@ -1,0 +1,204 @@
+{
+    "background": "The company aims to establish the best policy for maintaining equipment, manufacturing, storing, and selling products to maximize profits with limited machinery, work hours, and specific product constraints.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of machines",
+            "symbol": "M",
+            "value": "",
+            "shape": [],
+            "code": "M = data[\"M\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit for each product",
+            "symbol": "Profit",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "Profit = np.array(data[\"Profit\"]) # ['K']"
+        },
+        {
+            "definition": "Time required to produce each product on each machine",
+            "symbol": "Time",
+            "value": "",
+            "shape": [
+                "K",
+                "M"
+            ],
+            "code": "Time = np.array(data[\"Time\"]) # ['K', 'M']"
+        },
+        {
+            "definition": "Downtime for each machine",
+            "symbol": "Downtime",
+            "value": "",
+            "shape": [
+                "M"
+            ],
+            "code": "Downtime = np.array(data[\"Downtime\"]) # ['M']"
+        },
+        {
+            "definition": "Limit for each product on constraints",
+            "symbol": "Limit",
+            "value": "",
+            "shape": [
+                "K",
+                "I"
+            ],
+            "code": "Limit = np.array(data[\"Limit\"]) # ['K', 'I']"
+        },
+        {
+            "definition": "Price for storing products",
+            "symbol": "StorePrice",
+            "value": 0.33,
+            "shape": [],
+            "code": "StorePrice = data[\"StorePrice\"] # scalar parameter"
+        },
+        {
+            "definition": "Quantity of products to keep in store",
+            "symbol": "KeepQuantity",
+            "value": "",
+            "shape": [],
+            "code": "KeepQuantity = data[\"KeepQuantity\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of work hours available",
+            "symbol": "WorkHours",
+            "value": "",
+            "shape": [],
+            "code": "WorkHours = data[\"WorkHours\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Each product must adhere to a production limit imposed by the constraints for the available machines.",
+            "status": "coded",
+            "formulation": "\\sum_{m=1}^{M} \\textup{Production}_{km} \\leq \\textup{Limit}_{k} \\quad \\forall k \\in K",
+            "related_variables": [
+                "Production"
+            ],
+            "related_parameters": [
+                "M",
+                "Limit"
+            ],
+            "code": "# Add production limit constraints for each product\nfor k in K:\n    model.addConstr(gp.quicksum(Production[k, m] for m in range(M)) <= Limit[k], name=f\"prod_limit_{k}\")"
+        },
+        {
+            "description": "A minimum quantity of KeepQuantity must be kept in storage",
+            "status": "coded",
+            "formulation": "\\sum_{k=1}^{K} \\textup{Storage}_{k} \\geq \\textup{KeepQuantity}",
+            "related_variables": [
+                "Storage"
+            ],
+            "related_parameters": [
+                "KeepQuantity"
+            ],
+            "code": "# Ensure the minimum quantity is kept in storage\nmodel.addConstr(gp.quicksum(Storage[k] for k in range(K)) >= KeepQuantity, name=\"min_storage_quantity\")"
+        },
+        {
+            "description": "Total production time for all products on all machines must not exceed available work hours",
+            "status": "coded",
+            "formulation": "\\sum_{k=1}^{K} \\sum_{m=1}^{M} \\textup{Production}_{km} \\cdot \\textup{Time}_{km} \\leq \\textup{WorkHours}",
+            "related_variables": [
+                "Production"
+            ],
+            "related_parameters": [
+                "Time",
+                "WorkHours"
+            ],
+            "code": "# Constraint for total production time not exceeding available work hours\ntotal_production_time = gp.quicksum(Production[k, m] * Time[k, m] for k in range(K) for m in range(M))\nmodel.addConstr(total_production_time <= WorkHours, name=\"total_production_time_limit\")"
+        },
+        {
+            "description": "All product quantities must be non-negative",
+            "status": "coded",
+            "formulation": "\\forall k \\in K, \\forall m \\in M: \\quad \\textup{Production}_{km} \\geq 0 \\quad \\text{and} \\quad \\textup{Storage}_{k} \\geq 0",
+            "related_variables": [
+                "Production",
+                "Storage"
+            ],
+            "related_parameters": [],
+            "code": "# Ensure all product quantities produced and stored are non-negative\nfor k in K:\n    for m in M:\n        model.addConstr(Production[k, m] >= 0, name=f\"non_negative_production_{k}_{m}\")\n    model.addConstr(Storage[k] >= 0, name=f\"non_negative_storage_{k}\")"
+        },
+        {
+            "description": "The total production time on each machine must not exceed the available work hours minus downtime for maintenance",
+            "status": "coded",
+            "formulation": "\\sum_{k=1}^{K} \\textup{Time}_{km} \\times \\textup{Production}_{km} \\leq \\textup{WorkHours} - \\textup{Downtime}_{m} \\quad \\forall m \\in \\{1, ..., M\\}",
+            "related_variables": [
+                "Production"
+            ],
+            "related_parameters": [
+                "Time",
+                "WorkHours",
+                "Downtime"
+            ],
+            "code": "# Add constraints to ensure that total production time does not exceed available work hours minus downtime per machine\nfor m in range(M):\n    model.addConstr(gp.quicksum(Time[k, m] * Production[k, m] for k in range(K)) <= WorkHours - Downtime[m], name=f\"production_time_machine_{m}\")"
+        },
+        {
+            "description": "The quantity of products kept in storage should not exceed the quantity decided to keep in store",
+            "status": "coded",
+            "formulation": "\\sum_{k=1}^{K} \\textup{Storage}_{k} \\leq \\textup{KeepQuantity}",
+            "related_variables": [
+                "Storage"
+            ],
+            "related_parameters": [
+                "KeepQuantity"
+            ],
+            "code": "# Add constraint for maximum allowable quantity in storage\nmodel.addConstr(gp.quicksum(Storage[k] for k in range(K)) <= KeepQuantity, \n                name=\"max_storage_constraint\")"
+        },
+        {
+            "description": "Production of each product must not exceed specific product constraints",
+            "status": "coded",
+            "formulation": "\\sum_{m=1}^{M} \\textup{Production}_{km} \\leq \\textup{Limit}_{ki} \\quad \\forall k \\in \\{1, ..., K\\}, \\forall i \\in \\{1, ..., I\\}",
+            "related_variables": [
+                "Production"
+            ],
+            "related_parameters": [
+                "Limit"
+            ],
+            "code": "# Add production limit constraints\nfor k in range(K):\n    for i in range(I):\n        model.addConstr(gp.quicksum(Production[k, m] for m in range(M)) <= Limit[k, i], \n                        name=f\"prod_limit_{k}_{i}\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of units of product k produced on machine m",
+            "symbol": "Production",
+            "shape": [
+                "K",
+                "M"
+            ],
+            "status": "coded",
+            "code": "Production = model.addVars(K, M, vtype=gp.GRB.CONTINUOUS, name=\"Production\")"
+        },
+        {
+            "definition": "Number of units of product k kept in storage",
+            "symbol": "Storage",
+            "shape": [
+                "K"
+            ],
+            "status": "coded",
+            "code": "Storage = model.addVars(K, vtype=gp.GRB.CONTINUOUS, name=\"Storage\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total profit from the production and sale of products, considering the cost of storage",
+            "status": "coded",
+            "formulation": "\\max \\quad \\sum_{k=1}^{K} \\sum_{m=1}^{M} \\textup{Profit}_{k} \\times \\textup{Production}_{km} - \\sum_{k=1}^{K} \\textup{StorePrice} \\times \\textup{Storage}_{k}",
+            "related_variables": [
+                "Production",
+                "Storage"
+            ],
+            "related_parameters": [
+                "Profit",
+                "StorePrice"
+            ],
+            "code": "# Set objective\nmodel.setObjective(gp.quicksum(Profit[k] * Production[k,m] for k in range(K) for m in range(M)) - gp.quicksum(StorePrice * Storage[k] for k in range(K)), gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413084907_nlp4lp_22/",
+    "problem_path": "data/nlp4lp/22/"
+}

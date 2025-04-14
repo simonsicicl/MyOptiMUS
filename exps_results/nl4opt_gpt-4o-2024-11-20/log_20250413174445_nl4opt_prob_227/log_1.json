@@ -1,0 +1,196 @@
+{
+    "background": "A garden bed requires hydration for both subsoil and topsoil. Water for hydration and the truck's capacity for transporting soil bags are limited resources.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Units of water required to hydrate one bag of subsoil",
+            "symbol": "SubsoilWater",
+            "value": 10,
+            "shape": [],
+            "code": "SubsoilWater = data[\"SubsoilWater\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of water required to hydrate one bag of topsoil",
+            "symbol": "TopsoilWater",
+            "value": 6,
+            "shape": [],
+            "code": "TopsoilWater = data[\"TopsoilWater\"] # scalar parameter"
+        },
+        {
+            "definition": "Total number of bags of subsoil and topsoil combined available",
+            "symbol": "TotalBags",
+            "value": 150,
+            "shape": [],
+            "code": "TotalBags = data[\"TotalBags\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of bags of topsoil required",
+            "symbol": "MinTopsoil",
+            "value": 10,
+            "shape": [],
+            "code": "MinTopsoil = data[\"MinTopsoil\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum proportion of topsoil bags",
+            "symbol": "MaxTopsoilProportion",
+            "value": 0.33,
+            "shape": [],
+            "code": "MaxTopsoilProportion = data[\"MaxTopsoilProportion\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of subsoil bags cannot be negative.",
+            "status": "coded",
+            "formulation": "\\textup{SubsoilBags} \\\\geq 0",
+            "related_variables": [
+                "SubsoilBags"
+            ],
+            "related_parameters": [],
+            "code": "# Ensure the number of subsoil bags cannot be negative\nmodel.addConstr(SubsoilBags >= 0, name=\"non_negative_subsoil_bags\")"
+        },
+        {
+            "description": "The number of topsoil bags must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{TopsoilBags} \\geq 0",
+            "related_variables": [
+                "TopsoilBags"
+            ],
+            "related_parameters": [],
+            "code": "# Ensure the number of topsoil bags is non-negative\nmodel.addConstr(TopsoilBags >= 0, name=\"non_negative_topsoil_bags\")"
+        },
+        {
+            "description": "The combined number of subsoil and topsoil bags cannot exceed the total allowed number of bags (TotalBags).",
+            "status": "coded",
+            "formulation": "\\textup{SubsoilBags} + \\textup{TopsoilBags} \\leq \\textup{TotalBags}",
+            "related_variables": [
+                "SubsoilBags",
+                "TopsoilBags"
+            ],
+            "related_parameters": [
+                "TotalBags"
+            ],
+            "code": "# Add constraint for combined number of subsoil and topsoil bags not exceeding TotalBags\nmodel.addConstr(SubsoilBags + TopsoilBags <= TotalBags, name=\"total_bags_limit\")"
+        },
+        {
+            "description": "The number of topsoil bags selected or transported for hydration must be at least the minimum required, denoted by MinTopsoil.",
+            "status": "coded",
+            "formulation": "\\textup{TopsoilBags} \\geq \\textup{MinTopsoil}",
+            "related_variables": [
+                "TopsoilBags"
+            ],
+            "related_parameters": [
+                "MinTopsoil"
+            ],
+            "code": "# Add constraint to enforce the minimum required number of topsoil bags\nmodel.addConstr(TopsoilBags >= MinTopsoil, name=\"min_topsoil_requirement\")"
+        },
+        {
+            "description": "The number of topsoil bags cannot exceed MaxTopsoilProportion times the total number of soil bags (which includes both topsoil and subsoil).",
+            "status": "coded",
+            "formulation": "\\textup{TopsoilBags} \\leq \\textup{MaxTopsoilProportion} \\times (\\textup{TopsoilBags} + \\textup{SubsoilBags})",
+            "related_variables": [
+                "TopsoilBags",
+                "SubsoilBags"
+            ],
+            "related_parameters": [
+                "MaxTopsoilProportion"
+            ],
+            "code": "# Add constraint to limit the number of topsoil bags\nmodel.addConstr(TopsoilBags <= MaxTopsoilProportion * (TopsoilBags + SubsoilBags), name=\"topsoil_limit\")"
+        },
+        {
+            "description": "The sum of SubsoilBags and TopsoilBags must not exceed the TotalBags available.",
+            "status": "coded",
+            "formulation": "\\textup{SubsoilBags} + \\textup{TopsoilBags} \\leq \\textup{TotalBags}",
+            "related_variables": [
+                "SubsoilBags",
+                "TopsoilBags"
+            ],
+            "related_parameters": [
+                "TotalBags"
+            ],
+            "code": "# Add constraint to ensure the sum of SubsoilBags and TopsoilBags does not exceed TotalBags\nmodel.addConstr(SubsoilBags + TopsoilBags <= TotalBags, name=\"bag_limit_constraint\")"
+        },
+        {
+            "description": "The number of TopsoilBags must be at least the minimum required.",
+            "status": "coded",
+            "formulation": "\\textup{TopsoilBags} \\geq \\textup{MinTopsoil}",
+            "related_variables": [
+                "TopsoilBags"
+            ],
+            "related_parameters": [
+                "MinTopsoil"
+            ],
+            "code": "# Add constraint to ensure the number of topsoil bags meets the minimum required\nmodel.addConstr(TopsoilBags >= MinTopsoil, name=\"min_topsoil_constraint\")"
+        },
+        {
+            "description": "The number of TopsoilBags must not exceed the maximum proportion of the total number of bags.",
+            "status": "coded",
+            "formulation": "\\textup{TopsoilBags} \\leq \\textup{MaxTopsoilProportion} \\cdot \\textup{TotalBagsUsed}",
+            "related_variables": [
+                "TopsoilBags",
+                "TotalBagsUsed"
+            ],
+            "related_parameters": [
+                "MaxTopsoilProportion"
+            ],
+            "code": "# Add constraint to ensure TopsoilBags do not exceed the maximum proportion of TotalBagsUsed\nmodel.addConstr(TopsoilBags <= MaxTopsoilProportion * TotalBagsUsed, name=\"max_topsoil_proportion_constraint\")"
+        },
+        {
+            "description": "Define TotalBagsUsed as the sum of SubsoilBags and TopsoilBags.",
+            "status": "coded",
+            "formulation": "\\textup{TotalBagsUsed} = \\textup{SubsoilBags} + \\textup{TopsoilBags}",
+            "related_variables": [
+                "TotalBagsUsed",
+                "SubsoilBags",
+                "TopsoilBags"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint to define TotalBagsUsed as the sum of SubsoilBags and TopsoilBags\nmodel.addConstr(TotalBagsUsed == SubsoilBags + TopsoilBags, name=\"total_bags_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of subsoil bags selected or transported for hydration.",
+            "symbol": "SubsoilBags",
+            "shape": [],
+            "status": "coded",
+            "code": "SubsoilBags = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"SubsoilBags\")"
+        },
+        {
+            "definition": "The number of topsoil bags selected or transported for hydration.",
+            "symbol": "TopsoilBags",
+            "shape": [],
+            "status": "coded",
+            "code": "TopsoilBags = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TopsoilBags\")"
+        },
+        {
+            "definition": "The total number of SubsoilBags and TopsoilBags used.",
+            "symbol": "TotalBagsUsed",
+            "shape": [],
+            "status": "coded",
+            "code": "TotalBagsUsed = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TotalBagsUsed\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total water required to hydrate both subsoil and topsoil.",
+            "status": "coded",
+            "formulation": "\\textup{Minimize: } \\quad \\textup{SubsoilWater} \\cdot \\textup{SubsoilBags} + \\textup{TopsoilWater} \\cdot \\textup{TopsoilBags}",
+            "related_variables": [
+                "SubsoilBags",
+                "TopsoilBags"
+            ],
+            "related_parameters": [
+                "SubsoilWater",
+                "TopsoilWater"
+            ],
+            "code": "# Set objective\nmodel.setObjective(SubsoilWater * SubsoilBags + TopsoilWater * TopsoilBags, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413174445_nl4opt_prob_227/",
+    "problem_path": "data/nl4opt/prob_227/"
+}

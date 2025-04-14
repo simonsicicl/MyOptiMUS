@@ -1,0 +1,173 @@
+{
+    "background": "A music company produces two types of digital keyboards, full-weighted and semi-weighted, which require oscillator chips and production time from a daily limited resource pool.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Sale price of the full-weighted keyboard",
+            "symbol": "FullWeightedPrice",
+            "value": 2800,
+            "shape": [],
+            "code": "FullWeightedPrice = data[\"FullWeightedPrice\"] # scalar parameter"
+        },
+        {
+            "definition": "Sale price of the semi-weighted keyboard",
+            "symbol": "SemiWeightedPrice",
+            "value": 2400,
+            "shape": [],
+            "code": "SemiWeightedPrice = data[\"SemiWeightedPrice\"] # scalar parameter"
+        },
+        {
+            "definition": "Total number of oscillator chips available per day",
+            "symbol": "TotalChips",
+            "value": 3500,
+            "shape": [],
+            "code": "TotalChips = data[\"TotalChips\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of oscillator chips required to produce one full-weighted keyboard",
+            "symbol": "ChipsFullWeighted",
+            "value": 20,
+            "shape": [],
+            "code": "ChipsFullWeighted = data[\"ChipsFullWeighted\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of oscillator chips required to produce one semi-weighted keyboard",
+            "symbol": "ChipsSemiWeighted",
+            "value": 15,
+            "shape": [],
+            "code": "ChipsSemiWeighted = data[\"ChipsSemiWeighted\"] # scalar parameter"
+        },
+        {
+            "definition": "Total available production time per day in hours",
+            "symbol": "TotalTime",
+            "value": 6,
+            "shape": [],
+            "code": "TotalTime = data[\"TotalTime\"] # scalar parameter"
+        },
+        {
+            "definition": "Production time required to produce one keyboard (regardless of type) in hours",
+            "symbol": "ProductionTimePerKeyboard",
+            "value": 1.2,
+            "shape": [],
+            "code": "ProductionTimePerKeyboard = data[\"ProductionTimePerKeyboard\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of full-weighted keyboards produced daily must be non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{FullWeightedKeyboards} \\\\geq 0",
+            "related_variables": [
+                "FullWeightedKeyboards"
+            ],
+            "related_parameters": [],
+            "code": "# Since the variable \"FullWeightedKeyboards\" is already defined as non-negative (default lower bound is 0 for continuous variables in Gurobi), no additional constraint is needed."
+        },
+        {
+            "description": "Number of semi-weighted keyboards is non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{SemiWeightedKeyboards} \\\\geq 0",
+            "related_variables": [
+                "SemiWeightedKeyboards"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint to ensure the number of semi-weighted keyboards is non-negative\nmodel.addConstr(SemiWeightedKeyboards >= 0, name=\"SemiWeightedKeyboards_nonnegative\")"
+        },
+        {
+            "description": "The total number of oscillator chips used by full-weighted and semi-weighted keyboard production cannot exceed the total available chips.",
+            "status": "coded",
+            "formulation": "\\textup{ChipsFullWeighted} \\cdot \\textup{FullWeightedKeyboards} + \\textup{ChipsSemiWeighted} \\cdot \\textup{SemiWeightedKeyboards} \\leq \\textup{TotalChips}",
+            "related_variables": [
+                "FullWeightedKeyboards",
+                "SemiWeightedKeyboards"
+            ],
+            "related_parameters": [
+                "ChipsFullWeighted",
+                "ChipsSemiWeighted",
+                "TotalChips"
+            ],
+            "code": "# Add constraint for the total number of oscillator chips used\nmodel.addConstr(\n    ChipsFullWeighted * FullWeightedKeyboards + ChipsSemiWeighted * SemiWeightedKeyboards <= TotalChips,\n    name=\"osillator_chips_limit\"\n)"
+        },
+        {
+            "description": "The total production time for all keyboards cannot exceed the available production time limit per day.",
+            "status": "coded",
+            "formulation": "\\textup{FullWeightedKeyboards} \\times \\textup{ProductionTimePerKeyboard} + \\textup{SemiWeightedKeyboards} \\times \\textup{ProductionTimePerKeyboard} \\leq \\textup{TotalTime}",
+            "related_variables": [
+                "FullWeightedKeyboards",
+                "SemiWeightedKeyboards"
+            ],
+            "related_parameters": [
+                "ProductionTimePerKeyboard",
+                "TotalTime"
+            ],
+            "code": "# Add total production time constraint\nmodel.addConstr(\n    FullWeightedKeyboards * ProductionTimePerKeyboard +\n    SemiWeightedKeyboards * ProductionTimePerKeyboard <= TotalTime,\n    name=\"total_production_time\"\n)"
+        },
+        {
+            "description": "Constraint ensuring that total oscillator chips used does not exceed daily availability",
+            "status": "coded",
+            "formulation": "\\textup{ChipsFullWeighted} \\cdot \\textup{FullWeightedKeyboards} + \\textup{ChipsSemiWeighted} \\cdot \\textup{SemiWeightedKeyboards} \\leq \\textup{TotalChips}",
+            "related_variables": [
+                "FullWeightedKeyboards",
+                "SemiWeightedKeyboards"
+            ],
+            "related_parameters": [
+                "ChipsFullWeighted",
+                "ChipsSemiWeighted",
+                "TotalChips"
+            ],
+            "code": "# Add oscillator chip availability constraint\nmodel.addConstr(\n    ChipsFullWeighted * FullWeightedKeyboards + ChipsSemiWeighted * SemiWeightedKeyboards <= TotalChips,\n    name=\"oscillator_chip_availability\"\n)"
+        },
+        {
+            "description": "Constraint ensuring that total production time does not exceed daily availability",
+            "status": "coded",
+            "formulation": "\\textup{ProductionTimePerKeyboard} \\cdot (\\textup{FullWeightedKeyboards} + \\textup{SemiWeightedKeyboards}) \\leq \\textup{TotalTime}",
+            "related_variables": [
+                "FullWeightedKeyboards",
+                "SemiWeightedKeyboards"
+            ],
+            "related_parameters": [
+                "ProductionTimePerKeyboard",
+                "TotalTime"
+            ],
+            "code": "# Add constraint ensuring total production time does not exceed daily availability  \nmodel.addConstr(  \n    ProductionTimePerKeyboard * (FullWeightedKeyboards + SemiWeightedKeyboards) <= TotalTime,  \n    name=\"production_time_constraint\"  \n)"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of full-weighted keyboards produced daily.",
+            "symbol": "FullWeightedKeyboards",
+            "shape": [],
+            "status": "coded",
+            "code": "FullWeightedKeyboards = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"FullWeightedKeyboards\")"
+        },
+        {
+            "definition": "Number of semi-weighted keyboards produced daily.",
+            "symbol": "SemiWeightedKeyboards",
+            "shape": [],
+            "status": "coded",
+            "code": "SemiWeightedKeyboards = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"SemiWeightedKeyboards\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total revenue from selling full-weighted and semi-weighted keyboards",
+            "status": "coded",
+            "formulation": "\\textup{FullWeightedPrice} \\cdot \\textup{FullWeightedKeyboards} + \\textup{SemiWeightedPrice} \\cdot \\textup{SemiWeightedKeyboards}",
+            "related_variables": [
+                "FullWeightedKeyboards",
+                "SemiWeightedKeyboards"
+            ],
+            "related_parameters": [
+                "FullWeightedPrice",
+                "SemiWeightedPrice"
+            ],
+            "code": "# Set objective\nmodel.setObjective(FullWeightedPrice * FullWeightedKeyboards + SemiWeightedPrice * SemiWeightedKeyboards, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413173854_nl4opt_prob_220/",
+    "problem_path": "data/nl4opt/prob_220/"
+}

@@ -1,0 +1,148 @@
+{
+    "background": "A party organizer requires transportation for party goers, with options of limousines or buses. Each type of vehicle has a fixed capacity, and there's a requirement for minimum transportation and limousine usage.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Capacity of one limousine",
+            "symbol": "LimousineCapacity",
+            "value": 12,
+            "shape": [],
+            "code": "LimousineCapacity = data[\"LimousineCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Capacity of one bus",
+            "symbol": "BusCapacity",
+            "value": 18,
+            "shape": [],
+            "code": "BusCapacity = data[\"BusCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of people to transport",
+            "symbol": "MinimumPeople",
+            "value": 400,
+            "shape": [],
+            "code": "MinimumPeople = data[\"MinimumPeople\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum percentage of vehicles that must be limousines",
+            "symbol": "MinimumLimousinePercentage",
+            "value": 0.7,
+            "shape": [],
+            "code": "MinimumLimousinePercentage = data[\"MinimumLimousinePercentage\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Number of limousines used must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumLimousines} \\geq 0",
+            "related_variables": [
+                "NumLimousines"
+            ],
+            "related_parameters": [],
+            "code": "# NumLimousines is already defined as an integer variable; just need to ensure it is non-negative\nmodel.addConstr(NumLimousines >= 0, name=\"non_negative_limousines\")"
+        },
+        {
+            "description": "Number of buses used is non-negative",
+            "status": "coded",
+            "formulation": "NumBuses \\geq 0",
+            "related_variables": [
+                "NumBuses"
+            ],
+            "related_parameters": [],
+            "code": "# Since NumBuses is already defined as a non-negative integer variable, no additional constraint is required."
+        },
+        {
+            "description": "At least MinimumPeople must be transported",
+            "status": "coded",
+            "formulation": "\\textup{NumLimousines} \\cdot \\textup{LimousineCapacity} + \\textup{NumBuses} \\cdot \\textup{BusCapacity} \\geq \\textup{MinimumPeople}",
+            "related_variables": [
+                "NumLimousines",
+                "NumBuses"
+            ],
+            "related_parameters": [
+                "LimousineCapacity",
+                "BusCapacity",
+                "MinimumPeople"
+            ],
+            "code": "# At least MinimumPeople must be transported\nmodel.addConstr(NumLimousines * LimousineCapacity + NumBuses * BusCapacity >= MinimumPeople, name=\"minimum_people_transported\")"
+        },
+        {
+            "description": "At least MinimumLimousinePercentage of the total vehicles must be limousines",
+            "status": "coded",
+            "formulation": "\\textup{NumLimousines} \\geq \\textup{MinimumLimousinePercentage} \\times (\\textup{NumLimousines} + \\textup{NumBuses})",
+            "related_variables": [
+                "NumLimousines",
+                "NumBuses"
+            ],
+            "related_parameters": [
+                "MinimumLimousinePercentage"
+            ],
+            "code": "# Add constraint to ensure at least MinimumLimousinePercentage of the total vehicles are limousines\nmodel.addConstr(NumLimousines >= MinimumLimousinePercentage * (NumLimousines + NumBuses), name=\"limousine_min_percentage\")"
+        },
+        {
+            "description": "Ensure minimum number of people to be transported is met",
+            "status": "coded",
+            "formulation": "\\textup{NumLimousines} \\times \\textup{LimousineCapacity} + \\textup{NumBuses} \\times \\textup{BusCapacity} \\geq \\textup{MinimumPeople}",
+            "related_variables": [
+                "NumLimousines",
+                "NumBuses"
+            ],
+            "related_parameters": [
+                "LimousineCapacity",
+                "BusCapacity",
+                "MinimumPeople"
+            ],
+            "code": "# Ensure minimum number of people to be transported is met\nmodel.addConstr(NumLimousines * LimousineCapacity + NumBuses * BusCapacity >= MinimumPeople, name=\"min_people_transported\")"
+        },
+        {
+            "description": "Ensure minimum percentage of vehicles that are limousines is met",
+            "status": "coded",
+            "formulation": "\\textup{NumLimousines} \\geq \\textup{MinimumLimousinePercentage} \\times (\\textup{NumLimousines} + \\textup{NumBuses})",
+            "related_variables": [
+                "NumLimousines",
+                "NumBuses"
+            ],
+            "related_parameters": [
+                "MinimumLimousinePercentage"
+            ],
+            "code": "# Ensure minimum percentage of vehicles that are limousines is met\nmodel.addConstr(NumLimousines >= MinimumLimousinePercentage * (NumLimousines + NumBuses), name=\"limousine_percentage\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of limousines used for transportation",
+            "symbol": "NumLimousines",
+            "shape": [],
+            "status": "coded",
+            "code": "NumLimousines = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumLimousines\")"
+        },
+        {
+            "definition": "Number of buses used for transportation",
+            "symbol": "NumBuses",
+            "shape": [],
+            "status": "coded",
+            "code": "NumBuses = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumBuses\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of vehicles used",
+            "status": "coded",
+            "formulation": "\\min \\textup{NumLimousines} + \\textup{NumBuses}",
+            "related_variables": [
+                "NumLimousines",
+                "NumBuses"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(NumLimousines + NumBuses, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 30.0,
+    "log_path": "logs/log_20250413165651_nl4opt_prob_239/",
+    "problem_path": "data/nl4opt/prob_239/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_239/data.json\", \"r\") as f:\n    data = json.load(f)\n\nLimousineCapacity = data[\"LimousineCapacity\"] # scalar parameter\nBusCapacity = data[\"BusCapacity\"] # scalar parameter\nMinimumPeople = data[\"MinimumPeople\"] # scalar parameter\nMinimumLimousinePercentage = data[\"MinimumLimousinePercentage\"] # scalar parameter\nNumLimousines = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumLimousines\")\nNumBuses = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumBuses\")\n\n# NumLimousines is already defined as an integer variable; just need to ensure it is non-negative\nmodel.addConstr(NumLimousines >= 0, name=\"non_negative_limousines\")\n\n# Since NumBuses is already defined as a non-negative integer variable, no additional constraint is required.\n\n# At least MinimumPeople must be transported\nmodel.addConstr(NumLimousines * LimousineCapacity + NumBuses * BusCapacity >= MinimumPeople, name=\"minimum_people_transported\")\n\n# Add constraint to ensure at least MinimumLimousinePercentage of the total vehicles are limousines\nmodel.addConstr(NumLimousines >= MinimumLimousinePercentage * (NumLimousines + NumBuses), name=\"limousine_min_percentage\")\n\n# Ensure minimum number of people to be transported is met\nmodel.addConstr(NumLimousines * LimousineCapacity + NumBuses * BusCapacity >= MinimumPeople, name=\"min_people_transported\")\n\n# Ensure minimum percentage of vehicles that are limousines is met\nmodel.addConstr(NumLimousines >= MinimumLimousinePercentage * (NumLimousines + NumBuses), name=\"limousine_percentage\")\n\n# Set objective\nmodel.setObjective(NumLimousines + NumBuses, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

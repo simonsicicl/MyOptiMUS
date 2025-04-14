@@ -1,0 +1,269 @@
+{
+    "background": "A logistics strategy is required to minimize the total costs associated with unloading, storage, and crane rentals while meeting demands and adhering to capacity constraints.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "The number of time periods",
+            "symbol": "T",
+            "value": "",
+            "shape": [],
+            "code": "T = data[\"T\"] # scalar parameter"
+        },
+        {
+            "definition": "Demand at time t",
+            "symbol": "Demands",
+            "value": "",
+            "shape": [
+                "T"
+            ],
+            "code": "Demands = np.array(data[\"Demands\"]) # ['T']"
+        },
+        {
+            "definition": "Unloading cost at time t",
+            "symbol": "UnloadCosts",
+            "value": "",
+            "shape": [
+                "T"
+            ],
+            "code": "UnloadCosts = np.array(data[\"UnloadCosts\"]) # ['T']"
+        },
+        {
+            "definition": "Unloading capacity at time t",
+            "symbol": "UnloadCapacity",
+            "value": "",
+            "shape": [
+                "T"
+            ],
+            "code": "UnloadCapacity = np.array(data[\"UnloadCapacity\"]) # ['T']"
+        },
+        {
+            "definition": "Cost for holding containers",
+            "symbol": "HoldingCost",
+            "value": 0,
+            "shape": [],
+            "code": "HoldingCost = data[\"HoldingCost\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of containers that can be held",
+            "symbol": "MaxContainer",
+            "value": 0,
+            "shape": [],
+            "code": "MaxContainer = data[\"MaxContainer\"] # scalar parameter"
+        },
+        {
+            "definition": "Initial number of containers at the start",
+            "symbol": "InitContainer",
+            "value": 0,
+            "shape": [],
+            "code": "InitContainer = data[\"InitContainer\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of cranes available for unloading",
+            "symbol": "NumCranes",
+            "value": 0,
+            "shape": [],
+            "code": "NumCranes = data[\"NumCranes\"] # scalar parameter"
+        },
+        {
+            "definition": "Capacity of each crane",
+            "symbol": "CraneCapacity",
+            "value": 0,
+            "shape": [],
+            "code": "CraneCapacity = data[\"CraneCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost for renting each crane",
+            "symbol": "CraneCost",
+            "value": 0,
+            "shape": [],
+            "code": "CraneCost = data[\"CraneCost\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The total demand at each time period must be met, either directly through unloading or using stored containers from inventory.",
+            "status": "formulated",
+            "formulation": "\\textup{Inventory}_{t-1} + \\textup{UnloadedQuantity}_{t} = \\textup{Demands}_{t} + \\textup{Inventory}_{t} \\quad \\forall t \\in \\{1, 2, \\dots, \\textup{T}\\}",
+            "related_variables": [
+                "UnloadedQuantity",
+                "Inventory"
+            ],
+            "related_parameters": [
+                "Demands",
+                "T"
+            ]
+        },
+        {
+            "description": "The quantity of goods unloaded in period t cannot exceed the unloading capacity for that period.",
+            "status": "formulated",
+            "formulation": "\\textup{UnloadedQuantity}_{t} \\leq \\textup{UnloadCapacity}_{t}, \\quad \\forall t \\in \\{1, \\dots, T\\}",
+            "related_variables": [
+                "UnloadedQuantity"
+            ],
+            "related_parameters": [
+                "UnloadCapacity"
+            ]
+        },
+        {
+            "description": "The maximum container inventory at any time period must not exceed the maximum capacity.",
+            "status": "formulated",
+            "formulation": "\\textup{Inventory}_t \\leq \\textup{MaxContainer}, \\quad \\forall t \\in \\{1, \\dots, T\\}",
+            "related_variables": [
+                "Inventory"
+            ],
+            "related_parameters": [
+                "MaxContainer",
+                "T"
+            ]
+        },
+        {
+            "description": "The quantity unloaded in each time period cannot exceed the unloading capacity.",
+            "status": "formulated",
+            "formulation": "\\textup{UnloadedQuantity}_{t} \\leq \\textup{UnloadCapacity}_{t} \\quad \\forall t \\in \\{1, 2, \\dots, \\textup{T}\\}",
+            "related_variables": [
+                "UnloadedQuantity"
+            ],
+            "related_parameters": [
+                "UnloadCapacity",
+                "T"
+            ]
+        },
+        {
+            "description": "The total number of stored containers must not exceed the maximum storage capacity in any time period.",
+            "status": "formulated",
+            "formulation": "\\textup{Inventory}_{t} \\leq \\textup{MaxContainer} \\quad \\forall t \\in \\{1, 2, \\dots, \\textup{T}\\}",
+            "related_variables": [
+                "Inventory"
+            ],
+            "related_parameters": [
+                "MaxContainer",
+                "T"
+            ]
+        },
+        {
+            "description": "Starting inventory at the beginning of the timeline is equal to the provided initial inventory.",
+            "status": "formulated",
+            "formulation": "\\textup{Inventory}_{0} = \\textup{InitContainer}",
+            "related_variables": [
+                "Inventory"
+            ],
+            "related_parameters": [
+                "InitContainer"
+            ]
+        },
+        {
+            "description": "The inventory balance equation links current inventory, goods unloaded, demand, and previous inventory.",
+            "status": "formulated",
+            "formulation": "\\textup{Inventory}_t = \\textup{Inventory}_{t-1} + \\textup{UnloadedQuantity}_t - \\textup{Demands}_t, \\quad \\forall t \\in \\{1, \\dots, T\\}, \\quad \\textup{Inventory}_0 = \\textup{InitContainer}",
+            "related_variables": [
+                "Inventory",
+                "UnloadedQuantity"
+            ],
+            "related_parameters": [
+                "Demands",
+                "InitContainer",
+                "T"
+            ]
+        },
+        {
+            "description": "Ensure that the demand is met while tracking inventory levels.",
+            "status": "formulated",
+            "formulation": "\\textup{Inventory}_{t-1} + \\textup{UnloadedQuantity}_{t} - \\textup{Demands}_{t} = \\textup{Inventory}_{t}, \\quad \\forall t \\in \\{1, \\dots, T\\}",
+            "related_variables": [
+                "UnloadedQuantity",
+                "Inventory"
+            ],
+            "related_parameters": [
+                "Demands",
+                "T"
+            ]
+        },
+        {
+            "description": "Ensure that the unloading operation does not exceed the capacity of cranes available.",
+            "status": "formulated",
+            "formulation": "\\textup{UnloadedQuantity}_{t} \\leq (\\textup{NumCranes} + \\textup{ExtraCranes}_{t}) \\cdot \\textup{CraneCapacity}, \\quad \\forall t \\in \\{1, \\dots, T\\}",
+            "related_variables": [
+                "UnloadedQuantity",
+                "ExtraCranes"
+            ],
+            "related_parameters": [
+                "NumCranes",
+                "CraneCapacity",
+                "T"
+            ]
+        },
+        {
+            "description": "Ensure that the inventory does not exceed its maximum capacity.",
+            "status": "formulated",
+            "formulation": "\\textup{Inventory}_{t} \\leq \\textup{MaxContainer}, \\quad \\forall t \\in \\{1, \\dots, T\\}",
+            "related_variables": [
+                "Inventory"
+            ],
+            "related_parameters": [
+                "MaxContainer",
+                "T"
+            ]
+        },
+        {
+            "description": "Ensure non-negativity for the number of extra cranes rented.",
+            "status": "formulated",
+            "formulation": "\\textup{ExtraCranes}_{t} \\geq 0, \\quad \\forall t \\in \\{1, \\dots, T\\}",
+            "related_variables": [
+                "ExtraCranes"
+            ],
+            "related_parameters": [
+                "T"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The quantity of goods unloaded in time period t",
+            "symbol": "UnloadedQuantity",
+            "shape": [
+                "T"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "The number of containers remaining in inventory at the end of time period t",
+            "symbol": "Inventory",
+            "shape": [
+                "T"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "The number of additional cranes rented at time t to handle unloading requirements.",
+            "symbol": "ExtraCranes",
+            "shape": [
+                "T"
+            ],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total costs of unloading, inventory holding, and crane rental costs across all time periods.",
+            "status": "formulated",
+            "formulation": "\\sum_{t=1}^{T} \\textup{UnloadCosts}_{t} \\cdot \\textup{UnloadedQuantity}_{t} + \\sum_{t=1}^{T} \\textup{HoldingCost} \\cdot \\textup{Inventory}_{t} + \\sum_{t=1}^{T} \\textup{CraneCost} \\cdot \\textup{ExtraCranes}_{t}",
+            "related_variables": [
+                "UnloadedQuantity",
+                "Inventory",
+                "ExtraCranes"
+            ],
+            "related_parameters": [
+                "UnloadCosts",
+                "HoldingCost",
+                "CraneCost",
+                "T"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413152201_nlp4lp_61/",
+    "problem_path": "data/nlp4lp/61/"
+}

@@ -1,0 +1,234 @@
+{
+    "background": "A car manufacturing company needs to provide a minimum-cost diet consisting of hamburgers and chicken wraps that meets the workers' nutritional requirements for calories, protein, and carbs.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Minimum required calories per worker",
+            "symbol": "C",
+            "value": 2200,
+            "shape": [],
+            "code": "C = data[\"C\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum required protein in grams per worker",
+            "symbol": "P",
+            "value": 50,
+            "shape": [],
+            "code": "P = data[\"P\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum required carbohydrates in grams per worker",
+            "symbol": "Cr",
+            "value": 70,
+            "shape": [],
+            "code": "Cr = data[\"Cr\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost of one hamburger",
+            "symbol": "HamburgerCost",
+            "value": 6.5,
+            "shape": [],
+            "code": "HamburgerCost = data[\"HamburgerCost\"] # scalar parameter"
+        },
+        {
+            "definition": "Calories provided by one hamburger",
+            "symbol": "HamburgerCalories",
+            "value": 800,
+            "shape": [],
+            "code": "HamburgerCalories = data[\"HamburgerCalories\"] # scalar parameter"
+        },
+        {
+            "definition": "Protein provided by one hamburger in grams",
+            "symbol": "HamburgerProtein",
+            "value": 19,
+            "shape": [],
+            "code": "HamburgerProtein = data[\"HamburgerProtein\"] # scalar parameter"
+        },
+        {
+            "definition": "Carbohydrates provided by one hamburger in grams",
+            "symbol": "HamburgerCarbs",
+            "value": 20,
+            "shape": [],
+            "code": "HamburgerCarbs = data[\"HamburgerCarbs\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost of one chicken wrap",
+            "symbol": "WrapCost",
+            "value": 4,
+            "shape": [],
+            "code": "WrapCost = data[\"WrapCost\"] # scalar parameter"
+        },
+        {
+            "definition": "Calories provided by one chicken wrap",
+            "symbol": "WrapCalories",
+            "value": 450,
+            "shape": [],
+            "code": "WrapCalories = data[\"WrapCalories\"] # scalar parameter"
+        },
+        {
+            "definition": "Protein provided by one chicken wrap in grams",
+            "symbol": "WrapProtein",
+            "value": 12,
+            "shape": [],
+            "code": "WrapProtein = data[\"WrapProtein\"] # scalar parameter"
+        },
+        {
+            "definition": "Carbohydrates provided by one chicken wrap in grams",
+            "symbol": "WrapCarbs",
+            "value": 10,
+            "shape": [],
+            "code": "WrapCarbs = data[\"WrapCarbs\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Total calories from hamburgers and chicken wraps must be at least C",
+            "status": "coded",
+            "formulation": "NumHamburgers \\times \\textup{HamburgerCalories} + NumWraps \\times \\textup{WrapCalories} \\geq C",
+            "related_variables": [
+                "NumHamburgers",
+                "NumWraps"
+            ],
+            "related_parameters": [
+                "HamburgerCalories",
+                "WrapCalories",
+                "C"
+            ],
+            "code": "# Add constraint for minimum total calories from hamburgers and chicken wraps\nmodel.addConstr(NumHamburgers * HamburgerCalories + NumWraps * WrapCalories >= C, \"min_calories\")"
+        },
+        {
+            "description": "Total grams of protein provided by hamburgers and chicken wraps must be at least P",
+            "status": "coded",
+            "formulation": "\\textup{HamburgerProtein} \\times \\textup{NumHamburgers} + \\textup{WrapProtein} \\times \\textup{NumWraps} \\geq \\textup{P}",
+            "related_variables": [
+                "NumHamburgers",
+                "NumWraps"
+            ],
+            "related_parameters": [
+                "HamburgerProtein",
+                "WrapProtein",
+                "P"
+            ],
+            "code": "# Add constraint for minimum protein requirement\nmodel.addConstr(HamburgerProtein * NumHamburgers + WrapProtein * NumWraps >= P, name=\"min_protein_requirement\")"
+        },
+        {
+            "description": "Total grams of carbohydrates from hamburgers and chicken wraps must be at least the minimum required carbohydrates per worker",
+            "status": "coded",
+            "formulation": "\\textup{NumHamburgers} \\times \\textup{HamburgerCarbs} + \\textup{NumWraps} \\times \\textup{WrapCarbs} \\geq \\textup{Cr}",
+            "related_variables": [
+                "NumHamburgers",
+                "NumWraps"
+            ],
+            "related_parameters": [
+                "HamburgerCarbs",
+                "WrapCarbs",
+                "Cr"
+            ],
+            "code": "# Total carbs from hamburgers and wraps must meet minimum required carbs per worker constraint\nmodel.addConstr(NumHamburgers * HamburgerCarbs + NumWraps * WrapCarbs >= Cr, name=\"carbs_requirement\")"
+        },
+        {
+            "description": "The number of hamburgers consumed must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumHamburgers} \\geq 0",
+            "related_variables": [
+                "NumHamburgers"
+            ],
+            "related_parameters": [],
+            "code": "# Since NumHamburgers is already an integer variable, no code is needed to enforce non-negativity\n# The Gurobi optimizer inherently ensures that the integer variable is non-negative by default."
+        },
+        {
+            "description": "Number of chicken wraps must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumWraps} \\geq 0",
+            "related_variables": [
+                "NumWraps"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint to ensure the number of chicken wraps is non-negative\nmodel.addConstr(NumWraps >= 0, name=\"num_wraps_non_negative\")"
+        },
+        {
+            "description": "Ensure that the total calories provided by hamburgers and wraps meet the minimum required calories",
+            "status": "coded",
+            "formulation": "\\textup{NumHamburgers} \\times \\textup{HamburgerCalories} + \\textup{NumWraps} \\times \\textup{WrapCalories} \\geq \\textup{C}",
+            "related_variables": [
+                "NumHamburgers",
+                "NumWraps"
+            ],
+            "related_parameters": [
+                "HamburgerCalories",
+                "WrapCalories",
+                "C"
+            ],
+            "code": "# Ensure that the total calories provided by hamburgers and wraps meet the minimum required calories\nmodel.addConstr(NumHamburgers * HamburgerCalories + NumWraps * WrapCalories >= C, \"calories_requirement\")"
+        },
+        {
+            "description": "Ensure that the total protein provided by hamburgers and wraps meet the minimum required protein",
+            "status": "coded",
+            "formulation": "\\textup{NumHamburgers} \\times \\textup{HamburgerProtein} + \\textup{NumWraps} \\times \\textup{WrapProtein} \\geq \\textup{P}",
+            "related_variables": [
+                "NumHamburgers",
+                "NumWraps"
+            ],
+            "related_parameters": [
+                "HamburgerProtein",
+                "WrapProtein",
+                "P"
+            ],
+            "code": "# Ensure that the total protein provided by hamburgers and wraps meet the minimum required protein\nmodel.addConstr(NumHamburgers * HamburgerProtein + NumWraps * WrapProtein >= P, name=\"protein_requirement\")"
+        },
+        {
+            "description": "Ensure that the total carbohydrates provided by hamburgers and wraps meet the minimum required carbohydrates",
+            "status": "coded",
+            "formulation": "\\textup{NumHamburgers} \\times \\textup{HamburgerCarbs} + \\textup{NumWraps} \\times \\textup{WrapCarbs} \\geq \\textup{Cr}",
+            "related_variables": [
+                "NumHamburgers",
+                "NumWraps"
+            ],
+            "related_parameters": [
+                "HamburgerCarbs",
+                "WrapCarbs",
+                "Cr"
+            ],
+            "code": "# Ensure that the total carbohydrates provided by hamburgers and wraps meet the minimum required carbohydrates\nmodel.addConstr(NumHamburgers * HamburgerCarbs + NumWraps * WrapCarbs >= Cr, name=\"min_carbohydrates\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of hamburgers consumed",
+            "symbol": "NumHamburgers",
+            "shape": [],
+            "status": "coded",
+            "code": "NumHamburgers = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumHamburgers\")"
+        },
+        {
+            "definition": "Number of chicken wraps consumed",
+            "symbol": "NumWraps",
+            "shape": [],
+            "status": "coded",
+            "code": "NumWraps = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumWraps\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total cost of providing hamburgers and chicken wraps to meet the dietary requirements",
+            "status": "coded",
+            "formulation": "\\textup{TotalCost} = \\textup{NumHamburgers} \\times \\textup{HamburgerCost} + \\textup{NumWraps} \\times \\textup{WrapCost}",
+            "related_variables": [
+                "NumHamburgers",
+                "NumWraps"
+            ],
+            "related_parameters": [
+                "HamburgerCost",
+                "WrapCost"
+            ],
+            "code": "# Set objective\nmodel.setObjective(NumHamburgers * HamburgerCost + NumWraps * WrapCost, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 23.5,
+    "log_path": "logs/log_20250413154002_nl4opt_prob_199/",
+    "problem_path": "data/nl4opt/prob_199/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_199/data.json\", \"r\") as f:\n    data = json.load(f)\n\nC = data[\"C\"] # scalar parameter\nP = data[\"P\"] # scalar parameter\nCr = data[\"Cr\"] # scalar parameter\nHamburgerCost = data[\"HamburgerCost\"] # scalar parameter\nHamburgerCalories = data[\"HamburgerCalories\"] # scalar parameter\nHamburgerProtein = data[\"HamburgerProtein\"] # scalar parameter\nHamburgerCarbs = data[\"HamburgerCarbs\"] # scalar parameter\nWrapCost = data[\"WrapCost\"] # scalar parameter\nWrapCalories = data[\"WrapCalories\"] # scalar parameter\nWrapProtein = data[\"WrapProtein\"] # scalar parameter\nWrapCarbs = data[\"WrapCarbs\"] # scalar parameter\nNumHamburgers = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumHamburgers\")\nNumWraps = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumWraps\")\n\n# Add constraint for minimum total calories from hamburgers and chicken wraps\nmodel.addConstr(NumHamburgers * HamburgerCalories + NumWraps * WrapCalories >= C, \"min_calories\")\n\n# Add constraint for minimum protein requirement\nmodel.addConstr(HamburgerProtein * NumHamburgers + WrapProtein * NumWraps >= P, name=\"min_protein_requirement\")\n\n# Total carbs from hamburgers and wraps must meet minimum required carbs per worker constraint\nmodel.addConstr(NumHamburgers * HamburgerCarbs + NumWraps * WrapCarbs >= Cr, name=\"carbs_requirement\")\n\n# Since NumHamburgers is already an integer variable, no code is needed to enforce non-negativity\n# The Gurobi optimizer inherently ensures that the integer variable is non-negative by default.\n\n# Add constraint to ensure the number of chicken wraps is non-negative\nmodel.addConstr(NumWraps >= 0, name=\"num_wraps_non_negative\")\n\n# Ensure that the total calories provided by hamburgers and wraps meet the minimum required calories\nmodel.addConstr(NumHamburgers * HamburgerCalories + NumWraps * WrapCalories >= C, \"calories_requirement\")\n\n# Ensure that the total protein provided by hamburgers and wraps meet the minimum required protein\nmodel.addConstr(NumHamburgers * HamburgerProtein + NumWraps * WrapProtein >= P, name=\"protein_requirement\")\n\n# Ensure that the total carbohydrates provided by hamburgers and wraps meet the minimum required carbohydrates\nmodel.addConstr(NumHamburgers * HamburgerCarbs + NumWraps * WrapCarbs >= Cr, name=\"min_carbohydrates\")\n\n# Set objective\nmodel.setObjective(NumHamburgers * HamburgerCost + NumWraps * WrapCost, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

@@ -1,0 +1,181 @@
+{
+    "background": "A company produces liquid and foam hand sanitizers, each requiring different quantities of water and alcohol, under resource constraints and a production preference.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Units of water required to make one unit of liquid hand sanitizer",
+            "symbol": "WaterL",
+            "value": 40,
+            "shape": [],
+            "code": "WaterL = data[\"WaterL\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of alcohol required to make one unit of liquid hand sanitizer",
+            "symbol": "AlcoholL",
+            "value": 50,
+            "shape": [],
+            "code": "AlcoholL = data[\"AlcoholL\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of water required to make one unit of foam hand sanitizer",
+            "symbol": "WaterF",
+            "value": 60,
+            "shape": [],
+            "code": "WaterF = data[\"WaterF\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of alcohol required to make one unit of foam hand sanitizer",
+            "symbol": "AlcoholF",
+            "value": 40,
+            "shape": [],
+            "code": "AlcoholF = data[\"AlcoholF\"] # scalar parameter"
+        },
+        {
+            "definition": "Total units of water available",
+            "symbol": "WaterTotal",
+            "value": 2000,
+            "shape": [],
+            "code": "WaterTotal = data[\"WaterTotal\"] # scalar parameter"
+        },
+        {
+            "definition": "Total units of alcohol available",
+            "symbol": "AlcoholTotal",
+            "value": 2100,
+            "shape": [],
+            "code": "AlcoholTotal = data[\"AlcoholTotal\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of liquid hand sanitizers that can be produced",
+            "symbol": "MaxLiquid",
+            "value": 30,
+            "shape": [],
+            "code": "MaxLiquid = data[\"MaxLiquid\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of hands that can be cleaned by one unit of liquid hand sanitizer",
+            "symbol": "CleanHandsL",
+            "value": 30,
+            "shape": [],
+            "code": "CleanHandsL = data[\"CleanHandsL\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of hands that can be cleaned by one unit of foam hand sanitizer",
+            "symbol": "CleanHandsF",
+            "value": 20,
+            "shape": [],
+            "code": "CleanHandsF = data[\"CleanHandsF\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of liquid hand sanitizers produced must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{LiquidSanitizersProduced} \\geq 0",
+            "related_variables": [
+                "LiquidSanitizersProduced"
+            ],
+            "related_parameters": [],
+            "code": "# Since LiquidSanitizersProduced is already a non-negative integer variable, no additional constraint is needed."
+        },
+        {
+            "description": "Number of foam hand sanitizers produced must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{FoamSanitizersProduced} \\geq 0",
+            "related_variables": [
+                "FoamSanitizersProduced"
+            ],
+            "related_parameters": [],
+            "code": "# Non-negativity constraint for foam hand sanitizers production\nmodel.addConstr(FoamSanitizersProduced >= 0, name=\"non_negative_FoamSanitizersProduced\")"
+        },
+        {
+            "description": "Total water used in producing liquid hand sanitizers is at most the available total units of water",
+            "status": "coded",
+            "formulation": "\\textup{WaterL} \\times \\textup{LiquidSanitizersProduced} \\leq \\textup{WaterTotal}",
+            "related_variables": [
+                "LiquidSanitizersProduced"
+            ],
+            "related_parameters": [
+                "WaterL",
+                "WaterTotal"
+            ],
+            "code": "# Constraint for the total water used in producing liquid hand sanitizers\nmodel.addConstr(WaterL * LiquidSanitizersProduced <= WaterTotal, name=\"water_usage_limit\")"
+        },
+        {
+            "description": "Total alcohol used in producing liquid and foam hand sanitizers should not exceed the available total alcohol",
+            "status": "coded",
+            "formulation": "\\textup{AlcoholL} \\times \\textup{LiquidSanitizersProduced} + \\textup{AlcoholF} \\times \\textup{FoamSanitizersProduced} \\leq \\textup{AlcoholTotal}",
+            "related_variables": [
+                "LiquidSanitizersProduced",
+                "FoamSanitizersProduced"
+            ],
+            "related_parameters": [
+                "AlcoholL",
+                "AlcoholF",
+                "AlcoholTotal"
+            ],
+            "code": "# Add constraint for total alcohol usage in producing liquid and foam hand sanitizers\nmodel.addConstr(AlcoholL * LiquidSanitizersProduced + AlcoholF * FoamSanitizersProduced <= AlcoholTotal, name=\"alcohol_usage_constraint\")"
+        },
+        {
+            "description": "The number of foam hand sanitizers must exceed the number of liquid hand sanitizers",
+            "status": "coded",
+            "formulation": "\\textup{FoamSanitizersProduced} \\geq \\textup{LiquidSanitizersProduced} + 1",
+            "related_variables": [
+                "FoamSanitizersProduced",
+                "LiquidSanitizersProduced"
+            ],
+            "related_parameters": [],
+            "code": "# Ensure foam hand sanitizers produced exceed liquid hand sanitizers by at least 1\nmodel.addConstr(FoamSanitizersProduced >= LiquidSanitizersProduced + 1, \n                name=\"foam_exceeds_liquid\")"
+        },
+        {
+            "description": "The number of liquid hand sanitizers produced cannot exceed the maximum capacity",
+            "status": "coded",
+            "formulation": "\\textup{LiquidSanitizersProduced} \\leq \\textup{MaxLiquid}",
+            "related_variables": [
+                "LiquidSanitizersProduced"
+            ],
+            "related_parameters": [
+                "MaxLiquid"
+            ],
+            "code": "# Ensure production doesn't exceed maximum capacity\nmodel.addConstr(LiquidSanitizersProduced <= MaxLiquid, name=\"max_liquid_capacity_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of liquid hand sanitizers produced",
+            "symbol": "LiquidSanitizersProduced",
+            "shape": [],
+            "status": "coded",
+            "code": "LiquidSanitizersProduced = model.addVar(vtype=gp.GRB.INTEGER, name=\"LiquidSanitizersProduced\")"
+        },
+        {
+            "definition": "The number of foam hand sanitizers produced",
+            "symbol": "FoamSanitizersProduced",
+            "shape": [],
+            "status": "coded",
+            "code": "FoamSanitizersProduced = model.addVar(vtype=gp.GRB.INTEGER, name=\"FoamSanitizersProduced\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total number of hands cleaned by the produced liquid and foam hand sanitizers",
+            "status": "coded",
+            "formulation": "\\max (\\textup{LiquidSanitizersProduced} \\times \\textup{CleanHandsL} + \\textup{FoamSanitizersProduced} \\times \\textup{CleanHandsF})",
+            "related_variables": [
+                "LiquidSanitizersProduced",
+                "FoamSanitizersProduced"
+            ],
+            "related_parameters": [
+                "CleanHandsL",
+                "CleanHandsF"
+            ],
+            "code": "# Set objective\nmodel.setObjective(LiquidSanitizersProduced * CleanHandsL + FoamSanitizersProduced * CleanHandsF, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 1160.0,
+    "log_path": "logs/log_20250413112405_nl4opt_prob_128/",
+    "problem_path": "data/nl4opt/prob_128/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_128/data.json\", \"r\") as f:\n    data = json.load(f)\n\nWaterL = data[\"WaterL\"] # scalar parameter\nAlcoholL = data[\"AlcoholL\"] # scalar parameter\nWaterF = data[\"WaterF\"] # scalar parameter\nAlcoholF = data[\"AlcoholF\"] # scalar parameter\nWaterTotal = data[\"WaterTotal\"] # scalar parameter\nAlcoholTotal = data[\"AlcoholTotal\"] # scalar parameter\nMaxLiquid = data[\"MaxLiquid\"] # scalar parameter\nCleanHandsL = data[\"CleanHandsL\"] # scalar parameter\nCleanHandsF = data[\"CleanHandsF\"] # scalar parameter\nLiquidSanitizersProduced = model.addVar(vtype=gp.GRB.INTEGER, name=\"LiquidSanitizersProduced\")\nFoamSanitizersProduced = model.addVar(vtype=gp.GRB.INTEGER, name=\"FoamSanitizersProduced\")\n\n# Since LiquidSanitizersProduced is already a non-negative integer variable, no additional constraint is needed.\n\n# Non-negativity constraint for foam hand sanitizers production\nmodel.addConstr(FoamSanitizersProduced >= 0, name=\"non_negative_FoamSanitizersProduced\")\n\n# Constraint for the total water used in producing liquid hand sanitizers\nmodel.addConstr(WaterL * LiquidSanitizersProduced <= WaterTotal, name=\"water_usage_limit\")\n\n# Add constraint for total alcohol usage in producing liquid and foam hand sanitizers\nmodel.addConstr(AlcoholL * LiquidSanitizersProduced + AlcoholF * FoamSanitizersProduced <= AlcoholTotal, name=\"alcohol_usage_constraint\")\n\n# Ensure foam hand sanitizers produced exceed liquid hand sanitizers by at least 1\nmodel.addConstr(FoamSanitizersProduced >= LiquidSanitizersProduced + 1, \n                name=\"foam_exceeds_liquid\")\n\n# Ensure production doesn't exceed maximum capacity\nmodel.addConstr(LiquidSanitizersProduced <= MaxLiquid, name=\"max_liquid_capacity_constraint\")\n\n# Set objective\nmodel.setObjective(LiquidSanitizersProduced * CleanHandsL + FoamSanitizersProduced * CleanHandsF, gp.GRB.MAXIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

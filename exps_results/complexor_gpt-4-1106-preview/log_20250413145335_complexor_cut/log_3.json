@@ -1,0 +1,135 @@
+{
+    "background": "This problem involves optimizing the number of raw rolls cut from a stock roll to meet specific width orders using various cutting patterns.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "symbol": "NumWidths",
+            "definition": "The number of widths to be cut",
+            "shape": [],
+            "code": "NumWidths = data[\"NumWidths\"] # scalar parameter"
+        },
+        {
+            "symbol": "NumPatterns",
+            "definition": "The total number of patterns",
+            "shape": [],
+            "code": "NumPatterns = data[\"NumPatterns\"] # scalar parameter"
+        },
+        {
+            "symbol": "Widths",
+            "definition": "The set of widths to be cut from the roll",
+            "shape": [
+                "NumWidths"
+            ],
+            "code": "Widths = np.array(data[\"Widths\"]) # ['NumWidths']"
+        },
+        {
+            "symbol": "RollWidth",
+            "definition": "The width of the raw roll",
+            "shape": [],
+            "code": "RollWidth = data[\"RollWidth\"] # scalar parameter"
+        },
+        {
+            "symbol": "Orders",
+            "definition": "The number of orders for each width",
+            "shape": [
+                "NumWidths"
+            ],
+            "code": "Orders = np.array(data[\"Orders\"]) # ['NumWidths']"
+        },
+        {
+            "symbol": "NumRollsWidthPattern",
+            "definition": "The number of rolls of each width i in each pattern j",
+            "shape": [
+                "NumWidths",
+                "NumPatterns"
+            ],
+            "code": "NumRollsWidthPattern = np.array(data[\"NumRollsWidthPattern\"]) # ['NumWidths', 'NumPatterns']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Number of rolls cut for each width must be non-negative",
+            "status": "coded",
+            "formulation": "\\forall i \\in \\{1, ..., \\textup{NumWidths}\\}, j \\in \\{1, ..., \\textup{NumPatterns}\\}, \\quad \\textup{NumRollsWidthPattern}_{i,j} \\geq 0",
+            "related_variables": [
+                "NumRollsWidthPattern"
+            ],
+            "related_parameters": [
+                "NumWidths",
+                "NumPatterns"
+            ],
+            "code": "# Add non-negativity constraints for the number of rolls cut for each width and pattern\nfor i in range(NumWidths):\n    for j in range(NumPatterns):\n        model.addConstr((NumRollsWidthPattern[i, j] >= 0),\n                        name=f\"nonnegativity_width_pattern_{i+1}_{j+1}\")"
+        },
+        {
+            "description": "Total number of rolls cut for each width i must meet or exceed Orders_i",
+            "status": "coded",
+            "formulation": "\\sum_{j=1}^{\\textup{NumPatterns}} \\textup{NumRollsWidthPattern}_{i,j} \\cdot x_j \\geq \\textup{Orders}_i \\quad \\forall i \\in \\{1, ..., \\textup{NumWidths}\\}",
+            "related_variables": [
+                "x"
+            ],
+            "related_parameters": [
+                "NumWidths",
+                "NumPatterns",
+                "NumRollsWidthPattern",
+                "Orders"
+            ],
+            "code": "# Add constraints to ensure the total number of rolls cut for each width meets or exceeds the orders\nfor i in range(NumWidths):\n    model.addConstr(gp.quicksum(NumRollsWidthPattern[i, j] * x[j] for j in range(NumPatterns)) >= Orders[i], \n                    name=f\"min_rolls_for_width_{i}\")"
+        },
+        {
+            "description": "Each pattern j is used a non-negative number of times",
+            "status": "coded",
+            "formulation": "\\forall j \\in \\{1, \\ldots, \\textup{NumPatterns}\\}, \\quad \\textup{x}_j \\geq 0",
+            "related_variables": [
+                "x"
+            ],
+            "related_parameters": [
+                "NumPatterns"
+            ],
+            "code": "# Since x_j already defined as integer, no need to change integrality, just adding non-negativity constraints\nfor j in range(NumPatterns):\n    model.addConstr(x[j] >= 0, name=f\"non_negativity_{j}\")"
+        },
+        {
+            "description": "Ensure that the demand for each width is satisfied",
+            "status": "coded",
+            "formulation": "\\sum_{j=1}^{\\textup{NumPatterns}} \\textup{NumRollsWidthPattern}_{ij} \\times \\textup{x}_{j} \\geq \\textup{Orders}_{i} \\quad \\forall i \\in \\{1,...,\\textup{NumWidths}\\}",
+            "related_variables": [
+                "x"
+            ],
+            "related_parameters": [
+                "NumRollsWidthPattern",
+                "Orders",
+                "NumWidths"
+            ],
+            "code": "# Ensure that the demand for each width is satisfied\nfor i in range(NumWidths):\n    model.addConstr(gp.quicksum(NumRollsWidthPattern[i, j] * x[j] for j in range(NumPatterns)) >= Orders[i], name=f\"demand_satisfaction_{i}\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of times a pattern j is used",
+            "symbol": "x",
+            "shape": [
+                "NumPatterns"
+            ],
+            "status": "coded",
+            "code": "x = model.addVars(NumPatterns, vtype=gp.GRB.INTEGER, name=\"x\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of raw rolls cut to meet the orders",
+            "status": "coded",
+            "formulation": "\\min \\sum_{j=1}^{\\textup{NumPatterns}} \\textup{x}_{j}",
+            "related_variables": [
+                "x"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(gp.quicksum(x[j] for j in range(NumPatterns)), gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "runtime_error",
+    "solver_output_status": "runtime_error",
+    "error_message": "Traceback (most recent call last):\n  File \"/Users/simonsici/Desktop/MyOptiMUS/evaluator.py\", line 45, in run\n    exec(last_line, local_env, local_env)\n  File \"<string>\", line 4, in <module>\n  File \"src/gurobipy/model.pxi\", line 3625, in gurobipy.Model.addConstr\nTypeError: unsupported operand type(s) for -: 'bool' and 'NoneType'\n",
+    "obj_val": null,
+    "log_path": "logs/log_20250413145335_complexor_cut/",
+    "problem_path": "data/complexor/cut/",
+    "prep_code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/complexor/cut/data.json\", \"r\") as f:\n    data = json.load(f)\n"
+}

@@ -1,0 +1,204 @@
+{
+    "background": "A woman has a budget for gambling on three different sports events and seeks to maximize her average payout while limiting her average chance of losing to a certain threshold.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Total budget available to gamble",
+            "symbol": "B",
+            "value": 100000,
+            "shape": [],
+            "code": "B = data[\"B\"] # scalar parameter"
+        },
+        {
+            "definition": "Probability of losing money on the basketball bet",
+            "symbol": "Pbasketball",
+            "value": 0.5,
+            "shape": [],
+            "code": "Pbasketball = data[\"Pbasketball\"] # scalar parameter"
+        },
+        {
+            "definition": "Probability of losing money on the horse race bet",
+            "symbol": "Phorse",
+            "value": 0.25,
+            "shape": [],
+            "code": "Phorse = data[\"Phorse\"] # scalar parameter"
+        },
+        {
+            "definition": "Probability of losing money on the soccer bet",
+            "symbol": "Psoccer",
+            "value": 0.1,
+            "shape": [],
+            "code": "Psoccer = data[\"Psoccer\"] # scalar parameter"
+        },
+        {
+            "definition": "Payout for each dollar bet on the basketball tournament",
+            "symbol": "Rbasketball",
+            "value": 1.2,
+            "shape": [],
+            "code": "Rbasketball = data[\"Rbasketball\"] # scalar parameter"
+        },
+        {
+            "definition": "Payout for each dollar bet on the horse race",
+            "symbol": "Rhorse",
+            "value": 0.5,
+            "shape": [],
+            "code": "Rhorse = data[\"Rhorse\"] # scalar parameter"
+        },
+        {
+            "definition": "Payout for each dollar bet on the soccer game",
+            "symbol": "Rsoccer",
+            "value": 0.1,
+            "shape": [],
+            "code": "Rsoccer = data[\"Rsoccer\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum average probability of losing money",
+            "symbol": "Pmax",
+            "value": 0.3,
+            "shape": [],
+            "code": "Pmax = data[\"Pmax\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Total money spent on all bets should not exceed the available budget B",
+            "status": "coded",
+            "formulation": "\\sum_{i \\in \\{\\textup{basketball}, \\textup{horse}, \\textup{soccer}\\}} \\textup{MoneySpent}_i \\leq \\textup{B}",
+            "related_variables": [
+                "MoneySpentBasketball",
+                "MoneySpentHorse",
+                "MoneySpentSoccer"
+            ],
+            "related_parameters": [
+                "B"
+            ],
+            "code": "# Constraint: Total money spent on all bets should not exceed the available budget B\nmodel.addConstr(MoneySpentBasketball + MoneySpentHorse + MoneySpentSoccer <= B, \"budget_constraint\")"
+        },
+        {
+            "description": "Money spent on basketball bet is non-negative",
+            "status": "coded",
+            "formulation": "\\textup{MoneySpentBasketball} \\geq 0",
+            "related_variables": [
+                "MoneySpentBasketball"
+            ],
+            "related_parameters": [],
+            "code": "# Constraint for non-negative money spent on basketball betting\nmodel.addConstr(MoneySpentBasketball >= 0, name=\"non_negative_MoneySpentBasketball\")"
+        },
+        {
+            "description": "The amount of money spent betting on the horse race event must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{MoneySpentHorse} \\geq 0",
+            "related_variables": [
+                "MoneySpentHorse"
+            ],
+            "related_parameters": [],
+            "code": "# MoneySpentHorse should be non-negative\nmodel.addConstr(MoneySpentHorse >= 0, name=\"constraint_non_negative_MoneySpentHorse\")"
+        },
+        {
+            "description": "The amount of money spent betting on the soccer event must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{MoneySpentSoccer} \\geq 0",
+            "related_variables": [
+                "MoneySpentSoccer"
+            ],
+            "related_parameters": [],
+            "code": "# Constraint: Money spent on soccer should be non-negative\nmodel.addConstr(MoneySpentSoccer >= 0, name=\"non_negative_betting\")"
+        },
+        {
+            "description": "The average chance of losing money on bets should not exceed Pmax",
+            "status": "coded",
+            "formulation": "\\frac{\\textup{MoneySpentBasketball} \\cdot \\textup{Pbasketball} + \\textup{MoneySpentHorse} \\cdot \\textup{Phorse} + \\textup{MoneySpentSoccer} \\cdot \\textup{Psoccer}}{\\textup{MoneySpentBasketball} + \\textup{MoneySpentHorse} + \\textup{MoneySpentSoccer}} \\leq \\textup{Pmax}",
+            "related_variables": [
+                "MoneySpentBasketball",
+                "MoneySpentHorse",
+                "MoneySpentSoccer"
+            ],
+            "related_parameters": [
+                "Pbasketball",
+                "Phorse",
+                "Psoccer",
+                "Pmax"
+            ],
+            "code": "# Add a constraint for the average chance of losing money on bets\nmodel.addConstr((MoneySpentBasketball * Pbasketball + MoneySpentHorse * Phorse + MoneySpentSoccer * Psoccer) <= Pmax * (MoneySpentBasketball + MoneySpentHorse + MoneySpentSoccer), name=\"max_loss_probability\")"
+        },
+        {
+            "description": "Ensure that the total money spent does not exceed the available budget",
+            "status": "coded",
+            "formulation": "\\textup{MoneySpentBasketball} + \\textup{MoneySpentHorse} + \\textup{MoneySpentSoccer} \\leq \\textup{B}",
+            "related_variables": [
+                "MoneySpentBasketball",
+                "MoneySpentHorse",
+                "MoneySpentSoccer"
+            ],
+            "related_parameters": [
+                "B"
+            ],
+            "code": "# Ensure that the total money spent does not exceed the available budget\nmodel.addConstr(MoneySpentBasketball + MoneySpentHorse + MoneySpentSoccer <= B, name=\"budget_constraint\")"
+        },
+        {
+            "description": "Limit the average probability of losing money to the maximum allowed threshold",
+            "status": "coded",
+            "formulation": "\\frac{\\textup{MoneySpentBasketball} \\times \\textup{Pbasketball} + \\textup{MoneySpentHorse} \\times \\textup{Phorse} + \\textup{MoneySpentSoccer} \\times \\textup{Psoccer}}{\\textup{MoneySpentBasketball} + \\textup{MoneySpentHorse} + \\textup{MoneySpentSoccer}} \\leq \\textup{Pmax}",
+            "related_variables": [
+                "MoneySpentBasketball",
+                "MoneySpentHorse",
+                "MoneySpentSoccer"
+            ],
+            "related_parameters": [
+                "Pbasketball",
+                "Phorse",
+                "Psoccer",
+                "Pmax"
+            ],
+            "code": "AverageLossProbability = model.addVar(vtype=gp.GRB.CONTINUOUS, name='AverageLossProbability')\nmodel.addConstr(MoneySpentBasketball * Pbasketball +\n                 MoneySpentHorse * Phorse +\n                 MoneySpentSoccer * Psoccer <=\n                 AverageLossProbability * (MoneySpentBasketball + MoneySpentHorse + MoneySpentSoccer),\n                name='max_avg_probability_loss')\nmodel.addConstr(AverageLossProbability <= Pmax, name='avg_probability_loss_max')\n"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Amount of money spent betting on the basketball event",
+            "symbol": "MoneySpentBasketball",
+            "shape": [],
+            "status": "coded",
+            "code": "MoneySpentBasketball = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"MoneySpentBasketball\")"
+        },
+        {
+            "definition": "Amount of money spent betting on the horse race event",
+            "symbol": "MoneySpentHorse",
+            "shape": [],
+            "status": "coded",
+            "code": "MoneySpentHorse = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"MoneySpentHorse\")"
+        },
+        {
+            "definition": "Amount of money spent betting on the soccer event",
+            "symbol": "MoneySpentSoccer",
+            "shape": [],
+            "status": "coded",
+            "code": "MoneySpentSoccer = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"MoneySpentSoccer\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the woman's average payout from betting on the basketball tournament, horse race, and soccer game",
+            "status": "coded",
+            "formulation": "\\max \\frac{\\textup{MoneySpentBasketball} \\times \\textup{Rbasketball} + \\textup{MoneySpentHorse} \\times \\textup{Rhorse} + \\textup{MoneySpentSoccer} \\times \\textup{Rsoccer}}{3}",
+            "related_variables": [
+                "MoneySpentBasketball",
+                "MoneySpentHorse",
+                "MoneySpentSoccer"
+            ],
+            "related_parameters": [
+                "Rbasketball",
+                "Rhorse",
+                "Rsoccer"
+            ],
+            "code": "# Define the objective function for maximizing the average payout\naverage_payout = (MoneySpentBasketball * Rbasketball + MoneySpentHorse * Rhorse + MoneySpentSoccer * Rsoccer) / 3\nmodel.setObjective(average_payout, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "runtime_error",
+    "solver_output_status": "runtime_error",
+    "error_message": "Traceback (most recent call last):\n  File \"c:\\Users\\Simon\\Desktop\\Courses\\ECE 570\\ECE570_Project\\MyOptiMUS\\evaluator.py\", line 45, in run\n    exec(last_line, local_env, local_env)\n  File \"<string>\", line 2, in <module>\n  File \"src\\\\gurobipy\\\\nlexpr.pxi\", line 618, in gurobipy._core.NLExpr.__le__\ngurobipy._exception.GurobiError: Nonlinear constraints must take the form y=f(x)\n",
+    "obj_val": null,
+    "log_path": "logs/log_20250413160405_nl4opt_prob_214/",
+    "problem_path": "data/nl4opt/prob_214/",
+    "prep_code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_214/data.json\", \"r\") as f:\n    data = json.load(f)\n"
+}

@@ -1,0 +1,222 @@
+{
+    "background": "A grocery store wants to liquidate its stock by selling banana-haters packages and combo packages that contain different quantities of apples, bananas, and grapes, for different profit margins.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Initial stock of apples",
+            "symbol": "ApplesStock",
+            "value": 10,
+            "shape": [],
+            "code": "ApplesStock = data[\"ApplesStock\"] # scalar parameter"
+        },
+        {
+            "definition": "Initial stock of bananas",
+            "symbol": "BananasStock",
+            "value": 20,
+            "shape": [],
+            "code": "BananasStock = data[\"BananasStock\"] # scalar parameter"
+        },
+        {
+            "definition": "Initial stock of grapes",
+            "symbol": "GrapesStock",
+            "value": 80,
+            "shape": [],
+            "code": "GrapesStock = data[\"GrapesStock\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of apples in a banana-haters package",
+            "symbol": "ApplesBHPack",
+            "value": 6,
+            "shape": [],
+            "code": "ApplesBHPack = data[\"ApplesBHPack\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of grapes in a banana-haters package",
+            "symbol": "GrapesBHPack",
+            "value": 30,
+            "shape": [],
+            "code": "GrapesBHPack = data[\"GrapesBHPack\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit from a banana-haters package",
+            "symbol": "ProfitBHPack",
+            "value": 6,
+            "shape": [],
+            "code": "ProfitBHPack = data[\"ProfitBHPack\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of apples in a combo package",
+            "symbol": "ApplesCombo",
+            "value": 5,
+            "shape": [],
+            "code": "ApplesCombo = data[\"ApplesCombo\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of bananas in a combo package",
+            "symbol": "BananasCombo",
+            "value": 6,
+            "shape": [],
+            "code": "BananasCombo = data[\"BananasCombo\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of grapes in a combo package",
+            "symbol": "GrapesCombo",
+            "value": 20,
+            "shape": [],
+            "code": "GrapesCombo = data[\"GrapesCombo\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit from a combo package",
+            "symbol": "ProfitCombo",
+            "value": 7,
+            "shape": [],
+            "code": "ProfitCombo = data[\"ProfitCombo\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of banana-haters packages sold must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{BananaHatersPackagesSold} \\geq 0",
+            "related_variables": [
+                "BananaHatersPackagesSold"
+            ],
+            "related_parameters": [],
+            "code": "# Since BananaHatersPackagesSold is already declared as a non-negative integer variable, no additional constraints are needed.\n# The non-negativity is handled by the variable type definition."
+        },
+        {
+            "description": "The number of combo packages sold must be non-negative",
+            "status": "coded",
+            "formulation": "ComboPackagesSold \\geq 0",
+            "related_variables": [
+                "ComboPackagesSold"
+            ],
+            "related_parameters": [],
+            "code": "model.addConstr(ComboPackagesSold >= 0, name=\"non_negativity_constraint\")"
+        },
+        {
+            "description": "Total apples used in both banana-haters and combo packages should not exceed the available stock of apples.",
+            "status": "coded",
+            "formulation": "\\textup{BananaHatersPackagesSold} \\cdot \\textup{ApplesBHPack} + \\textup{ComboPackagesSold} \\cdot \\textup{ApplesCombo} \\leq \\textup{ApplesStock}",
+            "related_variables": [
+                "BananaHatersPackagesSold",
+                "ComboPackagesSold"
+            ],
+            "related_parameters": [
+                "ApplesStock",
+                "ApplesBHPack",
+                "ApplesCombo"
+            ],
+            "code": "# Apple stock constraint\nmodel.addConstr(BananaHatersPackagesSold * ApplesBHPack + ComboPackagesSold * ApplesCombo <= ApplesStock, name=\"apple_stock_constraint\")"
+        },
+        {
+            "description": "The total number of bananas used in combo packages must not exceed the stock of bananas available",
+            "status": "coded",
+            "formulation": "\\textup{BananasCombo} \\cdot \\textup{ComboPackagesSold} \\leq \\textup{BananasStock}",
+            "related_variables": [
+                "ComboPackagesSold"
+            ],
+            "related_parameters": [
+                "BananasCombo",
+                "BananasStock"
+            ],
+            "code": "# Constraint: The total number of bananas used in combo packages must not exceed the stock of bananas available\nBananasCombo = data[\"BananasCombo\"] # scalar parameter\nBananasStock = data[\"BananasStock\"] # scalar parameter\nComboPackagesSold = model.addVar(vtype=gp.GRB.INTEGER, name=\"ComboPackagesSold\")\n\nmodel.addConstr(BananasCombo * ComboPackagesSold <= BananasStock, name=\"bananas_limit\")"
+        },
+        {
+            "description": "The total number of grapes used in both banana-haters and combo packages must not exceed the available stock of grapes.",
+            "status": "coded",
+            "formulation": "GrapesBHPack \\cdot \\textup{BananaHatersPackagesSold} + GrapesCombo \\cdot \\textup{ComboPackagesSold} \\leq \\textup{GrapesStock}",
+            "related_variables": [
+                "BananaHatersPackagesSold",
+                "ComboPackagesSold"
+            ],
+            "related_parameters": [
+                "GrapesBHPack",
+                "GrapesCombo",
+                "GrapesStock"
+            ],
+            "code": "# Constraint: The total number of grapes in packages sold must not exceed the available grape stock\nmodel.addConstr(GrapesBHPack * BananaHatersPackagesSold + GrapesCombo * ComboPackagesSold <= GrapesStock, \"grape_stock_limit\")"
+        },
+        {
+            "description": "The number of apples used in banana-haters packages and combo packages does not exceed the initial stock",
+            "status": "coded",
+            "formulation": "\\textup{BananaHatersPackagesSold} \\times \\textup{ApplesBHPack} + \\textup{ComboPackagesSold} \\times \\textup{ApplesCombo} \\leq \\textup{ApplesStock}",
+            "related_variables": [
+                "BananaHatersPackagesSold",
+                "ComboPackagesSold"
+            ],
+            "related_parameters": [
+                "ApplesBHPack",
+                "ApplesCombo",
+                "ApplesStock"
+            ],
+            "code": "# Apple usage in banana-haters and combo packages does not exceed initial stock\nmodel.addConstr(BananaHatersPackagesSold * ApplesBHPack + ComboPackagesSold * ApplesCombo <= ApplesStock, name=\"apple_stock_constraint\")"
+        },
+        {
+            "description": "The number of bananas used in combo packages does not exceed the initial stock because banana-haters packages contain no bananas",
+            "status": "coded",
+            "formulation": "\\textup{ComboPackagesSold} \\times \\textup{BananasCombo} \\leq \\textup{BananasStock}",
+            "related_variables": [
+                "ComboPackagesSold"
+            ],
+            "related_parameters": [
+                "BananasCombo",
+                "BananasStock"
+            ],
+            "code": "# Ensure bananas used in combo packages do not exceed initial banana stock\nmodel.addConstr(ComboPackagesSold * BananasCombo <= BananasStock, name=\"banana_usage_limit\")"
+        },
+        {
+            "description": "The number of grapes used in banana-haters packages and combo packages does not exceed the initial stock",
+            "status": "coded",
+            "formulation": "\\textup{BananaHatersPackagesSold} \\times \\textup{GrapesBHPack} + \\textup{ComboPackagesSold} \\times \\textup{GrapesCombo} \\leq \\textup{GrapesStock}",
+            "related_variables": [
+                "BananaHatersPackagesSold",
+                "ComboPackagesSold"
+            ],
+            "related_parameters": [
+                "GrapesBHPack",
+                "GrapesCombo",
+                "GrapesStock"
+            ],
+            "code": "# The number of grapes used in banana-haters packages and combo packages does not exceed the initial stock\nmodel.addConstr(BananaHatersPackagesSold * GrapesBHPack + ComboPackagesSold * GrapesCombo <= GrapesStock, \n                name=\"grapes_stock_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of banana-haters packages sold",
+            "symbol": "BananaHatersPackagesSold",
+            "shape": [],
+            "status": "coded",
+            "code": "BananaHatersPackagesSold = model.addVar(vtype=gp.GRB.INTEGER, name=\"BananaHatersPackagesSold\")"
+        },
+        {
+            "definition": "The number of combo packages sold",
+            "symbol": "ComboPackagesSold",
+            "shape": [],
+            "status": "coded",
+            "code": "ComboPackagesSold = model.addVar(vtype=gp.GRB.INTEGER, name=\"ComboPackagesSold\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total profit by selling banana-haters packages and combo packages",
+            "status": "coded",
+            "formulation": "\\max (\\textup{BananaHatersPackagesSold} \\times \\textup{ProfitBHPack} + \\textup{ComboPackagesSold} \\times \\textup{ProfitCombo})",
+            "related_variables": [
+                "BananaHatersPackagesSold",
+                "ComboPackagesSold"
+            ],
+            "related_parameters": [
+                "ProfitBHPack",
+                "ProfitCombo"
+            ],
+            "code": "# Define the objective function\nobjective = BananaHatersPackagesSold * ProfitBHPack + ComboPackagesSold * ProfitCombo\n\n# Set the objective\nmodel.setObjective(objective, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413154200_nl4opt_prob_20/",
+    "problem_path": "data/nl4opt/prob_20/"
+}

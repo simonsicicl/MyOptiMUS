@@ -1,0 +1,149 @@
+{
+    "background": "The problem involves the distribution of electricity from multiple power plants to multiple cities, with the goal of minimizing the transmission costs while respecting the supply and demand constraints of the power plants and cities respectively.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of power plants",
+            "symbol": "P",
+            "value": "",
+            "shape": [],
+            "code": "P = data[\"P\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of cities",
+            "symbol": "C",
+            "value": "",
+            "shape": [],
+            "code": "C = data[\"C\"] # scalar parameter"
+        },
+        {
+            "definition": "Electricity supply capacity of power plant p",
+            "symbol": "Supply",
+            "value": "",
+            "shape": [
+                "P"
+            ],
+            "code": "Supply = np.array(data[\"Supply\"]) # ['P']"
+        },
+        {
+            "definition": "Electricity demand of city c",
+            "symbol": "Demand",
+            "value": "",
+            "shape": [
+                "C"
+            ],
+            "code": "Demand = np.array(data[\"Demand\"]) # ['C']"
+        },
+        {
+            "definition": "Transmission cost from power plant p to city c",
+            "symbol": "TransmissionCosts",
+            "value": "",
+            "shape": [
+                "P",
+                "C"
+            ],
+            "code": "TransmissionCosts = np.array(data[\"TransmissionCosts\"]) # ['P', 'C']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Each power plant has a limited supply capacity.",
+            "status": "coded",
+            "formulation": "\\sum_{c=1}^{C} \\textup{ElectricitySupplied}_{p,c} \\leq \\textup{Supply}_p \\quad \\forall p \\in \\{1,...,P\\}",
+            "related_variables": [
+                "ElectricitySupplied"
+            ],
+            "related_parameters": [
+                "Supply"
+            ],
+            "code": "# Add supply capacity constraints for each power plant\nfor p in range(P):\n    model.addConstr(gp.quicksum(ElectricitySupplied[p, c] for c in range(C)) <= Supply[p], name=f\"supply_capacity_{p}\")"
+        },
+        {
+            "description": "Each city c must receive its specific electricity demand.",
+            "status": "coded",
+            "formulation": "\\sum_{p=1}^{P} \\textup{ElectricitySupplied}_{p,c} = \\textup{Demand}_{c} \\quad \\forall c \\in \\{1, 2, ..., C\\}",
+            "related_variables": [
+                "ElectricitySupplied"
+            ],
+            "related_parameters": [
+                "Demand"
+            ],
+            "code": "# Ensure each city receives its specific electricity demand\nfor c in range(C):\n    model.addConstr(gp.quicksum(ElectricitySupplied[p, c] for p in range(P)) == Demand[c], name=f\"demand_constraint_city_{c}\")"
+        },
+        {
+            "description": "The total electricity supplied to each city must meet its demand",
+            "status": "coded",
+            "formulation": "\\sum_{p=1}^{P} \\textup{ElectricitySupplied}_{p,c} \\geq \\textup{Demand}_{c} \\quad \\forall c \\in \\{1, 2, ..., C\\}",
+            "related_variables": [
+                "ElectricitySupplied"
+            ],
+            "related_parameters": [
+                "Demand"
+            ],
+            "code": "# Demand satisfaction constraints for each city\nfor c in range(C):\n    model.addConstr(gp.quicksum(ElectricitySupplied[p, c] for p in range(P)) >= Demand[c], name=f\"Demand_satisfaction_city_{c}\")"
+        },
+        {
+            "description": "Power plants cannot send more electricity than their supply capacity to cities",
+            "status": "coded",
+            "formulation": "\\sum_{c=1}^{C} \\textup{ElectricitySupplied}_{p,c} \\leq \\textup{Supply}_p \\quad \\forall p \\in \\{1, 2, ..., P\\}",
+            "related_variables": [
+                "ElectricitySupplied"
+            ],
+            "related_parameters": [
+                "P",
+                "C",
+                "Supply"
+            ],
+            "code": "# Power plants cannot send more electricity than their supply capacity to cities\nfor p in range(P):\n    model.addConstr(gp.quicksum(ElectricitySupplied[p, c] for c in range(C)) <= Supply[p], name=f\"supply_capacity_{p}\")"
+        },
+        {
+            "description": "Electricity supplied from any power plant to any city must be non-negative",
+            "status": "coded",
+            "formulation": "\\forall p \\in \\{1, \\ldots, P\\}, \\forall c \\in \\{1, \\ldots, C\\}: \\quad \\textup{ElectricitySupplied}_{p,c} \\geq 0",
+            "related_variables": [
+                "ElectricitySupplied"
+            ],
+            "related_parameters": [
+                "P",
+                "C"
+            ],
+            "code": "# Fixed code\nElectricitySupplied = model.addVars(P, C, vtype=gp.GRB.CONTINUOUS, name=\"ElectricitySupplied\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Amount of electricity supplied from power plant p to city c",
+            "symbol": "ElectricitySupplied",
+            "shape": [
+                "P",
+                "C"
+            ],
+            "status": "coded",
+            "code": "ElectricitySupplied = model.addVars(P, C, vtype=gp.GRB.CONTINUOUS, name=\"ElectricitySupplied\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total transmission cost from power plants to cities",
+            "status": "coded",
+            "formulation": "\\min \\sum_{p=1}^{\\textup{P}} \\sum_{c=1}^{\\textup{C}} \\textup{TransmissionCosts}_{p,c} \\cdot \\textup{ElectricitySupplied}_{p,c}",
+            "related_variables": [
+                "ElectricitySupplied"
+            ],
+            "related_parameters": [
+                "P",
+                "C",
+                "TransmissionCosts"
+            ],
+            "code": "# Set objective\nmodel.setObjective(gp.quicksum(TransmissionCosts[p, c] * ElectricitySupplied[p, c] for p in range(P) for c in range(C)), gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": "Traceback (most recent call last):\n  File \"c:\\Users\\Simon\\Desktop\\Courses\\ECE 570\\ECE570_Project\\MyOptiMUS\\evaluator.py\", line 45, in run\n    exec(last_line, local_env, local_env)\n  File \"<string>\", line 1\n    ```\n    ^\nSyntaxError: invalid syntax\n",
+    "obj_val": 0.0,
+    "log_path": "logs/log_20250413102550_nlp4lp_55/",
+    "problem_path": "data/nlp4lp/55/",
+    "prep_code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nlp4lp/55/data.json\", \"r\") as f:\n    data = json.load(f)\n",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nlp4lp/55/data.json\", \"r\") as f:\n    data = json.load(f)\n\nP = data[\"P\"] # scalar parameter\nC = data[\"C\"] # scalar parameter\nSupply = np.array(data[\"Supply\"]) # ['P']\nDemand = np.array(data[\"Demand\"]) # ['C']\nTransmissionCosts = np.array(data[\"TransmissionCosts\"]) # ['P', 'C']\nElectricitySupplied = model.addVars(P, C, vtype=gp.GRB.CONTINUOUS, name=\"ElectricitySupplied\")\n\n# Add supply capacity constraints for each power plant\nfor p in range(P):\n    model.addConstr(gp.quicksum(ElectricitySupplied[p, c] for c in range(C)) <= Supply[p], name=f\"supply_capacity_{p}\")\n\n# Ensure each city receives its specific electricity demand\nfor c in range(C):\n    model.addConstr(gp.quicksum(ElectricitySupplied[p, c] for p in range(P)) == Demand[c], name=f\"demand_constraint_city_{c}\")\n\n# Demand satisfaction constraints for each city\nfor c in range(C):\n    model.addConstr(gp.quicksum(ElectricitySupplied[p, c] for p in range(P)) >= Demand[c], name=f\"Demand_satisfaction_city_{c}\")\n\n# Power plants cannot send more electricity than their supply capacity to cities\nfor p in range(P):\n    model.addConstr(gp.quicksum(ElectricitySupplied[p, c] for c in range(C)) <= Supply[p], name=f\"supply_capacity_{p}\")\n\n# Fixed code\nElectricitySupplied = model.addVars(P, C, vtype=gp.GRB.CONTINUOUS, name=\"ElectricitySupplied\")\n\n# Set objective\nmodel.setObjective(gp.quicksum(TransmissionCosts[p, c] * ElectricitySupplied[p, c] for p in range(P) for c in range(C)), gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

@@ -1,0 +1,206 @@
+{
+    "background": "A researcher needs to outsource image annotations and has two companies to choose from with different annotations rates and charges. Part of the dataset requires a specialized company for annotation.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Annotation rate of the specialized company",
+            "symbol": "SpecializedRate",
+            "value": 60,
+            "shape": [],
+            "code": "SpecializedRate = data[\"SpecializedRate\"] # scalar parameter"
+        },
+        {
+            "definition": "Annotation rate of the common company",
+            "symbol": "CommonRate",
+            "value": 40,
+            "shape": [],
+            "code": "CommonRate = data[\"CommonRate\"] # scalar parameter"
+        },
+        {
+            "definition": "Hourly charge of the specialized company",
+            "symbol": "SpecializedCharge",
+            "value": 100,
+            "shape": [],
+            "code": "SpecializedCharge = data[\"SpecializedCharge\"] # scalar parameter"
+        },
+        {
+            "definition": "Hourly charge of the common company",
+            "symbol": "CommonCharge",
+            "value": 72,
+            "shape": [],
+            "code": "CommonCharge = data[\"CommonCharge\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of images to be annotated",
+            "symbol": "MinimumImages",
+            "value": 10000,
+            "shape": [],
+            "code": "MinimumImages = data[\"MinimumImages\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum proportion of work to be allocated to the specialized company",
+            "symbol": "MinimumSpecializedProportion",
+            "value": 0.33,
+            "shape": [],
+            "code": "MinimumSpecializedProportion = data[\"MinimumSpecializedProportion\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of images annotated by the specialized company must be non-negative.",
+            "status": "formulated",
+            "formulation": "\\textup{SpecializedImages} \\geq 0",
+            "related_variables": [
+                "SpecializedImages"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "The constraints ensure that the number of images annotated by each company is non-negative.",
+            "status": "formulated",
+            "formulation": "\\\\textup{SpecializedImages} \\\\geq 0, \\\\quad \\\\textup{CommonImages} \\\\geq 0",
+            "related_variables": [
+                "SpecializedImages",
+                "CommonImages"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "The total number of images annotated must be at least MinimumImages.",
+            "status": "formulated",
+            "formulation": "\\\\textup{SpecializedImages} + \\\\textup{CommonImages} \\\\geq \\\\textup{MinimumImages}",
+            "related_variables": [
+                "SpecializedImages",
+                "CommonImages"
+            ],
+            "related_parameters": [
+                "MinimumImages"
+            ]
+        },
+        {
+            "description": "At least MinimumSpecializedProportion of the work must be allocated to the specialized company",
+            "status": "formulated",
+            "formulation": "\\textup{SpecializedImages} \\geq \\textup{MinimumSpecializedProportion} \\cdot \\textup{TotalImagesAnnotated}",
+            "related_variables": [
+                "SpecializedImages",
+                "TotalImagesAnnotated"
+            ],
+            "related_parameters": [
+                "MinimumSpecializedProportion"
+            ]
+        },
+        {
+            "description": "The total number of images annotated must meet the minimum required.",
+            "status": "formulated",
+            "formulation": "\\\\textup{SpecializedImages} + \\\\textup{CommonImages} \\\\geq \\\\textup{MinimumImages}",
+            "related_variables": [
+                "SpecializedImages",
+                "CommonImages"
+            ],
+            "related_parameters": [
+                "MinimumImages"
+            ]
+        },
+        {
+            "description": "A minimum proportion of the total images must be allocated to the specialized company.",
+            "status": "formulated",
+            "formulation": "\\\\textup{SpecializedImages} \\\\geq \\\\textup{MinimumSpecializedProportion} \\\\cdot (\\\\textup{SpecializedImages} + \\\\textup{CommonImages})",
+            "related_variables": [
+                "SpecializedImages",
+                "CommonImages"
+            ],
+            "related_parameters": [
+                "MinimumSpecializedProportion"
+            ]
+        },
+        {
+            "description": "TotalImagesAnnotated is the sum of SpecializedImages and CommonImages",
+            "status": "formulated",
+            "formulation": "\\textup{TotalImagesAnnotated} = \\textup{SpecializedImages} + \\textup{CommonImages}",
+            "related_variables": [
+                "SpecializedImages",
+                "CommonImages",
+                "TotalImagesAnnotated"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Ensure that the total number of images annotated by both companies meets or exceeds the minimum required images.",
+            "status": "formulated",
+            "formulation": "\\textup{SpecializedImages} + \\textup{CommonImages} \\geq \\textup{MinimumImages}",
+            "related_variables": [
+                "SpecializedImages",
+                "CommonImages"
+            ],
+            "related_parameters": [
+                "MinimumImages"
+            ]
+        },
+        {
+            "description": "Enforce that the proportion of work allocated to the specialized company meets the minimum required proportion.",
+            "status": "formulated",
+            "formulation": "\\frac{\\textup{SpecializedImages}}{\\textup{TotalImagesAnnotated}} \\geq \\textup{MinimumSpecializedProportion}",
+            "related_variables": [
+                "SpecializedImages",
+                "TotalImagesAnnotated"
+            ],
+            "related_parameters": [
+                "MinimumSpecializedProportion"
+            ]
+        },
+        {
+            "description": "Ensure the total number of images is the sum of images annotated by the specialized and common companies.",
+            "status": "formulated",
+            "formulation": "\\textup{TotalImagesAnnotated} = \\textup{SpecializedImages} + \\textup{CommonImages}",
+            "related_variables": [
+                "TotalImagesAnnotated",
+                "SpecializedImages",
+                "CommonImages"
+            ],
+            "related_parameters": []
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of images annotated by the specialized company.",
+            "symbol": "SpecializedImages",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "The number of images annotated by the common company.",
+            "symbol": "CommonImages",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "The total number of images annotated by both companies",
+            "symbol": "TotalImagesAnnotated",
+            "shape": [],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total cost of annotating the dataset by considering the costs associated with the specialized and common companies.",
+            "status": "formulated",
+            "formulation": "\\textup{Minimize:} \\quad \\textup{SpecializedImages} \\cdot \\frac{\\textup{SpecializedCharge}}{\\textup{SpecializedRate}} + \\textup{CommonImages} \\cdot \\frac{\\textup{CommonCharge}}{\\textup{CommonRate}}",
+            "related_variables": [
+                "SpecializedImages",
+                "CommonImages"
+            ],
+            "related_parameters": [
+                "SpecializedRate",
+                "CommonRate",
+                "SpecializedCharge",
+                "CommonCharge"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250414054208_nl4opt_prob_264/",
+    "problem_path": "data/nl4opt/prob_264/"
+}

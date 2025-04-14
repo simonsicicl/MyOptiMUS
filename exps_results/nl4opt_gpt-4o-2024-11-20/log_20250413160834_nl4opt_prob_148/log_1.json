@@ -1,0 +1,228 @@
+{
+    "background": "A clinic has two methods for vaccine administration: a pill and a shot. They are subject to administration time and a minimum ratio of shots to pills.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Time taken to administer the pill vaccine",
+            "symbol": "PillTime",
+            "value": 10,
+            "shape": [],
+            "code": "PillTime = data[\"PillTime\"] # scalar parameter"
+        },
+        {
+            "definition": "Time taken to administer the shot vaccine",
+            "symbol": "ShotTime",
+            "value": 20,
+            "shape": [],
+            "code": "ShotTime = data[\"ShotTime\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum ratio of shots to pills",
+            "symbol": "RatioShotsToPills",
+            "value": 3,
+            "shape": [],
+            "code": "RatioShotsToPills = data[\"RatioShotsToPills\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of pill vaccines to be administered",
+            "symbol": "MinPills",
+            "value": 30,
+            "shape": [],
+            "code": "MinPills = data[\"MinPills\"] # scalar parameter"
+        },
+        {
+            "definition": "Total operating time of the clinic in minutes",
+            "symbol": "TotalTime",
+            "value": 10000,
+            "shape": [],
+            "code": "TotalTime = data[\"TotalTime\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The clinic must administer at least RatioShotsToPills times as many shots as pills.",
+            "status": "coded",
+            "formulation": "\\textup{ShotsAdministered} \\geq \\textup{RatioShotsToPills} \\times \\textup{PillsAdministered}",
+            "related_variables": [
+                "ShotsAdministered",
+                "PillsAdministered"
+            ],
+            "related_parameters": [
+                "RatioShotsToPills"
+            ],
+            "code": "# Add constraint to ensure the clinic administers at least RatioShotsToPills times as many shots as pills\nmodel.addConstr(ShotsAdministered >= RatioShotsToPills * PillsAdministered, name=\"ratio_shots_to_pills\")"
+        },
+        {
+            "description": "The clinic must administer at least MinPills pill vaccines.",
+            "status": "coded",
+            "formulation": "\\textup{PillsAdministered} \\geq \\textup{MinPills}",
+            "related_variables": [
+                "PillsAdministered"
+            ],
+            "related_parameters": [
+                "MinPills"
+            ],
+            "code": "# Add constraint for minimum number of pill vaccines to be administered\nmodel.addConstr(PillsAdministered >= MinPills, name=\"min_pills_constraint\")"
+        },
+        {
+            "description": "The total time used to administer pills and shots cannot exceed the total clinic operating time.",
+            "status": "coded",
+            "formulation": "\\textup{PillsAdministered} \\cdot \\textup{PillTime} + \\textup{ShotsAdministered} \\cdot \\textup{ShotTime} \\leq \\textup{TotalTime}",
+            "related_variables": [
+                "PillsAdministered",
+                "ShotsAdministered"
+            ],
+            "related_parameters": [
+                "PillTime",
+                "ShotTime",
+                "TotalTime"
+            ],
+            "code": "# Add total time constraint\nmodel.addConstr(\n    PillsAdministered * PillTime + ShotsAdministered * ShotTime <= TotalTime,\n    name=\"total_time_constraint\"\n)"
+        },
+        {
+            "description": "The number of pill vaccines administered must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{PillsAdministered} \\geq 0",
+            "related_variables": [
+                "PillsAdministered"
+            ],
+            "related_parameters": [],
+            "code": "# The variable \"PillsAdministered\" is already defined as non-negative (continuous type). No additional constraints are needed."
+        },
+        {
+            "description": "Non-negativity constraint for the number of shot vaccines administered.",
+            "status": "coded",
+            "formulation": "\\textup{ShotsAdministered} \\geq 0",
+            "related_variables": [
+                "ShotsAdministered"
+            ],
+            "related_parameters": [],
+            "code": "# Non-negativity constraint for the number of shots administered\nmodel.addConstr(ShotsAdministered >= 0, name=\"non_negativity_shots\")"
+        },
+        {
+            "description": "Non-negativity constraint for the number of pill vaccines administered.",
+            "status": "coded",
+            "formulation": "\\textup{PillsAdministered} \\geq 0",
+            "related_variables": [
+                "PillsAdministered"
+            ],
+            "related_parameters": [],
+            "code": "# Non-negativity constraint for the number of pill vaccines administered\nmodel.addConstr(PillsAdministered >= 0, name=\"non_negativity_pills_administered\")"
+        },
+        {
+            "description": "The total time for administering pills and shots cannot exceed the operational capacity of the clinic.",
+            "status": "coded",
+            "formulation": "\\textup{PillTime} \\cdot \\textup{PillsAdministered} + \\textup{ShotTime} \\cdot \\textup{ShotsAdministered} \\leq \\textup{TotalTime}",
+            "related_variables": [
+                "PillsAdministered",
+                "ShotsAdministered"
+            ],
+            "related_parameters": [
+                "PillTime",
+                "ShotTime",
+                "TotalTime"
+            ],
+            "code": "# Add operational time constraint\nmodel.addConstr(\n    PillsAdministered * PillTime + ShotsAdministered * ShotTime <= TotalTime,\n    name=\"operational_time_capacity\"\n)"
+        },
+        {
+            "description": "The ratio of shots to pills administered must meet the minimum ratio requirement.",
+            "status": "coded",
+            "formulation": "\\textup{ShotsAdministered} \\geq \\textup{RatioShotsToPills} \\cdot \\textup{PillsAdministered}",
+            "related_variables": [
+                "PillsAdministered",
+                "ShotsAdministered"
+            ],
+            "related_parameters": [
+                "RatioShotsToPills"
+            ],
+            "code": "# Add constraint for the ratio of shots to pills administered\nmodel.addConstr(ShotsAdministered >= RatioShotsToPills * PillsAdministered, name=\"ratio_shots_to_pills\")"
+        },
+        {
+            "description": "At least the minimum number of pills must be administered.",
+            "status": "coded",
+            "formulation": "\\textup{PillsAdministered} \\geq \\textup{MinPills}",
+            "related_variables": [
+                "PillsAdministered"
+            ],
+            "related_parameters": [
+                "MinPills"
+            ],
+            "code": "# Add constraint to ensure at least the minimum number of pills are administered\nmodel.addConstr(PillsAdministered >= MinPills, name=\"min_pills_constraint\")"
+        },
+        {
+            "description": "Ensure the total time to administer vaccines does not exceed the available clinic time.",
+            "status": "coded",
+            "formulation": "\\textup{PillsAdministered} \\\\cdot \\textup{PillTime} + \\textup{ShotsAdministered} \\\\cdot \\textup{ShotTime} \\\\leq \\textup{TotalTime}",
+            "related_variables": [
+                "PillsAdministered",
+                "ShotsAdministered"
+            ],
+            "related_parameters": [
+                "PillTime",
+                "ShotTime",
+                "TotalTime"
+            ],
+            "code": "# Add constraint to ensure total vaccine administration time does not exceed clinic time\nmodel.addConstr(\n    PillsAdministered * PillTime + ShotsAdministered * ShotTime <= TotalTime,\n    name=\"clinic_time_constraint\"\n)"
+        },
+        {
+            "description": "Ensure the number of shots to pills satisfies the minimum ratio constraint.",
+            "status": "coded",
+            "formulation": "\\textup{ShotsAdministered} \\\\geq \\textup{RatioShotsToPills} \\\\cdot \\textup{PillsAdministered}",
+            "related_variables": [
+                "PillsAdministered",
+                "ShotsAdministered"
+            ],
+            "related_parameters": [
+                "RatioShotsToPills"
+            ],
+            "code": "# Add constraint to ensure the number of shots adminstered satisfies the minimum ratio\nmodel.addConstr(ShotsAdministered >= RatioShotsToPills * PillsAdministered, name=\"min_ratio_shots_to_pills\")"
+        },
+        {
+            "description": "Ensure the minimum number of pills administered is met.",
+            "status": "coded",
+            "formulation": "\\textup{PillsAdministered} \\\\geq \\textup{MinPills}",
+            "related_variables": [
+                "PillsAdministered"
+            ],
+            "related_parameters": [
+                "MinPills"
+            ],
+            "code": "# Add constraint to ensure the minimum number of pills administered is met\nmodel.addConstr(PillsAdministered >= MinPills, name=\"min_pills_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of pills administered.",
+            "symbol": "PillsAdministered",
+            "shape": [],
+            "status": "coded",
+            "code": "PillsAdministered = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"PillsAdministered\")"
+        },
+        {
+            "definition": "The number of shots administered.",
+            "symbol": "ShotsAdministered",
+            "shape": [],
+            "status": "coded",
+            "code": "ShotsAdministered = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"ShotsAdministered\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the number of patients vaccinated by administering pills and shots.",
+            "status": "coded",
+            "formulation": "\\textup{Maximize} \\quad \\textup{PillsAdministered} + \\textup{ShotsAdministered}",
+            "related_variables": [
+                "PillsAdministered",
+                "ShotsAdministered"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(PillsAdministered + ShotsAdministered, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413160834_nl4opt_prob_148/",
+    "problem_path": "data/nl4opt/prob_148/"
+}

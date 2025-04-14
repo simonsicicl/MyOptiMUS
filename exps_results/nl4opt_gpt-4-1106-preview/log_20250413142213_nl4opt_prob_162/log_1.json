@@ -1,0 +1,195 @@
+{
+    "background": "A zoo needs to transport monkeys to the vet and has the option to use buses or cars, with specific capacities and trip durations for each. A limit is set on bus trips and a minimum proportion for car trips.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of monkeys that can be transported per bus trip",
+            "symbol": "BusCapacity",
+            "value": 20,
+            "shape": [],
+            "code": "BusCapacity = data[\"BusCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Duration of one bus trip",
+            "symbol": "BusDuration",
+            "value": 30,
+            "shape": [],
+            "code": "BusDuration = data[\"BusDuration\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of monkeys that can be transported per car trip",
+            "symbol": "CarCapacity",
+            "value": 6,
+            "shape": [],
+            "code": "CarCapacity = data[\"CarCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Duration of one car trip",
+            "symbol": "CarDuration",
+            "value": 15,
+            "shape": [],
+            "code": "CarDuration = data[\"CarDuration\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of bus trips allowed",
+            "symbol": "MaxBusTrips",
+            "value": 10,
+            "shape": [],
+            "code": "MaxBusTrips = data[\"MaxBusTrips\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum proportion of trips that must be by car",
+            "symbol": "MinCarTripProportion",
+            "value": 0.6,
+            "shape": [],
+            "code": "MinCarTripProportion = data[\"MinCarTripProportion\"] # scalar parameter"
+        },
+        {
+            "definition": "Total number of monkeys to be transported",
+            "symbol": "TotalMonkeys",
+            "value": 300,
+            "shape": [],
+            "code": "TotalMonkeys = data[\"TotalMonkeys\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of bus trips must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfBusTrips} \\geq 0",
+            "related_variables": [
+                "NumberOfBusTrips"
+            ],
+            "related_parameters": [],
+            "code": "# Since the variable NumberOfBusTrips has already been defined as an INTEGER and is non-negative by default,\n# no additional constraint is necessary to ensure it is non-negative.\n# Gurobi integer variables are non-negative by default unless specified otherwise."
+        },
+        {
+            "description": "The number of car trips is non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfCarTrips} \\geq 0",
+            "related_variables": [
+                "NumberOfCarTrips"
+            ],
+            "related_parameters": [],
+            "code": "# Constraint to ensure the number of car trips is non-negative\nmodel.addConstr(NumberOfCarTrips >= 0, name=\"non_negative_car_trips\")"
+        },
+        {
+            "description": "The total number of bus trips cannot exceed the maximum allowed bus trips",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfBusTrips} \\leq \\textup{MaxBusTrips}",
+            "related_variables": [
+                "NumberOfBusTrips"
+            ],
+            "related_parameters": [
+                "MaxBusTrips"
+            ],
+            "code": "# Constraint: Total number of bus trips cannot exceed the maximum allowed bus trips\nmodel.addConstr(NumberOfBusTrips <= MaxBusTrips, name=\"max_bus_trips_constraint\")"
+        },
+        {
+            "description": "At least MinCarTripProportion proportion of the trips must be by car",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfCarTrips} \\geq \\textup{MinCarTripProportion} \\cdot (\\textup{NumberOfCarTrips} + \\textup{NumberOfBusTrips})",
+            "related_variables": [
+                "NumberOfCarTrips",
+                "NumberOfBusTrips"
+            ],
+            "related_parameters": [
+                "MinCarTripProportion"
+            ],
+            "code": "# At least MinCarTripProportion proportion of the trips must be by car\nmodel.addConstr(NumberOfCarTrips >= MinCarTripProportion * (NumberOfCarTrips + NumberOfBusTrips), name=\"MinCarTripProportionConstraint\")"
+        },
+        {
+            "description": "Total number of monkeys transported must be at least TotalMonkeys",
+            "status": "coded",
+            "formulation": "\\textup{BusCapacity} \\cdot \\textup{NumberOfBusTrips} + \\textup{CarCapacity} \\cdot \\textup{NumberOfCarTrips} \\geq \\textup{TotalMonkeys}",
+            "related_variables": [
+                "NumberOfBusTrips",
+                "NumberOfCarTrips"
+            ],
+            "related_parameters": [
+                "BusCapacity",
+                "CarCapacity",
+                "TotalMonkeys"
+            ],
+            "code": "# Add constraint to ensure total number of monkeys transported is at least TotalMonkeys\nmodel.addConstr(BusCapacity * NumberOfBusTrips + CarCapacity * NumberOfCarTrips >= TotalMonkeys, name=\"total_monkeys_transport\")"
+        },
+        {
+            "description": "Ensure that the total number of monkeys transported is at least equal to the total number of monkeys",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfBusTrips} \\times \\textup{BusCapacity} + \\textup{NumberOfCarTrips} \\times \\textup{CarCapacity} \\geq \\textup{TotalMonkeys}",
+            "related_variables": [
+                "NumberOfBusTrips",
+                "NumberOfCarTrips"
+            ],
+            "related_parameters": [
+                "BusCapacity",
+                "CarCapacity",
+                "TotalMonkeys"
+            ],
+            "code": "# Ensure that the total number of monkeys transported is at least equal to the total number of monkeys\nmodel.addConstr((NumberOfBusTrips * BusCapacity) + (NumberOfCarTrips * CarCapacity) >= TotalMonkeys, \"min_monkeys_transported\")"
+        },
+        {
+            "description": "Limit the number of bus trips",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfBusTrips} \\leq \\textup{MaxBusTrips}",
+            "related_variables": [
+                "NumberOfBusTrips"
+            ],
+            "related_parameters": [
+                "MaxBusTrips"
+            ],
+            "code": "# Add constraint to limit the number of bus trips\nmodel.addConstr(NumberOfBusTrips <= MaxBusTrips, name=\"limit_bus_trips\")"
+        },
+        {
+            "description": "Ensure the minimum proportion of car trips",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfCarTrips} \\geq \\textup{MinCarTripProportion} \\times ( \\textup{NumberOfCarTrips} + \\textup{NumberOfBusTrips} )",
+            "related_variables": [
+                "NumberOfBusTrips",
+                "NumberOfCarTrips"
+            ],
+            "related_parameters": [
+                "MinCarTripProportion"
+            ],
+            "code": "# Ensure the minimum proportion of car trips\nmodel.addConstr(NumberOfCarTrips >= MinCarTripProportion * (NumberOfCarTrips + NumberOfBusTrips), name=\"min_car_trip_proportion_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of bus trips used to transport monkeys",
+            "symbol": "NumberOfBusTrips",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfBusTrips = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfBusTrips\")"
+        },
+        {
+            "definition": "Number of car trips used to transport monkeys",
+            "symbol": "NumberOfCarTrips",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfCarTrips = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfCarTrips\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total time required to transport all the monkeys to the vet",
+            "status": "coded",
+            "formulation": "\\textup{TotalTime} = \\textup{NumberOfBusTrips} \\times \\textup{BusDuration} + \\textup{NumberOfCarTrips} \\times \\textup{CarDuration}",
+            "related_variables": [
+                "NumberOfBusTrips",
+                "NumberOfCarTrips"
+            ],
+            "related_parameters": [
+                "BusDuration",
+                "CarDuration"
+            ],
+            "code": "# Set objective\nmodel.setObjective(NumberOfBusTrips * BusDuration + NumberOfCarTrips * CarDuration, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413142213_nl4opt_prob_162/",
+    "problem_path": "data/nl4opt/prob_162/"
+}

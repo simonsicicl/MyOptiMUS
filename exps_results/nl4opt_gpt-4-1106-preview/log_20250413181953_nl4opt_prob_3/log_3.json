@@ -1,0 +1,232 @@
+{
+    "background": "Ben is growing apples and pears on his orchard with TotalAcres acres available.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Total acres available for growing fruits",
+            "symbol": "TotalAcres",
+            "value": 50,
+            "shape": [],
+            "code": "TotalAcres = data[\"TotalAcres\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum acres of apples that must be grown",
+            "symbol": "MinApples",
+            "value": 5,
+            "shape": [],
+            "code": "MinApples = data[\"MinApples\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum acres of pears that must be grown",
+            "symbol": "MinPears",
+            "value": 10,
+            "shape": [],
+            "code": "MinPears = data[\"MinPears\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit per acre of growing apples",
+            "symbol": "ProfitApple",
+            "value": 2,
+            "shape": [],
+            "code": "ProfitApple = data[\"ProfitApple\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit per acre of growing pears",
+            "symbol": "ProfitPear",
+            "value": 4,
+            "shape": [],
+            "code": "ProfitPear = data[\"ProfitPear\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum ratio of pears to apples in growing",
+            "symbol": "MaxPearsToApplesRatio",
+            "value": 2,
+            "shape": [],
+            "code": "MaxPearsToApplesRatio = data[\"MaxPearsToApplesRatio\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Number of apple acres must be an integer",
+            "status": "coded",
+            "formulation": "AppleAcres \\in \\mathbb{Z}",
+            "related_variables": [
+                "AppleAcres"
+            ],
+            "related_parameters": [],
+            "code": "AppleAcres.vtype = gp.GRB.INTEGER"
+        },
+        {
+            "description": "Total area for pears and apples cannot exceed available land, and number of pear acres is an integer",
+            "status": "coded",
+            "formulation": "\\textup{AppleAcres} + \\textup{PearAcres} \\leq \\textup{TotalAcres}",
+            "related_variables": [
+                "AppleAcres",
+                "PearAcres"
+            ],
+            "related_parameters": [
+                "TotalAcres"
+            ],
+            "code": "# Constraint: Total area for pears and apples cannot exceed available land\nmodel.addConstr(AppleAcres + PearAcres <= TotalAcres, name=\"land_limit\")"
+        },
+        {
+            "description": "The number of apple acres must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{AppleAcres} \\geq 0",
+            "related_variables": [
+                "AppleAcres"
+            ],
+            "related_parameters": [],
+            "code": "# Add non-negativity constraint for the number of apple acres\nmodel.addConstr(AppleAcres >= 0, name=\"apple_acres_nonnegativity\")"
+        },
+        {
+            "description": "The number of pear acres must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{PearAcres} \\geq 0",
+            "related_variables": [
+                "PearAcres"
+            ],
+            "related_parameters": [],
+            "code": "# Add non-negativity constraint for pear acres\nmodel.addConstr(PearAcres >= 0, name=\"non_negativity_pear_acres\")"
+        },
+        {
+            "description": "The number of acres dedicated to apples must be at least the minimum required for apples",
+            "status": "coded",
+            "formulation": "\\textup{AppleAcres} \\geq \\textup{MinApples}",
+            "related_variables": [
+                "AppleAcres"
+            ],
+            "related_parameters": [
+                "MinApples"
+            ],
+            "code": "# Add constraint for minimum apple acres\nmodel.addConstr(AppleAcres >= MinApples, name=\"min_apple_acres\")"
+        },
+        {
+            "description": "The number of pear acres must meet the minimum required",
+            "status": "coded",
+            "formulation": "\\textup{PearAcres} \\geq \\textup{MinPears}",
+            "related_variables": [
+                "PearAcres"
+            ],
+            "related_parameters": [
+                "MinPears"
+            ],
+            "code": "# Constraint for the minimum required pear acres\nmodel.addConstr(PearAcres >= MinPears, name=\"min_pear_acres_constraint\")"
+        },
+        {
+            "description": "The number of pear acres must not exceed the maximum ratio of pears to apples in growing",
+            "status": "coded",
+            "formulation": "\\textup{PearAcres} \\leq \\textup{MaxPearsToApplesRatio} \\times \\textup{AppleAcres}",
+            "related_variables": [
+                "PearAcres",
+                "AppleAcres"
+            ],
+            "related_parameters": [
+                "MaxPearsToApplesRatio"
+            ],
+            "code": "# Constraint: The number of pear acres must not exceed the maximum ratio of pears to apples in growing\nmodel.addConstr(PearAcres <= MaxPearsToApplesRatio * AppleAcres, name=\"PearToAppleRatioConstraint\")"
+        },
+        {
+            "description": "The sum of apple acres and pear acres does not exceed TotalAcres",
+            "status": "coded",
+            "formulation": "\\textup{AppleAcres} + \\textup{PearAcres} \\leq \\textup{TotalAcres}",
+            "related_variables": [
+                "AppleAcres",
+                "PearAcres"
+            ],
+            "related_parameters": [
+                "TotalAcres"
+            ],
+            "code": "# Assuming there needs to be a constraint relating AppleAcres and PearAcres to TotalAcres\nmodel.addConstr(AppleAcres + PearAcres <= TotalAcres, 'TotalLandUse')\n\n# Add objective, constraints, or other necessary parts of the formulation here\n# For example, setting an objective function:\n# model.setObjective(<some_expression>, gp.GRB.MAXIMIZE)\n\n# And adding constraints, if any:\n# model.addConstr(<constraint_expression>, 'ConstraintName')\n\n# In this example, replace <some_expression> and <constraint_expression> with actual code"
+        },
+        {
+            "description": "The total acres used for apples and pears cannot exceed the total acres available",
+            "status": "coded",
+            "formulation": "\\textup{AppleAcres} + \\textup{PearAcres} \\leq \\textup{TotalAcres}",
+            "related_variables": [
+                "AppleAcres",
+                "PearAcres"
+            ],
+            "related_parameters": [
+                "TotalAcres"
+            ],
+            "code": "# Add constraint for the total acres used for apples and pears not to exceed the total acres available\nmodel.addConstr(AppleAcres + PearAcres <= TotalAcres, name=\"total_acres_constraint\")"
+        },
+        {
+            "description": "The number of pear acres must be at least the minimum required",
+            "status": "coded",
+            "formulation": "\\textup{PearAcres} \\geq \\textup{MinPears}",
+            "related_variables": [
+                "PearAcres"
+            ],
+            "related_parameters": [
+                "MinPears"
+            ],
+            "code": "# Add constraint for the minimum required pear acres\nmodel.addConstr(PearAcres >= MinPears, name=\"min_pear_acres\")"
+        },
+        {
+            "description": "The number of apple acres must be at least the minimum required",
+            "status": "coded",
+            "formulation": "\\textup{AppleAcres} \\geq \\textup{MinApples}",
+            "related_variables": [
+                "AppleAcres"
+            ],
+            "related_parameters": [
+                "MinApples"
+            ],
+            "code": "model.addConstr(AppleAcres >= MinApples, name=\"min_apple_acres\")"
+        },
+        {
+            "description": "The ratio of pears to apples cannot exceed the maximum allowed",
+            "status": "coded",
+            "formulation": "\\textup{PearAcres} \\leq \\textup{MaxPearsToApplesRatio} \\cdot \\textup{AppleAcres}",
+            "related_variables": [
+                "AppleAcres",
+                "PearAcres"
+            ],
+            "related_parameters": [
+                "MaxPearsToApplesRatio"
+            ],
+            "code": "# Add constraint for the ratio of pears to apples not exceeding the maximum allowed\nmodel.addConstr(PearAcres <= MaxPearsToApplesRatio * AppleAcres, name=\"MaxPearsToApplesRatioConstraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of apple acres",
+            "symbol": "AppleAcres",
+            "shape": [],
+            "status": "coded",
+            "code": "AppleAcres = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"AppleAcres\")"
+        },
+        {
+            "definition": "Number of pear acres, which is an integer value",
+            "symbol": "PearAcres",
+            "shape": [],
+            "status": "coded",
+            "code": "PearAcres = model.addVar(vtype=gp.GRB.INTEGER, name=\"PearAcres\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total profit from growing apples and pears",
+            "status": "coded",
+            "formulation": "\\textup{Maximize}\\quad \\textup{ProfitApple} \\cdot \\textup{AppleAcres} + \\textup{ProfitPear} \\cdot \\textup{PearAcres}",
+            "related_variables": [
+                "AppleAcres",
+                "PearAcres"
+            ],
+            "related_parameters": [
+                "ProfitApple",
+                "ProfitPear"
+            ],
+            "code": "# Set objective\nmodel.setObjective(ProfitApple * AppleAcres + ProfitPear * PearAcres, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "runtime_error",
+    "solver_output_status": "runtime_error",
+    "error_message": "Traceback (most recent call last):\n  File \"c:\\Users\\Simon\\Desktop\\Courses\\ECE 570\\ECE570_Project\\MyOptiMUS\\evaluator.py\", line 45, in run\n    exec(last_line, local_env, local_env)\n  File \"<string>\", line 1\n    ```\n    ^\nSyntaxError: invalid syntax\n",
+    "obj_val": null,
+    "log_path": "logs/log_20250413181953_nl4opt_prob_3/",
+    "problem_path": "data/nl4opt/prob_3/",
+    "prep_code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_3/data.json\", \"r\") as f:\n    data = json.load(f)\n"
+}

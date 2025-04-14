@@ -1,0 +1,204 @@
+{
+    "background": "A vine company sells vine in vintage and regular bottles with different volumes, seeking to maximize the total number of bottles produced from a limited amount of vine while respecting a minimum ratio of regular to vintage bottles and ensuring a minimum production of vintage bottles.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Volume of a vintage bottle of vine",
+            "symbol": "VintageVolume",
+            "value": 500,
+            "shape": [],
+            "code": "VintageVolume = data[\"VintageVolume\"] # scalar parameter"
+        },
+        {
+            "definition": "Volume of a regular bottle of vine",
+            "symbol": "RegularVolume",
+            "value": 750,
+            "shape": [],
+            "code": "RegularVolume = data[\"RegularVolume\"] # scalar parameter"
+        },
+        {
+            "definition": "Total volume of vine available",
+            "symbol": "TotalVolume",
+            "value": 100000,
+            "shape": [],
+            "code": "TotalVolume = data[\"TotalVolume\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum ratio of regular bottles to vintage bottles",
+            "symbol": "MinRegularVintageRatio",
+            "value": 4,
+            "shape": [],
+            "code": "MinRegularVintageRatio = data[\"MinRegularVintageRatio\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of vintage bottles to be produced",
+            "symbol": "MinVintageBottles",
+            "value": 10,
+            "shape": [],
+            "code": "MinVintageBottles = data[\"MinVintageBottles\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of vintage bottles produced must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfVintageBottles} \\geq 0",
+            "related_variables": [
+                "NumberOfVintageBottles"
+            ],
+            "related_parameters": [],
+            "code": "# Since NumberOfVintageBottles is already defined as an integer variable, \n# we just need to add a constraint to ensure it is non-negative\nmodel.addConstr(NumberOfVintageBottles >= 0, \"vintage_bottles_nonnegativity\")"
+        },
+        {
+            "description": "Number of regular bottles is non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfRegularBottles} \\geq 0",
+            "related_variables": [
+                "NumberOfRegularBottles"
+            ],
+            "related_parameters": [],
+            "code": "model.addConstr(NumberOfRegularBottles >= 0, name=\"NumberOfRegularBottles_nonneg\")"
+        },
+        {
+            "description": "Number of regular bottles must be at least MinRegularVintageRatio times the number of vintage bottles",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfRegularBottles} \\geq \\textup{MinRegularVintageRatio} \\times \\textup{NumberOfVintageBottles}",
+            "related_variables": [
+                "NumberOfRegularBottles",
+                "NumberOfVintageBottles"
+            ],
+            "related_parameters": [
+                "MinRegularVintageRatio"
+            ],
+            "code": "# Add constraint for minimum ratio of regular bottles to vintage bottles\nmodel.addConstr(NumberOfRegularBottles >= MinRegularVintageRatio * NumberOfVintageBottles, name=\"min_regular_vintage_ratio\")"
+        },
+        {
+            "description": "Ensure at least a minimum number of vintage bottles are produced",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfVintageBottles} \\geq \\textup{MinVintageBottles}",
+            "related_variables": [
+                "NumberOfVintageBottles"
+            ],
+            "related_parameters": [
+                "MinVintageBottles"
+            ],
+            "code": "# Ensure at least a minimum number of vintage bottles are produced\nmodel.addConstr(NumberOfVintageBottles >= MinVintageBottles, name=\"min_vintage_bottles\")"
+        },
+        {
+            "description": "The total volume of vintage and regular bottles must not exceed the available volume",
+            "status": "coded",
+            "formulation": "\\textup{VintageVolume} \\times \\textup{NumberOfVintageBottles} + \\textup{RegularVolume} \\times \\textup{NumberOfRegularBottles} \\leq \\textup{TotalVolume}",
+            "related_variables": [
+                "NumberOfVintageBottles",
+                "NumberOfRegularBottles"
+            ],
+            "related_parameters": [
+                "VintageVolume",
+                "RegularVolume",
+                "TotalVolume"
+            ],
+            "code": "# Ensure the total volume of vintage and regular bottles does not exceed available volume\nmodel.addConstr((VintageVolume * NumberOfVintageBottles) + (RegularVolume * NumberOfRegularBottles) <= TotalVolume, name=\"volume_constraint\")"
+        },
+        {
+            "description": "The number of regular bottles must be at least 4 times the number of vintage bottles",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfRegularBottles} \\geq \\textup{MinRegularVintageRatio} \\times \\textup{NumberOfVintageBottles}",
+            "related_variables": [
+                "NumberOfRegularBottles",
+                "NumberOfVintageBottles"
+            ],
+            "related_parameters": [
+                "MinRegularVintageRatio"
+            ],
+            "code": "# Add constraint for the number of regular bottles to be at least 4 times the number of vintage bottles\nmodel.addConstr(NumberOfRegularBottles >= MinRegularVintageRatio * NumberOfVintageBottles, \"min_ratio_regular_vintage\")"
+        },
+        {
+            "description": "The number of vintage bottles must meet a minimum production",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfVintageBottles} \\geq \\textup{MinVintageBottles}",
+            "related_variables": [
+                "NumberOfVintageBottles"
+            ],
+            "related_parameters": [
+                "MinVintageBottles"
+            ],
+            "code": "# Ensure minimum production of vintage bottles\nmodel.addConstr(NumberOfVintageBottles >= MinVintageBottles, name=\"min_vintage_production\")"
+        },
+        {
+            "description": "Ensure that the volume constraints are respected for the vintage and regular bottles given the total volume of vine available",
+            "status": "coded",
+            "formulation": "\\textup{VintageVolume} \\cdot \\textup{NumberOfVintageBottles} + \\textup{RegularVolume} \\cdot \\textup{NumberOfRegularBottles} \\leq \\textup{TotalVolume}",
+            "related_variables": [
+                "NumberOfVintageBottles",
+                "NumberOfRegularBottles"
+            ],
+            "related_parameters": [
+                "VintageVolume",
+                "RegularVolume",
+                "TotalVolume"
+            ],
+            "code": "# Ensure that the volume constraints are respected for the vintage and regular bottles\nmodel.addConstr(VintageVolume * NumberOfVintageBottles + RegularVolume * NumberOfRegularBottles <= TotalVolume, name=\"volume_constraint\")"
+        },
+        {
+            "description": "Maintain at least a minimum ratio of regular to vintage bottles produced",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfRegularBottles} \\geq \\textup{MinRegularVintageRatio} \\cdot \\textup{NumberOfVintageBottles}",
+            "related_variables": [
+                "NumberOfVintageBottles",
+                "NumberOfRegularBottles"
+            ],
+            "related_parameters": [
+                "MinRegularVintageRatio"
+            ],
+            "code": "# Add constraint to maintain at least a minimum ratio of regular to vintage bottles produced\nmodel.addConstr(NumberOfRegularBottles >= MinRegularVintageRatio * NumberOfVintageBottles, name=\"MinRegularVintageRatioConstraint\")"
+        },
+        {
+            "description": "Ensure a minimum production of vintage bottles",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfVintageBottles} \\geq \\textup{MinVintageBottles}",
+            "related_variables": [
+                "NumberOfVintageBottles"
+            ],
+            "related_parameters": [
+                "MinVintageBottles"
+            ],
+            "code": "# Ensure a minimum production of vintage bottles constraint\nmodel.addConstr(NumberOfVintageBottles >= MinVintageBottles, name=\"min_vintage_production\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of vintage bottles produced",
+            "symbol": "NumberOfVintageBottles",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfVintageBottles = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfVintageBottles\")"
+        },
+        {
+            "definition": "The number of regular bottles produced",
+            "symbol": "NumberOfRegularBottles",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfRegularBottles = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfRegularBottles\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total number of bottles produced",
+            "status": "coded",
+            "formulation": "\\textup{Maximize} \\quad \\textup{NumberOfVintageBottles} + \\textup{NumberOfRegularBottles}",
+            "related_variables": [
+                "NumberOfVintageBottles",
+                "NumberOfRegularBottles"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(NumberOfVintageBottles + NumberOfRegularBottles, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 142.0,
+    "log_path": "logs/log_20250414051726_nl4opt_prob_98/",
+    "problem_path": "data/nl4opt/prob_98/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_98/data.json\", \"r\") as f:\n    data = json.load(f)\n\nVintageVolume = data[\"VintageVolume\"] # scalar parameter\nRegularVolume = data[\"RegularVolume\"] # scalar parameter\nTotalVolume = data[\"TotalVolume\"] # scalar parameter\nMinRegularVintageRatio = data[\"MinRegularVintageRatio\"] # scalar parameter\nMinVintageBottles = data[\"MinVintageBottles\"] # scalar parameter\nNumberOfVintageBottles = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfVintageBottles\")\nNumberOfRegularBottles = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfRegularBottles\")\n\n# Since NumberOfVintageBottles is already defined as an integer variable, \n# we just need to add a constraint to ensure it is non-negative\nmodel.addConstr(NumberOfVintageBottles >= 0, \"vintage_bottles_nonnegativity\")\n\nmodel.addConstr(NumberOfRegularBottles >= 0, name=\"NumberOfRegularBottles_nonneg\")\n\n# Add constraint for minimum ratio of regular bottles to vintage bottles\nmodel.addConstr(NumberOfRegularBottles >= MinRegularVintageRatio * NumberOfVintageBottles, name=\"min_regular_vintage_ratio\")\n\n# Ensure at least a minimum number of vintage bottles are produced\nmodel.addConstr(NumberOfVintageBottles >= MinVintageBottles, name=\"min_vintage_bottles\")\n\n# Ensure the total volume of vintage and regular bottles does not exceed available volume\nmodel.addConstr((VintageVolume * NumberOfVintageBottles) + (RegularVolume * NumberOfRegularBottles) <= TotalVolume, name=\"volume_constraint\")\n\n# Add constraint for the number of regular bottles to be at least 4 times the number of vintage bottles\nmodel.addConstr(NumberOfRegularBottles >= MinRegularVintageRatio * NumberOfVintageBottles, \"min_ratio_regular_vintage\")\n\n# Ensure minimum production of vintage bottles\nmodel.addConstr(NumberOfVintageBottles >= MinVintageBottles, name=\"min_vintage_production\")\n\n# Ensure that the volume constraints are respected for the vintage and regular bottles\nmodel.addConstr(VintageVolume * NumberOfVintageBottles + RegularVolume * NumberOfRegularBottles <= TotalVolume, name=\"volume_constraint\")\n\n# Add constraint to maintain at least a minimum ratio of regular to vintage bottles produced\nmodel.addConstr(NumberOfRegularBottles >= MinRegularVintageRatio * NumberOfVintageBottles, name=\"MinRegularVintageRatioConstraint\")\n\n# Ensure a minimum production of vintage bottles constraint\nmodel.addConstr(NumberOfVintageBottles >= MinVintageBottles, name=\"min_vintage_production\")\n\n# Set objective\nmodel.setObjective(NumberOfVintageBottles + NumberOfRegularBottles, gp.GRB.MAXIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

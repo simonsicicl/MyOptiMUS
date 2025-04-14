@@ -1,0 +1,125 @@
+{
+    "background": "A jam company needs to determine the minimum number of small and large jars to meet a minimum volume requirement for shipping jam, with a preference for small jars over large ones.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Volume of jam that a small jar can hold",
+            "symbol": "SmallJarVolume",
+            "value": 50,
+            "shape": [],
+            "code": "SmallJarVolume = data[\"SmallJarVolume\"] # scalar parameter"
+        },
+        {
+            "definition": "Volume of jam that a large jar can hold",
+            "symbol": "LargeJarVolume",
+            "value": 200,
+            "shape": [],
+            "code": "LargeJarVolume = data[\"LargeJarVolume\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum total volume of jam needed for shipment",
+            "symbol": "MinimumVolume",
+            "value": 100000,
+            "shape": [],
+            "code": "MinimumVolume = data[\"MinimumVolume\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of large jars must be non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{LargeJars} \\\\geq 0",
+            "related_variables": [
+                "LargeJars"
+            ],
+            "related_parameters": [],
+            "code": "# The variable \"LargeJars\" already has a non-negative domain by default since it is defined as a non-negative continuous variable."
+        },
+        {
+            "description": "Non-negativity constraint for the number of small jars.",
+            "status": "coded",
+            "formulation": "\\textup{SmallJars} \\geq 0",
+            "related_variables": [
+                "SmallJars"
+            ],
+            "related_parameters": [],
+            "code": "# The variable SmallJars is already defined as non-negative due to its default properties in gurobipy (lower bound of 0)."
+        },
+        {
+            "description": "The number of large jars should not exceed the number of small jars.",
+            "status": "coded",
+            "formulation": "\\textup{LargeJars} \\leq \\textup{SmallJars}",
+            "related_variables": [
+                "LargeJars",
+                "SmallJars"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint ensuring the number of large jars does not exceed the number of small jars\nmodel.addConstr(LargeJars <= SmallJars, name=\"large_small_jar_balance\")"
+        },
+        {
+            "description": "The total volume of jam in jars must be at least the MinimumVolume in milliliters.",
+            "status": "coded",
+            "formulation": "\\\\textup{SmallJarVolume} \\\\times \\\\textup{SmallJars} + \\\\textup{LargeJarVolume} \\\\times \\\\textup{LargeJars} \\\\geq \\\\textup{MinimumVolume}",
+            "related_variables": [
+                "SmallJars",
+                "LargeJars"
+            ],
+            "related_parameters": [
+                "SmallJarVolume",
+                "LargeJarVolume",
+                "MinimumVolume"
+            ],
+            "code": "# Add constraint to ensure total jam volume in jars meets or exceeds the minimum volume requirement\nmodel.addConstr(SmallJars * SmallJarVolume + LargeJars * LargeJarVolume >= MinimumVolume, name=\"minimum_jam_volume\")"
+        },
+        {
+            "description": "Ensure the total volume from small and large jars meets or exceeds the minimum required volume.",
+            "status": "coded",
+            "formulation": "\\textup{SmallJarVolume} \\cdot \\textup{SmallJars} + \\textup{LargeJarVolume} \\cdot \\textup{LargeJars} \\geq \\textup{MinimumVolume}",
+            "related_variables": [
+                "SmallJars",
+                "LargeJars"
+            ],
+            "related_parameters": [
+                "SmallJarVolume",
+                "LargeJarVolume",
+                "MinimumVolume"
+            ],
+            "code": "# Add total volume constraint for small and large jars\nmodel.addConstr(SmallJarVolume * SmallJars + LargeJarVolume * LargeJars >= MinimumVolume, name=\"total_volume_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of large jars used to store jam.",
+            "symbol": "LargeJars",
+            "shape": [],
+            "status": "coded",
+            "code": "LargeJars = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"LargeJars\")"
+        },
+        {
+            "definition": "Number of small jars used to store jam.",
+            "symbol": "SmallJars",
+            "shape": [],
+            "status": "coded",
+            "code": "SmallJars = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"SmallJars\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of jars used to ship at least the minimum volume of jam.",
+            "status": "coded",
+            "formulation": "\\textup{Minimize:} \\quad \\textup{SmallJars} + \\textup{LargeJars}",
+            "related_variables": [
+                "SmallJars",
+                "LargeJars"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(SmallJars + LargeJars, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413163515_nl4opt_prob_176/",
+    "problem_path": "data/nl4opt/prob_176/"
+}

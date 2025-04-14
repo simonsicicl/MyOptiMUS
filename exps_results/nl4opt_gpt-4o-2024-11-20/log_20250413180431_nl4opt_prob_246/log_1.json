@@ -1,0 +1,210 @@
+{
+    "background": "A lighting company offers two types of lights, LED fixtures and fluorescence lamps, which differ in their electricity usage and frequency of change.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Electricity used per hour by an LED light",
+            "symbol": "ELed",
+            "value": 5,
+            "shape": [],
+            "code": "ELed = data[\"ELed\"] # scalar parameter"
+        },
+        {
+            "definition": "Times an LED light needs to be changed per decade",
+            "symbol": "NLed",
+            "value": 3,
+            "shape": [],
+            "code": "NLed = data[\"NLed\"] # scalar parameter"
+        },
+        {
+            "definition": "Electricity used per hour by a fluorescence lamp",
+            "symbol": "EFluorescence",
+            "value": 8,
+            "shape": [],
+            "code": "EFluorescence = data[\"EFluorescence\"] # scalar parameter"
+        },
+        {
+            "definition": "Times a fluorescence lamp needs to be changed per decade",
+            "symbol": "NFluorescence",
+            "value": 4,
+            "shape": [],
+            "code": "NFluorescence = data[\"NFluorescence\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum percentage of lights that must be fluorescence lamps",
+            "symbol": "PFluorescence",
+            "value": 0.3,
+            "shape": [],
+            "code": "PFluorescence = data[\"PFluorescence\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of light fixtures required",
+            "symbol": "MinLights",
+            "value": 300,
+            "shape": [],
+            "code": "MinLights = data[\"MinLights\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum units of electricity that can be used",
+            "symbol": "MaxElectricity",
+            "value": 2000,
+            "shape": [],
+            "code": "MaxElectricity = data[\"MaxElectricity\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Ensure that at least a proportion (PFluorescence) of installed fixtures are fluorescence lamps.",
+            "status": "coded",
+            "formulation": "\\textup{NumFluorescenceLights} \\geq PFluorescence \\cdot (\\textup{NumLEDLights} + \\textup{NumFluorescenceLights})",
+            "related_variables": [
+                "NumFluorescenceLights",
+                "NumLEDLights"
+            ],
+            "related_parameters": [
+                "PFluorescence"
+            ],
+            "code": "# Add constraint to ensure at least a proportion of installed fixtures are fluorescence lamps\nmodel.addConstr(NumFluorescenceLights >= PFluorescence * (NumLEDLights + NumFluorescenceLights), name=\"min_fluorescence_lamps\")"
+        },
+        {
+            "description": "The total number of light fixtures installed (LED and fluorescence combined) must be at least MinLights.",
+            "status": "coded",
+            "formulation": "\\\\textup{NumLEDLights} + \\\\textup{NumFluorescenceLights} \\\\geq \\\\textup{MinLights}",
+            "related_variables": [
+                "NumLEDLights",
+                "NumFluorescenceLights"
+            ],
+            "related_parameters": [
+                "MinLights"
+            ],
+            "code": "# Add constraint for total number of light fixtures\nmodel.addConstr(NumLEDLights + NumFluorescenceLights >= MinLights, name=\"min_lights_constraint\")"
+        },
+        {
+            "description": "The total electricity usage per hour from all installed LED lights and fluorescence lamps cannot exceed the maximum allowed electricity usage per hour.",
+            "status": "coded",
+            "formulation": "\\textup{ELed} \\cdot \\textup{NumLEDLights} + \\textup{EFluorescence} \\cdot \\textup{NumFluorescenceLights} \\leq \\textup{MaxElectricity}",
+            "related_variables": [
+                "NumLEDLights",
+                "NumFluorescenceLights"
+            ],
+            "related_parameters": [
+                "ELed",
+                "EFluorescence",
+                "MaxElectricity"
+            ],
+            "code": "# Add electricity usage constraint\nmodel.addConstr(\n    NumLEDLights * ELed + NumFluorescenceLights * EFluorescence <= MaxElectricity, \n    name=\"electricity_usage_limit\"\n)"
+        },
+        {
+            "description": "The number of LED light fixtures installed must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumLEDLights} \\\\geq 0",
+            "related_variables": [
+                "NumLEDLights"
+            ],
+            "related_parameters": [],
+            "code": "# No additional code needed since variable \"NumLEDLights\" is already non-negative due to its default lower bound (0) in Gurobi."
+        },
+        {
+            "description": "The number of fluorescence lamps must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumFluorescenceLights} \\geq 0",
+            "related_variables": [
+                "NumFluorescenceLights"
+            ],
+            "related_parameters": [],
+            "code": "# The non-negativity of NumFluorescenceLights is inherently handled by its default domain in Gurobi,\n# so no additional constraint code is required."
+        },
+        {
+            "description": "Ensure that the total number of lights installed meets the minimum requirement (MinLights).",
+            "status": "coded",
+            "formulation": "\\textup{NumLEDLights} + \\textup{NumFluorescenceLights} \\geq MinLights",
+            "related_variables": [
+                "NumLEDLights",
+                "NumFluorescenceLights"
+            ],
+            "related_parameters": [
+                "MinLights"
+            ],
+            "code": "# Add constraint to ensure the total number of lights installed meets the minimum requirement (MinLights)\nmodel.addConstr(NumLEDLights + NumFluorescenceLights >= MinLights, name=\"min_lights_requirement\")"
+        },
+        {
+            "description": "Minimum number of lights required",
+            "status": "coded",
+            "formulation": "\\textup{NumLEDLights} + \\textup{NumFluorescenceLights} \\geq \\textup{MinLights}",
+            "related_variables": [
+                "NumLEDLights",
+                "NumFluorescenceLights"
+            ],
+            "related_parameters": [
+                "MinLights"
+            ],
+            "code": "# Add constraint for the minimum number of lights required\nmodel.addConstr(NumLEDLights + NumFluorescenceLights >= MinLights, name=\"min_lights_required\")"
+        },
+        {
+            "description": "Minimum percentage of fluorescent lights",
+            "status": "coded",
+            "formulation": "\\textup{NumFluorescenceLights} \\geq \\textup{PFluorescence} \\cdot (\\textup{NumLEDLights} + \\textup{NumFluorescenceLights})",
+            "related_variables": [
+                "NumLEDLights",
+                "NumFluorescenceLights"
+            ],
+            "related_parameters": [
+                "PFluorescence"
+            ],
+            "code": "# Add constraint to enforce minimum percentage of fluorescent lights\nmodel.addConstr(NumFluorescenceLights >= PFluorescence * (NumLEDLights + NumFluorescenceLights), name=\"min_fluorescent_lights\")"
+        },
+        {
+            "description": "Maximum electricity usage constraint",
+            "status": "coded",
+            "formulation": "\\textup{ELed} \\cdot \\textup{NumLEDLights} + \\textup{EFluorescence} \\cdot \\textup{NumFluorescenceLights} \\leq \\textup{MaxElectricity}",
+            "related_variables": [
+                "NumLEDLights",
+                "NumFluorescenceLights"
+            ],
+            "related_parameters": [
+                "ELed",
+                "EFluorescence",
+                "MaxElectricity"
+            ],
+            "code": "# Add maximum electricity usage constraint\nmodel.addConstr(ELed * NumLEDLights + EFluorescence * NumFluorescenceLights <= MaxElectricity, name=\"MaxElectricityConstraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of LED light fixtures installed",
+            "symbol": "NumLEDLights",
+            "shape": [],
+            "status": "coded",
+            "code": "NumLEDLights = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumLEDLights\")"
+        },
+        {
+            "definition": "Number of fluorescence lamps installed",
+            "symbol": "NumFluorescenceLights",
+            "shape": [],
+            "status": "coded",
+            "code": "NumFluorescenceLights = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumFluorescenceLights\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of light changes over a decade",
+            "status": "coded",
+            "formulation": "\\textup{Minimize} \\quad \\textup{NLed} \\cdot \\textup{NumLEDLights} + \\textup{NFluorescence} \\cdot \\textup{NumFluorescenceLights}",
+            "related_variables": [
+                "NumLEDLights",
+                "NumFluorescenceLights"
+            ],
+            "related_parameters": [
+                "NLed",
+                "NFluorescence"
+            ],
+            "code": "# Set objective\nmodel.setObjective(NLed * NumLEDLights + NFluorescence * NumFluorescenceLights, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413180431_nl4opt_prob_246/",
+    "problem_path": "data/nl4opt/prob_246/"
+}

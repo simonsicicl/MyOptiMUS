@@ -1,0 +1,203 @@
+{
+    "background": "A patient needs to increase her protein and iron intake. She has the option of eating fish or chicken meals, each containing certain amounts of protein, iron, and fat.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Units of protein in each fish meal",
+            "symbol": "ProteinFish",
+            "value": 10,
+            "shape": [],
+            "code": "ProteinFish = data[\"ProteinFish\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of iron in each fish meal",
+            "symbol": "IronFish",
+            "value": 12,
+            "shape": [],
+            "code": "IronFish = data[\"IronFish\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of protein in each chicken meal",
+            "symbol": "ProteinChicken",
+            "value": 15,
+            "shape": [],
+            "code": "ProteinChicken = data[\"ProteinChicken\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of iron in each chicken meal",
+            "symbol": "IronChicken",
+            "value": 8,
+            "shape": [],
+            "code": "IronChicken = data[\"IronChicken\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum required units of protein",
+            "symbol": "MinProtein",
+            "value": 130,
+            "shape": [],
+            "code": "MinProtein = data[\"MinProtein\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum required units of iron",
+            "symbol": "MinIron",
+            "value": 120,
+            "shape": [],
+            "code": "MinIron = data[\"MinIron\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum ratio of chicken meals to fish meals",
+            "symbol": "MinChickenFishRatio",
+            "value": 2,
+            "shape": [],
+            "code": "MinChickenFishRatio = data[\"MinChickenFishRatio\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of fat in each fish meal",
+            "symbol": "FatFish",
+            "value": 7,
+            "shape": [],
+            "code": "FatFish = data[\"FatFish\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of fat in each chicken meal",
+            "symbol": "FatChicken",
+            "value": 10,
+            "shape": [],
+            "code": "FatChicken = data[\"FatChicken\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The patient must consume at least MinProtein units of protein from fish and chicken meals.",
+            "status": "coded",
+            "formulation": "\\textup{ProteinFish} \\cdot \\textup{NumberOfFishMeals} + \\textup{ProteinChicken} \\cdot \\textup{NumberOfChickenMeals} \\geq \\textup{MinProtein}",
+            "related_variables": [
+                "NumberOfFishMeals",
+                "NumberOfChickenMeals"
+            ],
+            "related_parameters": [
+                "ProteinFish",
+                "ProteinChicken",
+                "MinProtein"
+            ],
+            "code": "# Patient protein intake constraint\nmodel.addConstr(ProteinFish * NumberOfFishMeals + ProteinChicken * NumberOfChickenMeals >= MinProtein, name=\"min_protein_intake\")"
+        },
+        {
+            "description": "Patient's diet must contain at least the minimum required units of iron",
+            "status": "coded",
+            "formulation": "\\textup{IronFish} \\cdot \\textup{NumberOfFishMeals} + \\textup{IronChicken} \\cdot \\textup{NumberOfChickenMeals} \\geq \\textup{MinIron}",
+            "related_variables": [
+                "NumberOfFishMeals",
+                "NumberOfChickenMeals"
+            ],
+            "related_parameters": [
+                "IronFish",
+                "IronChicken",
+                "MinIron"
+            ],
+            "code": "# Ensure patient's diet contains at least the minimum required units of iron\nmodel.addConstr(IronFish * NumberOfFishMeals + IronChicken * NumberOfChickenMeals >= MinIron, name=\"min_iron_requirement\")"
+        },
+        {
+            "description": "The number of fish meals the patient consumes should be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfFishMeals} \\geq 0",
+            "related_variables": [
+                "NumberOfFishMeals"
+            ],
+            "related_parameters": [],
+            "code": "# Since NumberOfFishMeals has already been defined as an integer variable, \n# we just need to add a constraint to ensure it is non-negative\nmodel.addConstr(NumberOfFishMeals >= 0, name=\"non_negative_fish_meals\")"
+        },
+        {
+            "description": "The number of chicken meals must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfChickenMeals} \\geq 0",
+            "related_variables": [
+                "NumberOfChickenMeals"
+            ],
+            "related_parameters": [],
+            "code": "model.addConstr(NumberOfChickenMeals >= 0, name=\"nonnegativity_chicken_meals\")"
+        },
+        {
+            "description": "Ensure the patient consumes at least the minimum required units of protein",
+            "status": "coded",
+            "formulation": "\\textup{ProteinFish} \\cdot \\textup{NumberOfFishMeals} + \\textup{ProteinChicken} \\cdot \\textup{NumberOfChickenMeals} \\geq \\textup{MinProtein}",
+            "related_variables": [
+                "NumberOfFishMeals",
+                "NumberOfChickenMeals"
+            ],
+            "related_parameters": [
+                "ProteinFish",
+                "ProteinChicken",
+                "MinProtein"
+            ],
+            "code": "# Ensure the patient consumes at least the minimum required units of protein\nmodel.addConstr(ProteinFish * NumberOfFishMeals + ProteinChicken * NumberOfChickenMeals >= MinProtein, name=\"min_protein_requirement\")"
+        },
+        {
+            "description": "Ensure the patient consumes at least the minimum required units of iron",
+            "status": "coded",
+            "formulation": "\\textup{IronFish} \\cdot \\textup{NumberOfFishMeals} + \\textup{IronChicken} \\cdot \\textup{NumberOfChickenMeals} \\geq \\textup{MinIron}",
+            "related_variables": [
+                "NumberOfFishMeals",
+                "NumberOfChickenMeals"
+            ],
+            "related_parameters": [
+                "IronFish",
+                "IronChicken",
+                "MinIron"
+            ],
+            "code": "# Ensure the patient consumes at least the minimum required units of iron\nmodel.addConstr(IronFish * NumberOfFishMeals + IronChicken * NumberOfChickenMeals >= MinIron, \"min_iron_intake\")"
+        },
+        {
+            "description": "Ensure the number of chicken meals is at least twice the number of fish meals to satisfy the minimum ratio requirement",
+            "status": "coded",
+            "formulation": "\\textup{MinChickenFishRatio} \\cdot \\textup{NumberOfFishMeals} \\leq \\textup{NumberOfChickenMeals}",
+            "related_variables": [
+                "NumberOfFishMeals",
+                "NumberOfChickenMeals"
+            ],
+            "related_parameters": [
+                "MinChickenFishRatio"
+            ],
+            "code": "# Ensure the number of chicken meals is at least twice the number of fish meals\nmodel.addConstr(MinChickenFishRatio * NumberOfFishMeals <= NumberOfChickenMeals, \"Min_Chicken_Fish_Ratio\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of fish meals the patient consumes",
+            "symbol": "NumberOfFishMeals",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfFishMeals = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfFishMeals\")"
+        },
+        {
+            "definition": "The number of chicken meals the patient consumes",
+            "symbol": "NumberOfChickenMeals",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfChickenMeals = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfChickenMeals\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total fat intake from consuming fish and chicken meals",
+            "status": "coded",
+            "formulation": "\\textup{Minimize} \\quad \\textup{FatIntake} = \\textup{FatFish} \\cdot \\textup{NumberOfFishMeals} + \\textup{FatChicken} \\cdot \\textup{NumberOfChickenMeals}",
+            "related_variables": [
+                "NumberOfFishMeals",
+                "NumberOfChickenMeals"
+            ],
+            "related_parameters": [
+                "FatFish",
+                "FatChicken"
+            ],
+            "code": "# Set objective\nmodel.setObjective(FatFish * NumberOfFishMeals + FatChicken * NumberOfChickenMeals, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 118.0,
+    "log_path": "logs/log_20250413105957_nl4opt_prob_107/",
+    "problem_path": "data/nl4opt/prob_107/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_107/data.json\", \"r\") as f:\n    data = json.load(f)\n\nProteinFish = data[\"ProteinFish\"] # scalar parameter\nIronFish = data[\"IronFish\"] # scalar parameter\nProteinChicken = data[\"ProteinChicken\"] # scalar parameter\nIronChicken = data[\"IronChicken\"] # scalar parameter\nMinProtein = data[\"MinProtein\"] # scalar parameter\nMinIron = data[\"MinIron\"] # scalar parameter\nMinChickenFishRatio = data[\"MinChickenFishRatio\"] # scalar parameter\nFatFish = data[\"FatFish\"] # scalar parameter\nFatChicken = data[\"FatChicken\"] # scalar parameter\nNumberOfFishMeals = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfFishMeals\")\nNumberOfChickenMeals = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfChickenMeals\")\n\n# Patient protein intake constraint\nmodel.addConstr(ProteinFish * NumberOfFishMeals + ProteinChicken * NumberOfChickenMeals >= MinProtein, name=\"min_protein_intake\")\n\n# Ensure patient's diet contains at least the minimum required units of iron\nmodel.addConstr(IronFish * NumberOfFishMeals + IronChicken * NumberOfChickenMeals >= MinIron, name=\"min_iron_requirement\")\n\n# Since NumberOfFishMeals has already been defined as an integer variable, \n# we just need to add a constraint to ensure it is non-negative\nmodel.addConstr(NumberOfFishMeals >= 0, name=\"non_negative_fish_meals\")\n\nmodel.addConstr(NumberOfChickenMeals >= 0, name=\"nonnegativity_chicken_meals\")\n\n# Ensure the patient consumes at least the minimum required units of protein\nmodel.addConstr(ProteinFish * NumberOfFishMeals + ProteinChicken * NumberOfChickenMeals >= MinProtein, name=\"min_protein_requirement\")\n\n# Ensure the patient consumes at least the minimum required units of iron\nmodel.addConstr(IronFish * NumberOfFishMeals + IronChicken * NumberOfChickenMeals >= MinIron, \"min_iron_intake\")\n\n# Ensure the number of chicken meals is at least twice the number of fish meals\nmodel.addConstr(MinChickenFishRatio * NumberOfFishMeals <= NumberOfChickenMeals, \"Min_Chicken_Fish_Ratio\")\n\n# Set objective\nmodel.setObjective(FatFish * NumberOfFishMeals + FatChicken * NumberOfChickenMeals, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

@@ -1,0 +1,114 @@
+{
+    "background": "The problem involves finding the 'best' linear relationship in the form of Y = bX + a that fits a set of data points. The 'best' fit minimizes the total absolute deviation of observed Y values from those predicted by the linear equation.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of data points",
+            "symbol": "K",
+            "value": "",
+            "shape": [],
+            "code": "K = data[\"K\"] # scalar parameter"
+        },
+        {
+            "definition": "Observed values of the dependent variable",
+            "symbol": "Y",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "Y = np.array(data[\"Y\"]) # ['K']"
+        },
+        {
+            "definition": "Observed values of the independent variable",
+            "symbol": "X",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "X = np.array(data[\"X\"]) # ['K']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Relating the absolute deviation \\textup{Dev}_{k} to the positive deviation of \\textup{Y}_{k} from the predicted value (\\textup{b}\\textup{X}_{k} + \\textup{a}).",
+            "status": "coded",
+            "formulation": "\\textup{Dev}_{k} \\geq \\textup{Y}_{k} - (\\textup{b} \\textup{X}_{k} + \\textup{a}), \\quad \\forall k \\in \\{1, \\ldots, \\textup{K}\\}",
+            "related_variables": [
+                "Dev",
+                "b",
+                "a"
+            ],
+            "related_parameters": [
+                "K",
+                "Y",
+                "X"
+            ],
+            "code": "# Add constraints to relate absolute deviation `Dev_k` to the positive deviation of `Y_k` from the predicted value `(b * X_k + a)`\nfor k in range(K):\n    model.addConstr(Dev[k] >= Y[k] - (b * X[k] + a), name=f\"absolute_dev_relation_{k}\")"
+        },
+        {
+            "description": "Relating the absolute deviation \\textup{Dev}_{k} to the negative deviation of \\textup{Y}_{k} from the predicted value (\\textup{b}\\textup{X}_{k} + \\textup{a}).",
+            "status": "coded",
+            "formulation": "\\textup{Dev}_{k} \\geq -(\\textup{Y}_{k} - (\\textup{b} \\textup{X}_{k} + \\textup{a})), \\quad \\forall k \\in \\{1, \\ldots, \\textup{K}\\}",
+            "related_variables": [
+                "Dev",
+                "b",
+                "a"
+            ],
+            "related_parameters": [
+                "K",
+                "Y",
+                "X"
+            ],
+            "code": "# Relate absolute deviation to negative deviation constraints\nfor k in range(K):\n    model.addConstr(Dev[k] >= -(Y[k] - (b * X[k] + a)), name=f\"abs_dev_constraint_{k}\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The slope of the linear model \\textup{Y} = \\textup{bX} + \\textup{a}.",
+            "symbol": "b",
+            "shape": [],
+            "status": "coded",
+            "code": "b = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"b\")"
+        },
+        {
+            "definition": "The intercept of the linear model \\textup{Y} = \\textup{bX} + \\textup{a}.",
+            "symbol": "a",
+            "shape": [],
+            "status": "coded",
+            "code": "a = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"a\")"
+        },
+        {
+            "definition": "The absolute deviation for the \\textit{k}-th data point, measuring the difference between observed \\textup{Y}_{k} and the predicted value (\\textup{bX}_{k} + \\textup{a}).",
+            "symbol": "Dev",
+            "shape": [
+                "K"
+            ],
+            "status": "coded",
+            "code": "Dev = model.addVars(K, vtype=gp.GRB.CONTINUOUS, name=\"Dev\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the sum of absolute deviations between the observed \\textup{Y} values and the values predicted by the linear model \\textup{Y} = bX + a.",
+            "status": "coded",
+            "formulation": "\\min \\sum_{k=1}^{\\textup{K}} \\textup{Dev}_{k}",
+            "related_variables": [
+                "Dev",
+                "b",
+                "a"
+            ],
+            "related_parameters": [
+                "K",
+                "Y",
+                "X"
+            ],
+            "code": "# Set objective\nmodel.setObjective(gp.quicksum(Dev[k] for k in range(K)), gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413155401_nlp4lp_31/",
+    "problem_path": "data/nlp4lp/31/"
+}

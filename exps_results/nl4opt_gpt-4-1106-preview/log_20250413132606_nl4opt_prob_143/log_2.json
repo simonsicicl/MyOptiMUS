@@ -1,0 +1,200 @@
+{
+    "background": "A lab is using its medicinal ingredients to produce large and small pills, with each type requiring a specific amount of medicinal ingredients and filler. A minimum number of large pills must be produced and a minimum percentage of the total production must be small pills.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Total units of medicinal ingredients available",
+            "symbol": "TotalMedicinalUnits",
+            "value": 1000,
+            "shape": [],
+            "code": "TotalMedicinalUnits = data[\"TotalMedicinalUnits\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of medicinal ingredients required for a large pill",
+            "symbol": "LargePillMedicinalUnits",
+            "value": 3,
+            "shape": [],
+            "code": "LargePillMedicinalUnits = data[\"LargePillMedicinalUnits\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of filler required for a large pill",
+            "symbol": "LargePillFillerUnits",
+            "value": 2,
+            "shape": [],
+            "code": "LargePillFillerUnits = data[\"LargePillFillerUnits\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of medicinal ingredients required for a small pill",
+            "symbol": "SmallPillMedicinalUnits",
+            "value": 2,
+            "shape": [],
+            "code": "SmallPillMedicinalUnits = data[\"SmallPillMedicinalUnits\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of filler required for a small pill",
+            "symbol": "SmallPillFillerUnits",
+            "value": 1,
+            "shape": [],
+            "code": "SmallPillFillerUnits = data[\"SmallPillFillerUnits\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum large pills to be produced",
+            "symbol": "MinimumLargePills",
+            "value": 100,
+            "shape": [],
+            "code": "MinimumLargePills = data[\"MinimumLargePills\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum percentage of total pills to be small pills",
+            "symbol": "MinimumSmallPillsPercentage",
+            "value": 0.6,
+            "shape": [],
+            "code": "MinimumSmallPillsPercentage = data[\"MinimumSmallPillsPercentage\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Number of large pills is non-negative",
+            "status": "coded",
+            "formulation": "NumberOfLargePills \\geq 0",
+            "related_variables": [
+                "NumberOfLargePills"
+            ],
+            "related_parameters": [],
+            "code": "# The number of large pills must be non-negative\nmodel.addConstr(NumberOfLargePills >= 0, name=\"non_negativity_large_pills\")"
+        },
+        {
+            "description": "Number of small pills is non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfSmallPills} \\geq 0",
+            "related_variables": [
+                "NumberOfSmallPills"
+            ],
+            "related_parameters": [],
+            "code": "# Add non-negativity constraint for the number of small pills\nmodel.addConstr(NumberOfSmallPills >= 0, name=\"non_negativity_small_pills\")"
+        },
+        {
+            "description": "Total medicinal units used in large and small pills cannot exceed TotalMedicinalUnits",
+            "status": "coded",
+            "formulation": "\\textup{LargePillMedicinalUnits} \\cdot \\textup{NumberOfLargePills} + \\textup{SmallPillMedicinalUnits} \\cdot \\textup{NumberOfSmallPills} \\leq \\textup{TotalMedicinalUnits}",
+            "related_variables": [
+                "NumberOfLargePills",
+                "NumberOfSmallPills"
+            ],
+            "related_parameters": [
+                "LargePillMedicinalUnits",
+                "SmallPillMedicinalUnits",
+                "TotalMedicinalUnits"
+            ],
+            "code": "# Add constraint for the total medicinal units used in large and small pills\nmodel.addConstr(LargePillMedicinalUnits * NumberOfLargePills + SmallPillMedicinalUnits * NumberOfSmallPills <= TotalMedicinalUnits, \"TotalMedicinalUnitsConstraint\")"
+        },
+        {
+            "description": "At least the minimum required number of large pills must be produced",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfLargePills} \\geq \\textup{MinimumLargePills}",
+            "related_variables": [
+                "NumberOfLargePills"
+            ],
+            "related_parameters": [
+                "MinimumLargePills"
+            ],
+            "code": "# Constraint for minimum required number of large pills\nmodel.addConstr(NumberOfLargePills >= MinimumLargePills, name=\"min_large_pills\")"
+        },
+        {
+            "description": "At least MinimumSmallPillsPercentage of the total number of pills must be small pills.",
+            "status": "coded",
+            "formulation": "(1 - \\textup{MinimumSmallPillsPercentage}) \\times \\textup{NumberOfSmallPills} \\geq \\textup{MinimumSmallPillsPercentage} \\times \\textup{NumberOfLargePills}",
+            "related_variables": [
+                "NumberOfLargePills",
+                "NumberOfSmallPills"
+            ],
+            "related_parameters": [
+                "MinimumSmallPillsPercentage"
+            ],
+            "code": "# At least MinimumSmallPillsPercentage of the total number of pills must be small pills constraint\nmodel.addConstr((1 - MinimumSmallPillsPercentage) * NumberOfSmallPills >= MinimumSmallPillsPercentage * NumberOfLargePills, \"MinimumSmallPillsPercentage_Constraint\")"
+        },
+        {
+            "description": "At least the minimum number of large pills must be produced",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfLargePills} \\geq \\textup{MinimumLargePills}",
+            "related_variables": [
+                "NumberOfLargePills"
+            ],
+            "related_parameters": [
+                "MinimumLargePills"
+            ],
+            "code": "# Ensure that the number of large pills produced meets the minimum required\nmodel.addConstr(NumberOfLargePills >= MinimumLargePills, \"min_large_pills\")"
+        },
+        {
+            "description": "At least a certain percentage of the total pills produced should be small pills",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfSmallPills} \\geq \\textup{MinimumSmallPillsPercentage} \\times \\textup{TotalPills}",
+            "related_variables": [
+                "NumberOfSmallPills",
+                "TotalPills"
+            ],
+            "related_parameters": [
+                "MinimumSmallPillsPercentage"
+            ],
+            "code": "# Constraint to ensure at least a certain percentage of the total pills produced should be small pills\nmodel.addConstr(NumberOfSmallPills >= MinimumSmallPillsPercentage * TotalPills, name=\"min_small_pills_percentage\")"
+        },
+        {
+            "description": "Definition of the total number of pills as the sum of large and small pills",
+            "status": "coded",
+            "formulation": "\\textup{TotalPills} = \\textup{NumberOfLargePills} + \\textup{NumberOfSmallPills}",
+            "related_variables": [
+                "TotalPills",
+                "NumberOfLargePills",
+                "NumberOfSmallPills"
+            ],
+            "related_parameters": [],
+            "code": "# Define the total number of pills constraint\nmodel.addConstr(TotalPills == NumberOfLargePills + NumberOfSmallPills, name=\"total_pills\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of large pills produced",
+            "symbol": "NumberOfLargePills",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfLargePills = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfLargePills\")"
+        },
+        {
+            "definition": "Number of small pills produced",
+            "symbol": "NumberOfSmallPills",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfSmallPills = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfSmallPills\")"
+        },
+        {
+            "definition": "The total number of pills produced",
+            "symbol": "TotalPills",
+            "shape": [],
+            "status": "coded",
+            "code": "TotalPills = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TotalPills\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of filler material used in all pills",
+            "status": "coded",
+            "formulation": "\\textup{TotalFillerUnits} = \\textup{NumberOfLargePills} \\times \\textup{LargePillFillerUnits} + \\textup{NumberOfSmallPills} \\times \\textup{SmallPillFillerUnits}",
+            "related_variables": [
+                "NumberOfLargePills",
+                "NumberOfSmallPills"
+            ],
+            "related_parameters": [
+                "LargePillFillerUnits",
+                "SmallPillFillerUnits"
+            ],
+            "code": "# Define the objective function\nobjective = NumberOfLargePills * LargePillFillerUnits + NumberOfSmallPills * SmallPillFillerUnits\n\n# Set the objective in the model\nmodel.setObjective(objective, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 350.0,
+    "log_path": "logs/log_20250413132606_nl4opt_prob_143/",
+    "problem_path": "data/nl4opt/prob_143/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_143/data.json\", \"r\") as f:\n    data = json.load(f)\n\nTotalMedicinalUnits = data[\"TotalMedicinalUnits\"] # scalar parameter\nLargePillMedicinalUnits = data[\"LargePillMedicinalUnits\"] # scalar parameter\nLargePillFillerUnits = data[\"LargePillFillerUnits\"] # scalar parameter\nSmallPillMedicinalUnits = data[\"SmallPillMedicinalUnits\"] # scalar parameter\nSmallPillFillerUnits = data[\"SmallPillFillerUnits\"] # scalar parameter\nMinimumLargePills = data[\"MinimumLargePills\"] # scalar parameter\nMinimumSmallPillsPercentage = data[\"MinimumSmallPillsPercentage\"] # scalar parameter\nNumberOfLargePills = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfLargePills\")\nNumberOfSmallPills = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfSmallPills\")\nTotalPills = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TotalPills\")\n\n# The number of large pills must be non-negative\nmodel.addConstr(NumberOfLargePills >= 0, name=\"non_negativity_large_pills\")\n\n# Add non-negativity constraint for the number of small pills\nmodel.addConstr(NumberOfSmallPills >= 0, name=\"non_negativity_small_pills\")\n\n# Add constraint for the total medicinal units used in large and small pills\nmodel.addConstr(LargePillMedicinalUnits * NumberOfLargePills + SmallPillMedicinalUnits * NumberOfSmallPills <= TotalMedicinalUnits, \"TotalMedicinalUnitsConstraint\")\n\n# Constraint for minimum required number of large pills\nmodel.addConstr(NumberOfLargePills >= MinimumLargePills, name=\"min_large_pills\")\n\n# At least MinimumSmallPillsPercentage of the total number of pills must be small pills constraint\nmodel.addConstr((1 - MinimumSmallPillsPercentage) * NumberOfSmallPills >= MinimumSmallPillsPercentage * NumberOfLargePills, \"MinimumSmallPillsPercentage_Constraint\")\n\n# Ensure that the number of large pills produced meets the minimum required\nmodel.addConstr(NumberOfLargePills >= MinimumLargePills, \"min_large_pills\")\n\n# Constraint to ensure at least a certain percentage of the total pills produced should be small pills\nmodel.addConstr(NumberOfSmallPills >= MinimumSmallPillsPercentage * TotalPills, name=\"min_small_pills_percentage\")\n\n# Define the total number of pills constraint\nmodel.addConstr(TotalPills == NumberOfLargePills + NumberOfSmallPills, name=\"total_pills\")\n\n# Define the objective function\nobjective = NumberOfLargePills * LargePillFillerUnits + NumberOfSmallPills * SmallPillFillerUnits\n\n# Set the objective in the model\nmodel.setObjective(objective, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

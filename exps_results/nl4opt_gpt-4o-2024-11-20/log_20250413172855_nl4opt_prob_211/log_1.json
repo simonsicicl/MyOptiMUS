@@ -1,0 +1,237 @@
+{
+    "background": "A flooring company produces laminate planks and carpets, facing expected minimum demand and a cap on weekly production due to raw material shortages, while seeking to maximize profit.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Minimum expected demand for laminate planks per week",
+            "symbol": "Dlaminate",
+            "value": 15000,
+            "shape": [],
+            "code": "Dlaminate = data[\"Dlaminate\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum expected demand for carpets per week",
+            "symbol": "Dcarpet",
+            "value": 5000,
+            "shape": [],
+            "code": "Dcarpet = data[\"Dcarpet\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum total amount of products to be shipped per week",
+            "symbol": "Dtotal",
+            "value": 50000,
+            "shape": [],
+            "code": "Dtotal = data[\"Dtotal\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum production capacity for laminate planks per week",
+            "symbol": "Claminate",
+            "value": 40000,
+            "shape": [],
+            "code": "Claminate = data[\"Claminate\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum production capacity for carpets per week",
+            "symbol": "Ccarpet",
+            "value": 20000,
+            "shape": [],
+            "code": "Ccarpet = data[\"Ccarpet\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit per square foot for laminate planks",
+            "symbol": "Plaminate",
+            "value": 2.1,
+            "shape": [],
+            "code": "Plaminate = data[\"Plaminate\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit per square foot for carpets",
+            "symbol": "Pcarpet",
+            "value": 3.3,
+            "shape": [],
+            "code": "Pcarpet = data[\"Pcarpet\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of square feet of laminate planks produced per week must meet or exceed the minimum expected demand \\textup{Dlaminate}.",
+            "status": "coded",
+            "formulation": "\\\\textup{LaminateProduced} \\\\geq \\\\textup{Dlaminate}",
+            "related_variables": [
+                "LaminateProduced"
+            ],
+            "related_parameters": [
+                "Dlaminate"
+            ],
+            "code": "# Add constraint to ensure laminate production meets or exceeds minimum demand\nmodel.addConstr(LaminateProduced >= Dlaminate, name=\"laminate_demand_constraint\")"
+        },
+        {
+            "description": "The flooring company must produce at least Dcarpet square feet of carpets per week.",
+            "status": "coded",
+            "formulation": "\\textup{CarpetProduced} \\geq \\textup{Dcarpet}",
+            "related_variables": [
+                "CarpetProduced"
+            ],
+            "related_parameters": [
+                "Dcarpet"
+            ],
+            "code": "# Add flooring company production constraint\nmodel.addConstr(CarpetProduced >= Dcarpet, name=\"minimum_carpet_production\")"
+        },
+        {
+            "description": "Ensure that the total square feet of laminate planks and carpets produced per week meets or exceeds the required minimum demand of Dtotal.",
+            "status": "coded",
+            "formulation": "\\textup{LaminateProduced} + \\textup{CarpetProduced} \\geq \\textup{Dtotal}",
+            "related_variables": [
+                "LaminateProduced",
+                "CarpetProduced"
+            ],
+            "related_parameters": [
+                "Dtotal"
+            ],
+            "code": "# Add constraint to ensure the total square feet of laminate and carpets produced meets or exceeds Dtotal\nmodel.addConstr(LaminateProduced + CarpetProduced >= Dtotal, name=\"min_demand_constraint\")"
+        },
+        {
+            "description": "The total square feet of laminate planks produced per week cannot exceed the maximum production capacity.",
+            "status": "coded",
+            "formulation": "\\textup{LaminateProduced} \\leq \\textup{Claminate}",
+            "related_variables": [
+                "LaminateProduced"
+            ],
+            "related_parameters": [
+                "Claminate"
+            ],
+            "code": "# Add laminate production capacity constraint\nmodel.addConstr(LaminateProduced <= Claminate, name=\"laminate_production_capacity\")"
+        },
+        {
+            "description": "Ensure that no more than \\textup{Ccarpet} square feet of carpets are produced per week.",
+            "status": "coded",
+            "formulation": "\\textup{CarpetProduced} \\leq \\textup{Ccarpet}",
+            "related_variables": [
+                "CarpetProduced"
+            ],
+            "related_parameters": [
+                "Ccarpet"
+            ],
+            "code": "# Add carpet production limit constraint\nmodel.addConstr(CarpetProduced <= Ccarpet, name=\"carpet_production_limit\")"
+        },
+        {
+            "description": "The number of square feet of laminate planks produced must be non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{LaminateProduced} \\\\geq 0",
+            "related_variables": [
+                "LaminateProduced"
+            ],
+            "related_parameters": [],
+            "code": "# The non-negativity constraint is automatically ensured due to the default non-negative domain of continuous variables in Gurobi."
+        },
+        {
+            "description": "The number of square feet of carpets produced per week must be non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{CarpetProduced} \\\\geq 0",
+            "related_variables": [
+                "CarpetProduced"
+            ],
+            "related_parameters": [],
+            "code": "# Ensure the number of square feet of carpets produced per week is non-negative\nmodel.addConstr(CarpetProduced >= 0, name=\"non_negativity_CarpetProduced\")"
+        },
+        {
+            "description": "Ensure the production of laminate planks meets the minimum demand.",
+            "status": "coded",
+            "formulation": "\\textup{LaminateProduced} \\geq \\textup{Dlaminate}",
+            "related_variables": [
+                "LaminateProduced"
+            ],
+            "related_parameters": [
+                "Dlaminate"
+            ],
+            "code": "# Add constraint to ensure laminate production meets minimum demand\nmodel.addConstr(LaminateProduced >= Dlaminate, name=\"min_demand_laminate\")"
+        },
+        {
+            "description": "Ensure the production of carpets meets the minimum demand.",
+            "status": "coded",
+            "formulation": "\\textup{CarpetProduced} \\geq \\textup{Dcarpet}",
+            "related_variables": [
+                "CarpetProduced"
+            ],
+            "related_parameters": [
+                "Dcarpet"
+            ],
+            "code": "# Ensure the production of carpets meets the minimum demand\nmodel.addConstr(CarpetProduced >= Dcarpet, name=\"min_demand_constraint\")"
+        },
+        {
+            "description": "Ensure the total production meets the overall minimum demand.",
+            "status": "coded",
+            "formulation": "\\textup{LaminateProduced} + \\textup{CarpetProduced} \\geq \\textup{Dtotal}",
+            "related_variables": [
+                "LaminateProduced",
+                "CarpetProduced"
+            ],
+            "related_parameters": [
+                "Dtotal"
+            ],
+            "code": "# Add constraint to ensure the total production meets the overall minimum demand\nmodel.addConstr(LaminateProduced + CarpetProduced >= Dtotal, name=\"total_production_min_demand\")"
+        },
+        {
+            "description": "Ensure the production of laminate planks does not exceed the capacity.",
+            "status": "coded",
+            "formulation": "\\textup{LaminateProduced} \\leq \\textup{Claminate}",
+            "related_variables": [
+                "LaminateProduced"
+            ],
+            "related_parameters": [
+                "Claminate"
+            ],
+            "code": "# Add constraint to ensure laminate production does not exceed capacity\nmodel.addConstr(LaminateProduced <= Claminate, name=\"laminate_production_capacity\")"
+        },
+        {
+            "description": "Ensure the production of carpets does not exceed the capacity.",
+            "status": "coded",
+            "formulation": "\\textup{CarpetProduced} \\leq \\textup{Ccarpet}",
+            "related_variables": [
+                "CarpetProduced"
+            ],
+            "related_parameters": [
+                "Ccarpet"
+            ],
+            "code": "# Add production capacity constraint\nmodel.addConstr(CarpetProduced <= Ccarpet, name=\"carpet_production_capacity\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of square feet of laminate planks produced per week.",
+            "symbol": "LaminateProduced",
+            "shape": [],
+            "status": "coded",
+            "code": "LaminateProduced = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"LaminateProduced\")"
+        },
+        {
+            "definition": "The number of square feet of carpets produced per week.",
+            "symbol": "CarpetProduced",
+            "shape": [],
+            "status": "coded",
+            "code": "CarpetProduced = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"CarpetProduced\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the company's weekly profit from producing laminate planks and carpets.",
+            "status": "coded",
+            "formulation": "\\text{Maximize:} \\quad \\textup{Plaminate} \\cdot \\textup{LaminateProduced} + \\textup{Pcarpet} \\cdot \\textup{CarpetProduced}",
+            "related_variables": [
+                "LaminateProduced",
+                "CarpetProduced"
+            ],
+            "related_parameters": [
+                "Plaminate",
+                "Pcarpet"
+            ],
+            "code": "# Set objective\nmodel.setObjective(Plaminate * LaminateProduced + Pcarpet * CarpetProduced, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413172855_nl4opt_prob_211/",
+    "problem_path": "data/nl4opt/prob_211/"
+}

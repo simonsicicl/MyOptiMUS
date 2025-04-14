@@ -1,0 +1,153 @@
+{
+    "background": "A researcher schedules in-vivo and ex-vivo experiments, each requiring its own preparation and execution times. Both types of experiments expose the researcher to some level of radiation.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Time to prepare one in-vivo experiment",
+            "symbol": "TimeInVivoPrep",
+            "value": 30,
+            "shape": [],
+            "code": "TimeInVivoPrep = data[\"TimeInVivoPrep\"] # scalar parameter"
+        },
+        {
+            "definition": "Time to execute one in-vivo experiment",
+            "symbol": "TimeInVivoExec",
+            "value": 60,
+            "shape": [],
+            "code": "TimeInVivoExec = data[\"TimeInVivoExec\"] # scalar parameter"
+        },
+        {
+            "definition": "Time to prepare one ex-vivo experiment",
+            "symbol": "TimeExVivoPrep",
+            "value": 45,
+            "shape": [],
+            "code": "TimeExVivoPrep = data[\"TimeExVivoPrep\"] # scalar parameter"
+        },
+        {
+            "definition": "Time to execute one ex-vivo experiment",
+            "symbol": "TimeExVivoExec",
+            "value": 30,
+            "shape": [],
+            "code": "TimeExVivoExec = data[\"TimeExVivoExec\"] # scalar parameter"
+        },
+        {
+            "definition": "Radiation units received from one in-vivo experiment",
+            "symbol": "RadiationInVivo",
+            "value": 2,
+            "shape": [],
+            "code": "RadiationInVivo = data[\"RadiationInVivo\"] # scalar parameter"
+        },
+        {
+            "definition": "Radiation units received from one ex-vivo experiment",
+            "symbol": "RadiationExVivo",
+            "value": 3,
+            "shape": [],
+            "code": "RadiationExVivo = data[\"RadiationExVivo\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum time allowed for preparing the experiments",
+            "symbol": "MaxTimePrep",
+            "value": 400,
+            "shape": [],
+            "code": "MaxTimePrep = data[\"MaxTimePrep\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum time allowed for executing the experiments",
+            "symbol": "MaxTimeExec",
+            "value": 500,
+            "shape": [],
+            "code": "MaxTimeExec = data[\"MaxTimeExec\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of in-vivo experiments must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfInVivoExperiments} \\geq 0",
+            "related_variables": [
+                "NumberOfInVivoExperiments"
+            ],
+            "related_parameters": [],
+            "code": "# Since NumberOfInVivoExperiments is already defined as an integer variable, \n# we only need to add the non-negativity constraint\nmodel.addConstr(NumberOfInVivoExperiments >= 0, \"num_in_vivo_non_negative\")"
+        },
+        {
+            "description": "Number of ex-vivo experiments must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfExVivoExperiments} \\geq 0",
+            "related_variables": [
+                "NumberOfExVivoExperiments"
+            ],
+            "related_parameters": [],
+            "code": "# Since NumberOfExVivoExperiments is already ensured to be an integer variable, \n# we only need to add a constraint to ensure it is non-negative.\nmodel.addConstr(NumberOfExVivoExperiments >= 0, \"non_negative_ex_vivo_experiments\")"
+        },
+        {
+            "description": "Total preparation time for all experiments must not exceed MaxTimePrep",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfInVivoExperiments} \\times \\textup{TimeInVivoPrep} + \\textup{NumberOfExVivoExperiments} \\times \\textup{TimeExVivoPrep} \\leq \\textup{MaxTimePrep}",
+            "related_variables": [
+                "NumberOfInVivoExperiments",
+                "NumberOfExVivoExperiments"
+            ],
+            "related_parameters": [
+                "TimeInVivoPrep",
+                "TimeExVivoPrep",
+                "MaxTimePrep"
+            ],
+            "code": "# Add constraint for the total preparation time for all experiments\nmodel.addConstr(NumberOfInVivoExperiments * TimeInVivoPrep +\n                NumberOfExVivoExperiments * TimeExVivoPrep <= MaxTimePrep,\n                name=\"max_preparation_time\")"
+        },
+        {
+            "description": "Total execution time for all experiments must not exceed the maximum allowed execution time",
+            "status": "coded",
+            "formulation": "\\textup{TimeInVivoExec} \\times \\textup{NumberOfInVivoExperiments} + \\textup{TimeExVivoExec} \\times \\textup{NumberOfExVivoExperiments} \\leq \\textup{MaxTimeExec}",
+            "related_variables": [
+                "NumberOfInVivoExperiments",
+                "NumberOfExVivoExperiments"
+            ],
+            "related_parameters": [
+                "TimeInVivoExec",
+                "TimeExVivoExec",
+                "MaxTimeExec"
+            ],
+            "code": "# Add constraint for maximum allowed execution time\nmodel.addConstr(TimeInVivoExec * NumberOfInVivoExperiments + TimeExVivoExec * NumberOfExVivoExperiments <= MaxTimeExec, name=\"max_execution_time\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of in-vivo experiments scheduled by the researcher",
+            "symbol": "NumberOfInVivoExperiments",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfInVivoExperiments = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfInVivoExperiments\")"
+        },
+        {
+            "definition": "Number of ex-vivo experiments scheduled by the researcher",
+            "symbol": "NumberOfExVivoExperiments",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfExVivoExperiments = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfExVivoExperiments\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total radiation received by the researcher",
+            "status": "coded",
+            "formulation": "\\textup{TotalRadiation} =  \\textup{RadiationInVivo} \\cdot \\textup{NumberOfInVivoExperiments} + \\textup{RadiationExVivo} \\cdot \\textup{NumberOfExVivoExperiments}",
+            "related_variables": [
+                "NumberOfInVivoExperiments",
+                "NumberOfExVivoExperiments"
+            ],
+            "related_parameters": [
+                "RadiationInVivo",
+                "RadiationExVivo"
+            ],
+            "code": "# Objective function\nmodel.setObjective(RadiationInVivo * NumberOfInVivoExperiments + RadiationExVivo * NumberOfExVivoExperiments, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 0.0,
+    "log_path": "logs/log_20250413174435_nl4opt_prob_268/",
+    "problem_path": "data/nl4opt/prob_268/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_268/data.json\", \"r\") as f:\n    data = json.load(f)\n\nTimeInVivoPrep = data[\"TimeInVivoPrep\"] # scalar parameter\nTimeInVivoExec = data[\"TimeInVivoExec\"] # scalar parameter\nTimeExVivoPrep = data[\"TimeExVivoPrep\"] # scalar parameter\nTimeExVivoExec = data[\"TimeExVivoExec\"] # scalar parameter\nRadiationInVivo = data[\"RadiationInVivo\"] # scalar parameter\nRadiationExVivo = data[\"RadiationExVivo\"] # scalar parameter\nMaxTimePrep = data[\"MaxTimePrep\"] # scalar parameter\nMaxTimeExec = data[\"MaxTimeExec\"] # scalar parameter\nNumberOfInVivoExperiments = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfInVivoExperiments\")\nNumberOfExVivoExperiments = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfExVivoExperiments\")\n\n# Since NumberOfInVivoExperiments is already defined as an integer variable, \n# we only need to add the non-negativity constraint\nmodel.addConstr(NumberOfInVivoExperiments >= 0, \"num_in_vivo_non_negative\")\n\n# Since NumberOfExVivoExperiments is already ensured to be an integer variable, \n# we only need to add a constraint to ensure it is non-negative.\nmodel.addConstr(NumberOfExVivoExperiments >= 0, \"non_negative_ex_vivo_experiments\")\n\n# Add constraint for the total preparation time for all experiments\nmodel.addConstr(NumberOfInVivoExperiments * TimeInVivoPrep +\n                NumberOfExVivoExperiments * TimeExVivoPrep <= MaxTimePrep,\n                name=\"max_preparation_time\")\n\n# Add constraint for maximum allowed execution time\nmodel.addConstr(TimeInVivoExec * NumberOfInVivoExperiments + TimeExVivoExec * NumberOfExVivoExperiments <= MaxTimeExec, name=\"max_execution_time\")\n\n# Objective function\nmodel.setObjective(RadiationInVivo * NumberOfInVivoExperiments + RadiationExVivo * NumberOfExVivoExperiments, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

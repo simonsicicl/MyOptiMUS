@@ -1,0 +1,208 @@
+{
+    "background": "The Employee Assignment Problem involves scheduling a certain number of employees with specific skills across multiple shifts and restaurants, taking into account skill demands and employee preferences to minimize the scheduling cost.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "symbol": "NumRestaurants",
+            "definition": "The number of restaurants",
+            "shape": [],
+            "code": "NumRestaurants = data[\"NumRestaurants\"] # scalar parameter"
+        },
+        {
+            "symbol": "NumEmployees",
+            "definition": "The number of employees",
+            "shape": [],
+            "code": "NumEmployees = data[\"NumEmployees\"] # scalar parameter"
+        },
+        {
+            "symbol": "NumShifts",
+            "definition": "The number of shifts",
+            "shape": [],
+            "code": "NumShifts = data[\"NumShifts\"] # scalar parameter"
+        },
+        {
+            "symbol": "NumSkills",
+            "definition": "The total number of skills that employees can have",
+            "shape": [],
+            "code": "NumSkills = data[\"NumSkills\"] # scalar parameter"
+        },
+        {
+            "symbol": "Demand",
+            "definition": "The demand for employees with specific skills at each restaurant during each shift",
+            "shape": [
+                "NumRestaurants",
+                "NumShifts",
+                "NumSkills"
+            ],
+            "code": "Demand = np.array(data[\"Demand\"]) # ['NumRestaurants', 'NumShifts', 'NumSkills']"
+        },
+        {
+            "symbol": "EmployeeSkills",
+            "definition": "Binary indicator if an employee has a specific skill",
+            "shape": [
+                "NumEmployees",
+                "NumSkills"
+            ],
+            "code": "EmployeeSkills = np.array(data[\"EmployeeSkills\"]) # ['NumEmployees', 'NumSkills']"
+        },
+        {
+            "symbol": "SkillPreference",
+            "definition": "Employee's preference level for each skill",
+            "shape": [
+                "NumEmployees",
+                "NumSkills"
+            ],
+            "code": "SkillPreference = np.array(data[\"SkillPreference\"]) # ['NumEmployees', 'NumSkills']"
+        },
+        {
+            "symbol": "ShiftAvailability",
+            "definition": "Binary indicator if an employee is available for a specific shift",
+            "shape": [
+                "NumEmployees",
+                "NumShifts"
+            ],
+            "code": "ShiftAvailability = np.array(data[\"ShiftAvailability\"]) # ['NumEmployees', 'NumShifts']"
+        },
+        {
+            "symbol": "UnfulfilledPositionWeight",
+            "definition": "The weighting factor for unfulfilled positions",
+            "shape": [],
+            "code": "UnfulfilledPositionWeight = data[\"UnfulfilledPositionWeight\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Exactly NumEmployees employees must be assigned",
+            "status": "formulated",
+            "formulation": "\\sum_{e=1}^{\\textup{NumEmployees}} \\sum_{r=1}^{\\textup{NumRestaurants}} \\sum_{j=1}^{\\textup{NumShifts}} \\textup{EmployeeAssignedRestaurantShift}_{erj} = \\textup{NumEmployees}",
+            "related_variables": [
+                "EmployeeAssignedRestaurantShift"
+            ],
+            "related_parameters": [
+                "NumEmployees",
+                "NumRestaurants",
+                "NumShifts"
+            ]
+        },
+        {
+            "description": "Each employee can only be assigned to one shift at one restaurant at a time",
+            "status": "formulated",
+            "formulation": "\\sum_{j=1}^{\\textup{NumRestaurants}} \\textup{EmployeeAssignedRestaurantShift}_{i,j,k} \\leq 1 \\quad \\forall i \\in \\{1, ..., \\textup{NumEmployees}\\}, k \\in \\{1, ..., \\textup{NumShifts}\\}",
+            "related_variables": [
+                "EmployeeAssignedRestaurantShift"
+            ],
+            "related_parameters": [
+                "NumEmployees",
+                "NumRestaurants",
+                "NumShifts"
+            ]
+        },
+        {
+            "description": "Each restaurant must have the required number of skilled employees for each shift",
+            "status": "formulated",
+            "formulation": "\\forall k \\in \\{1,\\ldots,\\textup{NumSkills}\\}, \\; r \\in \\{1,\\ldots,\\textup{NumRestaurants}\\}, \\; s \\in \\{1,\\ldots,\\textup{NumShifts}\\}, \\quad \\sum_{e=1}^{\\textup{NumEmployees}} (\\textup{EmployeeAssignedRestaurantShift}_{e,r,s} \\times \\textup{EmployeeSkills}_{e,k}) \\geq \\textup{Demand}_{r,s,k}",
+            "related_variables": [
+                "EmployeeAssignedRestaurantShift",
+                "EmployeeSkills"
+            ],
+            "related_parameters": [
+                "Demand"
+            ]
+        },
+        {
+            "description": "Each skill demand for a shift at a restaurant must be covered by assigning an employee with the corresponding skill, considering their availability and preference for the shift",
+            "status": "formulated",
+            "formulation": "\\sum_{e=1}^{\\textup{NumEmployees}} \\textup{EmployeeSkills}_{e,s} \\cdot \\textup{EmployeeAssignedRestaurantShift}_{e,r,t} \\geq \\textup{Demand}_{r,t,s} \\quad \\forall r \\in [1, \\textup{NumRestaurants}], \\quad \\forall t \\in [1, \\textup{NumShifts}], \\quad \\forall s \\in [1, \\textup{NumSkills}]",
+            "related_variables": [
+                "EmployeeAssignedRestaurantShift",
+                "EmployeeSkills"
+            ],
+            "related_parameters": [
+                "NumRestaurants",
+                "NumEmployees",
+                "NumShifts",
+                "NumSkills",
+                "Demand"
+            ]
+        },
+        {
+            "description": "An employee can only be assigned to a shift if they are available for that shift",
+            "status": "formulated",
+            "formulation": "\\textup{EmployeeAssignedRestaurantShift}_{e,r,t} \\leq \\textup{ShiftAvailability}_{e,t} \\quad \\forall e \\in [1, \\textup{NumEmployees}], \\quad \\forall r \\in [1, \\textup{NumRestaurants}], \\quad \\forall t \\in [1, \\textup{NumShifts}]",
+            "related_variables": [
+                "EmployeeAssignedRestaurantShift",
+                "ShiftAvailability"
+            ],
+            "related_parameters": [
+                "NumRestaurants",
+                "NumEmployees",
+                "NumShifts"
+            ]
+        },
+        {
+            "description": "Ensure SkillCoverage is the sum of EmployeeAssignedRestaurantShift for employees with the required skills",
+            "status": "formulated",
+            "formulation": "\\textup{SkillCoverage}_{rsk} = \\sum_{e=1}^{\\textup{NumEmployees}} \\textup{EmployeeSkills}_{ek} \\cdot \\textup{EmployeeAssignedRestaurantShift}_{ers}, \\quad \\forall r \\in \\{1, ..., \\textup{NumRestaurants}\\}, \\quad s \\in \\{1, ..., \\textup{NumShifts}\\}, \\quad k \\in \\{1, ..., \\textup{NumSkills}\\}",
+            "related_variables": [
+                "EmployeeAssignedRestaurantShift",
+                "SkillCoverage"
+            ],
+            "related_parameters": [
+                "NumEmployees",
+                "NumRestaurants",
+                "NumShifts",
+                "NumSkills",
+                "EmployeeSkills"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Binary indicator if an employee is assigned to a specific restaurant during a specific shift",
+            "symbol": "EmployeeAssignedRestaurantShift",
+            "shape": [
+                "NumEmployees",
+                "NumRestaurants",
+                "NumShifts"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "Coverage of each skill in each restaurant during each shift",
+            "symbol": "SkillCoverage",
+            "shape": [
+                "NumSkills",
+                "NumRestaurants",
+                "NumShifts"
+            ],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total cost of scheduling by considering the cost for unfulfilled positions and the cost for assigning employees to less preferred positions",
+            "status": "formulated",
+            "formulation": "\\min \\quad \\sum_{e=1}^{\\textup{NumEmployees}} \\sum_{r=1}^{\\textup{NumRestaurants}} \\sum_{s=1}^{\\textup{NumShifts}} \\textup{EmployeeAssignedRestaurantShift}_{ers} \\cdot \\left(\\sum_{k=1}^{\\textup{NumSkills}} \\textup{EmployeeSkills}_{ek} \\cdot \\textup{SkillPreference}_{ek} \\right) + \\sum_{r=1}^{\\textup{NumRestaurants}} \\sum_{s=1}^{\\textup{NumShifts}} \\sum_{k=1}^{\\textup{NumSkills}} \\textup{UnfulfilledPositionWeight} \\cdot \\max(0, \\textup{Demand}_{rsk} - \\textup{SkillCoverage}_{rsk})",
+            "related_variables": [
+                "EmployeeAssignedRestaurantShift",
+                "SkillCoverage"
+            ],
+            "related_parameters": [
+                "NumEmployees",
+                "NumRestaurants",
+                "NumShifts",
+                "NumSkills",
+                "EmployeeSkills",
+                "SkillPreference",
+                "Demand",
+                "UnfulfilledPositionWeight"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413144625_complexor_Scheduling Problem/",
+    "problem_path": "data/complexor/Scheduling Problem/"
+}

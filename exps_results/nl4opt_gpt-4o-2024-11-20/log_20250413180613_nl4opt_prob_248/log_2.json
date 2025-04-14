@@ -1,0 +1,245 @@
+{
+    "background": "A navy ship is preparing meals to ensure sufficient vitamin and fibre intake for their staff, using only salads and fruit bowls.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Minimum units of vitamin intake required per staff",
+            "symbol": "V",
+            "value": 90,
+            "shape": [],
+            "code": "V = data[\"V\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum units of fibre intake required per staff",
+            "symbol": "F",
+            "value": 110,
+            "shape": [],
+            "code": "F = data[\"F\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of vitamins in one salad",
+            "symbol": "VSalad",
+            "value": 7,
+            "shape": [],
+            "code": "VSalad = data[\"VSalad\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of fibre in one salad",
+            "symbol": "FSalad",
+            "value": 12,
+            "shape": [],
+            "code": "FSalad = data[\"FSalad\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of vitamins in one fruit bowl",
+            "symbol": "VFruitBowl",
+            "value": 15,
+            "shape": [],
+            "code": "VFruitBowl = data[\"VFruitBowl\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of fibre in one fruit bowl",
+            "symbol": "FFruitBowl",
+            "value": 3,
+            "shape": [],
+            "code": "FFruitBowl = data[\"FFruitBowl\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum proportion of meals that can be fruit bowls",
+            "symbol": "MaxFruitBowlProportion",
+            "value": 0.3,
+            "shape": [],
+            "code": "MaxFruitBowlProportion = data[\"MaxFruitBowlProportion\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of potassium in one salad",
+            "symbol": "KSalad",
+            "value": 2,
+            "shape": [],
+            "code": "KSalad = data[\"KSalad\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of potassium in one fruit bowl",
+            "symbol": "KFruitBowl",
+            "value": 8,
+            "shape": [],
+            "code": "KFruitBowl = data[\"KFruitBowl\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Each staff must receive at least V units of vitamins, which is provided by salads and fruit bowls.",
+            "status": "coded",
+            "formulation": "\\textup{VSalad} \\cdot \\textup{NumberOfSalads} + \\textup{VFruitBowl} \\cdot \\textup{NumberOfFruitBowls} \\geq \\textup{V}",
+            "related_variables": [
+                "NumberOfSalads",
+                "NumberOfFruitBowls"
+            ],
+            "related_parameters": [
+                "V",
+                "VSalad",
+                "VFruitBowl"
+            ],
+            "code": "# Add vitamin intake constraint\nmodel.addConstr(VSalad * NumberOfSalads + VFruitBowl * NumberOfFruitBowls >= V, name=\"vitamin_intake_constraint\")"
+        },
+        {
+            "description": "Ensure each staff receives at least F units of fibre.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfSalads} * \\textup{F\\_Salad} + \\textup{NumberOfFruitBowls} * \\textup{F\\_FruitBowl} \\geq \\textup{F} * \\textup{S}",
+            "related_variables": [
+                "NumberOfSalads",
+                "NumberOfFruitBowls",
+                "S"
+            ],
+            "related_parameters": [
+                "F",
+                "FSalad",
+                "FFruitBowl"
+            ],
+            "code": "# Add minimum fibre intake constraint\nmodel.addConstr(NumberOfSalads * FSalad + NumberOfFruitBowls * FFruitBowl >= F * S, name=\"minimum_fibre_intake\")"
+        },
+        {
+            "description": "Each staff is limited to a maximum proportion of MaxFruitBowlProportion of their total meals as fruit bowls.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfFruitBowls} \\leq \\frac{\\textup{MaxFruitBowlProportion}}{1 - \\textup{MaxFruitBowlProportion}} \\cdot \\textup{NumberOfSalads}",
+            "related_variables": [
+                "NumberOfSalads",
+                "NumberOfFruitBowls"
+            ],
+            "related_parameters": [
+                "MaxFruitBowlProportion"
+            ],
+            "code": "# Add constraint to limit fruit bowls proportion\nmodel.addConstr(\n    NumberOfFruitBowls <= (MaxFruitBowlProportion / (1 - MaxFruitBowlProportion)) * NumberOfSalads,\n    name=\"max_fruit_bowl_proportion\"\n)"
+        },
+        {
+            "description": "The total number of salads prepared must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfSalads} \\geq 0",
+            "related_variables": [
+                "NumberOfSalads"
+            ],
+            "related_parameters": [],
+            "code": "# Add non-negativity constraint for the total number of salads\nmodel.addConstr(NumberOfSalads >= 0, name=\"non_negative_salads\")"
+        },
+        {
+            "description": "Ensure the number of fruit bowls prepared for each staff member is non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{NumberOfFruitBowls} \\\\geq 0",
+            "related_variables": [
+                "NumberOfFruitBowls"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint to ensure the number of fruit bowls is non-negative\nmodel.addConstr(NumberOfFruitBowls >= 0, name=\"non_negative_fruit_bowls\")"
+        },
+        {
+            "description": "Each staff must meet the minimum vitamin intake requirement.",
+            "status": "coded",
+            "formulation": "VSalad \\cdot \\textup{NumberOfSalads} + VFruitBowl \\cdot \\textup{NumberOfFruitBowls} \\geq S \\cdot V",
+            "related_variables": [
+                "NumberOfSalads",
+                "NumberOfFruitBowls"
+            ],
+            "related_parameters": [
+                "VSalad",
+                "VFruitBowl",
+                "V",
+                "S"
+            ],
+            "code": "# Add vitamin intake constraints\nmodel.addConstr(VSalad * NumberOfSalads + VFruitBowl * NumberOfFruitBowls >= S * V, name=\"min_vitamin_intake\")"
+        },
+        {
+            "description": "Each staff must meet the minimum fibre intake requirement.",
+            "status": "coded",
+            "formulation": "FSalad \\cdot \\textup{NumberOfSalads} + FFruitBowl \\cdot \\textup{NumberOfFruitBowls} \\geq S \\cdot F",
+            "related_variables": [
+                "NumberOfSalads",
+                "NumberOfFruitBowls"
+            ],
+            "related_parameters": [
+                "FSalad",
+                "FFruitBowl",
+                "F",
+                "S"
+            ],
+            "code": "# Add constraint to meet the minimum fibre intake requirement per staff\nmodel.addConstr(FSalad * NumberOfSalads + FFruitBowl * NumberOfFruitBowls >= S * F, name=\"fibre_intake_requirement\")"
+        },
+        {
+            "description": "The total number of meals is the sum of salads and fruit bowls.",
+            "status": "coded",
+            "formulation": "\\textup{TotalMeals} = \\textup{NumberOfSalads} + \\textup{NumberOfFruitBowls}",
+            "related_variables": [
+                "TotalMeals",
+                "NumberOfSalads",
+                "NumberOfFruitBowls"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint for total meals to be equal to the sum of salads and fruit bowls\nmodel.addConstr(TotalMeals == NumberOfSalads + NumberOfFruitBowls, name=\"total_meals_constraint\")"
+        },
+        {
+            "description": "The number of fruit bowls cannot exceed the maximum proportion of the total meals.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfFruitBowls} \\leq MaxFruitBowlProportion \\cdot \\textup{TotalMeals}",
+            "related_variables": [
+                "NumberOfFruitBowls",
+                "TotalMeals"
+            ],
+            "related_parameters": [
+                "MaxFruitBowlProportion"
+            ],
+            "code": "# Add constraint for the maximum proportion of fruit bowls\nmodel.addConstr(NumberOfFruitBowls <= MaxFruitBowlProportion * TotalMeals, name=\"max_fruit_bowl_proportion\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The total number of salads consumed.",
+            "symbol": "NumberOfSalads",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfSalads = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfSalads\")"
+        },
+        {
+            "definition": "The total number of fruit bowls consumed.",
+            "symbol": "NumberOfFruitBowls",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfFruitBowls = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfFruitBowls\")"
+        },
+        {
+            "definition": "The total number of staff on the navy ship.",
+            "symbol": "S",
+            "shape": [],
+            "status": "coded",
+            "code": "S = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"S\")"
+        },
+        {
+            "definition": "The total number of meals consumed.",
+            "symbol": "TotalMeals",
+            "shape": [],
+            "status": "coded",
+            "code": "TotalMeals = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TotalMeals\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total potassium intake from salads and fruit bowls for all staff.",
+            "status": "coded",
+            "formulation": "\\max \\\\quad KSalad \\cdot \\textup{NumberOfSalads} + KFruitBowl \\cdot \\textup{NumberOfFruitBowls}",
+            "related_variables": [
+                "NumberOfSalads",
+                "NumberOfFruitBowls"
+            ],
+            "related_parameters": [
+                "KSalad",
+                "KFruitBowl"
+            ],
+            "code": "# Set objective\nmodel.setObjective(KSalad * NumberOfSalads + KFruitBowl * NumberOfFruitBowls, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 4,
+    "error_message": null,
+    "obj_val": "infeasible or unbounded",
+    "log_path": "logs/log_20250413180613_nl4opt_prob_248/",
+    "problem_path": "data/nl4opt/prob_248/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_248/data.json\", \"r\") as f:\n    data = json.load(f)\n\nV = data[\"V\"] # scalar parameter\nF = data[\"F\"] # scalar parameter\nVSalad = data[\"VSalad\"] # scalar parameter\nFSalad = data[\"FSalad\"] # scalar parameter\nVFruitBowl = data[\"VFruitBowl\"] # scalar parameter\nFFruitBowl = data[\"FFruitBowl\"] # scalar parameter\nMaxFruitBowlProportion = data[\"MaxFruitBowlProportion\"] # scalar parameter\nKSalad = data[\"KSalad\"] # scalar parameter\nKFruitBowl = data[\"KFruitBowl\"] # scalar parameter\nNumberOfSalads = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfSalads\")\nNumberOfFruitBowls = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfFruitBowls\")\nS = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"S\")\nTotalMeals = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TotalMeals\")\n\n# Add vitamin intake constraint\nmodel.addConstr(VSalad * NumberOfSalads + VFruitBowl * NumberOfFruitBowls >= V, name=\"vitamin_intake_constraint\")\n\n# Add minimum fibre intake constraint\nmodel.addConstr(NumberOfSalads * FSalad + NumberOfFruitBowls * FFruitBowl >= F * S, name=\"minimum_fibre_intake\")\n\n# Add constraint to limit fruit bowls proportion\nmodel.addConstr(\n    NumberOfFruitBowls <= (MaxFruitBowlProportion / (1 - MaxFruitBowlProportion)) * NumberOfSalads,\n    name=\"max_fruit_bowl_proportion\"\n)\n\n# Add non-negativity constraint for the total number of salads\nmodel.addConstr(NumberOfSalads >= 0, name=\"non_negative_salads\")\n\n# Add constraint to ensure the number of fruit bowls is non-negative\nmodel.addConstr(NumberOfFruitBowls >= 0, name=\"non_negative_fruit_bowls\")\n\n# Add vitamin intake constraints\nmodel.addConstr(VSalad * NumberOfSalads + VFruitBowl * NumberOfFruitBowls >= S * V, name=\"min_vitamin_intake\")\n\n# Add constraint to meet the minimum fibre intake requirement per staff\nmodel.addConstr(FSalad * NumberOfSalads + FFruitBowl * NumberOfFruitBowls >= S * F, name=\"fibre_intake_requirement\")\n\n# Add constraint for total meals to be equal to the sum of salads and fruit bowls\nmodel.addConstr(TotalMeals == NumberOfSalads + NumberOfFruitBowls, name=\"total_meals_constraint\")\n\n# Add constraint for the maximum proportion of fruit bowls\nmodel.addConstr(NumberOfFruitBowls <= MaxFruitBowlProportion * TotalMeals, name=\"max_fruit_bowl_proportion\")\n\n# Set objective\nmodel.setObjective(KSalad * NumberOfSalads + KFruitBowl * NumberOfFruitBowls, gp.GRB.MAXIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

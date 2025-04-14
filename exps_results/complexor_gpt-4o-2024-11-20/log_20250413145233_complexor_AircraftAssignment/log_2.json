@@ -1,0 +1,259 @@
+{
+    "background": "The Aircraft Assignment Problem involves assigning a given number of aircraft to specified routes with the goal of minimizing the total operational cost while adhering to aircraft availability limits and route demand requirements.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "symbol": "TotalAircraft",
+            "definition": "The total number of aircraft available for assignment",
+            "shape": [],
+            "code": "TotalAircraft = data[\"TotalAircraft\"] # scalar parameter"
+        },
+        {
+            "symbol": "TotalRoutes",
+            "definition": "The total number of routes that require aircraft assignment",
+            "shape": [],
+            "code": "TotalRoutes = data[\"TotalRoutes\"] # scalar parameter"
+        },
+        {
+            "symbol": "Availability",
+            "definition": "The availability of each aircraft, indicating the maximum number of routes it can be assigned to",
+            "shape": [
+                "TotalAircraft"
+            ],
+            "code": "Availability = np.array(data[\"Availability\"]) # ['TotalAircraft']"
+        },
+        {
+            "symbol": "Demand",
+            "definition": "The demand for each route, indicating the number of aircraft required",
+            "shape": [
+                "TotalRoutes"
+            ],
+            "code": "Demand = np.array(data[\"Demand\"]) # ['TotalRoutes']"
+        },
+        {
+            "symbol": "Capacity",
+            "definition": "The capacity matrix defining the suitability and capability of each aircraft for each route",
+            "shape": [
+                "TotalAircraft",
+                "TotalRoutes"
+            ],
+            "code": "Capacity = np.array(data[\"Capacity\"]) # ['TotalAircraft', 'TotalRoutes']"
+        },
+        {
+            "symbol": "Costs",
+            "definition": "The cost matrix representing the cost of assigning each aircraft to each route",
+            "shape": [
+                "TotalAircraft",
+                "TotalRoutes"
+            ],
+            "code": "Costs = np.array(data[\"Costs\"]) # ['TotalAircraft', 'TotalRoutes']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Each aircraft can be assigned to at most its individual availability.",
+            "status": "coded",
+            "formulation": "\\sum_{j=1}^{\\textup{TotalRoutes}} \\textup{Assignment}_{i,j} \\leq \\textup{Availability}_{i}, \\quad \\forall i \\in \\{1, 2, ..., \\textup{TotalAircraft}\\}",
+            "related_variables": [
+                "Assignment"
+            ],
+            "related_parameters": [
+                "Availability",
+                "TotalRoutes",
+                "TotalAircraft"
+            ],
+            "code": "# Add aircraft availability constraints\nfor i in range(TotalAircraft):\n    model.addConstr(gp.quicksum(Assignment[i, j] for j in range(TotalRoutes)) <= Availability[i], name=f\"aircraft_availability_{i}\")"
+        },
+        {
+            "description": "Each route must have at least the required number of aircraft to meet its demand",
+            "status": "coded",
+            "formulation": "\\sum_{a=1}^{\\textup{TotalAircraft}} \\textup{Assignment}_{a,r} \\geq \\textup{Demand}_{r}, \\quad \\forall r \\in \\{ 1, \\dots, \\textup{TotalRoutes} \\}",
+            "related_variables": [
+                "Assignment"
+            ],
+            "related_parameters": [
+                "TotalAircraft",
+                "TotalRoutes",
+                "Demand"
+            ],
+            "code": "# Add route demand satisfaction constraints\nfor r in range(TotalRoutes):\n    model.addConstr(gp.quicksum(Assignment[a, r] for a in range(TotalAircraft)) >= Demand[r], \n                    name=f\"route_demand_{r}\")"
+        },
+        {
+            "description": "An aircraft can be assigned to a route only if it has the capacity for that route.",
+            "status": "coded",
+            "formulation": "\\textup{Assignment}_{i,j} \\\\leq \\textup{Capacity}_{i,j},\\\\quad \\forall \\\\ i \\\\in \\\\{1, \\dots, \\textup{TotalAircraft}\\\\},\\\\quad j \\\\in \\\\{1, \\dots, \\textup{TotalRoutes}\\\\}",
+            "related_variables": [
+                "Assignment"
+            ],
+            "related_parameters": [
+                "Capacity"
+            ],
+            "code": "# Add aircraft assignment capacity constraints\nfor i in range(TotalAircraft):\n    for j in range(TotalRoutes):\n        model.addConstr(Assignment[i, j] <= Capacity[i, j], name=f\"aircraft_capacity_{i}_{j}\")"
+        },
+        {
+            "description": "The number of aircraft assigned to a route must be an integer. This is inherently handled as the decision variable Assignment is binary. Nonetheless, auxiliary expressions can represent totals explicitly.",
+            "status": "coded",
+            "formulation": "\\textup{Assignment}_{i, j} \\in \\{0, 1\\} \\quad \\forall \\ i = 1, \\dots, \\textup{TotalAircraft}, \\ j = 1, \\dots, \\textup{TotalRoutes}",
+            "related_variables": [
+                "Assignment"
+            ],
+            "related_parameters": [
+                "TotalAircraft",
+                "TotalRoutes"
+            ],
+            "code": "# The integrality of Assignment is inherently handled as it is defined as a binary variable. No additional code is required."
+        },
+        {
+            "description": "The total number of aircraft assigned to each route must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{TotalAssigned}_{j} \\geq 0 \\quad \\forall \\\\ j \\in \\{1, 2, \\ldots, \\textup{TotalRoutes}\\}",
+            "related_variables": [
+                "TotalAssigned"
+            ],
+            "related_parameters": [
+                "TotalRoutes"
+            ],
+            "code": "# Add non-negativity constraint for TotalAssigned to each route\nfor j in range(TotalRoutes):\n    model.addConstr(TotalAssigned[j] >= 0, name=f\"nonnegativity_TotalAssigned_{j}\")"
+        },
+        {
+            "description": "The total number of aircraft assigned across all routes must not exceed the total number of available aircraft.",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{\\textup{TotalAircraft}} \\sum_{j=1}^{\\textup{TotalRoutes}} \\textup{Assignment}_{i,j} \\leq \\textup{TotalAircraft}",
+            "related_variables": [
+                "Assignment"
+            ],
+            "related_parameters": [
+                "TotalAircraft",
+                "TotalRoutes"
+            ],
+            "code": "# Add constraint to ensure the total number of aircraft assigned does not exceed the total available aircraft\nmodel.addConstr(\n    gp.quicksum(Assignment[i, j] for i in range(TotalAircraft) for j in range(TotalRoutes)) <= TotalAircraft,\n    name=\"aircraft_assignment_limit\"\n)"
+        },
+        {
+            "description": "Ensure that each decision variable representing the assignment of an aircraft to a route is binary.",
+            "status": "coded",
+            "formulation": "\\textup{Assignment}_{i,j} \\in \\{0, 1\\}, \\quad \\forall i \\in \\{1, 2, ..., \\textup{TotalAircraft}\\}, \\forall j \\in \\{1, 2, ..., \\textup{TotalRoutes}\\}",
+            "related_variables": [
+                "Assignment"
+            ],
+            "related_parameters": [
+                "TotalAircraft",
+                "TotalRoutes"
+            ],
+            "code": "# No additional code needed: decision variable Assignment was already declared as binary."
+        },
+        {
+            "description": "The total number of aircraft assigned to each route must equal the integer variable TotalAssigned.",
+            "status": "coded",
+            "formulation": "\\textup{TotalAssigned}_{j} = \\sum_{i=1}^{\\textup{TotalAircraft}} \\textup{Assignment}_{i, j} \\quad \\forall \\ j = 1, \\dots, \\textup{TotalRoutes}",
+            "related_variables": [
+                "Assignment",
+                "TotalAssigned"
+            ],
+            "related_parameters": [
+                "TotalAircraft",
+                "TotalRoutes"
+            ],
+            "code": "# Add constraints ensuring the total number of aircraft assigned to each route equals the respective integer variable TotalAssigned\nfor j in range(TotalRoutes):\n    model.addConstr(TotalAssigned[j] == gp.quicksum(Assignment[i, j] for i in range(TotalAircraft)), name=f\"TotalAssigned_route{j}\")"
+        },
+        {
+            "description": "Define the relationship between binary decision variable \\textup{Assignment} and the total number of aircraft assigned to each route \\textup{TotalAssigned}.",
+            "status": "coded",
+            "formulation": "\\textup{TotalAssigned}_{j} = \\sum_{i=1}^{\\textup{TotalAircraft}} \\textup{Assignment}_{i,j} \\quad \\forall \\\\ j \\in \\{1, 2, \\ldots, \\textup{TotalRoutes}\\}",
+            "related_variables": [
+                "Assignment",
+                "TotalAssigned"
+            ],
+            "related_parameters": [
+                "TotalAircraft",
+                "TotalRoutes"
+            ],
+            "code": "# Add constraints to relate Assignment and TotalAssigned\nfor j in range(TotalRoutes):\n    model.addConstr(TotalAssigned[j] == gp.quicksum(Assignment[i, j] for i in range(TotalAircraft)), \n                    name=f\"Total_Assigned_to_Route_{j}\")"
+        },
+        {
+            "description": "An aircraft cannot be assigned to more routes than its availability",
+            "status": "coded",
+            "formulation": "\\sum_{j=1}^{\\textup{TotalRoutes}} \\textup{Assignment}_{ij} \\leq \\textup{Availability}_{i}, \\quad \\forall i \\in \\{1, ..., \\textup{TotalAircraft}\\}",
+            "related_variables": [
+                "Assignment"
+            ],
+            "related_parameters": [
+                "TotalRoutes",
+                "Availability",
+                "TotalAircraft"
+            ],
+            "code": "# Add aircraft availability constraints\nfor i in range(TotalAircraft):\n    model.addConstr(\n        gp.quicksum(Assignment[i, j] for j in range(TotalRoutes)) <= Availability[i], \n        name=f\"aircraft_availability_{i}\"\n    )"
+        },
+        {
+            "description": "Each route must meet the required demand for aircraft",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{\\textup{TotalAircraft}} \\textup{Assignment}_{ij} = \\textup{Demand}_{j}, \\quad \\forall j \\in \\{1, ..., \\textup{TotalRoutes}\\}",
+            "related_variables": [
+                "Assignment"
+            ],
+            "related_parameters": [
+                "TotalAircraft",
+                "Demand",
+                "TotalRoutes"
+            ],
+            "code": "# Add constraints to ensure each route meets its aircraft demand\nfor j in range(TotalRoutes):\n    model.addConstr(\n        gp.quicksum(Assignment[i, j] for i in range(TotalAircraft)) == Demand[j], \n        name=f\"route_demand_{j}\"\n    )"
+        },
+        {
+            "description": "An aircraft can only be assigned to a route if it meets the capacity feasibility",
+            "status": "coded",
+            "formulation": "\\textup{Assignment}_{ij} \\leq \\textup{Capacity}_{ij}, \\quad \\forall i \\in \\{1, ..., \\textup{TotalAircraft}\\}, \\quad \\forall j \\in \\{1, ..., \\textup{TotalRoutes}\\}",
+            "related_variables": [
+                "Assignment"
+            ],
+            "related_parameters": [
+                "TotalAircraft",
+                "TotalRoutes",
+                "Capacity"
+            ],
+            "code": "# Add capacity feasibility constraints for aircraft assignment\nfor i in range(TotalAircraft):\n    for j in range(TotalRoutes):\n        model.addConstr(Assignment[i, j] <= Capacity[i, j], name=f\"capacity_feasibility_aircraft_{i}_route_{j}\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "A binary decision variable indicating whether an aircraft is assigned to a specific route.",
+            "symbol": "Assignment",
+            "shape": [
+                "TotalAircraft",
+                "TotalRoutes"
+            ],
+            "status": "coded",
+            "code": "Assignment = model.addVars(TotalAircraft, TotalRoutes, vtype=gp.GRB.BINARY, name=\"Assignment\")"
+        },
+        {
+            "definition": "The total number of aircraft assigned to each route.",
+            "symbol": "TotalAssigned",
+            "shape": [
+                "TotalRoutes"
+            ],
+            "status": "coded",
+            "code": "TotalAssigned = model.addVars(TotalRoutes, vtype=gp.GRB.INTEGER, name=\"TotalAssigned\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total cost of assigning aircraft to routes",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{\\textup{TotalAircraft}} \\sum_{j=1}^{\\textup{TotalRoutes}} \\textup{Costs}_{ij} \\cdot \\textup{Assignment}_{ij}",
+            "related_variables": [
+                "Assignment"
+            ],
+            "related_parameters": [
+                "TotalAircraft",
+                "TotalRoutes",
+                "Costs"
+            ],
+            "code": "# Set objective\nmodel.setObjective(gp.quicksum(Costs[i, j] * Assignment[i, j] for i in range(TotalAircraft) for j in range(TotalRoutes)), gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 3,
+    "error_message": null,
+    "obj_val": "infeasible",
+    "log_path": "logs/log_20250413145233_complexor_AircraftAssignment/",
+    "problem_path": "data/complexor/AircraftAssignment/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/complexor/AircraftAssignment/data.json\", \"r\") as f:\n    data = json.load(f)\n\nTotalAircraft = data[\"TotalAircraft\"] # scalar parameter\nTotalRoutes = data[\"TotalRoutes\"] # scalar parameter\nAvailability = np.array(data[\"Availability\"]) # ['TotalAircraft']\nDemand = np.array(data[\"Demand\"]) # ['TotalRoutes']\nCapacity = np.array(data[\"Capacity\"]) # ['TotalAircraft', 'TotalRoutes']\nCosts = np.array(data[\"Costs\"]) # ['TotalAircraft', 'TotalRoutes']\nAssignment = model.addVars(TotalAircraft, TotalRoutes, vtype=gp.GRB.BINARY, name=\"Assignment\")\nTotalAssigned = model.addVars(TotalRoutes, vtype=gp.GRB.INTEGER, name=\"TotalAssigned\")\n\n# Add aircraft availability constraints\nfor i in range(TotalAircraft):\n    model.addConstr(gp.quicksum(Assignment[i, j] for j in range(TotalRoutes)) <= Availability[i], name=f\"aircraft_availability_{i}\")\n\n# Add route demand satisfaction constraints\nfor r in range(TotalRoutes):\n    model.addConstr(gp.quicksum(Assignment[a, r] for a in range(TotalAircraft)) >= Demand[r], \n                    name=f\"route_demand_{r}\")\n\n# Add aircraft assignment capacity constraints\nfor i in range(TotalAircraft):\n    for j in range(TotalRoutes):\n        model.addConstr(Assignment[i, j] <= Capacity[i, j], name=f\"aircraft_capacity_{i}_{j}\")\n\n# The integrality of Assignment is inherently handled as it is defined as a binary variable. No additional code is required.\n\n# Add non-negativity constraint for TotalAssigned to each route\nfor j in range(TotalRoutes):\n    model.addConstr(TotalAssigned[j] >= 0, name=f\"nonnegativity_TotalAssigned_{j}\")\n\n# Add constraint to ensure the total number of aircraft assigned does not exceed the total available aircraft\nmodel.addConstr(\n    gp.quicksum(Assignment[i, j] for i in range(TotalAircraft) for j in range(TotalRoutes)) <= TotalAircraft,\n    name=\"aircraft_assignment_limit\"\n)\n\n# No additional code needed: decision variable Assignment was already declared as binary.\n\n# Add constraints ensuring the total number of aircraft assigned to each route equals the respective integer variable TotalAssigned\nfor j in range(TotalRoutes):\n    model.addConstr(TotalAssigned[j] == gp.quicksum(Assignment[i, j] for i in range(TotalAircraft)), name=f\"TotalAssigned_route{j}\")\n\n# Add constraints to relate Assignment and TotalAssigned\nfor j in range(TotalRoutes):\n    model.addConstr(TotalAssigned[j] == gp.quicksum(Assignment[i, j] for i in range(TotalAircraft)), \n                    name=f\"Total_Assigned_to_Route_{j}\")\n\n# Add aircraft availability constraints\nfor i in range(TotalAircraft):\n    model.addConstr(\n        gp.quicksum(Assignment[i, j] for j in range(TotalRoutes)) <= Availability[i], \n        name=f\"aircraft_availability_{i}\"\n    )\n\n# Add constraints to ensure each route meets its aircraft demand\nfor j in range(TotalRoutes):\n    model.addConstr(\n        gp.quicksum(Assignment[i, j] for i in range(TotalAircraft)) == Demand[j], \n        name=f\"route_demand_{j}\"\n    )\n\n# Add capacity feasibility constraints for aircraft assignment\nfor i in range(TotalAircraft):\n    for j in range(TotalRoutes):\n        model.addConstr(Assignment[i, j] <= Capacity[i, j], name=f\"capacity_feasibility_aircraft_{i}_route_{j}\")\n\n# Set objective\nmodel.setObjective(gp.quicksum(Costs[i, j] * Assignment[i, j] for i in range(TotalAircraft) for j in range(TotalRoutes)), gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

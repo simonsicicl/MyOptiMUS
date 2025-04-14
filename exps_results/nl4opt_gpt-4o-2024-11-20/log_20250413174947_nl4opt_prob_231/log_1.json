@@ -1,0 +1,195 @@
+{
+    "background": "An amusement park operates two types of games, throwing and climbing games. The games differ in customer attraction rates and operating costs, and there is a requirement to have more throwing games than climbing games.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of customers per hour for throwing games",
+            "symbol": "Ct",
+            "value": 15,
+            "shape": [],
+            "code": "Ct = data[\"Ct\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of customers per hour for climbing games",
+            "symbol": "Cc",
+            "value": 8,
+            "shape": [],
+            "code": "Cc = data[\"Cc\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost of prizes per hour for throwing games",
+            "symbol": "Pt",
+            "value": 2,
+            "shape": [],
+            "code": "Pt = data[\"Pt\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost of prizes per hour for climbing games",
+            "symbol": "Pc",
+            "value": 3,
+            "shape": [],
+            "code": "Pc = data[\"Pc\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum ratio of the number of throwing games to climbing games",
+            "symbol": "R",
+            "value": 2,
+            "shape": [],
+            "code": "R = data[\"R\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of climbing games",
+            "symbol": "MinClimbingGames",
+            "value": 5,
+            "shape": [],
+            "code": "MinClimbingGames = data[\"MinClimbingGames\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum total cost of prizes per hour",
+            "symbol": "MaxPrizeCost",
+            "value": 100,
+            "shape": [],
+            "code": "MaxPrizeCost = data[\"MaxPrizeCost\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of throwing games must be at least R times the number of climbing games.",
+            "status": "coded",
+            "formulation": "\\textup{T} \\geq \\textup{R} \\cdot \\textup{C}",
+            "related_variables": [
+                "T",
+                "C"
+            ],
+            "related_parameters": [
+                "R"
+            ],
+            "code": "# Add constraint for the number of throwing games being at least R times the number of climbing games\nmodel.addConstr(T >= R * C, name=\"throwing_vs_climbing_games\")"
+        },
+        {
+            "description": "The number of climbing games should be at least MinClimbingGames.",
+            "status": "coded",
+            "formulation": "C \\geq \\textup{MinClimbingGames}",
+            "related_variables": [
+                "C"
+            ],
+            "related_parameters": [
+                "MinClimbingGames"
+            ],
+            "code": "# Enforce minimum number of climbing games constraint\nmodel.addConstr(C >= MinClimbingGames, name=\"min_climbing_games\")"
+        },
+        {
+            "description": "The total cost in prizes per hour for all games should not exceed MaxPrizeCost.",
+            "status": "coded",
+            "formulation": "T \\\\cdot \\\\textup{Pt} + C \\\\cdot \\\\textup{Pc} \\\\leq \\\\textup{MaxPrizeCost}",
+            "related_variables": [
+                "T",
+                "C"
+            ],
+            "related_parameters": [
+                "Pt",
+                "Pc",
+                "MaxPrizeCost"
+            ],
+            "code": "# Add constraint to ensure total prize cost per hour does not exceed MaxPrizeCost\nmodel.addConstr(T * Pt + C * Pc <= MaxPrizeCost, name=\"prize_cost_limit\")"
+        },
+        {
+            "description": "Number of throwing games is non-negative",
+            "status": "coded",
+            "formulation": "\\textup{T} \\geq 0",
+            "related_variables": [
+                "T"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint for non-negative number of throwing games\nmodel.addConstr(T >= 0, name=\"non_negative_throws\")"
+        },
+        {
+            "description": "The number of climbing games must be non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{C} \\\\geq 0",
+            "related_variables": [
+                "C"
+            ],
+            "related_parameters": [],
+            "code": "# The number of climbing games must be non-negative\nmodel.addConstr(C >= 0, name=\"non_negative_climbing_games\")"
+        },
+        {
+            "description": "The number of throwing games must be at least R times the number of climbing games",
+            "status": "coded",
+            "formulation": "T \\geq R \\cdot C",
+            "related_variables": [
+                "T",
+                "C"
+            ],
+            "related_parameters": [
+                "R"
+            ],
+            "code": "# Add constraint: The number of throwing games must be at least R times the number of climbing games\nmodel.addConstr(T >= R * C, name=\"throwing_vs_climbing_ratio\")"
+        },
+        {
+            "description": "The number of climbing games must be greater than or equal to the minimum required climbing games",
+            "status": "coded",
+            "formulation": "C \\geq MinClimbingGames",
+            "related_variables": [
+                "C"
+            ],
+            "related_parameters": [
+                "MinClimbingGames"
+            ],
+            "code": "# Enforce minimum number of climbing games constraint\nmodel.addConstr(C >= MinClimbingGames, name=\"min_climbing_games\")"
+        },
+        {
+            "description": "The total cost of prizes for all games must not exceed the maximum allowed prize cost per hour",
+            "status": "coded",
+            "formulation": "Pt \\cdot T + Pc \\cdot C \\leq MaxPrizeCost",
+            "related_variables": [
+                "T",
+                "C"
+            ],
+            "related_parameters": [
+                "Pt",
+                "Pc",
+                "MaxPrizeCost"
+            ],
+            "code": "# Add constraint for the total cost of prizes per hour\nmodel.addConstr(T * Pt + C * Pc <= MaxPrizeCost, name=\"prize_cost_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of throwing games",
+            "symbol": "T",
+            "shape": [],
+            "status": "coded",
+            "code": "T = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"T\")"
+        },
+        {
+            "definition": "Number of climbing games",
+            "symbol": "C",
+            "shape": [],
+            "status": "coded",
+            "code": "C = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"C\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total number of customers attracted every hour across all games",
+            "status": "coded",
+            "formulation": "\\textup{Maximize:} \\quad Z = Ct \\cdot T + Cc \\cdot C",
+            "related_variables": [
+                "T",
+                "C"
+            ],
+            "related_parameters": [
+                "Ct",
+                "Cc"
+            ],
+            "code": "# Set objective\nmodel.setObjective(Ct * T + Cc * C, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413174947_nl4opt_prob_231/",
+    "problem_path": "data/nl4opt/prob_231/"
+}

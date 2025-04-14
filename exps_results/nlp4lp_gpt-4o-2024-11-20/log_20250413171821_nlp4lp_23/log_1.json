@@ -1,0 +1,234 @@
+{
+    "background": "The company is looking to minimize redundancy across various resources with specific strength requirements and differing costs associated with wastage, redundancy, overmanning, and short working.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Total number of different types of resources",
+            "symbol": "K",
+            "value": "",
+            "shape": [],
+            "code": "K = data[\"K\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of different requirements for each type of resource",
+            "symbol": "I",
+            "value": "",
+            "shape": [],
+            "code": "I = data[\"I\"] # scalar parameter"
+        },
+        {
+            "definition": "Strength of each type of resource",
+            "symbol": "Strength",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "Strength = np.array(data[\"Strength\"]) # ['K']"
+        },
+        {
+            "definition": "Value when wastage of resources is less than optimal",
+            "symbol": "LessOneWaste",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "LessOneWaste = np.array(data[\"LessOneWaste\"]) # ['K']"
+        },
+        {
+            "definition": "Value when wastage of resources is more than optimal",
+            "symbol": "MoreOneWaste",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "MoreOneWaste = np.array(data[\"MoreOneWaste\"]) # ['K']"
+        },
+        {
+            "definition": "Number of recruited resources of each type",
+            "symbol": "Recruit",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "Recruit = np.array(data[\"Recruit\"]) # ['K']"
+        },
+        {
+            "definition": "Cost of redundancy for each type of resource",
+            "symbol": "CostRedundancy",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "CostRedundancy = np.array(data[\"CostRedundancy\"]) # ['K']"
+        },
+        {
+            "definition": "Number of overmanned positions",
+            "symbol": "NumOverman",
+            "value": "",
+            "shape": [],
+            "code": "NumOverman = data[\"NumOverman\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost of overmanning for each type of resource",
+            "symbol": "CostOverman",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "CostOverman = np.array(data[\"CostOverman\"]) # ['K']"
+        },
+        {
+            "definition": "Number of shortworked positions",
+            "symbol": "NumShortwork",
+            "value": "",
+            "shape": [],
+            "code": "NumShortwork = data[\"NumShortwork\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost of short working for each type of resource",
+            "symbol": "CostShort",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "CostShort = np.array(data[\"CostShort\"]) # ['K']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Ensure non-negative values for Recruitment, Overmanned Positions, and Shortworked Positions for each type of resource.",
+            "status": "coded",
+            "formulation": "\\textup{Recruit}_{k} \\geq 0 \\quad \\forall k \\in \\{1, 2, ..., K\\} \\\\ \\textup{NumOverman} \\geq 0 \\\\ \\textup{NumShortwork} \\geq 0",
+            "related_variables": [
+                "Recruit",
+                "NumOverman",
+                "NumShortwork"
+            ],
+            "related_parameters": [
+                "K"
+            ],
+            "code": "# Add non-negativity constraints for Recruitment, Overmanned Positions, and Shortworked Positions\nfor k in range(K):\n    model.addConstr(Recruit[k] >= 0, name=f\"non_negativity_Recruit_{k}\")\nmodel.addConstr(NumOverman >= 0, name=\"non_negativity_NumOverman\")\nmodel.addConstr(NumShortwork >= 0, name=\"non_negativity_NumShortwork\")"
+        },
+        {
+            "description": "The amount of each resource used must be at least equal to \\textup{I} - \\textup{LessOneWaste} if there is less wastage.",
+            "status": "coded",
+            "formulation": "\\textup{AmountUsed}_k \\geq \\textup{I} - \\textup{LessOneWaste}_k \\cdot \\textup{IsLessWastage}_k \\quad \\forall \\; k = 1, \\dots, \\textup{K}",
+            "related_variables": [
+                "AmountUsed",
+                "IsLessWastage"
+            ],
+            "related_parameters": [
+                "I",
+                "LessOneWaste",
+                "K"
+            ],
+            "code": "# Add constraints to ensure resource usage respects the wastage condition\nfor k in range(K):\n    model.addConstr(AmountUsed[k] >= I - LessOneWaste[k] * IsLessWastage[k], name=f\"resource_usage_constraint_{k}\")"
+        },
+        {
+            "description": "The amount of each resource used must not exceed I + MoreOneWaste in case of more wastage, or I + LessOneWaste in case of less wastage.",
+            "status": "coded",
+            "formulation": "\\textup{AmountUsed}_{k} \\leq I + \\textup{LessOneWaste}_{k} \\cdot \\textup{IsLessWastage}_{k} + \\textup{MoreOneWaste}_{k} \\cdot (1 - \\textup{IsLessWastage}_{k}), \\quad \\forall k = 1, \\dots, \\textup{K}",
+            "related_variables": [
+                "AmountUsed",
+                "IsLessWastage"
+            ],
+            "related_parameters": [
+                "I",
+                "LessOneWaste",
+                "MoreOneWaste",
+                "K"
+            ],
+            "code": "# Add resource usage constraints with wastage conditions\nfor k in range(K):\n    model.addConstr(\n        AmountUsed[k] <= I + LessOneWaste[k] * IsLessWastage[k] + MoreOneWaste[k] * (1 - IsLessWastage[k]),\n        name=f\"resource_usage_wastage_{k}\"\n    )"
+        },
+        {
+            "description": "Auxiliary binary variable enforces logical consistency for conditions on \\textup{IsLessWastage}_k.",
+            "status": "coded",
+            "formulation": "\\textup{IsLessWastage}_k \\in \\{0, 1\\} \\quad \\forall \\; k = 1, \\dots, \\textup{K}",
+            "related_variables": [
+                "IsLessWastage"
+            ],
+            "related_parameters": [
+                "K"
+            ],
+            "code": "# No additional constraints are needed because `IsLessWastage` is already enforced to be binary during its definition."
+        },
+        {
+            "description": "Logical bounds on the resource used for consistency in optimization.",
+            "status": "coded",
+            "formulation": "\\textup{AmountUsed}_k \\geq 0 \\quad \\forall \\; k = 1, \\dots, \\textup{K}",
+            "related_variables": [
+                "AmountUsed"
+            ],
+            "related_parameters": [
+                "K"
+            ],
+            "code": "# Add non-negativity constraints for AmountUsed\nfor k in range(K):\n    model.addConstr(AmountUsed[k] >= 0, name=f\"non_negativity_AmountUsed[{k}]\")"
+        },
+        {
+            "description": "Constraint linking redundancy amount to the difference between recruited and used resources for all resource types.",
+            "status": "coded",
+            "formulation": "\\textup{RedundancyAmount}_{k} \\geq \\textup{Recruit}_{k} - \\textup{AmountUsed}_{k}, \\quad \\forall k \\in \\{1, \\dots, K\\}",
+            "related_variables": [
+                "RedundancyAmount",
+                "AmountUsed"
+            ],
+            "related_parameters": [
+                "Recruit"
+            ],
+            "code": "# Add redundancy constraints\nfor k in range(K):\n    model.addConstr(RedundancyAmount[k] >= Recruit[k] - AmountUsed[k], name=f\"redundancy_constr_{k}\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The amount of each resource used for a given resource type.",
+            "symbol": "AmountUsed",
+            "shape": [
+                "K"
+            ],
+            "status": "coded",
+            "code": "AmountUsed = model.addVars(K, vtype=gp.GRB.CONTINUOUS, name=\"AmountUsed\")"
+        },
+        {
+            "definition": "Binary variable to represent whether the wastage condition for a resource type is 'less than optimal.'",
+            "symbol": "IsLessWastage",
+            "shape": [
+                "K"
+            ],
+            "status": "coded",
+            "code": "IsLessWastage = model.addVars(K, vtype=gp.GRB.BINARY, name=\"IsLessWastage\")"
+        },
+        {
+            "definition": "The redundancy for each resource type based on the difference between recruited and used resources.",
+            "symbol": "RedundancyAmount",
+            "shape": [
+                "K"
+            ],
+            "status": "coded",
+            "code": "RedundancyAmount = model.addVars(K, vtype=gp.GRB.CONTINUOUS, name=\"RedundancyAmount\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total cost of redundancy, overmanning, and short working for the company.",
+            "status": "coded",
+            "formulation": "\\min \\Bigg( \\sum_{k=1}^{K} \\textup{CostRedundancy}_{k} \\cdot \\textup{RedundancyAmount}_{k} + \\sum_{k=1}^{K} \\textup{CostOverman}_{k} \\cdot \\textup{NumOverman} + \\sum_{k=1}^{K} \\textup{CostShort}_{k} \\cdot \\textup{NumShortwork} \\Bigg)",
+            "related_variables": [
+                "RedundancyAmount"
+            ],
+            "related_parameters": [
+                "CostRedundancy",
+                "NumOverman",
+                "CostOverman",
+                "NumShortwork",
+                "CostShort"
+            ],
+            "code": "# Set objective\nmodel.setObjective(\n    gp.quicksum(CostRedundancy[k] * RedundancyAmount[k] for k in range(K)) +\n    gp.quicksum(CostOverman[k] * NumOverman for k in range(K)) +\n    gp.quicksum(CostShort[k] * NumShortwork for k in range(K)), \n    gp.GRB.MINIMIZE\n)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413171821_nlp4lp_23/",
+    "problem_path": "data/nlp4lp/23/"
+}

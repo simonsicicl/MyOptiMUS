@@ -1,0 +1,228 @@
+{
+    "background": "A snow removal company operates small and large trucks requiring different numbers of people for snow shoveling and having different snow capacities.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of people required to shovel snow for a small truck",
+            "symbol": "PeopleSmallTruck",
+            "value": 2,
+            "shape": [],
+            "code": "PeopleSmallTruck = data[\"PeopleSmallTruck\"] # scalar parameter"
+        },
+        {
+            "definition": "Capacity of snow that a small truck can carry",
+            "symbol": "CapacitySmallTruck",
+            "value": 30,
+            "shape": [],
+            "code": "CapacitySmallTruck = data[\"CapacitySmallTruck\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of people required to shovel snow for a large truck",
+            "symbol": "PeopleLargeTruck",
+            "value": 4,
+            "shape": [],
+            "code": "PeopleLargeTruck = data[\"PeopleLargeTruck\"] # scalar parameter"
+        },
+        {
+            "definition": "Capacity of snow that a large truck can carry",
+            "symbol": "CapacityLargeTruck",
+            "value": 50,
+            "shape": [],
+            "code": "CapacityLargeTruck = data[\"CapacityLargeTruck\"] # scalar parameter"
+        },
+        {
+            "definition": "Total number of people available for shoveling snow",
+            "symbol": "TotalPeople",
+            "value": 30,
+            "shape": [],
+            "code": "TotalPeople = data[\"TotalPeople\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of small trucks required",
+            "symbol": "MinSmallTrucks",
+            "value": 10,
+            "shape": [],
+            "code": "MinSmallTrucks = data[\"MinSmallTrucks\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of large trucks required",
+            "symbol": "MinLargeTrucks",
+            "value": 3,
+            "shape": [],
+            "code": "MinLargeTrucks = data[\"MinLargeTrucks\"] # scalar parameter"
+        },
+        {
+            "definition": "Proportion of the number of small trucks to large trucks",
+            "symbol": "TruckProportion",
+            "value": 2,
+            "shape": [],
+            "code": "TruckProportion = data[\"TruckProportion\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Each small truck must be assigned a non-negative number of people for shoveling snow",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfPeopleAssignedToSmallTrucks} \\geq 0",
+            "related_variables": [
+                "NumberOfPeopleAssignedToSmallTrucks"
+            ],
+            "related_parameters": [],
+            "code": "# Since the NumberOfPeopleAssignedToSmallTrucks variable is already initialized to be non-negative by default,\n# there's no need to add an explicit constraint for it.\n\n# In Gurobi, all variables are non-negative by default unless specified otherwise, thus no constraint needed here."
+        },
+        {
+            "description": "The number of people assigned to large trucks must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfPeopleAssignedToLargeTrucks} \\geq 0",
+            "related_variables": [
+                "NumberOfPeopleAssignedToLargeTrucks"
+            ],
+            "related_parameters": [],
+            "code": "# Since NumberOfPeopleAssignedToLargeTrucks is already defined as an integer variable, no code needed to ensure non-negativity,\n# as integer variables in Gurobi are non-negative by default unless specified otherwise."
+        },
+        {
+            "description": "The total number of people for small and large trucks combined cannot exceed the total available people",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfPeopleAssignedToSmallTrucks} \\cdot \\textup{PeopleSmallTruck} + \\textup{NumberOfPeopleAssignedToLargeTrucks} \\cdot \\textup{PeopleLargeTruck} \\leq \\textup{TotalPeople}",
+            "related_variables": [
+                "NumberOfPeopleAssignedToSmallTrucks",
+                "NumberOfPeopleAssignedToLargeTrucks"
+            ],
+            "related_parameters": [
+                "PeopleSmallTruck",
+                "PeopleLargeTruck",
+                "TotalPeople"
+            ],
+            "code": "# Add constraint: Total number of people for trucks cannot exceed the total available people\nmodel.addConstr(NumberOfPeopleAssignedToSmallTrucks * PeopleSmallTruck + NumberOfPeopleAssignedToLargeTrucks * PeopleLargeTruck <= TotalPeople, \"total_people_constraint\")"
+        },
+        {
+            "description": "At least MinSmallTrucks small trucks must be used",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfSmallTrucks} \\geq \\textup{MinSmallTrucks}",
+            "related_variables": [
+                "NumberOfSmallTrucks"
+            ],
+            "related_parameters": [
+                "MinSmallTrucks"
+            ],
+            "code": "# Ensure that at least the minimum number of small trucks is used\nmodel.addConstr(NumberOfSmallTrucks >= MinSmallTrucks, name=\"min_small_trucks_constraint\")"
+        },
+        {
+            "description": "At least MinLargeTrucks large trucks must be used",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfLargeTrucks} \\geq \\textup{MinLargeTrucks}",
+            "related_variables": [
+                "NumberOfLargeTrucks"
+            ],
+            "related_parameters": [
+                "MinLargeTrucks"
+            ],
+            "code": "# Ensure that at least MinLargeTrucks large trucks are used\nmodel.addConstr(NumberOfLargeTrucks >= MinLargeTrucks, name=\"min_large_trucks_constraint\")"
+        },
+        {
+            "description": "The total number of people assigned to small and large trucks should not exceed the total number of people available for shoveling snow",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfSmallTrucks} \\times \\textup{PeopleSmallTruck} + \\textup{NumberOfLargeTrucks} \\times \\textup{PeopleLargeTruck} \\leq \\textup{TotalPeople}",
+            "related_variables": [
+                "NumberOfSmallTrucks",
+                "NumberOfLargeTrucks"
+            ],
+            "related_parameters": [
+                "PeopleSmallTruck",
+                "PeopleLargeTruck",
+                "TotalPeople"
+            ],
+            "code": "# Constraint: Total number of people assigned to small and large trucks should not exceed the total number of people available for shoveling snow\nmodel.addConstr(NumberOfSmallTrucks * PeopleSmallTruck + NumberOfLargeTrucks * PeopleLargeTruck <= TotalPeople, \"PeopleCapacityConstraint\")"
+        },
+        {
+            "description": "The number of small trucks used must be at least the minimum required",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfSmallTrucks} \\geq \\textup{MinSmallTrucks}",
+            "related_variables": [
+                "NumberOfSmallTrucks"
+            ],
+            "related_parameters": [
+                "MinSmallTrucks"
+            ],
+            "code": "# Ensure the number of small trucks used is at least the minimum required\nmodel.addConstr(NumberOfSmallTrucks >= MinSmallTrucks, name=\"min_small_trucks_required\")"
+        },
+        {
+            "description": "The number of large trucks used must be at least the minimum required",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfLargeTrucks} \\geq \\textup{MinLargeTrucks}",
+            "related_variables": [
+                "NumberOfLargeTrucks"
+            ],
+            "related_parameters": [
+                "MinLargeTrucks"
+            ],
+            "code": "# Constraint: Number of large trucks used must be at least the minimum required\nmodel.addConstr(NumberOfLargeTrucks >= MinLargeTrucks, name=\"min_large_trucks_required\")"
+        },
+        {
+            "description": "Maintain the proportion of the number of small trucks to large trucks",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfSmallTrucks} \\geq \\textup{TruckProportion} \\times \\textup{NumberOfLargeTrucks}",
+            "related_variables": [
+                "NumberOfSmallTrucks",
+                "NumberOfLargeTrucks"
+            ],
+            "related_parameters": [
+                "TruckProportion"
+            ],
+            "code": "# Maintaining the proportion of the number of small trucks to large trucks\nmodel.addConstr(NumberOfSmallTrucks >= TruckProportion * NumberOfLargeTrucks, name=\"truck_proportion_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of people assigned to each small truck for shoveling snow",
+            "symbol": "NumberOfPeopleAssignedToSmallTrucks",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfPeopleAssignedToSmallTrucks = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfPeopleAssignedToSmallTrucks\")"
+        },
+        {
+            "definition": "Number of people assigned to each large truck for shoveling snow",
+            "symbol": "NumberOfPeopleAssignedToLargeTrucks",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfPeopleAssignedToLargeTrucks = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfPeopleAssignedToLargeTrucks\")"
+        },
+        {
+            "definition": "Number of small trucks used for shoveling snow",
+            "symbol": "NumberOfSmallTrucks",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfSmallTrucks = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfSmallTrucks\")"
+        },
+        {
+            "definition": "Number of large trucks used for shoveling snow",
+            "symbol": "NumberOfLargeTrucks",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfLargeTrucks = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfLargeTrucks\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total amount of snow transported by the company using small and large trucks",
+            "status": "coded",
+            "formulation": "\\textup{Maximize}\\quad \\textup{TotalSnow} = \\textup{NumberOfSmallTrucks} \\times \\textup{CapacitySmallTruck} + \\textup{NumberOfLargeTrucks} \\times \\textup{CapacityLargeTruck}",
+            "related_variables": [
+                "NumberOfSmallTrucks",
+                "NumberOfLargeTrucks"
+            ],
+            "related_parameters": [
+                "CapacitySmallTruck",
+                "CapacityLargeTruck"
+            ],
+            "code": "# Set objective\nmodel.setObjective(NumberOfSmallTrucks * CapacitySmallTruck + NumberOfLargeTrucks * CapacityLargeTruck, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 4,
+    "error_message": null,
+    "obj_val": "infeasible or unbounded",
+    "log_path": "logs/log_20250413153515_nl4opt_prob_194/",
+    "problem_path": "data/nl4opt/prob_194/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_194/data.json\", \"r\") as f:\n    data = json.load(f)\n\nPeopleSmallTruck = data[\"PeopleSmallTruck\"] # scalar parameter\nCapacitySmallTruck = data[\"CapacitySmallTruck\"] # scalar parameter\nPeopleLargeTruck = data[\"PeopleLargeTruck\"] # scalar parameter\nCapacityLargeTruck = data[\"CapacityLargeTruck\"] # scalar parameter\nTotalPeople = data[\"TotalPeople\"] # scalar parameter\nMinSmallTrucks = data[\"MinSmallTrucks\"] # scalar parameter\nMinLargeTrucks = data[\"MinLargeTrucks\"] # scalar parameter\nTruckProportion = data[\"TruckProportion\"] # scalar parameter\nNumberOfPeopleAssignedToSmallTrucks = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfPeopleAssignedToSmallTrucks\")\nNumberOfPeopleAssignedToLargeTrucks = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfPeopleAssignedToLargeTrucks\")\nNumberOfSmallTrucks = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfSmallTrucks\")\nNumberOfLargeTrucks = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfLargeTrucks\")\n\n# Since the NumberOfPeopleAssignedToSmallTrucks variable is already initialized to be non-negative by default,\n# there's no need to add an explicit constraint for it.\n\n# In Gurobi, all variables are non-negative by default unless specified otherwise, thus no constraint needed here.\n\n# Since NumberOfPeopleAssignedToLargeTrucks is already defined as an integer variable, no code needed to ensure non-negativity,\n# as integer variables in Gurobi are non-negative by default unless specified otherwise.\n\n# Add constraint: Total number of people for trucks cannot exceed the total available people\nmodel.addConstr(NumberOfPeopleAssignedToSmallTrucks * PeopleSmallTruck + NumberOfPeopleAssignedToLargeTrucks * PeopleLargeTruck <= TotalPeople, \"total_people_constraint\")\n\n# Ensure that at least the minimum number of small trucks is used\nmodel.addConstr(NumberOfSmallTrucks >= MinSmallTrucks, name=\"min_small_trucks_constraint\")\n\n# Ensure that at least MinLargeTrucks large trucks are used\nmodel.addConstr(NumberOfLargeTrucks >= MinLargeTrucks, name=\"min_large_trucks_constraint\")\n\n# Constraint: Total number of people assigned to small and large trucks should not exceed the total number of people available for shoveling snow\nmodel.addConstr(NumberOfSmallTrucks * PeopleSmallTruck + NumberOfLargeTrucks * PeopleLargeTruck <= TotalPeople, \"PeopleCapacityConstraint\")\n\n# Ensure the number of small trucks used is at least the minimum required\nmodel.addConstr(NumberOfSmallTrucks >= MinSmallTrucks, name=\"min_small_trucks_required\")\n\n# Constraint: Number of large trucks used must be at least the minimum required\nmodel.addConstr(NumberOfLargeTrucks >= MinLargeTrucks, name=\"min_large_trucks_required\")\n\n# Maintaining the proportion of the number of small trucks to large trucks\nmodel.addConstr(NumberOfSmallTrucks >= TruckProportion * NumberOfLargeTrucks, name=\"truck_proportion_constraint\")\n\n# Set objective\nmodel.setObjective(NumberOfSmallTrucks * CapacitySmallTruck + NumberOfLargeTrucks * CapacityLargeTruck, gp.GRB.MAXIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

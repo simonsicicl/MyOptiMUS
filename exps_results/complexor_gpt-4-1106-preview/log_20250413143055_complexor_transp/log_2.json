@@ -1,0 +1,120 @@
+{
+    "background": "This is a transportation problem involving the transfer of goods from multiple origins to multiple destinations, each with their own supply and demand constraints, aiming to minimize the total transportation cost.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "symbol": "NumberOfOrigins",
+            "definition": "The total number of origins",
+            "shape": [],
+            "code": "NumberOfOrigins = data[\"NumberOfOrigins\"] # scalar parameter"
+        },
+        {
+            "symbol": "NumberOfDestinations",
+            "definition": "The total number of destinations",
+            "shape": [],
+            "code": "NumberOfDestinations = data[\"NumberOfDestinations\"] # scalar parameter"
+        },
+        {
+            "symbol": "SupplyOfOrigin",
+            "definition": "The supply available at each origin",
+            "shape": [
+                "NumberOfOrigins"
+            ],
+            "code": "SupplyOfOrigin = np.array(data[\"SupplyOfOrigin\"]) # ['NumberOfOrigins']"
+        },
+        {
+            "symbol": "DemandOfDestination",
+            "definition": "The demand that needs to be satisfied at each destination",
+            "shape": [
+                "NumberOfDestinations"
+            ],
+            "code": "DemandOfDestination = np.array(data[\"DemandOfDestination\"]) # ['NumberOfDestinations']"
+        },
+        {
+            "symbol": "CostPerUnit",
+            "definition": "The cost of transporting a unit from each origin to each destination",
+            "shape": [
+                "NumberOfOrigins",
+                "NumberOfDestinations"
+            ],
+            "code": "CostPerUnit = np.array(data[\"CostPerUnit\"]) # ['NumberOfOrigins', 'NumberOfDestinations']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Total supply from each origin must be exactly the available supply at that origin",
+            "status": "coded",
+            "formulation": "\\sum_{j=1}^{\\textup{NumberOfDestinations}} \\textup{ShippingQuantity}_{ij} = \\textup{SupplyOfOrigin}_{i} \\quad \\forall i \\in \\{1, \\ldots, \\textup{NumberOfOrigins}\\}",
+            "related_variables": [
+                "ShippingQuantity"
+            ],
+            "related_parameters": [
+                "SupplyOfOrigin",
+                "NumberOfDestinations",
+                "NumberOfOrigins"
+            ],
+            "code": "# Ensure that total supply shipped from each origin equals its available supply\nfor i in range(NumberOfOrigins):\n    model.addConstr(gp.quicksum(ShippingQuantity[i, j] for j in range(NumberOfDestinations)) == SupplyOfOrigin[i], name=\"supply_constraint_origin_{}\".format(i))"
+        },
+        {
+            "description": "Total demand at each destination must be exactly equal to the DemandOfDestination",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{\\textup{NumberOfOrigins}} \\textup{ShippingQuantity}_{ij} = \\textup{DemandOfDestination}_j \\quad \\forall j \\in \\{1, \\ldots, \\textup{NumberOfDestinations}\\}",
+            "related_variables": [
+                "ShippingQuantity"
+            ],
+            "related_parameters": [
+                "NumberOfOrigins",
+                "DemandOfDestination"
+            ],
+            "code": "# Add demand satisfaction constraints for each destination\nfor j in range(NumberOfDestinations):\n    model.addConstr(gp.quicksum(ShippingQuantity[i, j] for i in range(NumberOfOrigins)) == DemandOfDestination[j], name=\"demand_satisfaction_{}\".format(j))"
+        },
+        {
+            "description": "Each shipping quantity from any origin to any destination must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{ShippingQuantity}_{ij} \\geq 0 \\quad \\forall i \\in \\{1, \\ldots, \\textup{NumberOfOrigins}\\}, \\quad \\forall j \\in \\{1, \\ldots, \\textup{NumberOfDestinations}\\}",
+            "related_variables": [
+                "ShippingQuantity"
+            ],
+            "related_parameters": [
+                "NumberOfOrigins",
+                "NumberOfDestinations"
+            ],
+            "code": "# Add non-negative shipping quantity constraints\nfor i in range(NumberOfOrigins):\n    for j in range(NumberOfDestinations):\n        model.addConstr(ShippingQuantity[i, j] >= 0, name=f\"non_negative_shipping_{i}_{j}\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Quantity of goods shipped from origin i to destination j",
+            "symbol": "ShippingQuantity",
+            "shape": [
+                "NumberOfOrigins",
+                "NumberOfDestinations"
+            ],
+            "status": "coded",
+            "code": "ShippingQuantity = model.addVars(NumberOfOrigins, NumberOfDestinations, vtype=gp.GRB.CONTINUOUS, name=\"ShippingQuantity\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total transportation cost of shipping goods from multiple origins to multiple destinations",
+            "status": "coded",
+            "formulation": "\\min \\sum_{i=1}^{\\textup{NumberOfOrigins}} \\sum_{j=1}^{\\textup{NumberOfDestinations}} (\\textup{CostPerUnit}_{ij} \\times \\textup{ShippingQuantity}_{ij})",
+            "related_variables": [
+                "ShippingQuantity"
+            ],
+            "related_parameters": [
+                "NumberOfOrigins",
+                "NumberOfDestinations",
+                "CostPerUnit"
+            ],
+            "code": "# Set objective\nmodel.setObjective(gp.quicksum(CostPerUnit[i, j] * ShippingQuantity[i, j] for i in range(NumberOfOrigins) for j in range(NumberOfDestinations)), gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 196200.0,
+    "log_path": "logs/log_20250413143055_complexor_transp/",
+    "problem_path": "data/complexor/transp/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/complexor/transp/data.json\", \"r\") as f:\n    data = json.load(f)\n\nNumberOfOrigins = data[\"NumberOfOrigins\"] # scalar parameter\nNumberOfDestinations = data[\"NumberOfDestinations\"] # scalar parameter\nSupplyOfOrigin = np.array(data[\"SupplyOfOrigin\"]) # ['NumberOfOrigins']\nDemandOfDestination = np.array(data[\"DemandOfDestination\"]) # ['NumberOfDestinations']\nCostPerUnit = np.array(data[\"CostPerUnit\"]) # ['NumberOfOrigins', 'NumberOfDestinations']\nShippingQuantity = model.addVars(NumberOfOrigins, NumberOfDestinations, vtype=gp.GRB.CONTINUOUS, name=\"ShippingQuantity\")\n\n# Ensure that total supply shipped from each origin equals its available supply\nfor i in range(NumberOfOrigins):\n    model.addConstr(gp.quicksum(ShippingQuantity[i, j] for j in range(NumberOfDestinations)) == SupplyOfOrigin[i], name=\"supply_constraint_origin_{}\".format(i))\n\n# Add demand satisfaction constraints for each destination\nfor j in range(NumberOfDestinations):\n    model.addConstr(gp.quicksum(ShippingQuantity[i, j] for i in range(NumberOfOrigins)) == DemandOfDestination[j], name=\"demand_satisfaction_{}\".format(j))\n\n# Add non-negative shipping quantity constraints\nfor i in range(NumberOfOrigins):\n    for j in range(NumberOfDestinations):\n        model.addConstr(ShippingQuantity[i, j] >= 0, name=f\"non_negative_shipping_{i}_{j}\")\n\n# Set objective\nmodel.setObjective(gp.quicksum(CostPerUnit[i, j] * ShippingQuantity[i, j] for i in range(NumberOfOrigins) for j in range(NumberOfDestinations)), gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

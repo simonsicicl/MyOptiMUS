@@ -1,0 +1,249 @@
+{
+    "background": "A bee farmer is deciding how many small and large bottles to use for transporting honey. Small and large bottles have different capacities and limitations.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Capacity of a small bottle",
+            "symbol": "SmallBottleCapacity",
+            "value": 5,
+            "shape": [],
+            "code": "SmallBottleCapacity = data[\"SmallBottleCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Capacity of a large bottle",
+            "symbol": "LargeBottleCapacity",
+            "value": 20,
+            "shape": [],
+            "code": "LargeBottleCapacity = data[\"LargeBottleCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of small bottles available",
+            "symbol": "MaxSmallBottles",
+            "value": 300,
+            "shape": [],
+            "code": "MaxSmallBottles = data[\"MaxSmallBottles\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of large bottles available",
+            "symbol": "MaxLargeBottles",
+            "value": 100,
+            "shape": [],
+            "code": "MaxLargeBottles = data[\"MaxLargeBottles\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of bottles that can be transported",
+            "symbol": "MaxBottlesTransported",
+            "value": 200,
+            "shape": [],
+            "code": "MaxBottlesTransported = data[\"MaxBottlesTransported\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum ratio of the number of small bottles to large bottles",
+            "symbol": "MinRatioSmallToLarge",
+            "value": 0.33,
+            "shape": [],
+            "code": "MinRatioSmallToLarge = data[\"MinRatioSmallToLarge\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of large bottles to be used",
+            "symbol": "MinLargeBottles",
+            "value": 50,
+            "shape": [],
+            "code": "MinLargeBottles = data[\"MinLargeBottles\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Number of small bottles used must be non-negative and integer.",
+            "status": "coded",
+            "formulation": "\\textup{SmallBottlesUsed} \\geq 0, \\quad \\textup{SmallBottlesUsed} \\in \\mathbb{Z}",
+            "related_variables": [
+                "SmallBottlesUsed"
+            ],
+            "related_parameters": [],
+            "code": "# Update SmallBottlesUsed variable's type to integer and ensure non-negativity\nSmallBottlesUsed.vtype = gp.GRB.INTEGER\nSmallBottlesUsed.LB = 0"
+        },
+        {
+            "description": "The number of large bottles used is non-negative and integer",
+            "status": "coded",
+            "formulation": "\\textup{LargeBottlesUsed} \\geq 0",
+            "related_variables": [
+                "LargeBottlesUsed"
+            ],
+            "related_parameters": [],
+            "code": "# Since the variable \"LargeBottlesUsed\" is defined as a continuous variable, we need to adjust its type to integer to satisfy the requirement\nLargeBottlesUsed.vtype = gp.GRB.INTEGER"
+        },
+        {
+            "description": "The number of small bottles used must be at most the maximum number of small bottles available (MaxSmallBottles).",
+            "status": "coded",
+            "formulation": "\\textup{SmallBottlesUsed} \\leq \\textup{MaxSmallBottles}",
+            "related_variables": [
+                "SmallBottlesUsed"
+            ],
+            "related_parameters": [
+                "MaxSmallBottles"
+            ],
+            "code": "# Add constraint to ensure the number of small bottles used does not exceed the maximum available\nmodel.addConstr(SmallBottlesUsed <= MaxSmallBottles, name=\"max_small_bottles_constraint\")"
+        },
+        {
+            "description": "The number of large bottles used cannot exceed the maximum allowed number of large bottles.",
+            "status": "coded",
+            "formulation": "\\textup{LargeBottlesUsed} \\leq \\textup{MaxLargeBottles}",
+            "related_variables": [
+                "LargeBottlesUsed"
+            ],
+            "related_parameters": [
+                "MaxLargeBottles"
+            ],
+            "code": "# Add constraint to ensure the number of large bottles used does not exceed the maximum allowed\nmodel.addConstr(LargeBottlesUsed <= MaxLargeBottles, name=\"large_bottles_limit\")"
+        },
+        {
+            "description": "At least MinRatioSmallToLarge times as many small bottles must be used as large bottles",
+            "status": "coded",
+            "formulation": "\\textup{SmallBottlesUsed} \\geq \\textup{MinRatioSmallToLarge} \\cdot \\textup{LargeBottlesUsed}",
+            "related_variables": [
+                "SmallBottlesUsed",
+                "LargeBottlesUsed"
+            ],
+            "related_parameters": [
+                "MinRatioSmallToLarge"
+            ],
+            "code": "# Add constraint for minimum ratio of small bottles to large bottles\nmodel.addConstr(SmallBottlesUsed >= MinRatioSmallToLarge * LargeBottlesUsed, name=\"min_ratio_small_to_large\")"
+        },
+        {
+            "description": "At most MaxBottlesTransported bottles can be transported in total.",
+            "status": "coded",
+            "formulation": "\\textup{SmallBottlesUsed} + \\textup{LargeBottlesUsed} \\leq \\textup{MaxBottlesTransported}",
+            "related_variables": [
+                "SmallBottlesUsed",
+                "LargeBottlesUsed"
+            ],
+            "related_parameters": [
+                "MaxBottlesTransported"
+            ],
+            "code": "# Add constraint to limit the total number of bottles transported\nmodel.addConstr(SmallBottlesUsed + LargeBottlesUsed <= MaxBottlesTransported, name=\"MaxBottlesConstraint\")"
+        },
+        {
+            "description": "The minimum number of large bottles that must be used",
+            "status": "coded",
+            "formulation": "\\textup{LargeBottlesUsed} \\geq \\textup{MinLargeBottles}",
+            "related_variables": [
+                "LargeBottlesUsed"
+            ],
+            "related_parameters": [
+                "MinLargeBottles"
+            ],
+            "code": "# Add constraint for the minimum number of large bottles used\nmodel.addConstr(LargeBottlesUsed >= MinLargeBottles, name=\"min_large_bottles_constraint\")"
+        },
+        {
+            "description": "The definition ensuring that LargeBottlesUsed must take an integer value",
+            "status": "coded",
+            "formulation": "\\textup{LargeBottlesUsed} \\in \\mathbb{Z}",
+            "related_variables": [
+                "LargeBottlesUsed"
+            ],
+            "related_parameters": [],
+            "code": "# LargeBottlesUsed must take an integer value\nLargeBottlesUsed.vtype = gp.GRB.INTEGER"
+        },
+        {
+            "description": "The number of small bottles used must not exceed the maximum available small bottles",
+            "status": "coded",
+            "formulation": "\\textup{SmallBottlesUsed} \\\\leq \\textup{MaxSmallBottles}",
+            "related_variables": [
+                "SmallBottlesUsed"
+            ],
+            "related_parameters": [
+                "MaxSmallBottles"
+            ],
+            "code": "# Add constraint ensuring the number of small bottles used does not exceed the maximum available\nmodel.addConstr(SmallBottlesUsed <= MaxSmallBottles, name=\"small_bottles_limit\")"
+        },
+        {
+            "description": "The number of large bottles used must not exceed the maximum available large bottles",
+            "status": "coded",
+            "formulation": "\\textup{LargeBottlesUsed} \\\\leq \\textup{MaxLargeBottles}",
+            "related_variables": [
+                "LargeBottlesUsed"
+            ],
+            "related_parameters": [
+                "MaxLargeBottles"
+            ],
+            "code": "# Add constraint ensuring the number of large bottles used does not exceed the maximum available\nmodel.addConstr(LargeBottlesUsed <= MaxLargeBottles, name=\"large_bottles_limit\")"
+        },
+        {
+            "description": "The total number of bottles transported (small + large) cannot exceed the maximum",
+            "status": "coded",
+            "formulation": "\\textup{SmallBottlesUsed} + \\textup{LargeBottlesUsed} \\\\leq \\textup{MaxBottlesTransported}",
+            "related_variables": [
+                "SmallBottlesUsed",
+                "LargeBottlesUsed"
+            ],
+            "related_parameters": [
+                "MaxBottlesTransported"
+            ],
+            "code": "# Add constraint for maximum number of bottles transported\nmodel.addConstr(SmallBottlesUsed + LargeBottlesUsed <= MaxBottlesTransported, name=\"max_bottles_transport\")"
+        },
+        {
+            "description": "The number of small bottles must maintain the minimum ratio relative to the number of large bottles",
+            "status": "coded",
+            "formulation": "\\textup{SmallBottlesUsed} \\\\geq \\textup{MinRatioSmallToLarge} \\\\cdot \\textup{LargeBottlesUsed}",
+            "related_variables": [
+                "SmallBottlesUsed",
+                "LargeBottlesUsed"
+            ],
+            "related_parameters": [
+                "MinRatioSmallToLarge"
+            ],
+            "code": "# Add constraint to maintain the minimum ratio between small and large bottles\nmodel.addConstr(SmallBottlesUsed >= MinRatioSmallToLarge * LargeBottlesUsed, name=\"min_ratio_small_to_large\")"
+        },
+        {
+            "description": "At least the minimum number of large bottles must be used",
+            "status": "coded",
+            "formulation": "\\textup{LargeBottlesUsed} \\\\geq \\textup{MinLargeBottles}",
+            "related_variables": [
+                "LargeBottlesUsed"
+            ],
+            "related_parameters": [
+                "MinLargeBottles"
+            ],
+            "code": "# Add constraint to ensure at least the minimum number of large bottles are used\nmodel.addConstr(LargeBottlesUsed >= MinLargeBottles, name=\"min_large_bottles\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of small bottles used for transporting honey",
+            "symbol": "SmallBottlesUsed",
+            "shape": [],
+            "status": "coded",
+            "code": "SmallBottlesUsed = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"SmallBottlesUsed\")"
+        },
+        {
+            "definition": "The number of large bottles used for transporting honey",
+            "symbol": "LargeBottlesUsed",
+            "shape": [],
+            "status": "coded",
+            "code": "LargeBottlesUsed = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"LargeBottlesUsed\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total amount of honey that can be transported",
+            "status": "coded",
+            "formulation": "\\textup{Maximize:} \\\\quad \\textup{SmallBottleCapacity} \\\\cdot \\textup{SmallBottlesUsed} + \\textup{LargeBottleCapacity} \\\\cdot \\textup{LargeBottlesUsed}",
+            "related_variables": [
+                "SmallBottlesUsed",
+                "LargeBottlesUsed"
+            ],
+            "related_parameters": [
+                "SmallBottleCapacity",
+                "LargeBottleCapacity"
+            ],
+            "code": "# Set objective\nmodel.setObjective(SmallBottleCapacity * SmallBottlesUsed + LargeBottleCapacity * LargeBottlesUsed, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413161110_nl4opt_prob_150/",
+    "problem_path": "data/nl4opt/prob_150/"
+}

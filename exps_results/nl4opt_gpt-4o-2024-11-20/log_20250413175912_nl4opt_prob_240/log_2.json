@@ -1,0 +1,169 @@
+{
+    "background": "A hospital is purchasing two types of pills for patients, one for prevention and another for treatment, with specific cost and demand constraints within a limited budget.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Cost to make one prevention pill",
+            "symbol": "PreventionPillCost",
+            "value": 15,
+            "shape": [],
+            "code": "PreventionPillCost = data[\"PreventionPillCost\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost to make one treatment pill",
+            "symbol": "TreatmentPillCost",
+            "value": 25,
+            "shape": [],
+            "code": "TreatmentPillCost = data[\"TreatmentPillCost\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum ratio of prevention pills to treatment pills",
+            "symbol": "PreventionTreatmentRatio",
+            "value": 2,
+            "shape": [],
+            "code": "PreventionTreatmentRatio = data[\"PreventionTreatmentRatio\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of treatment pills the hospital must purchase",
+            "symbol": "MinTreatmentPills",
+            "value": 50,
+            "shape": [],
+            "code": "MinTreatmentPills = data[\"MinTreatmentPills\"] # scalar parameter"
+        },
+        {
+            "definition": "Budget of the hospital for purchasing pills",
+            "symbol": "Budget",
+            "value": 10000,
+            "shape": [],
+            "code": "Budget = data[\"Budget\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Ensure the number of prevention pills is at least PreventionTreatmentRatio times the number of treatment pills.",
+            "status": "coded",
+            "formulation": "\\textup{NumberPreventionPills} \\geq \\textup{PreventionTreatmentRatio} \\times \\textup{NumberTreatmentPills}",
+            "related_variables": [
+                "NumberPreventionPills",
+                "NumberTreatmentPills"
+            ],
+            "related_parameters": [
+                "PreventionTreatmentRatio"
+            ],
+            "code": "# Add constraint to ensure NumberPreventionPills is at least PreventionTreatmentRatio times NumberTreatmentPills\nmodel.addConstr(NumberPreventionPills >= PreventionTreatmentRatio * NumberTreatmentPills, name=\"prevention_treatment_ratio_constraint\")"
+        },
+        {
+            "description": "The number of treatment pills purchased must be at least the minimum required treatment pills.",
+            "status": "coded",
+            "formulation": "\\textup{NumberTreatmentPills} \\geq \\textup{MinTreatmentPills}",
+            "related_variables": [
+                "NumberTreatmentPills"
+            ],
+            "related_parameters": [
+                "MinTreatmentPills"
+            ],
+            "code": "# Add constraint to ensure the number of treatment pills purchased meets the minimum requirement  \nmodel.addConstr(NumberTreatmentPills >= MinTreatmentPills, name=\"min_treatment_pills_constraint\")"
+        },
+        {
+            "description": "The total cost of purchasing prevention and treatment pills must not exceed the budget.",
+            "status": "coded",
+            "formulation": "\\textup{PreventionPillCost} \\times \\textup{NumberPreventionPills} + \\textup{TreatmentPillCost} \\times \\textup{NumberTreatmentPills} \\leq \\textup{Budget}",
+            "related_variables": [
+                "NumberPreventionPills",
+                "NumberTreatmentPills"
+            ],
+            "related_parameters": [
+                "PreventionPillCost",
+                "TreatmentPillCost",
+                "Budget"
+            ],
+            "code": "# Add budget constraint for purchasing pills\nmodel.addConstr(\n    PreventionPillCost * NumberPreventionPills + TreatmentPillCost * NumberTreatmentPills <= Budget,\n    name=\"budget_constraint\"\n)"
+        },
+        {
+            "description": "The numbers of prevention and treatment pills are non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumberPreventionPills} \\geq 0 \\quad \\land \\quad \\textup{NumberTreatmentPills} \\geq 0",
+            "related_variables": [
+                "NumberPreventionPills",
+                "NumberTreatmentPills"
+            ],
+            "related_parameters": [],
+            "code": "# Non-negativity constraints for the number of pills\nmodel.addConstr(NumberPreventionPills >= 0, name=\"non_negativity_prevention_pills\")\nmodel.addConstr(NumberTreatmentPills >= 0, name=\"non_negativity_treatment_pills\")"
+        },
+        {
+            "description": "Ensure the budget constraint is satisfied, considering the number of prevention and treatment pills purchased and their respective costs.",
+            "status": "coded",
+            "formulation": "\\textup{PreventionPillCost} \\cdot \\textup{NumberPreventionPills} + \\textup{TreatmentPillCost} \\cdot \\textup{NumberTreatmentPills} \\leq \\textup{Budget}",
+            "related_variables": [
+                "NumberPreventionPills",
+                "NumberTreatmentPills"
+            ],
+            "related_parameters": [
+                "PreventionPillCost",
+                "TreatmentPillCost",
+                "Budget"
+            ],
+            "code": "# Add budget constraint\nmodel.addConstr(\n    NumberPreventionPills * PreventionPillCost + NumberTreatmentPills * TreatmentPillCost <= Budget,\n    name=\"budget_constraint\"\n)"
+        },
+        {
+            "description": "Ensure the number of prevention pills meets the minimum required ratio compared to the number of treatment pills.",
+            "status": "coded",
+            "formulation": "\\textup{NumberPreventionPills} \\geq \\textup{PreventionTreatmentRatio} \\cdot \\textup{NumberTreatmentPills}",
+            "related_variables": [
+                "NumberPreventionPills",
+                "NumberTreatmentPills"
+            ],
+            "related_parameters": [
+                "PreventionTreatmentRatio"
+            ],
+            "code": "# Add minimum ratio constraint for prevention pills and treatment pills\nmodel.addConstr(NumberPreventionPills >= PreventionTreatmentRatio * NumberTreatmentPills, name=\"min_ratio_prevention_treatment\")"
+        },
+        {
+            "description": "Ensure the minimum number of treatment pills purchased meets or exceeds the stated minimum requirement.",
+            "status": "coded",
+            "formulation": "\\textup{NumberTreatmentPills} \\geq \\textup{MinTreatmentPills}",
+            "related_variables": [
+                "NumberTreatmentPills"
+            ],
+            "related_parameters": [
+                "MinTreatmentPills"
+            ],
+            "code": "# Add constraint to ensure the minimum number of treatment pills purchased  \nmodel.addConstr(NumberTreatmentPills >= MinTreatmentPills, name=\"min_treatment_pills_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of prevention pills purchased by the hospital",
+            "symbol": "NumberPreventionPills",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberPreventionPills = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberPreventionPills\")"
+        },
+        {
+            "definition": "The number of treatment pills purchased by the hospital",
+            "symbol": "NumberTreatmentPills",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberTreatmentPills = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberTreatmentPills\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the number of patients that can be treated by the hospital.",
+            "status": "coded",
+            "formulation": "Maximize \\quad \\textup{NumberTreatmentPills}",
+            "related_variables": [
+                "NumberTreatmentPills"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(NumberTreatmentPills, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 181.8181818181818,
+    "log_path": "logs/log_20250413175912_nl4opt_prob_240/",
+    "problem_path": "data/nl4opt/prob_240/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_240/data.json\", \"r\") as f:\n    data = json.load(f)\n\nPreventionPillCost = data[\"PreventionPillCost\"] # scalar parameter\nTreatmentPillCost = data[\"TreatmentPillCost\"] # scalar parameter\nPreventionTreatmentRatio = data[\"PreventionTreatmentRatio\"] # scalar parameter\nMinTreatmentPills = data[\"MinTreatmentPills\"] # scalar parameter\nBudget = data[\"Budget\"] # scalar parameter\nNumberPreventionPills = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberPreventionPills\")\nNumberTreatmentPills = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberTreatmentPills\")\n\n# Add constraint to ensure NumberPreventionPills is at least PreventionTreatmentRatio times NumberTreatmentPills\nmodel.addConstr(NumberPreventionPills >= PreventionTreatmentRatio * NumberTreatmentPills, name=\"prevention_treatment_ratio_constraint\")\n\n# Add constraint to ensure the number of treatment pills purchased meets the minimum requirement  \nmodel.addConstr(NumberTreatmentPills >= MinTreatmentPills, name=\"min_treatment_pills_constraint\")\n\n# Add budget constraint for purchasing pills\nmodel.addConstr(\n    PreventionPillCost * NumberPreventionPills + TreatmentPillCost * NumberTreatmentPills <= Budget,\n    name=\"budget_constraint\"\n)\n\n# Non-negativity constraints for the number of pills\nmodel.addConstr(NumberPreventionPills >= 0, name=\"non_negativity_prevention_pills\")\nmodel.addConstr(NumberTreatmentPills >= 0, name=\"non_negativity_treatment_pills\")\n\n# Add budget constraint\nmodel.addConstr(\n    NumberPreventionPills * PreventionPillCost + NumberTreatmentPills * TreatmentPillCost <= Budget,\n    name=\"budget_constraint\"\n)\n\n# Add minimum ratio constraint for prevention pills and treatment pills\nmodel.addConstr(NumberPreventionPills >= PreventionTreatmentRatio * NumberTreatmentPills, name=\"min_ratio_prevention_treatment\")\n\n# Add constraint to ensure the minimum number of treatment pills purchased  \nmodel.addConstr(NumberTreatmentPills >= MinTreatmentPills, name=\"min_treatment_pills_constraint\")\n\n# Set objective\nmodel.setObjective(NumberTreatmentPills, gp.GRB.MAXIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

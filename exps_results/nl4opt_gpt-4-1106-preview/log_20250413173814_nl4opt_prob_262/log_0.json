@@ -1,0 +1,236 @@
+{
+    "background": "Due to an accident, locals must be moved across a lake either using kayaks or motorboats, each with different capacities and trip durations. Constraints on the number of motorboat trips and a minimum percentage of kayak trips apply.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Minimum number of locals to be moved",
+            "symbol": "MinLocals",
+            "value": 550,
+            "shape": [],
+            "code": "MinLocals = data[\"MinLocals\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of people per kayak trip",
+            "symbol": "PeoplePerKayak",
+            "value": 4,
+            "shape": [],
+            "code": "PeoplePerKayak = data[\"PeoplePerKayak\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of people per motorboat trip",
+            "symbol": "PeoplePerMotorboat",
+            "value": 5,
+            "shape": [],
+            "code": "PeoplePerMotorboat = data[\"PeoplePerMotorboat\"] # scalar parameter"
+        },
+        {
+            "definition": "Time per kayak trip in minutes",
+            "symbol": "TimePerKayak",
+            "value": 5,
+            "shape": [],
+            "code": "TimePerKayak = data[\"TimePerKayak\"] # scalar parameter"
+        },
+        {
+            "definition": "Time per motorboat trip in minutes",
+            "symbol": "TimePerMotorboat",
+            "value": 3,
+            "shape": [],
+            "code": "TimePerMotorboat = data[\"TimePerMotorboat\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum possible motorboat trips",
+            "symbol": "MaxMotorboatTrips",
+            "value": 25,
+            "shape": [],
+            "code": "MaxMotorboatTrips = data[\"MaxMotorboatTrips\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum percentage of trips that should be by kayak",
+            "symbol": "MinPercentKayakTrips",
+            "value": 0.75,
+            "shape": [],
+            "code": "MinPercentKayakTrips = data[\"MinPercentKayakTrips\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "At least \\textup{MinLocals} locals must be transported across the lake",
+            "status": "formulated",
+            "formulation": "\\textup{PeoplePerKayak} \\cdot \\textup{NumKayakTrips} + \\textup{PeoplePerMotorboat} \\cdot \\textup{NumMotorboatTrips} \\geq \\textup{MinLocals}",
+            "related_variables": [
+                "NumKayakTrips",
+                "NumMotorboatTrips"
+            ],
+            "related_parameters": [
+                "MinLocals",
+                "PeoplePerKayak",
+                "PeoplePerMotorboat"
+            ]
+        },
+        {
+            "description": "Total number of people transported via kayak trips cannot exceed the product of the number of kayak trips and the number of people per kayak.",
+            "status": "formulated",
+            "formulation": "\\textup{NumKayakTrips} \\times \\textup{PeoplePerKayak} \\leq \\textup{TotalPeopleKayak}",
+            "related_variables": [
+                "NumKayakTrips",
+                "TotalPeopleKayak"
+            ],
+            "related_parameters": [
+                "PeoplePerKayak"
+            ]
+        },
+        {
+            "description": "The total number of people transported by motorboat trips cannot exceed the product of the number of motorboat trips and the number of people per motorboat trip",
+            "status": "formulated",
+            "formulation": "\\textup{TotalPeopleMotorboat} \\leq \\textup{NumMotorboatTrips} \\times \\textup{PeoplePerMotorboat}",
+            "related_variables": [
+                "NumMotorboatTrips",
+                "TotalPeopleMotorboat"
+            ],
+            "related_parameters": [
+                "PeoplePerMotorboat"
+            ]
+        },
+        {
+            "description": "Constraint on the maximum number of motorboat trips",
+            "status": "formulated",
+            "formulation": "\\textup{NumMotorboatTrips} \\leq \\textup{MaxMotorboatTrips}",
+            "related_variables": [
+                "NumMotorboatTrips"
+            ],
+            "related_parameters": [
+                "MaxMotorboatTrips"
+            ]
+        },
+        {
+            "description": "At least MinPercentKayakTrips% of the total trips must be by kayak",
+            "status": "formulated",
+            "formulation": "\\textup{NumKayakTrips} \\geq \\textup{MinPercentKayakTrips} \\times (\\textup{NumKayakTrips} + \\textup{NumMotorboatTrips})",
+            "related_variables": [
+                "NumKayakTrips",
+                "NumMotorboatTrips"
+            ],
+            "related_parameters": [
+                "MinPercentKayakTrips"
+            ]
+        },
+        {
+            "description": "Linearized constraint to ensure that the percentage of kayak trips is at least the minimum required",
+            "status": "formulated",
+            "formulation": "(1 - \\textup{MinPercentKayakTrips}) \\times \\textup{NumKayakTrips} \\geq \\textup{MinPercentKayakTrips} \\times \\textup{NumMotorboatTrips}",
+            "related_variables": [
+                "NumKayakTrips",
+                "NumMotorboatTrips"
+            ],
+            "related_parameters": [
+                "MinPercentKayakTrips"
+            ]
+        },
+        {
+            "description": "Ensure that the total number of people transported meets or exceeds the minimum required",
+            "status": "formulated",
+            "formulation": "\\textup{TotalPeopleKayak} + \\textup{TotalPeopleMotorboat} \\geq \\textup{MinLocals}",
+            "related_variables": [
+                "TotalPeopleKayak",
+                "TotalPeopleMotorboat"
+            ],
+            "related_parameters": [
+                "MinLocals"
+            ]
+        },
+        {
+            "description": "Ensure that the number of trips by motorboat does not exceed the maximum allowed",
+            "status": "formulated",
+            "formulation": "\\textup{NumMotorboatTrips} \\leq \\textup{MaxMotorboatTrips}",
+            "related_variables": [
+                "NumMotorboatTrips"
+            ],
+            "related_parameters": [
+                "MaxMotorboatTrips"
+            ]
+        },
+        {
+            "description": "Ensure that at least the minimum percentage of the trips are made by kayaks",
+            "status": "formulated",
+            "formulation": "\\textup{NumKayakTrips} \\geq \\textup{MinPercentKayakTrips} \\times (\\textup{NumKayakTrips} + \\textup{NumMotorboatTrips})",
+            "related_variables": [
+                "NumKayakTrips",
+                "NumMotorboatTrips"
+            ],
+            "related_parameters": [
+                "MinPercentKayakTrips"
+            ]
+        },
+        {
+            "description": "Relate the total number of people transported by kayak to the number of kayak trips",
+            "status": "formulated",
+            "formulation": "\\textup{TotalPeopleKayak} = \\textup{NumKayakTrips} \\times \\textup{PeoplePerKayak}",
+            "related_variables": [
+                "TotalPeopleKayak",
+                "NumKayakTrips"
+            ],
+            "related_parameters": [
+                "PeoplePerKayak"
+            ]
+        },
+        {
+            "description": "Relate the total number of people transported by motorboat to the number of motorboat trips",
+            "status": "formulated",
+            "formulation": "\\textup{TotalPeopleMotorboat} = \\textup{NumMotorboatTrips} \\times \\textup{PeoplePerMotorboat}",
+            "related_variables": [
+                "TotalPeopleMotorboat",
+                "NumMotorboatTrips"
+            ],
+            "related_parameters": [
+                "PeoplePerMotorboat"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of kayak trips",
+            "symbol": "NumKayakTrips",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "Number of motorboat trips",
+            "symbol": "NumMotorboatTrips",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "Total number of people transported by kayak trips",
+            "symbol": "TotalPeopleKayak",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "Total number of people transported by motorboat trips",
+            "symbol": "TotalPeopleMotorboat",
+            "shape": [],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total time needed to transport all the locals using kayaks and motorboats",
+            "status": "formulated",
+            "formulation": "\\textup{Minimize} \\quad \\textup{TotalTime} = \\textup{NumKayakTrips} \\times \\textup{TimePerKayak} + \\textup{NumMotorboatTrips} \\times \\textup{TimePerMotorboat}",
+            "related_variables": [
+                "NumKayakTrips",
+                "NumMotorboatTrips"
+            ],
+            "related_parameters": [
+                "TimePerKayak",
+                "TimePerMotorboat"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413173814_nl4opt_prob_262/",
+    "problem_path": "data/nl4opt/prob_262/"
+}

@@ -1,0 +1,211 @@
+{
+    "background": "A clinic conducts throat or nasal swabs on patients with limited time and specific requirements for the minimum number of nasal swabs and the ratio between throat and nasal swabs.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Time taken for one throat swab",
+            "symbol": "ThroatSwabTime",
+            "value": 5,
+            "shape": [],
+            "code": "ThroatSwabTime = data[\"ThroatSwabTime\"] # scalar parameter"
+        },
+        {
+            "definition": "Time taken for one nasal swab",
+            "symbol": "NasalSwabTime",
+            "value": 3,
+            "shape": [],
+            "code": "NasalSwabTime = data[\"NasalSwabTime\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of nasal swabs to be administered",
+            "symbol": "MinNasalSwabs",
+            "value": 30,
+            "shape": [],
+            "code": "MinNasalSwabs = data[\"MinNasalSwabs\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum ratio of throat swabs to nasal swabs",
+            "symbol": "ThroatNasalRatio",
+            "value": 4,
+            "shape": [],
+            "code": "ThroatNasalRatio = data[\"ThroatNasalRatio\"] # scalar parameter"
+        },
+        {
+            "definition": "Total operational time in minutes",
+            "symbol": "TotalTime",
+            "value": 20000,
+            "shape": [],
+            "code": "TotalTime = data[\"TotalTime\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Non-negativity, time, minimum nasal swabs, and throat-to-nasal swab ratio constraints.",
+            "status": "formulated",
+            "formulation": "\\textup{NumberOfThroatSwabs} \\geq 0, \\quad \\textup{NumberOfNasalSwabs} \\geq 0 \\\\ \\textup{ThroatSwabTime} \\times \\textup{NumberOfThroatSwabs} + \\textup{NasalSwabTime} \\times \\textup{NumberOfNasalSwabs} \\leq \\textup{TotalTime} \\\\ \\textup{NumberOfNasalSwabs} \\geq \\textup{MinNasalSwabs} \\\\ \\frac{\\textup{NumberOfThroatSwabs}}{\\textup{NumberOfNasalSwabs}} \\geq \\textup{ThroatNasalRatio}",
+            "related_variables": [
+                "NumberOfThroatSwabs",
+                "NumberOfNasalSwabs"
+            ],
+            "related_parameters": [
+                "ThroatSwabTime",
+                "NasalSwabTime",
+                "MinNasalSwabs",
+                "ThroatNasalRatio",
+                "TotalTime"
+            ]
+        },
+        {
+            "description": "The total time for nasal swabs is non-negative, implying the number of nasal swabs must also be non-negative.",
+            "status": "formulated",
+            "formulation": "\\textup{NumberOfNasalSwabs} \\geq 0",
+            "related_variables": [
+                "NumberOfNasalSwabs"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "At least MinNasalSwabs nasal swabs must be administered, ensuring the clinic meets a minimum required number.",
+            "status": "formulated",
+            "formulation": "\\textup{NumberOfNasalSwabs} \\geq \\textup{MinNasalSwabs}",
+            "related_variables": [
+                "NumberOfNasalSwabs"
+            ],
+            "related_parameters": [
+                "MinNasalSwabs"
+            ]
+        },
+        {
+            "description": "At least ThroatNasalRatio times as many throat swabs as nasal swabs must be done",
+            "status": "formulated",
+            "formulation": "\\textup{NumberOfThroatSwabs} \\geq \\textup{ThroatNasalRatio} \\cdot \\textup{NumberOfNasalSwabs}",
+            "related_variables": [
+                "NumberOfThroatSwabs",
+                "NumberOfNasalSwabs"
+            ],
+            "related_parameters": [
+                "ThroatNasalRatio"
+            ]
+        },
+        {
+            "description": "The total time for administering both types of swabs cannot exceed TotalTime minutes.",
+            "status": "formulated",
+            "formulation": "\\textup{ThroatSwabTime} \\cdot \\textup{NumberOfThroatSwabs} + \\textup{NasalSwabTime} \\cdot \\textup{NumberOfNasalSwabs} \\leq \\textup{TotalTime}",
+            "related_variables": [
+                "NumberOfThroatSwabs",
+                "NumberOfNasalSwabs"
+            ],
+            "related_parameters": [
+                "ThroatSwabTime",
+                "NasalSwabTime",
+                "TotalTime"
+            ]
+        },
+        {
+            "description": "The number of nasal swabs must meet the minimum requirement.",
+            "status": "formulated",
+            "formulation": "\\textup{NumberOfNasalSwabs} \\geq \\textup{MinNasalSwabs}",
+            "related_variables": [
+                "NumberOfNasalSwabs"
+            ],
+            "related_parameters": [
+                "MinNasalSwabs"
+            ]
+        },
+        {
+            "description": "The number of throat swabs must maintain the required throat-to-nasal swab ratio.",
+            "status": "formulated",
+            "formulation": "\\textup{NumberOfThroatSwabs} \\geq \\textup{ThroatNasalRatio} \\cdot \\textup{NumberOfNasalSwabs}",
+            "related_variables": [
+                "NumberOfThroatSwabs",
+                "NumberOfNasalSwabs"
+            ],
+            "related_parameters": [
+                "ThroatNasalRatio"
+            ]
+        },
+        {
+            "description": "The total time for all swabs (throat and nasal) must not exceed the allocated operational time.",
+            "status": "formulated",
+            "formulation": "(\\textup{ThroatSwabTime} \\cdot \\textup{NumberOfThroatSwabs}) + (\\textup{NasalSwabTime} \\cdot \\textup{NumberOfNasalSwabs}) \\leq \\textup{TotalTime}",
+            "related_variables": [
+                "NumberOfThroatSwabs",
+                "NumberOfNasalSwabs"
+            ],
+            "related_parameters": [
+                "ThroatSwabTime",
+                "NasalSwabTime",
+                "TotalTime"
+            ]
+        },
+        {
+            "description": "Total time spent on all swabs cannot exceed the available operation time",
+            "status": "formulated",
+            "formulation": "\\textup{ThroatSwabTime} \\cdot \\textup{NumberOfThroatSwabs} + \\textup{NasalSwabTime} \\cdot \\textup{NumberOfNasalSwabs} \\leq \\textup{TotalTime}",
+            "related_variables": [
+                "NumberOfThroatSwabs",
+                "NumberOfNasalSwabs"
+            ],
+            "related_parameters": [
+                "ThroatSwabTime",
+                "NasalSwabTime",
+                "TotalTime"
+            ]
+        },
+        {
+            "description": "Number of nasal swabs must be at least the minimum required",
+            "status": "formulated",
+            "formulation": "\\textup{NumberOfNasalSwabs} \\geq \\textup{MinNasalSwabs}",
+            "related_variables": [
+                "NumberOfNasalSwabs"
+            ],
+            "related_parameters": [
+                "MinNasalSwabs"
+            ]
+        },
+        {
+            "description": "Number of throat swabs must follow the throat-to-nasal ratio constraint",
+            "status": "formulated",
+            "formulation": "\\textup{NumberOfThroatSwabs} \\geq \\textup{ThroatNasalRatio} \\cdot \\textup{NumberOfNasalSwabs}",
+            "related_variables": [
+                "NumberOfThroatSwabs",
+                "NumberOfNasalSwabs"
+            ],
+            "related_parameters": [
+                "ThroatNasalRatio"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of throat swabs performed",
+            "symbol": "NumberOfThroatSwabs",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "Number of nasal swabs performed",
+            "symbol": "NumberOfNasalSwabs",
+            "shape": [],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total number of swabs performed (throat and nasal swabs combined)",
+            "status": "formulated",
+            "formulation": "\\max \\quad \\textup{NumberOfThroatSwabs} + \\textup{NumberOfNasalSwabs}",
+            "related_variables": [
+                "NumberOfThroatSwabs",
+                "NumberOfNasalSwabs"
+            ],
+            "related_parameters": []
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413155009_nl4opt_prob_129/",
+    "problem_path": "data/nl4opt/prob_129/"
+}

@@ -1,0 +1,254 @@
+{
+    "background": "A souvenir shop makes wooden elephants and tigers with plastic ornaments.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Wood required for one elephant",
+            "symbol": "WoodElephant",
+            "value": 50,
+            "shape": [],
+            "code": "WoodElephant = data[\"WoodElephant\"] # scalar parameter"
+        },
+        {
+            "definition": "Plastic required for one elephant",
+            "symbol": "PlasticElephant",
+            "value": 20,
+            "shape": [],
+            "code": "PlasticElephant = data[\"PlasticElephant\"] # scalar parameter"
+        },
+        {
+            "definition": "Wood required for one tiger",
+            "symbol": "WoodTiger",
+            "value": 40,
+            "shape": [],
+            "code": "WoodTiger = data[\"WoodTiger\"] # scalar parameter"
+        },
+        {
+            "definition": "Plastic required for one tiger",
+            "symbol": "PlasticTiger",
+            "value": 30,
+            "shape": [],
+            "code": "PlasticTiger = data[\"PlasticTiger\"] # scalar parameter"
+        },
+        {
+            "definition": "Total available wood per week",
+            "symbol": "TotalWood",
+            "value": 5000,
+            "shape": [],
+            "code": "TotalWood = data[\"TotalWood\"] # scalar parameter"
+        },
+        {
+            "definition": "Total available plastic per week",
+            "symbol": "TotalPlastic",
+            "value": 4000,
+            "shape": [],
+            "code": "TotalPlastic = data[\"TotalPlastic\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit per elephant",
+            "symbol": "ProfitElephant",
+            "value": 5,
+            "shape": [],
+            "code": "ProfitElephant = data[\"ProfitElephant\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit per tiger",
+            "symbol": "ProfitTiger",
+            "value": 4,
+            "shape": [],
+            "code": "ProfitTiger = data[\"ProfitTiger\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of elephants must be an integer because elephants cannot be produced fractionally.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfElephants} \\in \\mathbb{Z}",
+            "related_variables": [
+                "NumberOfElephants"
+            ],
+            "related_parameters": [],
+            "code": "# No need for additional code since the NumberOfElephants variable is already defined as an integer."
+        },
+        {
+            "description": "The number of tigers must be an integer value",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfTigers} \\in \\mathbb{Z}",
+            "related_variables": [
+                "NumberOfTigers"
+            ],
+            "related_parameters": [],
+            "code": "# The variable NumberOfTigers is already defined as an integer, no additional constraint is needed"
+        },
+        {
+            "description": "The number of elephants produced must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfElephants} \\geq 0",
+            "related_variables": [
+                "NumberOfElephants"
+            ],
+            "related_parameters": [],
+            "code": "# The number of elephants produced must be non-negative\nmodel.addConstr(NumberOfElephants >= 0, name=\"NumberOfElephants_nonneg\")"
+        },
+        {
+            "description": "The number of tigers produced must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfTigers} \\geq 0",
+            "related_variables": [
+                "NumberOfTigers"
+            ],
+            "related_parameters": [],
+            "code": "# Add non-negativity constraint for the number of tigers produced\nmodel.addConstr(NumberOfTigers >= 0, name=\"non_negativity_tigers\")"
+        },
+        {
+            "description": "Total wood used for elephants and tigers must not exceed the available wood per week",
+            "status": "coded",
+            "formulation": "\\textup{WoodElephant} \\cdot \\textup{NumberOfElephants} + \\textup{WoodTiger} \\cdot \\textup{NumberOfTigers} \\leq \\textup{TotalWood}",
+            "related_variables": [
+                "NumberOfElephants",
+                "NumberOfTigers"
+            ],
+            "related_parameters": [
+                "WoodElephant",
+                "WoodTiger",
+                "TotalWood"
+            ],
+            "code": "# Total wood used for elephants and tigers must not exceed the available wood per week\nmodel.addConstr(WoodElephant * NumberOfElephants + WoodTiger * NumberOfTigers <= TotalWood, \"wood_usage\")"
+        },
+        {
+            "description": "The total amount of plastic used for producing elephants and tigers should not exceed the total available plastic per week",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfElephants} \\times \\textup{PlasticElephant} + \\textup{NumberOfTigers} \\times \\textup{PlasticTiger} \\leq \\textup{TotalPlastic}",
+            "related_variables": [
+                "NumberOfElephants",
+                "NumberOfTigers"
+            ],
+            "related_parameters": [
+                "PlasticElephant",
+                "PlasticTiger",
+                "TotalPlastic"
+            ],
+            "code": "# Add constraint for plastic used for elephants and tigers not exceeding total available plastic\nmodel.addConstr(NumberOfElephants * PlasticElephant + NumberOfTigers * PlasticTiger <= TotalPlastic, name=\"plastic_usage_limit\")"
+        },
+        {
+            "description": "Total wood used for all elephants must not exceed the total available wood.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfElephants} \\times \\textup{WoodElephant} \\leq \\textup{TotalWood}",
+            "related_variables": [
+                "NumberOfElephants"
+            ],
+            "related_parameters": [
+                "WoodElephant",
+                "TotalWood"
+            ],
+            "code": "# Constraint: Total wood used for all elephants must not exceed the total available wood\nmodel.addConstr(NumberOfElephants * WoodElephant <= TotalWood, name=\"wood_usage_constraint\")"
+        },
+        {
+            "description": "Total plastic used for all elephants must not exceed the total available plastic per week",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfElephants} \\times \\textup{PlasticElephant} \\leq \\textup{TotalPlastic}",
+            "related_variables": [
+                "NumberOfElephants"
+            ],
+            "related_parameters": [
+                "PlasticElephant",
+                "TotalPlastic"
+            ],
+            "code": "# Plastic constraint for elephants\nmodel.addConstr(NumberOfElephants * PlasticElephant <= TotalPlastic, \"TotalPlasticConstraint\")"
+        },
+        {
+            "description": "Total wood used for the production of tigers must not exceed the total available wood.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfTigers} \\times \\textup{WoodTiger} \\leq \\textup{TotalWood}",
+            "related_variables": [
+                "NumberOfTigers"
+            ],
+            "related_parameters": [
+                "WoodTiger",
+                "TotalWood"
+            ],
+            "code": "# Total wood used for the production of tigers must not exceed the total available wood\nmodel.addConstr(NumberOfTigers * WoodTiger <= TotalWood, name=\"wood_usage_limit\")"
+        },
+        {
+            "description": "Total plastic used for the tigers must not exceed the total available plastic",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfTigers} \\times \\textup{PlasticTiger} \\leq \\textup{TotalPlastic}",
+            "related_variables": [
+                "NumberOfTigers"
+            ],
+            "related_parameters": [
+                "PlasticTiger",
+                "TotalPlastic"
+            ],
+            "code": "# Add constraint for total plastic used for tigers not exceeding available plastic\nmodel.addConstr(NumberOfTigers * PlasticTiger <= TotalPlastic, name=\"plastic_usage_limit\")"
+        },
+        {
+            "description": "Wood usage should not exceed the total available wood",
+            "status": "coded",
+            "formulation": "\\textup{WoodElephant} \\times \\textup{NumberOfElephants} + \\textup{WoodTiger} \\times \\textup{NumberOfTigers} \\leq \\textup{TotalWood}",
+            "related_variables": [
+                "NumberOfElephants",
+                "NumberOfTigers"
+            ],
+            "related_parameters": [
+                "WoodElephant",
+                "WoodTiger",
+                "TotalWood"
+            ],
+            "code": "# Wood usage should not exceed the total available wood\nmodel.addConstr(WoodElephant * NumberOfElephants + WoodTiger * NumberOfTigers <= TotalWood, name='wood_usage')"
+        },
+        {
+            "description": "Plastic usage should not exceed the total available plastic",
+            "status": "coded",
+            "formulation": "\\textup{PlasticElephant} \\times \\textup{NumberOfElephants} + \\textup{PlasticTiger} \\times \\textup{NumberOfTigers} \\leq \\textup{TotalPlastic}",
+            "related_variables": [
+                "NumberOfElephants",
+                "NumberOfTigers"
+            ],
+            "related_parameters": [
+                "PlasticElephant",
+                "PlasticTiger",
+                "TotalPlastic"
+            ],
+            "code": "# Add plastic usage constraint\nmodel.addConstr(PlasticElephant * NumberOfElephants + PlasticTiger * NumberOfTigers <= TotalPlastic, name=\"plastic_usage\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of elephants produced",
+            "symbol": "NumberOfElephants",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfElephants = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfElephants\")"
+        },
+        {
+            "definition": "The number of tigers produced",
+            "symbol": "NumberOfTigers",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfTigers = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfTigers\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total profit from producing elephants and tigers",
+            "status": "coded",
+            "formulation": "\\max (\\textup{ProfitElephant} \\times \\textup{NumberOfElephants} + \\textup{ProfitTiger} \\times \\textup{NumberOfTigers})",
+            "related_variables": [
+                "NumberOfElephants",
+                "NumberOfTigers"
+            ],
+            "related_parameters": [
+                "ProfitElephant",
+                "ProfitTiger"
+            ],
+            "code": "# Set objective\nmodel.setObjective(ProfitElephant * NumberOfElephants + ProfitTiger * NumberOfTigers, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413164344_nl4opt_prob_23/",
+    "problem_path": "data/nl4opt/prob_23/"
+}

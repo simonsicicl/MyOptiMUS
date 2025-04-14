@@ -1,0 +1,236 @@
+{
+    "background": "A university research lab can make two types of diabetes medicine using limited imported material and mRNA, with different per-dose requirements for each medicine.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Units of imported material to make one dose of medicine A",
+            "symbol": "MaterialA",
+            "value": 30,
+            "shape": [],
+            "code": "MaterialA = data[\"MaterialA\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of mRNA to make one dose of medicine A",
+            "symbol": "MrnaA",
+            "value": 50,
+            "shape": [],
+            "code": "MrnaA = data[\"MrnaA\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of imported material to make one dose of medicine B",
+            "symbol": "MaterialB",
+            "value": 40,
+            "shape": [],
+            "code": "MaterialB = data[\"MaterialB\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of mRNA to make one dose of medicine B",
+            "symbol": "MrnaB",
+            "value": 30,
+            "shape": [],
+            "code": "MrnaB = data[\"MrnaB\"] # scalar parameter"
+        },
+        {
+            "definition": "Total units of imported material available",
+            "symbol": "TotalMaterial",
+            "value": 300,
+            "shape": [],
+            "code": "TotalMaterial = data[\"TotalMaterial\"] # scalar parameter"
+        },
+        {
+            "definition": "Total units of mRNA available",
+            "symbol": "TotalMrna",
+            "value": 400,
+            "shape": [],
+            "code": "TotalMrna = data[\"TotalMrna\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum doses of medicine A that can be made",
+            "symbol": "MaxDosesA",
+            "value": 5,
+            "shape": [],
+            "code": "MaxDosesA = data[\"MaxDosesA\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of people treated by one dose of medicine A",
+            "symbol": "PeopleA",
+            "value": 12,
+            "shape": [],
+            "code": "PeopleA = data[\"PeopleA\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of people treated by one dose of medicine B",
+            "symbol": "PeopleB",
+            "value": 8,
+            "shape": [],
+            "code": "PeopleB = data[\"PeopleB\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of doses of medicine A must be non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{DosesA} \\\\geq 0",
+            "related_variables": [
+                "DosesA"
+            ],
+            "related_parameters": [],
+            "code": "# Non-negativity constraint for the number of doses of medicine A\nmodel.addConstr(DosesA >= 0, name=\"non_negativity_DosesA\")"
+        },
+        {
+            "description": "The number of doses of medicine B must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{DosesB} \\geq 0",
+            "related_variables": [
+                "DosesB"
+            ],
+            "related_parameters": [],
+            "code": "# The variable DosesB is already defined as non-negative due to its default lower bound of 0 in Gurobi."
+        },
+        {
+            "description": "The total usage of imported material for producing doses of medicine A and medicine B must not exceed the total available material.",
+            "status": "coded",
+            "formulation": "\\textup{MaterialA} \\cdot \\textup{DosesA} + \\textup{MaterialB} \\cdot \\textup{DosesB} \\leq \\textup{TotalMaterial}",
+            "related_variables": [
+                "DosesA",
+                "DosesB"
+            ],
+            "related_parameters": [
+                "MaterialA",
+                "MaterialB",
+                "TotalMaterial"
+            ],
+            "code": "# Add constraint for total usage of imported material\nmodel.addConstr(MaterialA * DosesA + MaterialB * DosesB <= TotalMaterial, name=\"material_usage_constraint\")"
+        },
+        {
+            "description": "The total mRNA usage for producing doses of medicine A and medicine B cannot exceed the total mRNA available.",
+            "status": "coded",
+            "formulation": "\\\\textup{DosesA} \\\\times \\\\textup{MrnaA} + \\\\textup{DosesB} \\\\times \\\\textup{MrnaB} \\\\leq \\\\textup{TotalMrna}",
+            "related_variables": [
+                "DosesA",
+                "DosesB"
+            ],
+            "related_parameters": [
+                "MrnaA",
+                "MrnaB",
+                "TotalMrna"
+            ],
+            "code": "# Add mRNA usage constraint\nmodel.addConstr(DosesA * MrnaA + DosesB * MrnaB <= TotalMrna, name=\"mRNA_usage_constraint\")"
+        },
+        {
+            "description": "The lab can make at most MaxDosesA doses of medicine A",
+            "status": "coded",
+            "formulation": "\\\\textup{DosesA} \\\\leq \\\\textup{MaxDosesA}",
+            "related_variables": [
+                "DosesA"
+            ],
+            "related_parameters": [
+                "MaxDosesA"
+            ],
+            "code": "# Add constraint for maximum doses of medicine A\nmodel.addConstr(DosesA <= MaxDosesA, name=\"max_doses_A\")"
+        },
+        {
+            "description": "The number of doses of medicine B must be greater than the number of doses of medicine A",
+            "status": "coded",
+            "formulation": "\\textup{DosesB} \\geq \\textup{DosesA} + 1",
+            "related_variables": [
+                "DosesA",
+                "DosesB"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint: DosesB must be greater than DosesA by at least 1\nmodel.addConstr(DosesB >= DosesA + 1, name=\"DosesB_greater_than_DosesA\")"
+        },
+        {
+            "description": "Imported material constraint",
+            "status": "coded",
+            "formulation": "(\\textup{MaterialA} \\cdot \\textup{DosesA} + \\textup{MaterialB} \\cdot \\textup{DosesB}) \\leq \\textup{TotalMaterial}",
+            "related_variables": [
+                "DosesA",
+                "DosesB"
+            ],
+            "related_parameters": [
+                "MaterialA",
+                "MaterialB",
+                "TotalMaterial"
+            ],
+            "code": "# Add imported material constraint\nmodel.addConstr(MaterialA * DosesA + MaterialB * DosesB <= TotalMaterial, name=\"imported_material_constraint\")"
+        },
+        {
+            "description": "mRNA availability constraint",
+            "status": "coded",
+            "formulation": "(\\textup{MrnaA} \\cdot \\textup{DosesA} + \\textup{MrnaB} \\cdot \\textup{DosesB}) \\leq \\textup{TotalMrna}",
+            "related_variables": [
+                "DosesA",
+                "DosesB"
+            ],
+            "related_parameters": [
+                "MrnaA",
+                "MrnaB",
+                "TotalMrna"
+            ],
+            "code": "# Add mRNA availability constraint\nmodel.addConstr(MrnaA * DosesA + MrnaB * DosesB <= TotalMrna, name=\"mRNA_availability\")"
+        },
+        {
+            "description": "Upper bound on doses of medicine A",
+            "status": "coded",
+            "formulation": "\\textup{DosesA} \\leq \\textup{MaxDosesA}",
+            "related_variables": [
+                "DosesA"
+            ],
+            "related_parameters": [
+                "MaxDosesA"
+            ],
+            "code": "# Add upper bound constraint on doses of medicine A\nmodel.addConstr(DosesA <= MaxDosesA, name=\"upper_bound_dosesA\")"
+        },
+        {
+            "description": "Non-negativity constraint for doses of medicine A and B",
+            "status": "coded",
+            "formulation": "\\textup{DosesA} \\geq 0, \\quad \\textup{DosesB} \\geq 0",
+            "related_variables": [
+                "DosesA",
+                "DosesB"
+            ],
+            "related_parameters": [],
+            "code": "# Non-negativity constraints for doses\nmodel.addConstr(DosesA >= 0, name=\"nonneg_DosesA\")\nmodel.addConstr(DosesB >= 0, name=\"nonneg_DosesB\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of doses of medicine A.",
+            "symbol": "DosesA",
+            "shape": [],
+            "status": "coded",
+            "code": "DosesA = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"DosesA\")"
+        },
+        {
+            "definition": "The number of doses of medicine B.",
+            "symbol": "DosesB",
+            "shape": [],
+            "status": "coded",
+            "code": "DosesB = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"DosesB\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total number of people treated with doses of medicine A and B",
+            "status": "coded",
+            "formulation": "\\textup{Maximize:} \\quad Z = (\\textup{PeopleA} \\cdot \\textup{DosesA} + \\textup{PeopleB} \\cdot \\textup{DosesB})",
+            "related_variables": [
+                "DosesA",
+                "DosesB"
+            ],
+            "related_parameters": [
+                "PeopleA",
+                "PeopleB"
+            ],
+            "code": "# Set objective\nmodel.setObjective(PeopleA * DosesA + PeopleB * DosesB, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 82.28571428571428,
+    "log_path": "logs/log_20250413155844_nl4opt_prob_138/",
+    "problem_path": "data/nl4opt/prob_138/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_138/data.json\", \"r\") as f:\n    data = json.load(f)\n\nMaterialA = data[\"MaterialA\"] # scalar parameter\nMrnaA = data[\"MrnaA\"] # scalar parameter\nMaterialB = data[\"MaterialB\"] # scalar parameter\nMrnaB = data[\"MrnaB\"] # scalar parameter\nTotalMaterial = data[\"TotalMaterial\"] # scalar parameter\nTotalMrna = data[\"TotalMrna\"] # scalar parameter\nMaxDosesA = data[\"MaxDosesA\"] # scalar parameter\nPeopleA = data[\"PeopleA\"] # scalar parameter\nPeopleB = data[\"PeopleB\"] # scalar parameter\nDosesA = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"DosesA\")\nDosesB = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"DosesB\")\n\n# Non-negativity constraint for the number of doses of medicine A\nmodel.addConstr(DosesA >= 0, name=\"non_negativity_DosesA\")\n\n# The variable DosesB is already defined as non-negative due to its default lower bound of 0 in Gurobi.\n\n# Add constraint for total usage of imported material\nmodel.addConstr(MaterialA * DosesA + MaterialB * DosesB <= TotalMaterial, name=\"material_usage_constraint\")\n\n# Add mRNA usage constraint\nmodel.addConstr(DosesA * MrnaA + DosesB * MrnaB <= TotalMrna, name=\"mRNA_usage_constraint\")\n\n# Add constraint for maximum doses of medicine A\nmodel.addConstr(DosesA <= MaxDosesA, name=\"max_doses_A\")\n\n# Add constraint: DosesB must be greater than DosesA by at least 1\nmodel.addConstr(DosesB >= DosesA + 1, name=\"DosesB_greater_than_DosesA\")\n\n# Add imported material constraint\nmodel.addConstr(MaterialA * DosesA + MaterialB * DosesB <= TotalMaterial, name=\"imported_material_constraint\")\n\n# Add mRNA availability constraint\nmodel.addConstr(MrnaA * DosesA + MrnaB * DosesB <= TotalMrna, name=\"mRNA_availability\")\n\n# Add upper bound constraint on doses of medicine A\nmodel.addConstr(DosesA <= MaxDosesA, name=\"upper_bound_dosesA\")\n\n# Non-negativity constraints for doses\nmodel.addConstr(DosesA >= 0, name=\"nonneg_DosesA\")\nmodel.addConstr(DosesB >= 0, name=\"nonneg_DosesB\")\n\n# Set objective\nmodel.setObjective(PeopleA * DosesA + PeopleB * DosesB, gp.GRB.MAXIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

@@ -1,0 +1,197 @@
+{
+    "background": "A small bakery uses batter and milk to make crepe cakes, sponge cakes, and birthday cakes, each needing different amounts of ingredients for their preparation.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Total amount of batter available",
+            "symbol": "TotalBatter",
+            "value": 20000,
+            "shape": [],
+            "code": "TotalBatter = data[\"TotalBatter\"] # scalar parameter"
+        },
+        {
+            "definition": "Total amount of milk available",
+            "symbol": "TotalMilk",
+            "value": 14000,
+            "shape": [],
+            "code": "TotalMilk = data[\"TotalMilk\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of batter required for a crepe cake",
+            "symbol": "BatterCrepe",
+            "value": 400,
+            "shape": [],
+            "code": "BatterCrepe = data[\"BatterCrepe\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of milk required for a crepe cake",
+            "symbol": "MilkCrepe",
+            "value": 200,
+            "shape": [],
+            "code": "MilkCrepe = data[\"MilkCrepe\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of batter required for a sponge cake",
+            "symbol": "BatterSponge",
+            "value": 500,
+            "shape": [],
+            "code": "BatterSponge = data[\"BatterSponge\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of milk required for a sponge cake",
+            "symbol": "MilkSponge",
+            "value": 300,
+            "shape": [],
+            "code": "MilkSponge = data[\"MilkSponge\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of batter required for a birthday cake",
+            "symbol": "BatterBirthday",
+            "value": 450,
+            "shape": [],
+            "code": "BatterBirthday = data[\"BatterBirthday\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of milk required for a birthday cake",
+            "symbol": "MilkBirthday",
+            "value": 350,
+            "shape": [],
+            "code": "MilkBirthday = data[\"MilkBirthday\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit per crepe cake",
+            "symbol": "ProfitCrepe",
+            "value": 12,
+            "shape": [],
+            "code": "ProfitCrepe = data[\"ProfitCrepe\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit per sponge cake",
+            "symbol": "ProfitSponge",
+            "value": 10,
+            "shape": [],
+            "code": "ProfitSponge = data[\"ProfitSponge\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit per birthday cake",
+            "symbol": "ProfitBirthday",
+            "value": 15,
+            "shape": [],
+            "code": "ProfitBirthday = data[\"ProfitBirthday\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of crepe cakes produced must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfCrepeCakes} \\geq 0",
+            "related_variables": [
+                "NumberOfCrepeCakes"
+            ],
+            "related_parameters": [],
+            "code": "# Constraint to ensure the number of crepe cakes produced is non-negative\nmodel.addConstr(NumberOfCrepeCakes >= 0, name=\"non_negative_crepe_cakes\")"
+        },
+        {
+            "description": "The number of sponge cakes produced by the bakery must be greater than or equal to zero.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfSpongeCakes} \\geq 0",
+            "related_variables": [
+                "NumberOfSpongeCakes"
+            ],
+            "related_parameters": [],
+            "code": "# Since the variable NumberOfSpongeCakes is already declared as an integer variable, we just need to add the constraint\nmodel.addConstr(NumberOfSpongeCakes >= 0, \"sponge_cakes_non_negative\")"
+        },
+        {
+            "description": "The number of birthday cakes must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfBirthdayCakes} \\geq 0",
+            "related_variables": [
+                "NumberOfBirthdayCakes"
+            ],
+            "related_parameters": [],
+            "code": "# Since NumberOfBirthdayCakes is already defined as an integer variable, we just need to add a constraint to ensure it is non-negative\nmodel.addConstr(NumberOfBirthdayCakes >= 0, name=\"non_negative_cakes\")"
+        },
+        {
+            "description": "Total grams of batter used for all cakes cannot exceed the total available batter",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfCrepeCakes} \\cdot \\textup{BatterCrepe} + \\textup{NumberOfSpongeCakes} \\cdot \\textup{BatterSponge} + \\textup{NumberOfBirthdayCakes} \\cdot \\textup{BatterBirthday} \\leq \\textup{TotalBatter}",
+            "related_variables": [
+                "NumberOfCrepeCakes",
+                "NumberOfSpongeCakes",
+                "NumberOfBirthdayCakes"
+            ],
+            "related_parameters": [
+                "TotalBatter",
+                "BatterCrepe",
+                "BatterSponge",
+                "BatterBirthday"
+            ],
+            "code": "# Constraint: Total grams of batter used for all cakes cannot exceed the total available batter\nmodel.addConstr(NumberOfCrepeCakes * BatterCrepe + NumberOfSpongeCakes * BatterSponge + NumberOfBirthdayCakes * BatterBirthday <= TotalBatter, name=\"TotalBatterConstraint\")"
+        },
+        {
+            "description": "Total grams of milk used cannot exceed the total amount of milk available",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfCrepeCakes} \\times \\textup{MilkCrepe} + \\textup{NumberOfSpongeCakes} \\times \\textup{MilkSponge} + \\textup{NumberOfBirthdayCakes} \\times \\textup{MilkBirthday} \\leq \\textup{TotalMilk}",
+            "related_variables": [
+                "NumberOfCrepeCakes",
+                "NumberOfSpongeCakes",
+                "NumberOfBirthdayCakes"
+            ],
+            "related_parameters": [
+                "MilkCrepe",
+                "MilkSponge",
+                "MilkBirthday",
+                "TotalMilk"
+            ],
+            "code": "# Total milk usage constraint\nmodel.addConstr(NumberOfCrepeCakes * MilkCrepe + NumberOfSpongeCakes * MilkSponge +\n                NumberOfBirthdayCakes * MilkBirthday <= TotalMilk, name=\"total_milk_usage\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of crepe cakes produced",
+            "symbol": "NumberOfCrepeCakes",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfCrepeCakes = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfCrepeCakes\")"
+        },
+        {
+            "definition": "Number of sponge cakes produced",
+            "symbol": "NumberOfSpongeCakes",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfSpongeCakes = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfSpongeCakes\")"
+        },
+        {
+            "definition": "Number of birthday cakes produced",
+            "symbol": "NumberOfBirthdayCakes",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfBirthdayCakes = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfBirthdayCakes\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the bakery's profit from making crepe cakes, sponge cakes, and birthday cakes",
+            "status": "coded",
+            "formulation": "\\textup{Maximize} \\quad \\textup{Profit} = \\textup{ProfitCrepe} \\cdot \\textup{NumberOfCrepeCakes} + \\textup{ProfitSponge} \\cdot \\textup{NumberOfSpongeCakes} + \\textup{ProfitBirthday} \\cdot \\textup{NumberOfBirthdayCakes}",
+            "related_variables": [
+                "NumberOfCrepeCakes",
+                "NumberOfSpongeCakes",
+                "NumberOfBirthdayCakes"
+            ],
+            "related_parameters": [
+                "ProfitCrepe",
+                "ProfitSponge",
+                "ProfitBirthday"
+            ],
+            "code": "# Define the objective function\nmodel.setObjective(ProfitCrepe * NumberOfCrepeCakes + ProfitSponge * NumberOfSpongeCakes + ProfitBirthday * NumberOfBirthdayCakes, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 648.0,
+    "log_path": "logs/log_20250413160603_nl4opt_prob_216/",
+    "problem_path": "data/nl4opt/prob_216/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_216/data.json\", \"r\") as f:\n    data = json.load(f)\n\nTotalBatter = data[\"TotalBatter\"] # scalar parameter\nTotalMilk = data[\"TotalMilk\"] # scalar parameter\nBatterCrepe = data[\"BatterCrepe\"] # scalar parameter\nMilkCrepe = data[\"MilkCrepe\"] # scalar parameter\nBatterSponge = data[\"BatterSponge\"] # scalar parameter\nMilkSponge = data[\"MilkSponge\"] # scalar parameter\nBatterBirthday = data[\"BatterBirthday\"] # scalar parameter\nMilkBirthday = data[\"MilkBirthday\"] # scalar parameter\nProfitCrepe = data[\"ProfitCrepe\"] # scalar parameter\nProfitSponge = data[\"ProfitSponge\"] # scalar parameter\nProfitBirthday = data[\"ProfitBirthday\"] # scalar parameter\nNumberOfCrepeCakes = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfCrepeCakes\")\nNumberOfSpongeCakes = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfSpongeCakes\")\nNumberOfBirthdayCakes = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfBirthdayCakes\")\n\n# Constraint to ensure the number of crepe cakes produced is non-negative\nmodel.addConstr(NumberOfCrepeCakes >= 0, name=\"non_negative_crepe_cakes\")\n\n# Since the variable NumberOfSpongeCakes is already declared as an integer variable, we just need to add the constraint\nmodel.addConstr(NumberOfSpongeCakes >= 0, \"sponge_cakes_non_negative\")\n\n# Since NumberOfBirthdayCakes is already defined as an integer variable, we just need to add a constraint to ensure it is non-negative\nmodel.addConstr(NumberOfBirthdayCakes >= 0, name=\"non_negative_cakes\")\n\n# Constraint: Total grams of batter used for all cakes cannot exceed the total available batter\nmodel.addConstr(NumberOfCrepeCakes * BatterCrepe + NumberOfSpongeCakes * BatterSponge + NumberOfBirthdayCakes * BatterBirthday <= TotalBatter, name=\"TotalBatterConstraint\")\n\n# Total milk usage constraint\nmodel.addConstr(NumberOfCrepeCakes * MilkCrepe + NumberOfSpongeCakes * MilkSponge +\n                NumberOfBirthdayCakes * MilkBirthday <= TotalMilk, name=\"total_milk_usage\")\n\n# Define the objective function\nmodel.setObjective(ProfitCrepe * NumberOfCrepeCakes + ProfitSponge * NumberOfSpongeCakes + ProfitBirthday * NumberOfBirthdayCakes, gp.GRB.MAXIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

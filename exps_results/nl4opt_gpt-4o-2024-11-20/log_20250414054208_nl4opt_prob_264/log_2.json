@@ -1,0 +1,221 @@
+{
+    "background": "A researcher needs to outsource image annotations and has two companies to choose from with different annotations rates and charges. Part of the dataset requires a specialized company for annotation.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Annotation rate of the specialized company",
+            "symbol": "SpecializedRate",
+            "value": 60,
+            "shape": [],
+            "code": "SpecializedRate = data[\"SpecializedRate\"] # scalar parameter"
+        },
+        {
+            "definition": "Annotation rate of the common company",
+            "symbol": "CommonRate",
+            "value": 40,
+            "shape": [],
+            "code": "CommonRate = data[\"CommonRate\"] # scalar parameter"
+        },
+        {
+            "definition": "Hourly charge of the specialized company",
+            "symbol": "SpecializedCharge",
+            "value": 100,
+            "shape": [],
+            "code": "SpecializedCharge = data[\"SpecializedCharge\"] # scalar parameter"
+        },
+        {
+            "definition": "Hourly charge of the common company",
+            "symbol": "CommonCharge",
+            "value": 72,
+            "shape": [],
+            "code": "CommonCharge = data[\"CommonCharge\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of images to be annotated",
+            "symbol": "MinimumImages",
+            "value": 10000,
+            "shape": [],
+            "code": "MinimumImages = data[\"MinimumImages\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum proportion of work to be allocated to the specialized company",
+            "symbol": "MinimumSpecializedProportion",
+            "value": 0.33,
+            "shape": [],
+            "code": "MinimumSpecializedProportion = data[\"MinimumSpecializedProportion\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of images annotated by the specialized company must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{SpecializedImages} \\geq 0",
+            "related_variables": [
+                "SpecializedImages"
+            ],
+            "related_parameters": [],
+            "code": "# No additional code is necessary as the non-negativity constraint is automatically handled by Gurobi for non-negative domain variables such as the `SpecializedImages` variable. Ensure the variable range is not modified elsewhere."
+        },
+        {
+            "description": "The constraints ensure that the number of images annotated by each company is non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{SpecializedImages} \\\\geq 0, \\\\quad \\\\textup{CommonImages} \\\\geq 0",
+            "related_variables": [
+                "SpecializedImages",
+                "CommonImages"
+            ],
+            "related_parameters": [],
+            "code": "# Add non-negativity constraints for SpecializedImages and CommonImages\nmodel.addConstr(SpecializedImages >= 0, name=\"non_negativity_SpecializedImages\")\nmodel.addConstr(CommonImages >= 0, name=\"non_negativity_CommonImages\")"
+        },
+        {
+            "description": "The total number of images annotated must be at least MinimumImages.",
+            "status": "coded",
+            "formulation": "\\\\textup{SpecializedImages} + \\\\textup{CommonImages} \\\\geq \\\\textup{MinimumImages}",
+            "related_variables": [
+                "SpecializedImages",
+                "CommonImages"
+            ],
+            "related_parameters": [
+                "MinimumImages"
+            ],
+            "code": "# Add constraint ensuring total annotated images are at least the minimum required\nmodel.addConstr(SpecializedImages + CommonImages >= MinimumImages, \n                name=\"min_images_constraint\")"
+        },
+        {
+            "description": "At least MinimumSpecializedProportion of the work must be allocated to the specialized company",
+            "status": "coded",
+            "formulation": "\\textup{SpecializedImages} \\geq \\textup{MinimumSpecializedProportion} \\cdot \\textup{TotalImagesAnnotated}",
+            "related_variables": [
+                "SpecializedImages",
+                "TotalImagesAnnotated"
+            ],
+            "related_parameters": [
+                "MinimumSpecializedProportion"
+            ],
+            "code": "# Add constraint ensuring at least MinimumSpecializedProportion of the total work is allocated to the specialized company\nmodel.addConstr(SpecializedImages >= MinimumSpecializedProportion * TotalImagesAnnotated, name=\"specialized_work_proportion\")"
+        },
+        {
+            "description": "The total number of images annotated must meet the minimum required.",
+            "status": "coded",
+            "formulation": "\\\\textup{SpecializedImages} + \\\\textup{CommonImages} \\\\geq \\\\textup{MinimumImages}",
+            "related_variables": [
+                "SpecializedImages",
+                "CommonImages"
+            ],
+            "related_parameters": [
+                "MinimumImages"
+            ],
+            "code": "# Add constraint for minimum number of images to be annotated\nmodel.addConstr(SpecializedImages + CommonImages >= MinimumImages, name=\"minimum_images_constraint\")"
+        },
+        {
+            "description": "A minimum proportion of the total images must be allocated to the specialized company.",
+            "status": "coded",
+            "formulation": "\\\\textup{SpecializedImages} \\\\geq \\\\textup{MinimumSpecializedProportion} \\\\cdot (\\\\textup{SpecializedImages} + \\\\textup{CommonImages})",
+            "related_variables": [
+                "SpecializedImages",
+                "CommonImages"
+            ],
+            "related_parameters": [
+                "MinimumSpecializedProportion"
+            ],
+            "code": "# Add constraint to ensure the minimum proportion of images are allocated to the specialized company\nmodel.addConstr(SpecializedImages >= MinimumSpecializedProportion * (SpecializedImages + CommonImages), name=\"min_proportion_specialized\")"
+        },
+        {
+            "description": "TotalImagesAnnotated is the sum of SpecializedImages and CommonImages",
+            "status": "coded",
+            "formulation": "\\textup{TotalImagesAnnotated} = \\textup{SpecializedImages} + \\textup{CommonImages}",
+            "related_variables": [
+                "SpecializedImages",
+                "CommonImages",
+                "TotalImagesAnnotated"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint for TotalImagesAnnotated as the sum of SpecializedImages and CommonImages\nmodel.addConstr(TotalImagesAnnotated == SpecializedImages + CommonImages, name=\"total_images_constraint\")"
+        },
+        {
+            "description": "Ensure that the total number of images annotated by both companies meets or exceeds the minimum required images.",
+            "status": "coded",
+            "formulation": "\\textup{SpecializedImages} + \\textup{CommonImages} \\geq \\textup{MinimumImages}",
+            "related_variables": [
+                "SpecializedImages",
+                "CommonImages"
+            ],
+            "related_parameters": [
+                "MinimumImages"
+            ],
+            "code": "# Adding the constraint to ensure the total number of annotated images meets or exceeds the minimum required\nmodel.addConstr(SpecializedImages + CommonImages >= MinimumImages, name=\"min_images_constraint\")"
+        },
+        {
+            "description": "Enforce that the proportion of work allocated to the specialized company meets the minimum required proportion.",
+            "status": "coded",
+            "formulation": "\\frac{\\textup{SpecializedImages}}{\\textup{TotalImagesAnnotated}} \\geq \\textup{MinimumSpecializedProportion}",
+            "related_variables": [
+                "SpecializedImages",
+                "TotalImagesAnnotated"
+            ],
+            "related_parameters": [
+                "MinimumSpecializedProportion"
+            ],
+            "code": "# Add constraint to ensure minimum specialized proportion\nmodel.addConstr(SpecializedImages >= MinimumSpecializedProportion * TotalImagesAnnotated, name=\"min_specialized_proportion\")"
+        },
+        {
+            "description": "Ensure the total number of images is the sum of images annotated by the specialized and common companies.",
+            "status": "coded",
+            "formulation": "\\textup{TotalImagesAnnotated} = \\textup{SpecializedImages} + \\textup{CommonImages}",
+            "related_variables": [
+                "TotalImagesAnnotated",
+                "SpecializedImages",
+                "CommonImages"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint ensuring total number of images is the sum of images annotated by specialized and common companies\nmodel.addConstr(TotalImagesAnnotated == SpecializedImages + CommonImages, name=\"total_images_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of images annotated by the specialized company.",
+            "symbol": "SpecializedImages",
+            "shape": [],
+            "status": "coded",
+            "code": "SpecializedImages = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"SpecializedImages\")"
+        },
+        {
+            "definition": "The number of images annotated by the common company.",
+            "symbol": "CommonImages",
+            "shape": [],
+            "status": "coded",
+            "code": "CommonImages = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"CommonImages\")"
+        },
+        {
+            "definition": "The total number of images annotated by both companies",
+            "symbol": "TotalImagesAnnotated",
+            "shape": [],
+            "status": "coded",
+            "code": "TotalImagesAnnotated = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TotalImagesAnnotated\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total cost of annotating the dataset by considering the costs associated with the specialized and common companies.",
+            "status": "coded",
+            "formulation": "\\textup{Minimize:} \\quad \\textup{SpecializedImages} \\cdot \\frac{\\textup{SpecializedCharge}}{\\textup{SpecializedRate}} + \\textup{CommonImages} \\cdot \\frac{\\textup{CommonCharge}}{\\textup{CommonRate}}",
+            "related_variables": [
+                "SpecializedImages",
+                "CommonImages"
+            ],
+            "related_parameters": [
+                "SpecializedRate",
+                "CommonRate",
+                "SpecializedCharge",
+                "CommonCharge"
+            ],
+            "code": "# Set objective\nmodel.setObjective(SpecializedImages * (SpecializedCharge / SpecializedRate) + CommonImages * (CommonCharge / CommonRate), gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 16666.666666666668,
+    "log_path": "logs/log_20250414054208_nl4opt_prob_264/",
+    "problem_path": "data/nl4opt/prob_264/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_264/data.json\", \"r\") as f:\n    data = json.load(f)\n\nSpecializedRate = data[\"SpecializedRate\"] # scalar parameter\nCommonRate = data[\"CommonRate\"] # scalar parameter\nSpecializedCharge = data[\"SpecializedCharge\"] # scalar parameter\nCommonCharge = data[\"CommonCharge\"] # scalar parameter\nMinimumImages = data[\"MinimumImages\"] # scalar parameter\nMinimumSpecializedProportion = data[\"MinimumSpecializedProportion\"] # scalar parameter\nSpecializedImages = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"SpecializedImages\")\nCommonImages = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"CommonImages\")\nTotalImagesAnnotated = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TotalImagesAnnotated\")\n\n# No additional code is necessary as the non-negativity constraint is automatically handled by Gurobi for non-negative domain variables such as the `SpecializedImages` variable. Ensure the variable range is not modified elsewhere.\n\n# Add non-negativity constraints for SpecializedImages and CommonImages\nmodel.addConstr(SpecializedImages >= 0, name=\"non_negativity_SpecializedImages\")\nmodel.addConstr(CommonImages >= 0, name=\"non_negativity_CommonImages\")\n\n# Add constraint ensuring total annotated images are at least the minimum required\nmodel.addConstr(SpecializedImages + CommonImages >= MinimumImages, \n                name=\"min_images_constraint\")\n\n# Add constraint ensuring at least MinimumSpecializedProportion of the total work is allocated to the specialized company\nmodel.addConstr(SpecializedImages >= MinimumSpecializedProportion * TotalImagesAnnotated, name=\"specialized_work_proportion\")\n\n# Add constraint for minimum number of images to be annotated\nmodel.addConstr(SpecializedImages + CommonImages >= MinimumImages, name=\"minimum_images_constraint\")\n\n# Add constraint to ensure the minimum proportion of images are allocated to the specialized company\nmodel.addConstr(SpecializedImages >= MinimumSpecializedProportion * (SpecializedImages + CommonImages), name=\"min_proportion_specialized\")\n\n# Add constraint for TotalImagesAnnotated as the sum of SpecializedImages and CommonImages\nmodel.addConstr(TotalImagesAnnotated == SpecializedImages + CommonImages, name=\"total_images_constraint\")\n\n# Adding the constraint to ensure the total number of annotated images meets or exceeds the minimum required\nmodel.addConstr(SpecializedImages + CommonImages >= MinimumImages, name=\"min_images_constraint\")\n\n# Add constraint to ensure minimum specialized proportion\nmodel.addConstr(SpecializedImages >= MinimumSpecializedProportion * TotalImagesAnnotated, name=\"min_specialized_proportion\")\n\n# Add constraint ensuring total number of images is the sum of images annotated by specialized and common companies\nmodel.addConstr(TotalImagesAnnotated == SpecializedImages + CommonImages, name=\"total_images_constraint\")\n\n# Set objective\nmodel.setObjective(SpecializedImages * (SpecializedCharge / SpecializedRate) + CommonImages * (CommonCharge / CommonRate), gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

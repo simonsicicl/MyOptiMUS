@@ -1,0 +1,222 @@
+{
+    "background": "A clinic offers blood pressure measurements using both automatic and manual machines with different time requirements, and aims to maximize patient throughput under operational constraints.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Time taken by the automatic machine per patient",
+            "symbol": "TAuto",
+            "value": 10,
+            "shape": [],
+            "code": "TAuto = data[\"TAuto\"] # scalar parameter"
+        },
+        {
+            "definition": "Time taken by the manual machine per patient",
+            "symbol": "TManual",
+            "value": 15,
+            "shape": [],
+            "code": "TManual = data[\"TManual\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum ratio of patients processed by the manual machine to those processed by the automatic machine",
+            "symbol": "RatioManualToAuto",
+            "value": 2,
+            "shape": [],
+            "code": "RatioManualToAuto = data[\"RatioManualToAuto\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of patients that can be processed by the automatic machine",
+            "symbol": "MinPatientsAuto",
+            "value": 20,
+            "shape": [],
+            "code": "MinPatientsAuto = data[\"MinPatientsAuto\"] # scalar parameter"
+        },
+        {
+            "definition": "Total clinic operation time in minutes",
+            "symbol": "TotalTime",
+            "value": 20000,
+            "shape": [],
+            "code": "TotalTime = data[\"TotalTime\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The time spent on automatic machine measurements must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{TimeOnAuto} \\geq 0",
+            "related_variables": [
+                "TimeOnAuto"
+            ],
+            "related_parameters": [],
+            "code": "# Constraint to ensure the time on automatic machine is non-negative\nmodel.addConstr(TimeOnAuto >= 0, name=\"time_on_auto_non_negative\")"
+        },
+        {
+            "description": "The time spent on manual machine measurements must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{TimeOnManual} \\geq 0",
+            "related_variables": [
+                "TimeOnManual"
+            ],
+            "related_parameters": [],
+            "code": "# Since there's no reference to a variable that needs to be defined or altered,\n# no code is needed for this constraint. The constraint seems to be a reminder\n# or a note rather than something that translates into a Gurobi constraint."
+        },
+        {
+            "description": "The total time spent on both automatic and manual measurements must not exceed the total available clinic time",
+            "status": "coded",
+            "formulation": "\\textup{TimeOnAuto} + (\\textup{PatientsManual} \\times \\textup{TManual}) \\leq \\textup{TotalTime}",
+            "related_variables": [
+                "TimeOnAuto",
+                "PatientsManual"
+            ],
+            "related_parameters": [
+                "TManual",
+                "TotalTime"
+            ],
+            "code": "# Constraint: Total time on automatic and manual measurements must not exceed total clinic time\nmodel.addConstr(TimeOnAuto + (PatientsManual * TManual) <= TotalTime, name=\"total_clinic_time\")"
+        },
+        {
+            "description": "Ensure that at least RatioManualToAuto times as many patients are processed manually than automatically",
+            "status": "coded",
+            "formulation": "\\textup{PatientsManual} \\geq \\textup{RatioManualToAuto} \\cdot (\\frac{\\textup{TimeOnAuto}}{\\textup{TAuto}})",
+            "related_variables": [
+                "PatientsManual",
+                "TimeOnAuto"
+            ],
+            "related_parameters": [
+                "RatioManualToAuto",
+                "TAuto"
+            ],
+            "code": "# Ensure that at least RatioManualToAuto times as many patients are processed manually than automatically\nmodel.addConstr(PatientsManual >= RatioManualToAuto * (TimeOnAuto / TAuto), name=\"ManualToAutoRatio\")"
+        },
+        {
+            "description": "At least MinPatientsAuto patients must be processed automatically",
+            "status": "coded",
+            "formulation": "\\textup{PatientsAuto} \\geq \\textup{MinPatientsAuto}",
+            "related_variables": [
+                "PatientsAuto"
+            ],
+            "related_parameters": [
+                "MinPatientsAuto"
+            ],
+            "code": "# Add constraint to ensure at least MinPatientsAuto patients are processed automatically\nmodel.addConstr(PatientsAuto >= MinPatientsAuto, name=\"min_patients_auto\")"
+        },
+        {
+            "description": "Total time spent on manual machine measurements is determined by the number of patients processed by the manual machine and the time per patient on the manual machine",
+            "status": "coded",
+            "formulation": "\\textup{TimeOnManual} = \\textup{PatientsManual} \\times \\textup{TManual}",
+            "related_variables": [
+                "TimeOnManual",
+                "PatientsManual"
+            ],
+            "related_parameters": [
+                "TManual"
+            ],
+            "code": "# Compute total time on manual machine\nTimeOnManual = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TimeOnManual\")\nmodel.addConstr(TimeOnManual == PatientsManual * TManual, name=\"manual_machine_time\")"
+        },
+        {
+            "description": "The minimum ratio of patients processed manually to automatically requires additional patients above the minimum for automatic machines",
+            "status": "coded",
+            "formulation": "\\textup{PatientsManual} \\geq \\textup{RatioManualToAuto} \\times \\textup{MinPatientsAuto}",
+            "related_variables": [
+                "PatientsManual"
+            ],
+            "related_parameters": [
+                "RatioManualToAuto",
+                "MinPatientsAuto"
+            ],
+            "code": "# Constrain the minimum number of patients processed manually to be at least a certain ratio of the minimum for automatic machines\nmodel.addConstr(PatientsManual >= RatioManualToAuto * MinPatientsAuto, name=\"min_ratio_manual_to_auto\")"
+        },
+        {
+            "description": "The total time spent on automatic machine measurements must not exceed the total operational time of the clinic",
+            "status": "coded",
+            "formulation": "\\textup{TimeOnAuto} \\leq \\textup{TotalTime}",
+            "related_variables": [
+                "TimeOnAuto"
+            ],
+            "related_parameters": [
+                "TotalTime"
+            ],
+            "code": "# Constraint: The total time spent on automatic machine measurements must not exceed the total operational time of the clinic\nmodel.addConstr(TimeOnAuto <= TotalTime, name=\"auto_measurement_time\")"
+        },
+        {
+            "description": "The patients processed manually must be at least twice the number of patients processed automatically",
+            "status": "coded",
+            "formulation": "\\textup{PatientsManual} \\geq \\textup{RatioManualToAuto} \\times \\textup{PatientsAuto}",
+            "related_variables": [
+                "PatientsManual",
+                "PatientsAuto"
+            ],
+            "related_parameters": [
+                "RatioManualToAuto"
+            ],
+            "code": "# Constraint: Patients processed manually must be at least twice the number of patients processed automatically\nmodel.addConstr(PatientsManual >= RatioManualToAuto * PatientsAuto, name=\"manual_to_auto_patient_ratio\")"
+        },
+        {
+            "description": "The patients processed automatically must be at least a certain minimum number",
+            "status": "coded",
+            "formulation": "\\textup{PatientsAuto} \\geq \\textup{MinPatientsAuto}",
+            "related_variables": [
+                "PatientsAuto"
+            ],
+            "related_parameters": [
+                "MinPatientsAuto"
+            ],
+            "code": "# Add minimum patients auto-processing constraint\nmodel.addConstr(PatientsAuto >= MinPatientsAuto, name=\"min_patients_auto_processing\")"
+        },
+        {
+            "description": "The total time spent on automatic machine measurements is equal to the time per patient times the number of patients processed automatically",
+            "status": "coded",
+            "formulation": "\\textup{TimeOnAuto} = \\textup{TAuto} \\times \\textup{PatientsAuto}",
+            "related_variables": [
+                "TimeOnAuto",
+                "PatientsAuto"
+            ],
+            "related_parameters": [
+                "TAuto"
+            ],
+            "code": "# Add constraint for the total time on automatic measurements\nmodel.addConstr(TimeOnAuto == TAuto * PatientsAuto, name=\"time_on_auto_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Total time spent on automatic machine measurements",
+            "symbol": "TimeOnAuto",
+            "shape": [],
+            "status": "coded",
+            "code": "TimeOnAuto = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TimeOnAuto\")"
+        },
+        {
+            "definition": "Total number of patients processed using manual machine",
+            "symbol": "PatientsManual",
+            "shape": [],
+            "status": "coded",
+            "code": "PatientsManual = model.addVar(vtype=gp.GRB.INTEGER, name=\"PatientsManual\")"
+        },
+        {
+            "definition": "Total number of patients processed using automatic machine",
+            "symbol": "PatientsAuto",
+            "shape": [],
+            "status": "coded",
+            "code": "PatientsAuto = model.addVar(vtype=gp.GRB.INTEGER, name=\"PatientsAuto\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the number of patients whose blood pressure can be taken within the clinic's operational hours",
+            "status": "coded",
+            "formulation": "\\max (\\textup{PatientsManual} + \\textup{PatientsAuto})",
+            "related_variables": [
+                "PatientsManual",
+                "PatientsAuto"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(PatientsManual + PatientsAuto, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 1500.0,
+    "log_path": "logs/log_20250413110207_nl4opt_prob_109/",
+    "problem_path": "data/nl4opt/prob_109/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_109/data.json\", \"r\") as f:\n    data = json.load(f)\n\nTAuto = data[\"TAuto\"] # scalar parameter\nTManual = data[\"TManual\"] # scalar parameter\nRatioManualToAuto = data[\"RatioManualToAuto\"] # scalar parameter\nMinPatientsAuto = data[\"MinPatientsAuto\"] # scalar parameter\nTotalTime = data[\"TotalTime\"] # scalar parameter\nTimeOnAuto = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TimeOnAuto\")\nPatientsManual = model.addVar(vtype=gp.GRB.INTEGER, name=\"PatientsManual\")\nPatientsAuto = model.addVar(vtype=gp.GRB.INTEGER, name=\"PatientsAuto\")\n\n# Constraint to ensure the time on automatic machine is non-negative\nmodel.addConstr(TimeOnAuto >= 0, name=\"time_on_auto_non_negative\")\n\n# Since there's no reference to a variable that needs to be defined or altered,\n# no code is needed for this constraint. The constraint seems to be a reminder\n# or a note rather than something that translates into a Gurobi constraint.\n\n# Constraint: Total time on automatic and manual measurements must not exceed total clinic time\nmodel.addConstr(TimeOnAuto + (PatientsManual * TManual) <= TotalTime, name=\"total_clinic_time\")\n\n# Ensure that at least RatioManualToAuto times as many patients are processed manually than automatically\nmodel.addConstr(PatientsManual >= RatioManualToAuto * (TimeOnAuto / TAuto), name=\"ManualToAutoRatio\")\n\n# Add constraint to ensure at least MinPatientsAuto patients are processed automatically\nmodel.addConstr(PatientsAuto >= MinPatientsAuto, name=\"min_patients_auto\")\n\n# Compute total time on manual machine\nTimeOnManual = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TimeOnManual\")\nmodel.addConstr(TimeOnManual == PatientsManual * TManual, name=\"manual_machine_time\")\n\n# Constrain the minimum number of patients processed manually to be at least a certain ratio of the minimum for automatic machines\nmodel.addConstr(PatientsManual >= RatioManualToAuto * MinPatientsAuto, name=\"min_ratio_manual_to_auto\")\n\n# Constraint: The total time spent on automatic machine measurements must not exceed the total operational time of the clinic\nmodel.addConstr(TimeOnAuto <= TotalTime, name=\"auto_measurement_time\")\n\n# Constraint: Patients processed manually must be at least twice the number of patients processed automatically\nmodel.addConstr(PatientsManual >= RatioManualToAuto * PatientsAuto, name=\"manual_to_auto_patient_ratio\")\n\n# Add minimum patients auto-processing constraint\nmodel.addConstr(PatientsAuto >= MinPatientsAuto, name=\"min_patients_auto_processing\")\n\n# Add constraint for the total time on automatic measurements\nmodel.addConstr(TimeOnAuto == TAuto * PatientsAuto, name=\"time_on_auto_constraint\")\n\n# Set objective\nmodel.setObjective(PatientsManual + PatientsAuto, gp.GRB.MAXIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

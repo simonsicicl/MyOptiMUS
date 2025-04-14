@@ -1,0 +1,166 @@
+{
+    "background": "The problem involves determining the production quantity for a set of products in a week, given production rates, a profit per ton for each product, a limited number of available hours, and constraints on the minimum and maximum sales for each product.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "symbol": "ProductNum",
+            "definition": "The number of products",
+            "shape": [],
+            "code": "ProductNum = data[\"ProductNum\"] # scalar parameter"
+        },
+        {
+            "symbol": "ProductionRate",
+            "definition": "The production rate of each product in tons per hour",
+            "shape": [
+                "ProductNum"
+            ],
+            "code": "ProductionRate = np.array(data[\"ProductionRate\"]) # ['ProductNum']"
+        },
+        {
+            "symbol": "ProfitPerTon",
+            "definition": "The profit per ton for each product",
+            "shape": [
+                "ProductNum"
+            ],
+            "code": "ProfitPerTon = np.array(data[\"ProfitPerTon\"]) # ['ProductNum']"
+        },
+        {
+            "symbol": "MinimumSale",
+            "definition": "The lower limit on the tons of each product sold in a week",
+            "shape": [
+                "ProductNum"
+            ],
+            "code": "MinimumSale = np.array(data[\"MinimumSale\"]) # ['ProductNum']"
+        },
+        {
+            "symbol": "MaximumSale",
+            "definition": "The upper limit on the tons of each product sold in a week",
+            "shape": [
+                "ProductNum"
+            ],
+            "code": "MaximumSale = np.array(data[\"MaximumSale\"]) # ['ProductNum']"
+        },
+        {
+            "symbol": "AvailableHours",
+            "definition": "The total available hours in a week for production",
+            "shape": [],
+            "code": "AvailableHours = data[\"AvailableHours\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Each product p must have a non-negative production quantity",
+            "status": "formulated",
+            "formulation": "\\forall p \\in \\{1, \\ldots, \\textup{ProductNum}\\}, \\quad \\textup{ProductionQuantity}_p \\geq 0",
+            "related_variables": [
+                "ProductionQuantity"
+            ],
+            "related_parameters": [
+                "ProductNum"
+            ]
+        },
+        {
+            "description": "Total production hours for all products must not exceed available hours",
+            "status": "formulated",
+            "formulation": "\\sum_{p=1}^{\\textup{ProductNum}} \\frac{\\textup{ProductionQuantity}_{p}}{\\textup{ProductionRate}_{p}} \\leq \\textup{AvailableHours}",
+            "related_variables": [
+                "ProductionQuantity"
+            ],
+            "related_parameters": [
+                "ProductNum",
+                "ProductionRate",
+                "AvailableHours"
+            ]
+        },
+        {
+            "description": "Each product must be sold in amounts at least equal to the specified minimum sale amount for the respective product.",
+            "status": "formulated",
+            "formulation": "\\textup{ProductionQuantity}_{p} \\geq \\textup{MinimumSale}_{p} \\quad \\forall p \\in \\{1, \\ldots, \\textup{ProductNum} \\}",
+            "related_variables": [
+                "ProductionQuantity"
+            ],
+            "related_parameters": [
+                "MinimumSale"
+            ]
+        },
+        {
+            "description": "Each product must be sold in amounts no more than its maximum sale limit",
+            "status": "formulated",
+            "formulation": "\\textup{ProductionQuantity}_p \\leq \\textup{MaximumSale}_p \\quad \\forall p \\in \\{1, 2, ..., \\textup{ProductNum}\\}",
+            "related_variables": [
+                "ProductionQuantity"
+            ],
+            "related_parameters": [
+                "MaximumSale",
+                "ProductNum"
+            ]
+        },
+        {
+            "description": "The total production time for all products must not exceed the available hours",
+            "status": "formulated",
+            "formulation": "\\sum_{p=1}^{\\textup{ProductNum}} (\\frac{\\textup{ProductionQuantity}[p]}{\\textup{ProductionRate}[p]}) \\leq \\textup{AvailableHours}",
+            "related_variables": [
+                "ProductionQuantity"
+            ],
+            "related_parameters": [
+                "ProductionRate",
+                "AvailableHours",
+                "ProductNum"
+            ]
+        },
+        {
+            "description": "Each product must be produced at least the minimum sale quantity",
+            "status": "formulated",
+            "formulation": "\\textup{ProductionQuantity}[p] \\geq \\textup{MinimumSale}[p], \\quad \\forall p \\in \\{1, ..., \\textup{ProductNum}\\}",
+            "related_variables": [
+                "ProductionQuantity"
+            ],
+            "related_parameters": [
+                "MinimumSale",
+                "ProductNum"
+            ]
+        },
+        {
+            "description": "Each product must be produced at most the maximum sale quantity",
+            "status": "formulated",
+            "formulation": "\\textup{ProductionQuantity}[p] \\leq \\textup{MaximumSale}[p], \\quad \\forall p \\in \\{1, ..., \\textup{ProductNum}\\}",
+            "related_variables": [
+                "ProductionQuantity"
+            ],
+            "related_parameters": [
+                "MaximumSale",
+                "ProductNum"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The production quantity of product p in tons",
+            "symbol": "ProductionQuantity",
+            "shape": [
+                "ProductNum"
+            ],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total profit gained from all products within the limited available production hours",
+            "status": "formulated",
+            "formulation": "\\max \\sum_{p=1}^{\\textup{ProductNum}} (\\textup{ProfitPerTon}[p] \\times \\textup{ProductionQuantity}[p])",
+            "related_variables": [
+                "ProductionQuantity"
+            ],
+            "related_parameters": [
+                "ProfitPerTon",
+                "ProductNum"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413142520_complexor_steel3/",
+    "problem_path": "data/complexor/steel3/"
+}

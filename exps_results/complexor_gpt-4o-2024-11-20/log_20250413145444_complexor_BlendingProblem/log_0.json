@@ -1,0 +1,155 @@
+{
+    "background": "The problem involves blending different market alloys into a final product that meets certain elemental composition requirements at minimum cost.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "symbol": "AlloysOnMarket",
+            "definition": "The number of different alloys available on the market",
+            "shape": [],
+            "code": "AlloysOnMarket = data[\"AlloysOnMarket\"] # scalar parameter"
+        },
+        {
+            "symbol": "RequiredElements",
+            "definition": "The number of elements required in the desired alloy blend",
+            "shape": [],
+            "code": "RequiredElements = data[\"RequiredElements\"] # scalar parameter"
+        },
+        {
+            "symbol": "CompositionDataPercentage",
+            "definition": "The composition data indicating the percentage of each required element in each available alloy",
+            "shape": [
+                "RequiredElements",
+                "AlloysOnMarket"
+            ],
+            "code": "CompositionDataPercentage = np.array(data[\"CompositionDataPercentage\"]) # ['RequiredElements', 'AlloysOnMarket']"
+        },
+        {
+            "symbol": "DesiredBlendPercentage",
+            "definition": "The desired percentage of each required element in the final alloy blend",
+            "shape": [
+                "RequiredElements"
+            ],
+            "code": "DesiredBlendPercentage = np.array(data[\"DesiredBlendPercentage\"]) # ['RequiredElements']"
+        },
+        {
+            "symbol": "AlloyPrice",
+            "definition": "The price of each alloy available on the market",
+            "shape": [
+                "AlloysOnMarket"
+            ],
+            "code": "AlloyPrice = np.array(data[\"AlloyPrice\"]) # ['AlloysOnMarket']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Non-negativity constraint ensuring that the quantity of each alloy used is non-negative.",
+            "status": "formulated",
+            "formulation": "\\textup{QuantityUsed}_{j} \\geq 0, \\quad \\forall \\, j \\in \\{1, \\dots, \\textup{AlloysOnMarket}\\}",
+            "related_variables": [
+                "QuantityUsed"
+            ],
+            "related_parameters": [
+                "AlloysOnMarket"
+            ]
+        },
+        {
+            "description": "Ensure the final blend meets the required percentage for each of the RequiredElements.",
+            "status": "formulated",
+            "formulation": "\\frac{\\sum_{j=1}^{\\textup{AlloysOnMarket}} \\textup{CompositionDataPercentage}_{ij} \\cdot \\textup{QuantityUsed}_{j}}{\\textup{TotalQuantityUsed}} = \\textup{DesiredBlendPercentage}_{i}, \\quad \\forall \\ i = 1, \\dots, \\textup{RequiredElements}",
+            "related_variables": [
+                "QuantityUsed",
+                "TotalQuantityUsed"
+            ],
+            "related_parameters": [
+                "CompositionDataPercentage",
+                "DesiredBlendPercentage",
+                "AlloysOnMarket",
+                "RequiredElements"
+            ]
+        },
+        {
+            "description": "Ensure the quantity of each alloy used does not exceed its availability on the market.",
+            "status": "formulated",
+            "formulation": "\\textup{QuantityUsed}_{i} \\leq \\textup{Availability}_{i}, \\quad \\forall i \\in \\textup{AlloysOnMarket}",
+            "related_variables": [
+                "QuantityUsed"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Define total quantity used in the blend.",
+            "status": "formulated",
+            "formulation": "\\textup{TotalQuantityUsed} = \\sum_{j=1}^{\\textup{AlloysOnMarket}} \\textup{QuantityUsed}_{j}",
+            "related_variables": [
+                "QuantityUsed",
+                "TotalQuantityUsed"
+            ],
+            "related_parameters": [
+                "AlloysOnMarket"
+            ]
+        },
+        {
+            "description": "Ensure the blend meets the desired percentage of each required element.",
+            "status": "formulated",
+            "formulation": "\\sum_{j=1}^{\\textup{AlloysOnMarket}} \\textup{CompositionDataPercentage}_{i,j} \\cdot \\textup{QuantityUsed}_{j} = \\textup{DesiredBlendPercentage}_{i} \\cdot \\textup{TotalQuantityUsed}, \\quad \\forall i \\in \\{1, \\dots, \\textup{RequiredElements}\\}",
+            "related_variables": [
+                "QuantityUsed",
+                "TotalQuantityUsed"
+            ],
+            "related_parameters": [
+                "CompositionDataPercentage",
+                "DesiredBlendPercentage",
+                "RequiredElements",
+                "AlloysOnMarket"
+            ]
+        },
+        {
+            "description": "Define the total quantity used as the sum of quantities of all alloys.",
+            "status": "formulated",
+            "formulation": "\\textup{TotalQuantityUsed} = \\sum_{j=1}^{\\textup{AlloysOnMarket}} \\textup{QuantityUsed}_{j}",
+            "related_variables": [
+                "QuantityUsed",
+                "TotalQuantityUsed"
+            ],
+            "related_parameters": [
+                "AlloysOnMarket"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Quantity of each alloy used in the final blend",
+            "symbol": "QuantityUsed",
+            "shape": [
+                "AlloysOnMarket"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "Total quantity of all alloys used in the final blend",
+            "symbol": "TotalQuantityUsed",
+            "shape": [],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total cost of producing the alloy with the desired blend percentages.",
+            "status": "formulated",
+            "formulation": "\\textup{Minimize} \\quad \\sum_{j=1}^{\\textup{AlloysOnMarket}} \\textup{AlloyPrice}_{j} \\cdot \\textup{QuantityUsed}_{j}",
+            "related_variables": [
+                "QuantityUsed"
+            ],
+            "related_parameters": [
+                "AlloyPrice",
+                "AlloysOnMarket"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413145444_complexor_BlendingProblem/",
+    "problem_path": "data/complexor/BlendingProblem/"
+}

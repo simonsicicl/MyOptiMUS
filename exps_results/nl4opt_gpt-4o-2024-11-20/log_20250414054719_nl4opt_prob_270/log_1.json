@@ -1,0 +1,164 @@
+{
+    "background": "A woman on a diet needs to plan her intake of two types of meal preps, smoothies and protein bars, with the objective to maximize protein intake while considering dietary restrictions.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Units of protein in one smoothie",
+            "symbol": "ProteinSmoothie",
+            "value": 2,
+            "shape": [],
+            "code": "ProteinSmoothie = data[\"ProteinSmoothie\"] # scalar parameter"
+        },
+        {
+            "definition": "Calories in one smoothie",
+            "symbol": "CaloriesSmoothie",
+            "value": 300,
+            "shape": [],
+            "code": "CaloriesSmoothie = data[\"CaloriesSmoothie\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of protein in one protein bar",
+            "symbol": "ProteinBar",
+            "value": 7,
+            "shape": [],
+            "code": "ProteinBar = data[\"ProteinBar\"] # scalar parameter"
+        },
+        {
+            "definition": "Calories in one protein bar",
+            "symbol": "CaloriesBar",
+            "value": 250,
+            "shape": [],
+            "code": "CaloriesBar = data[\"CaloriesBar\"] # scalar parameter"
+        },
+        {
+            "definition": "The ratio of the quantity of protein bars to smoothies",
+            "symbol": "RatioBarsSmoothies",
+            "value": 2,
+            "shape": [],
+            "code": "RatioBarsSmoothies = data[\"RatioBarsSmoothies\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum calorie intake",
+            "symbol": "MaxCalories",
+            "value": 2000,
+            "shape": [],
+            "code": "MaxCalories = data[\"MaxCalories\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The ratio of protein bars to smoothies is exactly equal to the parameter RatioBarsSmoothies.",
+            "status": "coded",
+            "formulation": "\\textup{NumBars} = \\textup{RatioBarsSmoothies} \\cdot \\textup{NumSmoothies}",
+            "related_variables": [
+                "NumBars",
+                "NumSmoothies"
+            ],
+            "related_parameters": [
+                "RatioBarsSmoothies"
+            ],
+            "code": "# Add constraint to enforce the ratio between NumBars and NumSmoothies\nmodel.addConstr(NumBars == RatioBarsSmoothies * NumSmoothies, name=\"ratio_bars_smoothies\")"
+        },
+        {
+            "description": "The total calorie intake from protein bars and smoothies must not exceed the maximum allowed calorie intake.",
+            "status": "coded",
+            "formulation": "\\\\textup{CaloriesBar} \\\\cdot \\\\textup{NumBars} + \\\\textup{CaloriesSmoothie} \\\\cdot \\\\textup{NumSmoothies} \\\\leq \\\\textup{MaxCalories}",
+            "related_variables": [
+                "NumBars",
+                "NumSmoothies"
+            ],
+            "related_parameters": [
+                "CaloriesBar",
+                "CaloriesSmoothie",
+                "MaxCalories"
+            ],
+            "code": "# Add calorie intake constraint\nmodel.addConstr(CaloriesBar * NumBars + CaloriesSmoothie * NumSmoothies <= MaxCalories, name=\"calorie_intake_constraint\")"
+        },
+        {
+            "description": "Ensure the number of smoothies consumed is non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumSmoothies} \\geq 0",
+            "related_variables": [
+                "NumSmoothies"
+            ],
+            "related_parameters": [],
+            "code": "# The variable NumSmoothies is already defined as non-negative. No additional code is required for this constraint."
+        },
+        {
+            "description": "The number of protein bars consumed must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumBars} \\geq 0",
+            "related_variables": [
+                "NumBars"
+            ],
+            "related_parameters": [],
+            "code": "# No additional code needed because the variable \"NumBars\" is already defined as non-negative due to its default lower bound of 0 in Gurobi."
+        },
+        {
+            "description": "Ensure the total caloric intake from smoothies and protein bars does not exceed the maximum allowed.",
+            "status": "coded",
+            "formulation": "\\textup{CaloriesSmoothie} \\\\cdot \\textup{NumSmoothies} + \\textup{CaloriesBar} \\\\cdot \\textup{NumBars} \\leq \\textup{MaxCalories}",
+            "related_variables": [
+                "NumSmoothies",
+                "NumBars"
+            ],
+            "related_parameters": [
+                "CaloriesSmoothie",
+                "CaloriesBar",
+                "MaxCalories"
+            ],
+            "code": "# Add calorie intake constraint\nmodel.addConstr(CaloriesSmoothie * NumSmoothies + CaloriesBar * NumBars <= MaxCalories, name=\"calorie_intake_limit\")"
+        },
+        {
+            "description": "Ensure the ratio of the number of protein bars to smoothies equals the given ratio.",
+            "status": "coded",
+            "formulation": "\\textup{NumBars} = \\textup{RatioBarsSmoothies} \\\\cdot \\textup{NumSmoothies}",
+            "related_variables": [
+                "NumSmoothies",
+                "NumBars"
+            ],
+            "related_parameters": [
+                "RatioBarsSmoothies"
+            ],
+            "code": "# Add constraint to ensure the ratio of NumBars to NumSmoothies equals RatioBarsSmoothies\nmodel.addConstr(NumBars == RatioBarsSmoothies * NumSmoothies, name=\"ratio_bars_smoothies_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of protein bars consumed.",
+            "symbol": "NumBars",
+            "shape": [],
+            "status": "coded",
+            "code": "NumBars = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumBars\")"
+        },
+        {
+            "definition": "The number of smoothies consumed.",
+            "symbol": "NumSmoothies",
+            "shape": [],
+            "status": "coded",
+            "code": "NumSmoothies = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumSmoothies\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the woman's total protein intake from smoothies and protein bars.",
+            "status": "coded",
+            "formulation": "\\max \\quad \\textup{ProteinSmoothie} \\\\cdot \\textup{NumSmoothies} + \\textup{ProteinBar} \\\\cdot \\textup{NumBars}",
+            "related_variables": [
+                "NumSmoothies",
+                "NumBars"
+            ],
+            "related_parameters": [
+                "ProteinSmoothie",
+                "ProteinBar"
+            ],
+            "code": "# Set objective\nmodel.setObjective(ProteinSmoothie * NumSmoothies + ProteinBar * NumBars, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250414054719_nl4opt_prob_270/",
+    "problem_path": "data/nl4opt/prob_270/"
+}

@@ -1,0 +1,201 @@
+{
+    "background": "A taco stand sells regular and deluxe tacos, aiming to maximize profit within the constraints of supply and demand.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Profit per regular taco",
+            "symbol": "ProfitRegular",
+            "value": 2.5,
+            "shape": [],
+            "code": "ProfitRegular = data[\"ProfitRegular\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit per deluxe taco",
+            "symbol": "ProfitDeluxe",
+            "value": 3.55,
+            "shape": [],
+            "code": "ProfitDeluxe = data[\"ProfitDeluxe\"] # scalar parameter"
+        },
+        {
+            "definition": "Demand maximum for regular tacos",
+            "symbol": "DemandRegularMax",
+            "value": 50,
+            "shape": [],
+            "code": "DemandRegularMax = data[\"DemandRegularMax\"] # scalar parameter"
+        },
+        {
+            "definition": "Demand maximum for deluxe tacos",
+            "symbol": "DemandDeluxeMax",
+            "value": 40,
+            "shape": [],
+            "code": "DemandDeluxeMax = data[\"DemandDeluxeMax\"] # scalar parameter"
+        },
+        {
+            "definition": "Supply limit for total tacos",
+            "symbol": "SupplyTotalMax",
+            "value": 70,
+            "shape": [],
+            "code": "SupplyTotalMax = data[\"SupplyTotalMax\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Constraints representing demand, supply limits, and non-negativity for the taco stand problem",
+            "status": "coded",
+            "formulation": "\\\\textup{RegularTacosSold} \\\\leq \\\\textup{DemandRegularMax}, \\\\quad \\\\textup{DeluxeTacosSold} \\\\leq \\\\textup{DemandDeluxeMax}, \\\\quad \\\\textup{RegularTacosSold} + \\\\textup{DeluxeTacosSold} \\\\leq \\\\textup{SupplyTotalMax}, \\\\quad \\\\textup{RegularTacosSold} \\\\geq 0, \\\\quad \\\\textup{DeluxeTacosSold} \\\\geq 0",
+            "related_variables": [
+                "RegularTacosSold",
+                "DeluxeTacosSold"
+            ],
+            "related_parameters": [
+                "DemandRegularMax",
+                "DemandDeluxeMax",
+                "SupplyTotalMax"
+            ],
+            "code": "# Add demand, supply, and non-negativity constraints for taco sales\nmodel.addConstr(RegularTacosSold <= DemandRegularMax, name=\"demand_regular_tacos\")\nmodel.addConstr(DeluxeTacosSold <= DemandDeluxeMax, name=\"demand_deluxe_tacos\")\nmodel.addConstr(RegularTacosSold + DeluxeTacosSold <= SupplyTotalMax, name=\"supply_total_limit\")\nmodel.addConstr(RegularTacosSold >= 0, name=\"non_negativity_regular_tacos\")\nmodel.addConstr(DeluxeTacosSold >= 0, name=\"non_negativity_deluxe_tacos\")"
+        },
+        {
+            "description": "The number of deluxe tacos sold must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{DeluxeTacosSold} \\geq 0",
+            "related_variables": [
+                "DeluxeTacosSold"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint to ensure the number of deluxe tacos sold is non-negative\nmodel.addConstr(DeluxeTacosSold >= 0, name=\"non_negative_deluxe_tacos\")"
+        },
+        {
+            "description": "The number of regular tacos sold is at most the maximum demand for regular tacos.",
+            "status": "coded",
+            "formulation": "\\textup{RegularTacosSold} \\leq \\textup{DemandRegularMax}",
+            "related_variables": [
+                "RegularTacosSold"
+            ],
+            "related_parameters": [
+                "DemandRegularMax"
+            ],
+            "code": "# Add the constraint that the number of regular tacos sold is at most the maximum demand for regular tacos\nmodel.addConstr(RegularTacosSold <= DemandRegularMax, name=\"max_demand_regular_tacos\")"
+        },
+        {
+            "description": "The number of deluxe tacos sold must be less than or equal to the maximum demand for deluxe tacos.",
+            "status": "coded",
+            "formulation": "\\textup{DeluxeTacosSold} \\leq \\textup{DemandDeluxeMax}",
+            "related_variables": [
+                "DeluxeTacosSold"
+            ],
+            "related_parameters": [
+                "DemandDeluxeMax"
+            ],
+            "code": "# Add constraint for deluxe tacos\nmodel.addConstr(DeluxeTacosSold <= DemandDeluxeMax, name=\"deluxe_tacos_demand_constraint\")"
+        },
+        {
+            "description": "The total number of tacos (regular and deluxe) sold is at most the supply limit.",
+            "status": "coded",
+            "formulation": "\\textup{RegularTacosSold} + \\textup{DeluxeTacosSold} \\leq \\textup{SupplyTotalMax}",
+            "related_variables": [
+                "RegularTacosSold",
+                "DeluxeTacosSold"
+            ],
+            "related_parameters": [
+                "SupplyTotalMax"
+            ],
+            "code": "# Add constraint ensuring total number of tacos sold is at most the supply limit\nmodel.addConstr(RegularTacosSold + DeluxeTacosSold <= SupplyTotalMax, name=\"total_taco_supply_limit\")"
+        },
+        {
+            "description": "Regular tacos sold cannot exceed the maximum demand for regular tacos.",
+            "status": "coded",
+            "formulation": "\\textup{RegularTacosSold} \\leq \\textup{DemandRegularMax}",
+            "related_variables": [
+                "RegularTacosSold"
+            ],
+            "related_parameters": [
+                "DemandRegularMax"
+            ],
+            "code": "# Regular tacos maximum demand constraint\nmodel.addConstr(RegularTacosSold <= DemandRegularMax, name=\"max_demand_regular_tacos\")"
+        },
+        {
+            "description": "Deluxe tacos sold cannot exceed the maximum demand for deluxe tacos.",
+            "status": "coded",
+            "formulation": "\\textup{DeluxeTacosSold} \\leq \\textup{DemandDeluxeMax}",
+            "related_variables": [
+                "DeluxeTacosSold"
+            ],
+            "related_parameters": [
+                "DemandDeluxeMax"
+            ],
+            "code": "# Add constraint to ensure deluxe tacos sold do not exceed maximum demand\nmodel.addConstr(DeluxeTacosSold <= DemandDeluxeMax, name=\"deluxe_tacos_demand_limit\")"
+        },
+        {
+            "description": "The total number of tacos sold cannot exceed the supply limit.",
+            "status": "coded",
+            "formulation": "\\textup{RegularTacosSold} + \\textup{DeluxeTacosSold} \\leq \\textup{SupplyTotalMax}",
+            "related_variables": [
+                "RegularTacosSold",
+                "DeluxeTacosSold"
+            ],
+            "related_parameters": [
+                "SupplyTotalMax"
+            ],
+            "code": "# Add constraint for total tacos sold not exceeding supply limit\nmodel.addConstr(RegularTacosSold + DeluxeTacosSold <= SupplyTotalMax, name=\"taco_supply_limit\")"
+        },
+        {
+            "description": "The number of regular tacos sold must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{RegularTacosSold} \\geq 0",
+            "related_variables": [
+                "RegularTacosSold"
+            ],
+            "related_parameters": [],
+            "code": "# The variable \"RegularTacosSold\" is already defined as non-negative due to its default lower bound (0) in Gurobi.\n# No additional code is needed for this constraint."
+        },
+        {
+            "description": "The number of deluxe tacos sold must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{DeluxeTacosSold} \\geq 0",
+            "related_variables": [
+                "DeluxeTacosSold"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint to ensure the number of deluxe tacos sold is non-negative\nmodel.addConstr(DeluxeTacosSold >= 0, name=\"non_negative_deluxe_tacos\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of regular tacos sold",
+            "symbol": "RegularTacosSold",
+            "shape": [],
+            "status": "coded",
+            "code": "RegularTacosSold = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"RegularTacosSold\")"
+        },
+        {
+            "definition": "The number of deluxe tacos sold",
+            "symbol": "DeluxeTacosSold",
+            "shape": [],
+            "status": "coded",
+            "code": "DeluxeTacosSold = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"DeluxeTacosSold\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total profit from selling regular and deluxe tacos.",
+            "status": "coded",
+            "formulation": "\\textup{Maximize:} \\quad \\textup{ProfitRegular} \\times \\textup{RegularTacosSold} + \\textup{ProfitDeluxe} \\times \\textup{DeluxeTacosSold}",
+            "related_variables": [
+                "RegularTacosSold",
+                "DeluxeTacosSold"
+            ],
+            "related_parameters": [
+                "ProfitRegular",
+                "ProfitDeluxe"
+            ],
+            "code": "# Set objective\nmodel.setObjective(ProfitRegular * RegularTacosSold + ProfitDeluxe * DeluxeTacosSold, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 217.0,
+    "log_path": "logs/log_20250413173524_nl4opt_prob_218/",
+    "problem_path": "data/nl4opt/prob_218/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_218/data.json\", \"r\") as f:\n    data = json.load(f)\n\nProfitRegular = data[\"ProfitRegular\"] # scalar parameter\nProfitDeluxe = data[\"ProfitDeluxe\"] # scalar parameter\nDemandRegularMax = data[\"DemandRegularMax\"] # scalar parameter\nDemandDeluxeMax = data[\"DemandDeluxeMax\"] # scalar parameter\nSupplyTotalMax = data[\"SupplyTotalMax\"] # scalar parameter\nRegularTacosSold = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"RegularTacosSold\")\nDeluxeTacosSold = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"DeluxeTacosSold\")\n\n# Add demand, supply, and non-negativity constraints for taco sales\nmodel.addConstr(RegularTacosSold <= DemandRegularMax, name=\"demand_regular_tacos\")\nmodel.addConstr(DeluxeTacosSold <= DemandDeluxeMax, name=\"demand_deluxe_tacos\")\nmodel.addConstr(RegularTacosSold + DeluxeTacosSold <= SupplyTotalMax, name=\"supply_total_limit\")\nmodel.addConstr(RegularTacosSold >= 0, name=\"non_negativity_regular_tacos\")\nmodel.addConstr(DeluxeTacosSold >= 0, name=\"non_negativity_deluxe_tacos\")\n\n# Add constraint to ensure the number of deluxe tacos sold is non-negative\nmodel.addConstr(DeluxeTacosSold >= 0, name=\"non_negative_deluxe_tacos\")\n\n# Add the constraint that the number of regular tacos sold is at most the maximum demand for regular tacos\nmodel.addConstr(RegularTacosSold <= DemandRegularMax, name=\"max_demand_regular_tacos\")\n\n# Add constraint for deluxe tacos\nmodel.addConstr(DeluxeTacosSold <= DemandDeluxeMax, name=\"deluxe_tacos_demand_constraint\")\n\n# Add constraint ensuring total number of tacos sold is at most the supply limit\nmodel.addConstr(RegularTacosSold + DeluxeTacosSold <= SupplyTotalMax, name=\"total_taco_supply_limit\")\n\n# Regular tacos maximum demand constraint\nmodel.addConstr(RegularTacosSold <= DemandRegularMax, name=\"max_demand_regular_tacos\")\n\n# Add constraint to ensure deluxe tacos sold do not exceed maximum demand\nmodel.addConstr(DeluxeTacosSold <= DemandDeluxeMax, name=\"deluxe_tacos_demand_limit\")\n\n# Add constraint for total tacos sold not exceeding supply limit\nmodel.addConstr(RegularTacosSold + DeluxeTacosSold <= SupplyTotalMax, name=\"taco_supply_limit\")\n\n# The variable \"RegularTacosSold\" is already defined as non-negative due to its default lower bound (0) in Gurobi.\n# No additional code is needed for this constraint.\n\n# Add constraint to ensure the number of deluxe tacos sold is non-negative\nmodel.addConstr(DeluxeTacosSold >= 0, name=\"non_negative_deluxe_tacos\")\n\n# Set objective\nmodel.setObjective(ProfitRegular * RegularTacosSold + ProfitDeluxe * DeluxeTacosSold, gp.GRB.MAXIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

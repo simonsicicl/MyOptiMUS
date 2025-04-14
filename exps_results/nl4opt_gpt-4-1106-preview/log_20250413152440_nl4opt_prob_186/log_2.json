@@ -1,0 +1,179 @@
+{
+    "background": "A construction company uses cows and elephants to transport bricks. Each animal has a limited carrying capacity, and the company seeks to minimize the number of animals while meeting a minimum transport requirement.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of bricks a cow can carry",
+            "symbol": "CapacityCow",
+            "value": 20,
+            "shape": [],
+            "code": "CapacityCow = data[\"CapacityCow\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of bricks an elephant can carry",
+            "symbol": "CapacityElephant",
+            "value": 50,
+            "shape": [],
+            "code": "CapacityElephant = data[\"CapacityElephant\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of bricks required to be transported",
+            "symbol": "MinBricks",
+            "value": 1000,
+            "shape": [],
+            "code": "MinBricks = data[\"MinBricks\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum ratio of cows to elephants",
+            "symbol": "MaxCowElephantRatio",
+            "value": 2.0,
+            "shape": [],
+            "code": "MaxCowElephantRatio = data[\"MaxCowElephantRatio\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of elephants relative to the number of cows",
+            "symbol": "MaxElephantsToCows",
+            "value": 1.0,
+            "shape": [],
+            "code": "MaxElephantsToCows = data[\"MaxElephantsToCows\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Number of elephants cannot exceed the number of cows",
+            "status": "coded",
+            "formulation": "\\textup{Elephants} \\leq \\textup{Cows}",
+            "related_variables": [
+                "Cows",
+                "Elephants"
+            ],
+            "related_parameters": [],
+            "code": "model.addConstr(Elephants <= Cows, name=\"elephant_cow_constraint\")"
+        },
+        {
+            "description": "There must be at most MaxCowElephantRatio cows for each elephant",
+            "status": "coded",
+            "formulation": "\\textup{Cows} \\leq \\textup{MaxCowElephantRatio} \\times \\textup{Elephants}",
+            "related_variables": [
+                "Cows",
+                "Elephants"
+            ],
+            "related_parameters": [
+                "MaxCowElephantRatio"
+            ],
+            "code": "# Ensure at most MaxCowElephantRatio cows for each elephant\nmodel.addConstr(Cows <= MaxCowElephantRatio * Elephants, name=\"max_cow_elephant_ratio\")"
+        },
+        {
+            "description": "The total number of bricks carried by all the cows and elephants must meet or exceed the minimum required number of bricks",
+            "status": "coded",
+            "formulation": "\\textup{Cows} \\times \\textup{CapacityCow} + \\textup{Elephants} \\times \\textup{CapacityElephant} \\geq \\textup{MinBricks}",
+            "related_variables": [
+                "Cows",
+                "Elephants"
+            ],
+            "related_parameters": [
+                "CapacityCow",
+                "CapacityElephant",
+                "MinBricks"
+            ],
+            "code": "# Constraint: Total number of bricks carried by cows and elephants meets or exceeds MinBricks\nmodel.addConstr(Cows * CapacityCow + Elephants * CapacityElephant >= MinBricks, name=\"bricks_requirement\")"
+        },
+        {
+            "description": "Number of cows must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{Cows} \\geq 0",
+            "related_variables": [
+                "Cows"
+            ],
+            "related_parameters": [],
+            "code": "# Constraint: Number of cows must be non-negative\nmodel.addConstr(Cows >= 0, name=\"non_negative_cows\")"
+        },
+        {
+            "description": "The number of elephants must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{Elephants} \\geq 0",
+            "related_variables": [
+                "Elephants"
+            ],
+            "related_parameters": [],
+            "code": "# The number of elephants must be non-negative\nmodel.addConstr(Elephants >= 0, name=\"elephants_non_negative\")"
+        },
+        {
+            "description": "Ensure minimum number of bricks are transported",
+            "status": "coded",
+            "formulation": "\\textup{Cows} \\times \\textup{CapacityCow} + \\textup{Elephants} \\times \\textup{CapacityElephant} \\geq \\textup{MinBricks}",
+            "related_variables": [
+                "Cows",
+                "Elephants"
+            ],
+            "related_parameters": [
+                "CapacityCow",
+                "CapacityElephant",
+                "MinBricks"
+            ],
+            "code": "# Ensure minimum number of bricks are transported\nmodel.addConstr(Cows * CapacityCow + Elephants * CapacityElephant >= MinBricks, name=\"min_bricks\")"
+        },
+        {
+            "description": "Ensure that the number of cows does not exceed the set maximum ratio of cows to elephants",
+            "status": "coded",
+            "formulation": "\\textup{Cows} \\leq \\textup{MaxCowElephantRatio} \\times \\textup{Elephants}",
+            "related_variables": [
+                "Cows",
+                "Elephants"
+            ],
+            "related_parameters": [
+                "MaxCowElephantRatio"
+            ],
+            "code": "# Ensure that the number of cows does not exceed the set maximum ratio of cows to elephants\nmodel.addConstr(Cows <= MaxCowElephantRatio * Elephants, name=\"cow_to_elephant_ratio_constraint\")"
+        },
+        {
+            "description": "Ensure that the number of elephants does not exceed the maximum number allowed relative to the number of cows",
+            "status": "coded",
+            "formulation": "\\textup{Elephants} \\leq \\textup{Cows} \\times \\textup{MaxElephantsToCows}",
+            "related_variables": [
+                "Cows",
+                "Elephants"
+            ],
+            "related_parameters": [
+                "MaxElephantsToCows"
+            ],
+            "code": "# Ensure that the number of elephants does not exceed the maximum number allowed relative to the number of cows\nmodel.addConstr(Elephants <= Cows * MaxElephantsToCows, name=\"elephant_cow_ratio\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of cows employed",
+            "symbol": "Cows",
+            "shape": [],
+            "status": "coded",
+            "code": "Cows = model.addVar(vtype=gp.GRB.INTEGER, name=\"Cows\")"
+        },
+        {
+            "definition": "The number of elephants employed",
+            "symbol": "Elephants",
+            "shape": [],
+            "status": "coded",
+            "code": "Elephants = model.addVar(vtype=gp.GRB.INTEGER, name=\"Elephants\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of animals used in the construction company for transporting bricks",
+            "status": "coded",
+            "formulation": "\\textup{Minimize} \\quad \\textup{Cows} + \\textup{Elephants}",
+            "related_variables": [
+                "Cows",
+                "Elephants"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(Cows + Elephants, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 29.0,
+    "log_path": "logs/log_20250413152440_nl4opt_prob_186/",
+    "problem_path": "data/nl4opt/prob_186/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_186/data.json\", \"r\") as f:\n    data = json.load(f)\n\nCapacityCow = data[\"CapacityCow\"] # scalar parameter\nCapacityElephant = data[\"CapacityElephant\"] # scalar parameter\nMinBricks = data[\"MinBricks\"] # scalar parameter\nMaxCowElephantRatio = data[\"MaxCowElephantRatio\"] # scalar parameter\nMaxElephantsToCows = data[\"MaxElephantsToCows\"] # scalar parameter\nCows = model.addVar(vtype=gp.GRB.INTEGER, name=\"Cows\")\nElephants = model.addVar(vtype=gp.GRB.INTEGER, name=\"Elephants\")\n\nmodel.addConstr(Elephants <= Cows, name=\"elephant_cow_constraint\")\n\n# Ensure at most MaxCowElephantRatio cows for each elephant\nmodel.addConstr(Cows <= MaxCowElephantRatio * Elephants, name=\"max_cow_elephant_ratio\")\n\n# Constraint: Total number of bricks carried by cows and elephants meets or exceeds MinBricks\nmodel.addConstr(Cows * CapacityCow + Elephants * CapacityElephant >= MinBricks, name=\"bricks_requirement\")\n\n# Constraint: Number of cows must be non-negative\nmodel.addConstr(Cows >= 0, name=\"non_negative_cows\")\n\n# The number of elephants must be non-negative\nmodel.addConstr(Elephants >= 0, name=\"elephants_non_negative\")\n\n# Ensure minimum number of bricks are transported\nmodel.addConstr(Cows * CapacityCow + Elephants * CapacityElephant >= MinBricks, name=\"min_bricks\")\n\n# Ensure that the number of cows does not exceed the set maximum ratio of cows to elephants\nmodel.addConstr(Cows <= MaxCowElephantRatio * Elephants, name=\"cow_to_elephant_ratio_constraint\")\n\n# Ensure that the number of elephants does not exceed the maximum number allowed relative to the number of cows\nmodel.addConstr(Elephants <= Cows * MaxElephantsToCows, name=\"elephant_cow_ratio\")\n\n# Set objective\nmodel.setObjective(Cows + Elephants, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

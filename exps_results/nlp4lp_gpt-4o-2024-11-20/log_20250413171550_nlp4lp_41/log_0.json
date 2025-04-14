@@ -1,0 +1,180 @@
+{
+    "background": "The problem involves determining an optimal production schedule that minimizes the total cost, taking into account regular and overtime production along with storage.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Demand of product n",
+            "symbol": "Demand",
+            "value": "",
+            "shape": [
+                "N"
+            ],
+            "code": "Demand = np.array(data[\"Demand\"]) # ['N']"
+        },
+        {
+            "definition": "Maximum production amount under regular conditions",
+            "symbol": "MaxRegularAmount",
+            "value": "",
+            "shape": [],
+            "code": "MaxRegularAmount = data[\"MaxRegularAmount\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost of production under regular conditions per unit",
+            "symbol": "CostRegular",
+            "value": "",
+            "shape": [],
+            "code": "CostRegular = data[\"CostRegular\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost of production under overtime conditions per unit",
+            "symbol": "CostOvertime",
+            "value": "",
+            "shape": [],
+            "code": "CostOvertime = data[\"CostOvertime\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost to store one unit of product",
+            "symbol": "StoreCost",
+            "value": "",
+            "shape": [],
+            "code": "StoreCost = data[\"StoreCost\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Demand for each product must be met",
+            "status": "formulated",
+            "formulation": "\\textup{RegularProduction}_{n} + \\textup{OvertimeProduction}_{n} + \\textup{StoredInventory}_{n} \\geq \\textup{Demand}_{n} \\quad \\forall \\, n \\in \\{1, \\dots, N\\}",
+            "related_variables": [
+                "RegularProduction",
+                "OvertimeProduction",
+                "StoredInventory"
+            ],
+            "related_parameters": [
+                "Demand"
+            ]
+        },
+        {
+            "description": "The maximum production under regular conditions for each product must not exceed the predefined maximum allowed amount \\textup{MaxRegularAmount}.",
+            "status": "formulated",
+            "formulation": "\\textup{RegularProduction}_{n} \\leq \\textup{MaxRegularAmount}, \\quad \\forall n \\in N",
+            "related_variables": [
+                "RegularProduction"
+            ],
+            "related_parameters": [
+                "MaxRegularAmount"
+            ]
+        },
+        {
+            "description": "Regular production for any product cannot exceed the maximum regular production amount",
+            "status": "formulated",
+            "formulation": "\\textup{RegularProduction}_{n} \\leq \\textup{MaxRegularAmount} \\quad \\forall \\, n \\in \\{1, \\dots, N\\}",
+            "related_variables": [
+                "RegularProduction"
+            ],
+            "related_parameters": [
+                "MaxRegularAmount"
+            ]
+        },
+        {
+            "description": "Non-negativity constraint for regular production",
+            "status": "formulated",
+            "formulation": "\\textup{RegularProduction}_{n} \\geq 0 \\quad \\forall \\, n \\in \\{1, \\dots, N\\}",
+            "related_variables": [
+                "RegularProduction"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Non-negativity constraint for overtime production",
+            "status": "formulated",
+            "formulation": "\\textup{OvertimeProduction}_{n} \\geq 0 \\quad \\forall \\, n \\in \\{1, \\dots, N\\}",
+            "related_variables": [
+                "OvertimeProduction"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Non-negativity constraint for stored inventory",
+            "status": "formulated",
+            "formulation": "\\textup{StoredInventory}_{n} \\geq 0 \\quad \\forall \\, n \\in \\{1, \\dots, N\\}",
+            "related_variables": [
+                "StoredInventory"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Demand satisfaction constraint ensuring total production and inventory meet demand for each product.",
+            "status": "formulated",
+            "formulation": "\\textup{RegularProduction}_{n} + \\textup{OvertimeProduction}_{n} + \\textup{StoredInventory}_{n} \\geq \\textup{Demand}_{n}, \\quad \\forall n \\in \\{1, 2, \\dots, N\\}",
+            "related_variables": [
+                "RegularProduction",
+                "OvertimeProduction",
+                "StoredInventory"
+            ],
+            "related_parameters": [
+                "Demand"
+            ]
+        },
+        {
+            "description": "Regular production cannot exceed the maximum allowed under regular working hours.",
+            "status": "formulated",
+            "formulation": "\\textup{RegularProduction}_{n} \\leq \\textup{MaxRegularAmount}, \\quad \\forall n \\in \\{1, 2, \\dots, N\\}",
+            "related_variables": [
+                "RegularProduction"
+            ],
+            "related_parameters": [
+                "MaxRegularAmount"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The quantity produced under regular working conditions for product n",
+            "symbol": "RegularProduction",
+            "shape": [
+                "N"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "The quantity produced under overtime working conditions for product n",
+            "symbol": "OvertimeProduction",
+            "shape": [
+                "N"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "The quantity of stored inventory available for product n",
+            "symbol": "StoredInventory",
+            "shape": [
+                "N"
+            ],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total cost of production and storage, including regular production, overtime production, and inventory storage costs.",
+            "status": "formulated",
+            "formulation": "\\sum_{n=1}^{N} \\Big( \\textup{RegularProduction}_{n} \\cdot \\textup{CostRegular} + \\textup{OvertimeProduction}_{n} \\cdot \\textup{CostOvertime} + \\textup{StoredInventory}_{n} \\cdot \\textup{StoreCost} \\Big)",
+            "related_variables": [
+                "RegularProduction",
+                "OvertimeProduction",
+                "StoredInventory"
+            ],
+            "related_parameters": [
+                "CostRegular",
+                "CostOvertime",
+                "StoreCost"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413171550_nlp4lp_41/",
+    "problem_path": "data/nlp4lp/41/"
+}

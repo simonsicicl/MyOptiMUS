@@ -1,0 +1,224 @@
+{
+    "background": "An Indian restaurant prepares two types of curry using goat and chicken meat. They need to optimize the use of curry base while satisfying the demand and ingredient constraints.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Units of goat meat required for one bowl of goat curry",
+            "symbol": "GoatMeatPerGoatCurry",
+            "value": 3,
+            "shape": [],
+            "code": "GoatMeatPerGoatCurry = data[\"GoatMeatPerGoatCurry\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of curry base required for one bowl of goat curry",
+            "symbol": "CurryBasePerGoatCurry",
+            "value": 6,
+            "shape": [],
+            "code": "CurryBasePerGoatCurry = data[\"CurryBasePerGoatCurry\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of chicken meat required for one bowl of chicken curry",
+            "symbol": "ChickenMeatPerChickenCurry",
+            "value": 5,
+            "shape": [],
+            "code": "ChickenMeatPerChickenCurry = data[\"ChickenMeatPerChickenCurry\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of curry base required for one bowl of chicken curry",
+            "symbol": "CurryBasePerChickenCurry",
+            "value": 5,
+            "shape": [],
+            "code": "CurryBasePerChickenCurry = data[\"CurryBasePerChickenCurry\"] # scalar parameter"
+        },
+        {
+            "definition": "Total available units of goat meat",
+            "symbol": "TotalGoatMeat",
+            "value": 1500,
+            "shape": [],
+            "code": "TotalGoatMeat = data[\"TotalGoatMeat\"] # scalar parameter"
+        },
+        {
+            "definition": "Total available units of chicken meat",
+            "symbol": "TotalChickenMeat",
+            "value": 2000,
+            "shape": [],
+            "code": "TotalChickenMeat = data[\"TotalChickenMeat\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum proportion of bowls that must be chicken curry",
+            "symbol": "MinChickenCurryProportion",
+            "value": 0.25,
+            "shape": [],
+            "code": "MinChickenCurryProportion = data[\"MinChickenCurryProportion\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of goat curry bowls must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{GoatCurryBowls} \\geq 0",
+            "related_variables": [
+                "GoatCurryBowls"
+            ],
+            "related_parameters": [],
+            "code": "# Add non-negativity constraint for GoatCurryBowls\nmodel.addConstr(GoatCurryBowls >= 0, name=\"non_negativity_GoatCurryBowls\")"
+        },
+        {
+            "description": "Number of chicken curry bowls must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{ChickenCurryBowls} \\geq 0",
+            "related_variables": [
+                "ChickenCurryBowls"
+            ],
+            "related_parameters": [],
+            "code": "# No code needed, as non-negativity is inherent to the default lower bound of Gurobi continuous variables,\n# i.e., variables are >= 0 by default."
+        },
+        {
+            "description": "The total goat meat used for all goat curry bowls must not exceed the available goat meat (TotalGoatMeat).",
+            "status": "coded",
+            "formulation": "\\textup{GoatMeatPerGoatCurry} \\\\cdot \\\\textup{GoatCurryBowls} \\\\leq \\\\textup{TotalGoatMeat}",
+            "related_variables": [
+                "GoatCurryBowls"
+            ],
+            "related_parameters": [
+                "GoatMeatPerGoatCurry",
+                "TotalGoatMeat"
+            ],
+            "code": "# Add constraint to restrict total goat meat used in goat curry bowls\nmodel.addConstr(GoatMeatPerGoatCurry * GoatCurryBowls <= TotalGoatMeat, name=\"goat_meat_limit\")"
+        },
+        {
+            "description": "The total chicken meat used in preparing all chicken curry bowls must not exceed the available chicken meat.",
+            "status": "coded",
+            "formulation": "\\textup{ChickenCurryBowls} \\cdot \\textup{ChickenMeatPerChickenCurry} \\leq \\textup{TotalChickenMeat}",
+            "related_variables": [
+                "ChickenCurryBowls"
+            ],
+            "related_parameters": [
+                "ChickenMeatPerChickenCurry",
+                "TotalChickenMeat"
+            ],
+            "code": "# Add constraint: total chicken meat used must not exceed available chicken meat\nmodel.addConstr(ChickenCurryBowls * ChickenMeatPerChickenCurry <= TotalChickenMeat, name=\"chicken_meat_limit\")"
+        },
+        {
+            "description": "At least a proportion \\textup{MinChickenCurryProportion} of the bowls made must be chicken curry.",
+            "status": "coded",
+            "formulation": "(1 - \\textup{MinChickenCurryProportion}) \\\\cdot \\textup{ChickenCurryBowls} \\\\geq \\textup{MinChickenCurryProportion} \\\\cdot \\textup{GoatCurryBowls}",
+            "related_variables": [
+                "ChickenCurryBowls",
+                "GoatCurryBowls"
+            ],
+            "related_parameters": [
+                "MinChickenCurryProportion"
+            ],
+            "code": "# Add constraint for minimum proportion of chicken curry bowls\nmodel.addConstr((1 - MinChickenCurryProportion) * ChickenCurryBowls >= MinChickenCurryProportion * GoatCurryBowls, \n                name=\"min_chicken_curry_proportion\")"
+        },
+        {
+            "description": "The number of goat curry bowls must be greater than the number of chicken curry bowls.",
+            "status": "coded",
+            "formulation": "\\textup{GoatCurryBowls} \\geq \\textup{ChickenCurryBowls} + 1",
+            "related_variables": [
+                "GoatCurryBowls",
+                "ChickenCurryBowls"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint: The number of goat curry bowls must be greater than the number of chicken curry bowls\nmodel.addConstr(GoatCurryBowls >= ChickenCurryBowls + 1, name=\"goat_vs_chicken_curry\")"
+        },
+        {
+            "description": "The total quantity of goat meat used cannot exceed the available goat meat.",
+            "status": "coded",
+            "formulation": "\\textup{GoatCurryBowls} \\cdot \\textup{GoatMeatPerGoatCurry} \\leq \\textup{TotalGoatMeat}",
+            "related_variables": [
+                "GoatCurryBowls"
+            ],
+            "related_parameters": [
+                "GoatMeatPerGoatCurry",
+                "TotalGoatMeat"
+            ],
+            "code": "# Add constraint to ensure goat meat usage does not exceed availability\nmodel.addConstr(GoatCurryBowls * GoatMeatPerGoatCurry <= TotalGoatMeat, name=\"goat_meat_usage\")"
+        },
+        {
+            "description": "The total quantity of chicken meat used cannot exceed the available chicken meat.",
+            "status": "coded",
+            "formulation": "\\textup{ChickenCurryBowls} \\cdot \\textup{ChickenMeatPerChickenCurry} \\leq \\textup{TotalChickenMeat}",
+            "related_variables": [
+                "ChickenCurryBowls"
+            ],
+            "related_parameters": [
+                "ChickenMeatPerChickenCurry",
+                "TotalChickenMeat"
+            ],
+            "code": "# Add chicken meat usage constraint\nmodel.addConstr(ChickenCurryBowls * ChickenMeatPerChickenCurry <= TotalChickenMeat, name=\"chicken_meat_usage\")"
+        },
+        {
+            "description": "The proportion of chicken curry bowls must be at least the minimum specified proportion.",
+            "status": "coded",
+            "formulation": "\\textup{ChickenCurryBowls} \\geq \\textup{MinChickenCurryProportion} \\cdot \\textup{TotalBowls}",
+            "related_variables": [
+                "ChickenCurryBowls",
+                "TotalBowls"
+            ],
+            "related_parameters": [
+                "MinChickenCurryProportion"
+            ],
+            "code": "# Add constraint: The proportion of chicken curry bowls must be at least the minimum specified proportion\nmodel.addConstr(ChickenCurryBowls >= MinChickenCurryProportion * TotalBowls, name=\"min_chicken_curry_proportion\")"
+        },
+        {
+            "description": "Total number of curry bowls is the sum of goat and chicken curry bowls.",
+            "status": "coded",
+            "formulation": "\\textup{TotalBowls} = \\textup{GoatCurryBowls} + \\textup{ChickenCurryBowls}",
+            "related_variables": [
+                "TotalBowls",
+                "GoatCurryBowls",
+                "ChickenCurryBowls"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint to ensure TotalBowls equals the sum of GoatCurryBowls and ChickenCurryBowls\nmodel.addConstr(TotalBowls == GoatCurryBowls + ChickenCurryBowls, name=\"total_bowls_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of goat curry bowls prepared by the restaurant.",
+            "symbol": "GoatCurryBowls",
+            "shape": [],
+            "status": "coded",
+            "code": "GoatCurryBowls = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"GoatCurryBowls\")"
+        },
+        {
+            "definition": "The number of chicken curry bowls prepared by the restaurant.",
+            "symbol": "ChickenCurryBowls",
+            "shape": [],
+            "status": "coded",
+            "code": "ChickenCurryBowls = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"ChickenCurryBowls\")"
+        },
+        {
+            "definition": "The total number of curry bowls prepared by the restaurant.",
+            "symbol": "TotalBowls",
+            "shape": [],
+            "status": "coded",
+            "code": "TotalBowls = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TotalBowls\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total amount of curry base used in making goat and chicken curry bowls.",
+            "status": "coded",
+            "formulation": "\\textup{Minimize} \\quad \\textup{CurryBaseUsed} = \\textup{GoatCurryBowls} \\cdot \\textup{CurryBasePerGoatCurry} + \\textup{ChickenCurryBowls} \\cdot \\textup{CurryBasePerChickenCurry}",
+            "related_variables": [
+                "GoatCurryBowls",
+                "ChickenCurryBowls"
+            ],
+            "related_parameters": [
+                "CurryBasePerGoatCurry",
+                "CurryBasePerChickenCurry"
+            ],
+            "code": "# Set objective\nmodel.setObjective(GoatCurryBowls * CurryBasePerGoatCurry + ChickenCurryBowls * CurryBasePerChickenCurry, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 11.499999999999998,
+    "log_path": "logs/log_20250414061602_nl4opt_prob_89/",
+    "problem_path": "data/nl4opt/prob_89/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_89/data.json\", \"r\") as f:\n    data = json.load(f)\n\nGoatMeatPerGoatCurry = data[\"GoatMeatPerGoatCurry\"] # scalar parameter\nCurryBasePerGoatCurry = data[\"CurryBasePerGoatCurry\"] # scalar parameter\nChickenMeatPerChickenCurry = data[\"ChickenMeatPerChickenCurry\"] # scalar parameter\nCurryBasePerChickenCurry = data[\"CurryBasePerChickenCurry\"] # scalar parameter\nTotalGoatMeat = data[\"TotalGoatMeat\"] # scalar parameter\nTotalChickenMeat = data[\"TotalChickenMeat\"] # scalar parameter\nMinChickenCurryProportion = data[\"MinChickenCurryProportion\"] # scalar parameter\nGoatCurryBowls = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"GoatCurryBowls\")\nChickenCurryBowls = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"ChickenCurryBowls\")\nTotalBowls = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TotalBowls\")\n\n# Add non-negativity constraint for GoatCurryBowls\nmodel.addConstr(GoatCurryBowls >= 0, name=\"non_negativity_GoatCurryBowls\")\n\n# No code needed, as non-negativity is inherent to the default lower bound of Gurobi continuous variables,\n# i.e., variables are >= 0 by default.\n\n# Add constraint to restrict total goat meat used in goat curry bowls\nmodel.addConstr(GoatMeatPerGoatCurry * GoatCurryBowls <= TotalGoatMeat, name=\"goat_meat_limit\")\n\n# Add constraint: total chicken meat used must not exceed available chicken meat\nmodel.addConstr(ChickenCurryBowls * ChickenMeatPerChickenCurry <= TotalChickenMeat, name=\"chicken_meat_limit\")\n\n# Add constraint for minimum proportion of chicken curry bowls\nmodel.addConstr((1 - MinChickenCurryProportion) * ChickenCurryBowls >= MinChickenCurryProportion * GoatCurryBowls, \n                name=\"min_chicken_curry_proportion\")\n\n# Add constraint: The number of goat curry bowls must be greater than the number of chicken curry bowls\nmodel.addConstr(GoatCurryBowls >= ChickenCurryBowls + 1, name=\"goat_vs_chicken_curry\")\n\n# Add constraint to ensure goat meat usage does not exceed availability\nmodel.addConstr(GoatCurryBowls * GoatMeatPerGoatCurry <= TotalGoatMeat, name=\"goat_meat_usage\")\n\n# Add chicken meat usage constraint\nmodel.addConstr(ChickenCurryBowls * ChickenMeatPerChickenCurry <= TotalChickenMeat, name=\"chicken_meat_usage\")\n\n# Add constraint: The proportion of chicken curry bowls must be at least the minimum specified proportion\nmodel.addConstr(ChickenCurryBowls >= MinChickenCurryProportion * TotalBowls, name=\"min_chicken_curry_proportion\")\n\n# Add constraint to ensure TotalBowls equals the sum of GoatCurryBowls and ChickenCurryBowls\nmodel.addConstr(TotalBowls == GoatCurryBowls + ChickenCurryBowls, name=\"total_bowls_constraint\")\n\n# Set objective\nmodel.setObjective(GoatCurryBowls * CurryBasePerGoatCurry + ChickenCurryBowls * CurryBasePerChickenCurry, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

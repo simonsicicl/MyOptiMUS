@@ -1,0 +1,168 @@
+{
+    "background": "The Aircraft Landing Problem involves scheduling aircraft to land on runways within specified time windows while adhering to separation time criteria between consecutive landings to ensure safety.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "symbol": "TotalAircrafts",
+            "definition": "The total number of aircraft in the set",
+            "shape": [],
+            "code": "TotalAircrafts = data[\"TotalAircrafts\"] # scalar parameter"
+        },
+        {
+            "symbol": "EarliestLandingTime",
+            "definition": "The earliest landing time for each aircraft",
+            "shape": [
+                "TotalAircrafts"
+            ],
+            "code": "EarliestLandingTime = np.array(data[\"EarliestLandingTime\"]) # ['TotalAircrafts']"
+        },
+        {
+            "symbol": "LatestLandingTime",
+            "definition": "The latest landing time for each aircraft",
+            "shape": [
+                "TotalAircrafts"
+            ],
+            "code": "LatestLandingTime = np.array(data[\"LatestLandingTime\"]) # ['TotalAircrafts']"
+        },
+        {
+            "symbol": "TargetLandingTime",
+            "definition": "The target landing time for each aircraft",
+            "shape": [
+                "TotalAircrafts"
+            ],
+            "code": "TargetLandingTime = np.array(data[\"TargetLandingTime\"]) # ['TotalAircrafts']"
+        },
+        {
+            "symbol": "PenaltyTimeAfterTarget",
+            "definition": "The penalty incurred for each aircraft landing after the target time",
+            "shape": [
+                "TotalAircrafts"
+            ],
+            "code": "PenaltyTimeAfterTarget = np.array(data[\"PenaltyTimeAfterTarget\"]) # ['TotalAircrafts']"
+        },
+        {
+            "symbol": "PenaltyTimeBeforeTarget",
+            "definition": "The penalty incurred for each aircraft landing before the target time",
+            "shape": [
+                "TotalAircrafts"
+            ],
+            "code": "PenaltyTimeBeforeTarget = np.array(data[\"PenaltyTimeBeforeTarget\"]) # ['TotalAircrafts']"
+        },
+        {
+            "symbol": "SeparationTimeMatrix",
+            "definition": "The required separation time between the landing of aircraft i and aircraft j",
+            "shape": [
+                "TotalAircrafts",
+                "TotalAircrafts"
+            ],
+            "code": "SeparationTimeMatrix = np.array(data[\"SeparationTimeMatrix\"]) # ['TotalAircrafts', 'TotalAircrafts']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Each aircraft must land within its predetermined time window.",
+            "status": "coded",
+            "formulation": "\\forall i \\in \\{1, \\ldots, \\textup{TotalAircrafts}\\}, \\quad \\textup{EarliestLandingTime}_i \\leq \\textup{LandingTime}_i \\leq \\textup{LatestLandingTime}_i",
+            "related_variables": [
+                "LandingTime"
+            ],
+            "related_parameters": [
+                "EarliestLandingTime",
+                "LatestLandingTime"
+            ],
+            "code": "# Add time window constraints for each aircraft\nfor i in range(TotalAircrafts):\n    model.addConstr(LandingTime[i] >= EarliestLandingTime[i], name=\"earliest_landing_time_{}\".format(i))\n    model.addConstr(LandingTime[i] <= LatestLandingTime[i], name=\"latest_landing_time_{}\".format(i))"
+        },
+        {
+            "description": "Maintain sufficient separation time between consecutive aircraft landings.",
+            "status": "coded",
+            "formulation": "\\forall i, j \\in \\{1, ..., \\textup{TotalAircrafts}\\}, i \\neq j:\\\\ \\textup{LandingTime}_i + \\textup{SeparationTimeMatrix}_{i,j} \\leq \\textup{LandingTime}_j + M \\cdot (1 - \\textup{SeparationMatrix}_{i,j}) \\\\ \\textup{LandingTime}_j + \\textup{SeparationTimeMatrix}_{j,i} \\leq \\textup{LandingTime}_i + M \\cdot \\textup{SeparationMatrix}_{i,j}",
+            "related_variables": [
+                "LandingTime",
+                "SeparationMatrix"
+            ],
+            "related_parameters": [
+                "TotalAircrafts",
+                "SeparationTimeMatrix"
+            ],
+            "code": "# Maintain sufficient separation time between consecutive aircraft landings\nM = gp.GRB.INFINITY # Large constant M used for big-M constraints\n\nfor i in range(TotalAircrafts):\n    for j in range(TotalAircrafts):\n        if i != j:\n            model.addConstr(LandingTime[i] + SeparationTimeMatrix[i, j] <= LandingTime[j] + M * (1 - SeparationMatrix[i,j]), \n                            name=f\"separation_time_{i}_{j}_i_before_j\")\n            model.addConstr(LandingTime[j] + SeparationTimeMatrix[j, i] <= LandingTime[i] + M * SeparationMatrix[i,j], \n                            name=f\"separation_time_{i}_{j}_j_before_i\")"
+        },
+        {
+            "description": "TimeBeforeTarget and TimeAfterTarget are non-negative and represent the time each aircraft lands before or after its TargetLandingTime",
+            "status": "coded",
+            "formulation": "\\textup{TimeBeforeTarget}_i \\geq \\textup{max}(0, \\textup{TargetLandingTime}_i - \\textup{LandingTime}_i) \\quad \\textup{and} \\quad \\textup{TimeAfterTarget}_i \\geq \\textup{max}(0, \\textup{LandingTime}_i - \\textup{TargetLandingTime}_i), \\quad \\forall i \\in \\{1, ..., \\textup{TotalAircrafts}\\}",
+            "related_variables": [
+                "TimeBeforeTarget",
+                "TimeAfterTarget",
+                "LandingTime"
+            ],
+            "related_parameters": [
+                "TargetLandingTime",
+                "TotalAircrafts"
+            ],
+            "code": "# TimeBeforeTarget and TimeAfterTarget constraints\nfor i in range(TotalAircrafts):\n    model.addConstr(TimeBeforeTarget[i] >= LandingTime[i] - TargetLandingTime[i], name=f\"TimeBeforeTarget_constr_{i}\")\n    model.addConstr(TimeAfterTarget[i] >= TargetLandingTime[i] - LandingTime[i], name=f\"TimeAfterTarget_constr_{i}\")\n\n# Non-negativity handled by variable declaration"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The actual landing time for each aircraft",
+            "symbol": "LandingTime",
+            "shape": [
+                "TotalAircrafts"
+            ],
+            "status": "coded",
+            "code": "LandingTime = model.addVars(TotalAircrafts, vtype=gp.GRB.CONTINUOUS, name=\"LandingTime\")"
+        },
+        {
+            "definition": "Binary variable indicating if aircraft i lands before aircraft j",
+            "symbol": "SeparationMatrix",
+            "shape": [
+                "TotalAircrafts",
+                "TotalAircrafts"
+            ],
+            "status": "coded",
+            "code": "SeparationMatrix = model.addVars(TotalAircrafts, TotalAircrafts, vtype=gp.GRB.BINARY, name=\"SeparationMatrix\")"
+        },
+        {
+            "definition": "The time aircraft i lands before its TargetLandingTime",
+            "symbol": "TimeBeforeTarget",
+            "shape": [
+                "TotalAircrafts"
+            ],
+            "status": "coded",
+            "code": "TimeBeforeTarget = model.addVars(TotalAircrafts, vtype=gp.GRB.CONTINUOUS, name=\"TimeBeforeTarget\")"
+        },
+        {
+            "definition": "The time aircraft i lands after its TargetLandingTime",
+            "symbol": "TimeAfterTarget",
+            "shape": [
+                "TotalAircrafts"
+            ],
+            "status": "coded",
+            "code": "TimeAfterTarget = model.addVars(TotalAircrafts, vtype=gp.GRB.CONTINUOUS, name=\"TimeAfterTarget\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the sum of penalties incurred for each aircraft landing before or after its TargetLandingTime",
+            "status": "coded",
+            "formulation": "\\textup{Minimize} \\quad \\sum_{i=1}^{\\textup{TotalAircrafts}} (\\textup{PenaltyTimeBeforeTarget}_i \\times \\textup{TimeBeforeTarget}_i + \\textup{PenaltyTimeAfterTarget}_i \\times \\textup{TimeAfterTarget}_i)",
+            "related_variables": [
+                "TimeBeforeTarget",
+                "TimeAfterTarget"
+            ],
+            "related_parameters": [
+                "TotalAircrafts",
+                "PenaltyTimeBeforeTarget",
+                "PenaltyTimeAfterTarget"
+            ],
+            "code": "# Set objective\nobjective = gp.quicksum((PenaltyTimeBeforeTarget[i] * TimeBeforeTarget[i] +\n                         PenaltyTimeAfterTarget[i] * TimeAfterTarget[i])\n                        for i in range(TotalAircrafts))\nmodel.setObjective(objective, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 0.0,
+    "log_path": "logs/log_20250413134515_complexor_AircraftLanding/",
+    "problem_path": "data/complexor/AircraftLanding/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/complexor/AircraftLanding/data.json\", \"r\") as f:\n    data = json.load(f)\n\nTotalAircrafts = data[\"TotalAircrafts\"] # scalar parameter\nEarliestLandingTime = np.array(data[\"EarliestLandingTime\"]) # ['TotalAircrafts']\nLatestLandingTime = np.array(data[\"LatestLandingTime\"]) # ['TotalAircrafts']\nTargetLandingTime = np.array(data[\"TargetLandingTime\"]) # ['TotalAircrafts']\nPenaltyTimeAfterTarget = np.array(data[\"PenaltyTimeAfterTarget\"]) # ['TotalAircrafts']\nPenaltyTimeBeforeTarget = np.array(data[\"PenaltyTimeBeforeTarget\"]) # ['TotalAircrafts']\nSeparationTimeMatrix = np.array(data[\"SeparationTimeMatrix\"]) # ['TotalAircrafts', 'TotalAircrafts']\nLandingTime = model.addVars(TotalAircrafts, vtype=gp.GRB.CONTINUOUS, name=\"LandingTime\")\nSeparationMatrix = model.addVars(TotalAircrafts, TotalAircrafts, vtype=gp.GRB.BINARY, name=\"SeparationMatrix\")\nTimeBeforeTarget = model.addVars(TotalAircrafts, vtype=gp.GRB.CONTINUOUS, name=\"TimeBeforeTarget\")\nTimeAfterTarget = model.addVars(TotalAircrafts, vtype=gp.GRB.CONTINUOUS, name=\"TimeAfterTarget\")\n\n# Add time window constraints for each aircraft\nfor i in range(TotalAircrafts):\n    model.addConstr(LandingTime[i] >= EarliestLandingTime[i], name=\"earliest_landing_time_{}\".format(i))\n    model.addConstr(LandingTime[i] <= LatestLandingTime[i], name=\"latest_landing_time_{}\".format(i))\n\n# Maintain sufficient separation time between consecutive aircraft landings\nM = gp.GRB.INFINITY # Large constant M used for big-M constraints\n\nfor i in range(TotalAircrafts):\n    for j in range(TotalAircrafts):\n        if i != j:\n            model.addConstr(LandingTime[i] + SeparationTimeMatrix[i, j] <= LandingTime[j] + M * (1 - SeparationMatrix[i,j]), \n                            name=f\"separation_time_{i}_{j}_i_before_j\")\n            model.addConstr(LandingTime[j] + SeparationTimeMatrix[j, i] <= LandingTime[i] + M * SeparationMatrix[i,j], \n                            name=f\"separation_time_{i}_{j}_j_before_i\")\n\n# TimeBeforeTarget and TimeAfterTarget constraints\nfor i in range(TotalAircrafts):\n    model.addConstr(TimeBeforeTarget[i] >= LandingTime[i] - TargetLandingTime[i], name=f\"TimeBeforeTarget_constr_{i}\")\n    model.addConstr(TimeAfterTarget[i] >= TargetLandingTime[i] - LandingTime[i], name=f\"TimeAfterTarget_constr_{i}\")\n\n# Non-negativity handled by variable declaration\n\n# Set objective\nobjective = gp.quicksum((PenaltyTimeBeforeTarget[i] * TimeBeforeTarget[i] +\n                         PenaltyTimeAfterTarget[i] * TimeAfterTarget[i])\n                        for i in range(TotalAircrafts))\nmodel.setObjective(objective, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

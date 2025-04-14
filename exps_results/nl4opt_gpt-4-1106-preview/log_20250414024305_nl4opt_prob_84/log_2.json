@@ -1,0 +1,153 @@
+{
+    "background": "A scientist has two experiments, alpha and beta, that produce electricity by consuming metal and acid resources. The scientist aims to maximize electricity production within the available amounts of metal and acid.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Metal required for experiment alpha",
+            "symbol": "MetalAlpha",
+            "value": 3,
+            "shape": [],
+            "code": "MetalAlpha = data[\"MetalAlpha\"] # scalar parameter"
+        },
+        {
+            "definition": "Acid required for experiment alpha",
+            "symbol": "AcidAlpha",
+            "value": 5,
+            "shape": [],
+            "code": "AcidAlpha = data[\"AcidAlpha\"] # scalar parameter"
+        },
+        {
+            "definition": "Electricity produced by experiment alpha",
+            "symbol": "ElectricityAlpha",
+            "value": 8,
+            "shape": [],
+            "code": "ElectricityAlpha = data[\"ElectricityAlpha\"] # scalar parameter"
+        },
+        {
+            "definition": "Metal required for experiment beta",
+            "symbol": "MetalBeta",
+            "value": 5,
+            "shape": [],
+            "code": "MetalBeta = data[\"MetalBeta\"] # scalar parameter"
+        },
+        {
+            "definition": "Acid required for experiment beta",
+            "symbol": "AcidBeta",
+            "value": 4,
+            "shape": [],
+            "code": "AcidBeta = data[\"AcidBeta\"] # scalar parameter"
+        },
+        {
+            "definition": "Electricity produced by experiment beta",
+            "symbol": "ElectricityBeta",
+            "value": 10,
+            "shape": [],
+            "code": "ElectricityBeta = data[\"ElectricityBeta\"] # scalar parameter"
+        },
+        {
+            "definition": "Total amount of metal available",
+            "symbol": "TotalMetal",
+            "value": 800,
+            "shape": [],
+            "code": "TotalMetal = data[\"TotalMetal\"] # scalar parameter"
+        },
+        {
+            "definition": "Total amount of acid available",
+            "symbol": "TotalAcid",
+            "value": 750,
+            "shape": [],
+            "code": "TotalAcid = data[\"TotalAcid\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Number of alpha experiments conducted must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumAlphaExperiments} \\geq 0",
+            "related_variables": [
+                "NumAlphaExperiments"
+            ],
+            "related_parameters": [],
+            "code": "# Since NumAlphaExperiments is already defined as an integer variable, we just need to add a constraint to ensure it is non-negative\nmodel.addConstr(NumAlphaExperiments >= 0, name=\"non_negative_alpha_experiments\")"
+        },
+        {
+            "description": "Number of beta experiments must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumBetaExperiments} \\geq 0",
+            "related_variables": [
+                "NumBetaExperiments"
+            ],
+            "related_parameters": [],
+            "code": "# Since NumBetaExperiments is already defined as an integer variable, no code is needed to enforce non-negativity.\n# The Gurobi solver enforces that integer variables are non-negative by default, hence no additional constraint is necessary."
+        },
+        {
+            "description": "Total metal consumed by alpha and beta experiments is less than or equal to the total metal available",
+            "status": "coded",
+            "formulation": "\\textup{MetalAlpha} \\cdot \\textup{NumAlphaExperiments} + \\textup{MetalBeta} \\cdot \\textup{NumBetaExperiments} \\leq \\textup{TotalMetal}",
+            "related_variables": [
+                "NumAlphaExperiments",
+                "NumBetaExperiments"
+            ],
+            "related_parameters": [
+                "MetalAlpha",
+                "MetalBeta",
+                "TotalMetal"
+            ],
+            "code": "# Add constraint: Total metal consumed by alpha and beta experiments is less than or equal to the total metal available\nmodel.addConstr(MetalAlpha * NumAlphaExperiments + MetalBeta * NumBetaExperiments <= TotalMetal, \n                name=\"total_metal_consumption\")"
+        },
+        {
+            "description": "The total acid consumed by alpha and beta experiments must be less than or equal to the total acid available",
+            "status": "coded",
+            "formulation": "\\textup{AcidAlpha} \\cdot \\textup{NumAlphaExperiments} + \\textup{AcidBeta} \\cdot \\textup{NumBetaExperiments} \\leq \\textup{TotalAcid}",
+            "related_variables": [
+                "NumAlphaExperiments",
+                "NumBetaExperiments"
+            ],
+            "related_parameters": [
+                "AcidAlpha",
+                "AcidBeta",
+                "TotalAcid"
+            ],
+            "code": "# Acid consumption constraint\nmodel.addConstr(AcidAlpha * NumAlphaExperiments + AcidBeta * NumBetaExperiments <= TotalAcid, name=\"total_acid_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of alpha experiments conducted",
+            "symbol": "NumAlphaExperiments",
+            "shape": [],
+            "status": "coded",
+            "code": "NumAlphaExperiments = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumAlphaExperiments\")"
+        },
+        {
+            "definition": "Number of beta experiments conducted",
+            "symbol": "NumBetaExperiments",
+            "shape": [],
+            "status": "coded",
+            "code": "NumBetaExperiments = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumBetaExperiments\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total amount of electricity produced by conducting alpha and beta experiments",
+            "status": "coded",
+            "formulation": "\\textup{ElectricityProduced} = \\textup{ElectricityAlpha} \\cdot \\textup{NumAlphaExperiments} + \\textup{ElectricityBeta} \\cdot \\textup{NumBetaExperiments}",
+            "related_variables": [
+                "NumAlphaExperiments",
+                "NumBetaExperiments"
+            ],
+            "related_parameters": [
+                "ElectricityAlpha",
+                "ElectricityBeta"
+            ],
+            "code": "# Define objective function\nmodel.setObjective(ElectricityAlpha * NumAlphaExperiments + ElectricityBeta * NumBetaExperiments, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 1680.0,
+    "log_path": "logs/log_20250414024305_nl4opt_prob_84/",
+    "problem_path": "data/nl4opt/prob_84/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_84/data.json\", \"r\") as f:\n    data = json.load(f)\n\nMetalAlpha = data[\"MetalAlpha\"] # scalar parameter\nAcidAlpha = data[\"AcidAlpha\"] # scalar parameter\nElectricityAlpha = data[\"ElectricityAlpha\"] # scalar parameter\nMetalBeta = data[\"MetalBeta\"] # scalar parameter\nAcidBeta = data[\"AcidBeta\"] # scalar parameter\nElectricityBeta = data[\"ElectricityBeta\"] # scalar parameter\nTotalMetal = data[\"TotalMetal\"] # scalar parameter\nTotalAcid = data[\"TotalAcid\"] # scalar parameter\nNumAlphaExperiments = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumAlphaExperiments\")\nNumBetaExperiments = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumBetaExperiments\")\n\n# Since NumAlphaExperiments is already defined as an integer variable, we just need to add a constraint to ensure it is non-negative\nmodel.addConstr(NumAlphaExperiments >= 0, name=\"non_negative_alpha_experiments\")\n\n# Since NumBetaExperiments is already defined as an integer variable, no code is needed to enforce non-negativity.\n# The Gurobi solver enforces that integer variables are non-negative by default, hence no additional constraint is necessary.\n\n# Add constraint: Total metal consumed by alpha and beta experiments is less than or equal to the total metal available\nmodel.addConstr(MetalAlpha * NumAlphaExperiments + MetalBeta * NumBetaExperiments <= TotalMetal, \n                name=\"total_metal_consumption\")\n\n# Acid consumption constraint\nmodel.addConstr(AcidAlpha * NumAlphaExperiments + AcidBeta * NumBetaExperiments <= TotalAcid, name=\"total_acid_constraint\")\n\n# Define objective function\nmodel.setObjective(ElectricityAlpha * NumAlphaExperiments + ElectricityBeta * NumBetaExperiments, gp.GRB.MAXIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

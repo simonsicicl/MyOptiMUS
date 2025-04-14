@@ -1,0 +1,193 @@
+{
+    "background": "A production and inventory schedule over a set number of periods requires minimization of the total cost, which is a combination of production costs, storage costs for inventory, and switching costs for changing production.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Demand for the product in each period i",
+            "symbol": "Deliver",
+            "value": "",
+            "shape": [
+                "T"
+            ],
+            "code": "Deliver = np.array(data[\"Deliver\"]) # ['T']"
+        },
+        {
+            "definition": "Cost to hold one unit of product in storage for one period",
+            "symbol": "StorageCost",
+            "value": 0.0,
+            "shape": [],
+            "code": "StorageCost = data[\"StorageCost\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost to switch the production from one period to another",
+            "symbol": "SwitchCost",
+            "value": 0.0,
+            "shape": [],
+            "code": "SwitchCost = data[\"SwitchCost\"] # scalar parameter"
+        },
+        {
+            "definition": "Total number of periods",
+            "symbol": "T",
+            "value": 0,
+            "shape": [],
+            "code": "T = data[\"T\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Production amounts in each period must be non-negative",
+            "status": "formulated",
+            "formulation": "\\forall t \\in \\{1, \\ldots, T\\}, \\quad \\textup{Production}_{t} \\geq 0",
+            "related_variables": [
+                "Production"
+            ],
+            "related_parameters": [
+                "T"
+            ]
+        },
+        {
+            "description": "Inventory levels must be non-negative in each period",
+            "status": "formulated",
+            "formulation": "Inventory_{t} \\geq 0, \\quad \\forall t \\in \\textup{T}",
+            "related_variables": [
+                "Inventory"
+            ],
+            "related_parameters": [
+                "T"
+            ]
+        },
+        {
+            "description": "Production in each period must meet delivery requirement while accounting for inventory",
+            "status": "formulated",
+            "formulation": "\\textup{Production}_t + \\textup{Inventory}_{t-1} \\geq \\textup{Deliver}_t \\quad \\forall t \\in \\{1, \\ldots, T\\}",
+            "related_variables": [
+                "Production",
+                "Inventory"
+            ],
+            "related_parameters": [
+                "Deliver"
+            ]
+        },
+        {
+            "description": "Switch cost is incurred when changing production between periods, if any",
+            "status": "formulated",
+            "formulation": "\\sum_{t=1}^{T} \\textup{SwitchCost} \\cdot \\textup{SwitchIndicator}_{t} \\leq \\textup{SwitchCost} \\cdot (T - 1)",
+            "related_variables": [
+                "SwitchIndicator"
+            ],
+            "related_parameters": [
+                "SwitchCost",
+                "T"
+            ]
+        },
+        {
+            "description": "The inventory level is defined by the inventory of the previous period plus production minus delivery in each period",
+            "status": "formulated",
+            "formulation": "Inventory_{t} = Inventory_{t-1} + Production_{t} - \\textup{Deliver}_{t}, \\quad \\forall t \\in \\textup{T}",
+            "related_variables": [
+                "Inventory",
+                "Production"
+            ],
+            "related_parameters": [
+                "Deliver"
+            ]
+        },
+        {
+            "description": "Non-negative inventory constraint in period 0, considering no initial inventory",
+            "status": "formulated",
+            "formulation": "\\textup{Inventory}_0 = 0",
+            "related_variables": [
+                "Inventory"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Inventory balance constraint, representing the change in inventory from one period to the next",
+            "status": "formulated",
+            "formulation": "\\textup{Inventory}_t = \\textup{Production}_t + \\textup{Inventory}_{t-1} - \\textup{Deliver}_t \\quad \\forall t \\in \\{1, \\ldots, T\\}",
+            "related_variables": [
+                "Production",
+                "Inventory"
+            ],
+            "related_parameters": [
+                "Deliver"
+            ]
+        },
+        {
+            "description": "Switch indicator should be 1 if production level changes from t-1 to t",
+            "status": "formulated",
+            "formulation": "\\textup{SwitchIndicator}_{t} \\geq \\textup{Production}_{t} - \\textup{Production}_{t-1}, \\quad \\forall t \\in \\{2, \\ldots, T\\}",
+            "related_variables": [
+                "SwitchIndicator",
+                "Production"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Switch indicator should be 1 if production level changes from t-1 to t (other direction)",
+            "status": "formulated",
+            "formulation": "\\textup{SwitchIndicator}_{t} \\geq \\textup{Production}_{t-1} - \\textup{Production}_{t}, \\quad \\forall t \\in \\{2, \\ldots, T\\}",
+            "related_variables": [
+                "SwitchIndicator",
+                "Production"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Switch indicator should be binary",
+            "status": "formulated",
+            "formulation": "\\textup{SwitchIndicator}_{t} \\in \\{0, 1\\}, \\quad \\forall t \\in \\{2, \\ldots, T\\}",
+            "related_variables": [
+                "SwitchIndicator"
+            ],
+            "related_parameters": []
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Amount of product produced in period t",
+            "symbol": "Production",
+            "shape": [
+                "T"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "Inventory level in period t",
+            "symbol": "Inventory",
+            "shape": [
+                "T"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "Binary variable indicating a switch in production level between two consecutive periods",
+            "symbol": "SwitchIndicator",
+            "shape": [
+                "T"
+            ],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total cost of production and inventory over T periods, which includes inventory holding costs and production switching costs",
+            "status": "formulated",
+            "formulation": "\\textup{Minimize} \\quad Z = \\sum_{t=1}^{T} (\\textup{StorageCost} \\cdot \\textup{Inventory}_{t} + \\textup{SwitchCost} \\cdot \\textup{SwitchIndicator}_{t})",
+            "related_variables": [
+                "Inventory",
+                "SwitchIndicator"
+            ],
+            "related_parameters": [
+                "StorageCost",
+                "SwitchCost"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413073451_nlp4lp_12/",
+    "problem_path": "data/nlp4lp/12/"
+}

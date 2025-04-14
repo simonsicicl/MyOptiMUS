@@ -1,0 +1,187 @@
+{
+    "background": "The problem involves selecting a combination of foods from a set that meets certain nutritional requirements while minimizing the total cost. The nutrients have individual minimum and maximum required amounts to be satisfied in the diet.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "symbol": "FoodNum",
+            "definition": "The number of foods",
+            "shape": [],
+            "code": "FoodNum = data[\"FoodNum\"] # scalar parameter"
+        },
+        {
+            "symbol": "NutrientNum",
+            "definition": "The number of nutrients",
+            "shape": [],
+            "code": "NutrientNum = data[\"NutrientNum\"] # scalar parameter"
+        },
+        {
+            "symbol": "CostPerFood",
+            "definition": "The cost of each food item",
+            "shape": [
+                "FoodNum"
+            ],
+            "code": "CostPerFood = np.array(data[\"CostPerFood\"]) # ['FoodNum']"
+        },
+        {
+            "symbol": "FoodMin",
+            "definition": "The minimum quantity of each food that can be bought",
+            "shape": [
+                "FoodNum"
+            ],
+            "code": "FoodMin = np.array(data[\"FoodMin\"]) # ['FoodNum']"
+        },
+        {
+            "symbol": "FoodMax",
+            "definition": "The maximum quantity of each food that can be bought",
+            "shape": [
+                "FoodNum"
+            ],
+            "code": "FoodMax = np.array(data[\"FoodMax\"]) # ['FoodNum']"
+        },
+        {
+            "symbol": "MinReqAmount",
+            "definition": "The minimum required amount of each nutrient",
+            "shape": [
+                "NutrientNum"
+            ],
+            "code": "MinReqAmount = np.array(data[\"MinReqAmount\"]) # ['NutrientNum']"
+        },
+        {
+            "symbol": "MaxReqAmount",
+            "definition": "The maximum allowed amount of each nutrient",
+            "shape": [
+                "NutrientNum"
+            ],
+            "code": "MaxReqAmount = np.array(data[\"MaxReqAmount\"]) # ['NutrientNum']"
+        },
+        {
+            "symbol": "AmountPerNutrient",
+            "definition": "The amount of each nutrient contained in each food item",
+            "shape": [
+                "FoodNum",
+                "NutrientNum"
+            ],
+            "code": "AmountPerNutrient = np.array(data[\"AmountPerNutrient\"]) # ['FoodNum', 'NutrientNum']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The total amount of each nutrient in the diet must meet the minimum requirements.",
+            "status": "coded",
+            "formulation": "\\sum_{j=1}^{\\textup{FoodNum}} \\textup{AmountPerNutrient}_{j,i} \\cdot \\textup{FoodQuantity}_{j} \\geq \\textup{MinReqAmount}_{i}, \\quad \\forall i \\in \\{1, 2, ..., \\textup{NutrientNum}\\}",
+            "related_variables": [
+                "FoodQuantity"
+            ],
+            "related_parameters": [
+                "AmountPerNutrient",
+                "MinReqAmount",
+                "FoodNum",
+                "NutrientNum"
+            ],
+            "code": "# Adding nutrient minimum requirement constraints\nfor i in range(NutrientNum):\n    model.addConstr(\n        gp.quicksum(AmountPerNutrient[j, i] * FoodQuantity[j] for j in range(FoodNum)) >= MinReqAmount[i],\n        name=f\"nutrient_min_req_{i}\"\n    )"
+        },
+        {
+            "description": "For each nutrient with a maximum requirement, the total amount in the diet must be at most MaxReqAmount_i.",
+            "status": "coded",
+            "formulation": "\\sum_{j=1}^{\\textup{FoodNum}} \\textup{AmountPerNutrient}_{j,i} \\cdot \\textup{FoodQuantity}_{j} \\leq \\textup{MaxReqAmount}_{i}, \\quad \\forall i \\in \\{1, 2, \\dots, \\textup{NutrientNum}\\}",
+            "related_variables": [
+                "FoodQuantity"
+            ],
+            "related_parameters": [
+                "AmountPerNutrient",
+                "MaxReqAmount",
+                "FoodNum",
+                "NutrientNum"
+            ],
+            "code": "# Add nutrient maximum requirement constraints\nfor i in range(NutrientNum):\n    model.addConstr(\n        gp.quicksum(FoodQuantity[j] * AmountPerNutrient[j, i] for j in range(FoodNum)) <= MaxReqAmount[i],\n        name=f\"nutrient_max_req_{i}\"\n    )"
+        },
+        {
+            "description": "Non-negativity constraint ensuring that the quantity of each food j is non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{FoodQuantity}_{j} \\geq 0 \\quad \\forall \\, j = 1, 2, \\dots, \\textup{FoodNum}",
+            "related_variables": [
+                "FoodQuantity"
+            ],
+            "related_parameters": [
+                "FoodNum"
+            ],
+            "code": "# Non-negativity constraints for food quantities\nfor j in range(FoodNum):\n    model.addConstr(FoodQuantity[j] >= 0, name=f\"NonNegativity_Food_{j}\")"
+        },
+        {
+            "description": "The selected quantity of each food item must lie within the minimum and maximum bounds.",
+            "status": "coded",
+            "formulation": "\\textup{FoodMin}_{j} \\leq \\textup{FoodQuantity}_{j} \\leq \\textup{FoodMax}_{j}, \\quad \\forall j \\in \\{1, 2, ..., \\textup{FoodNum}\\}",
+            "related_variables": [
+                "FoodQuantity"
+            ],
+            "related_parameters": [
+                "FoodMin",
+                "FoodMax",
+                "FoodNum"
+            ],
+            "code": "# Add constraints to ensure the selected quantity of each food item lies within the minimum and maximum bounds\nfor j in range(FoodNum):\n    model.addConstr(FoodMin[j] <= FoodQuantity[j], name=f\"FoodMinConstr_{j}\")\n    model.addConstr(FoodQuantity[j] <= FoodMax[j], name=f\"FoodMaxConstr_{j}\")"
+        },
+        {
+            "description": "Ensure the total amount of each nutrient across all foods meets the minimum and maximum requirements.",
+            "status": "coded",
+            "formulation": "\\textup{MinReqAmount}_{i} \\leq \\sum_{j=1}^{\\textup{FoodNum}} \\textup{FoodQuantity}_{j} \\cdot \\textup{AmountPerNutrient}_{j,i} \\leq \\textup{MaxReqAmount}_{i}, \\quad \\forall \\ i=1,\\dots,\\textup{NutrientNum}",
+            "related_variables": [
+                "FoodQuantity"
+            ],
+            "related_parameters": [
+                "MinReqAmount",
+                "MaxReqAmount",
+                "AmountPerNutrient",
+                "FoodNum",
+                "NutrientNum"
+            ],
+            "code": "# Add nutrient balance constraints\nfor i in range(NutrientNum):\n    model.addConstr(\n        gp.quicksum(FoodQuantity[j] * AmountPerNutrient[j, i] for j in range(FoodNum)) >= MinReqAmount[i],\n        name=f\"nutrient_min_req_{i}\"\n    )\n    model.addConstr(\n        gp.quicksum(FoodQuantity[j] * AmountPerNutrient[j, i] for j in range(FoodNum)) <= MaxReqAmount[i],\n        name=f\"nutrient_max_req_{i}\"\n    )"
+        },
+        {
+            "description": "Ensure the quantity of each food item is within its defined minimum and maximum limits.",
+            "status": "coded",
+            "formulation": "\\textup{FoodMin}_{j} \\leq \\textup{FoodQuantity}_{j} \\leq \\textup{FoodMax}_{j}, \\quad \\forall \\ j=1,\\dots,\\textup{FoodNum}",
+            "related_variables": [
+                "FoodQuantity"
+            ],
+            "related_parameters": [
+                "FoodMin",
+                "FoodMax",
+                "FoodNum"
+            ],
+            "code": "# Add constraints for minimum and maximum food quantity limits\nfor j in range(FoodNum):\n    model.addConstr(FoodQuantity[j] >= FoodMin[j], name=f\"FoodMinConstr_{j}\")\n    model.addConstr(FoodQuantity[j] <= FoodMax[j], name=f\"FoodMaxConstr_{j}\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The quantity of food item j selected for the diet.",
+            "symbol": "FoodQuantity",
+            "shape": [
+                "FoodNum"
+            ],
+            "status": "coded",
+            "code": "FoodQuantity = model.addVars(FoodNum, vtype=gp.GRB.CONTINUOUS, name=\"FoodQuantity\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total cost of buying foods to meet the nutritional requirements.",
+            "status": "coded",
+            "formulation": "\\sum_{j=1}^{\\textup{FoodNum}} \\textup{FoodQuantity}_{j} \\cdot \\textup{CostPerFood}_{j}",
+            "related_variables": [
+                "FoodQuantity"
+            ],
+            "related_parameters": [
+                "CostPerFood",
+                "FoodNum"
+            ],
+            "code": "# Set objective\nmodel.setObjective(gp.quicksum(FoodQuantity[j] * CostPerFood[j] for j in range(FoodNum)), gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413150015_complexor_dietu/",
+    "problem_path": "data/complexor/dietu/"
+}

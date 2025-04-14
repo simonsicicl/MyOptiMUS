@@ -1,0 +1,233 @@
+{
+    "background": "A science store produces two types of boxes, cheap and expensive, which require metal and acid to create foam. Both types of boxes emit heat during production.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Units of metal required for a cheap box",
+            "symbol": "MetalCheap",
+            "value": 3,
+            "shape": [],
+            "code": "MetalCheap = data[\"MetalCheap\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of acid required for a cheap box",
+            "symbol": "AcidCheap",
+            "value": 5,
+            "shape": [],
+            "code": "AcidCheap = data[\"AcidCheap\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of foam produced by a cheap box",
+            "symbol": "FoamCheap",
+            "value": 8,
+            "shape": [],
+            "code": "FoamCheap = data[\"FoamCheap\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of metal required for an expensive box",
+            "symbol": "MetalExpensive",
+            "value": 5,
+            "shape": [],
+            "code": "MetalExpensive = data[\"MetalExpensive\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of acid required for an expensive box",
+            "symbol": "AcidExpensive",
+            "value": 8,
+            "shape": [],
+            "code": "AcidExpensive = data[\"AcidExpensive\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of foam produced by an expensive box",
+            "symbol": "FoamExpensive",
+            "value": 10,
+            "shape": [],
+            "code": "FoamExpensive = data[\"FoamExpensive\"] # scalar parameter"
+        },
+        {
+            "definition": "Heat given off by a cheap box",
+            "symbol": "HeatCheap",
+            "value": 2,
+            "shape": [],
+            "code": "HeatCheap = data[\"HeatCheap\"] # scalar parameter"
+        },
+        {
+            "definition": "Heat given off by an expensive box",
+            "symbol": "HeatExpensive",
+            "value": 3,
+            "shape": [],
+            "code": "HeatExpensive = data[\"HeatExpensive\"] # scalar parameter"
+        },
+        {
+            "definition": "Total units of metal available",
+            "symbol": "MetalTotal",
+            "value": 200,
+            "shape": [],
+            "code": "MetalTotal = data[\"MetalTotal\"] # scalar parameter"
+        },
+        {
+            "definition": "Total units of acid available",
+            "symbol": "AcidTotal",
+            "value": 300,
+            "shape": [],
+            "code": "AcidTotal = data[\"AcidTotal\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum heat units allowed",
+            "symbol": "HeatMax",
+            "value": 50,
+            "shape": [],
+            "code": "HeatMax = data[\"HeatMax\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of cheap boxes should be non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{NumberOfCheapBoxes} \\\\geq 0",
+            "related_variables": [
+                "NumberOfCheapBoxes"
+            ],
+            "related_parameters": [],
+            "code": "# Since the variable \"NumberOfCheapBoxes\" is already defined as non-negative (default lower bound is 0 for continuous variables in Gurobi), no additional constraint is needed."
+        },
+        {
+            "description": "The number of expensive boxes to be produced must be non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{NumberOfExpensiveBoxes} \\\\geq 0",
+            "related_variables": [
+                "NumberOfExpensiveBoxes"
+            ],
+            "related_parameters": [],
+            "code": "# Add non-negativity constraint for NumberOfExpensiveBoxes\nmodel.addConstr(NumberOfExpensiveBoxes >= 0, name=\"non_negative_expensive_boxes\")"
+        },
+        {
+            "description": "The total amount of metal used for producing cheap and expensive boxes should not exceed the available total metal (MetalTotal).",
+            "status": "coded",
+            "formulation": "\\textup{MetalCheap} \\times \\textup{NumberOfCheapBoxes} + \\textup{MetalExpensive} \\times \\textup{NumberOfExpensiveBoxes} \\leq \\textup{MetalTotal}",
+            "related_variables": [
+                "NumberOfCheapBoxes",
+                "NumberOfExpensiveBoxes"
+            ],
+            "related_parameters": [
+                "MetalCheap",
+                "MetalExpensive",
+                "MetalTotal"
+            ],
+            "code": "# Add constraint to ensure total metal usage does not exceed available metal\nmodel.addConstr(\n    MetalCheap * NumberOfCheapBoxes + MetalExpensive * NumberOfExpensiveBoxes <= MetalTotal,\n    name=\"total_metal_limit\"\n)"
+        },
+        {
+            "description": "The acid usage for cheap and expensive boxes combined must not exceed the total available acid (\\textup{AcidTotal}).",
+            "status": "coded",
+            "formulation": "\\textup{AcidCheap} \\times \\textup{NumberOfCheapBoxes} + \\textup{AcidExpensive} \\times \\textup{NumberOfExpensiveBoxes} \\leq \\textup{AcidTotal}",
+            "related_variables": [
+                "NumberOfCheapBoxes",
+                "NumberOfExpensiveBoxes"
+            ],
+            "related_parameters": [
+                "AcidCheap",
+                "AcidExpensive",
+                "AcidTotal"
+            ],
+            "code": "# Add acid usage constraint\nmodel.addConstr(\n    AcidCheap * NumberOfCheapBoxes + AcidExpensive * NumberOfExpensiveBoxes <= AcidTotal, \n    name=\"acid_usage_constraint\"\n)"
+        },
+        {
+            "description": "The total heat generated by producing cheap and expensive boxes must be less than or equal to the maximum allowable heat.",
+            "status": "coded",
+            "formulation": "\\textup{HeatCheap} \\times \\textup{NumberOfCheapBoxes} + \\textup{HeatExpensive} \\times \\textup{NumberOfExpensiveBoxes} \\leq \\textup{HeatMax}",
+            "related_variables": [
+                "NumberOfCheapBoxes",
+                "NumberOfExpensiveBoxes"
+            ],
+            "related_parameters": [
+                "HeatCheap",
+                "HeatExpensive",
+                "HeatMax"
+            ],
+            "code": "# Add heat generation constraint\nmodel.addConstr(\n    NumberOfCheapBoxes * HeatCheap + NumberOfExpensiveBoxes * HeatExpensive <= HeatMax,\n    name=\"heat_generation_constraint\"\n)"
+        },
+        {
+            "description": "Metal usage constraint ensuring total metal used does not exceed total available.",
+            "status": "coded",
+            "formulation": "\\textup{MetalCheap} \\cdot \\textup{NumberOfCheapBoxes} + \\textup{MetalExpensive} \\cdot \\textup{NumberOfExpensiveBoxes} \\leq \\textup{MetalTotal}",
+            "related_variables": [
+                "NumberOfCheapBoxes",
+                "NumberOfExpensiveBoxes"
+            ],
+            "related_parameters": [
+                "MetalCheap",
+                "MetalExpensive",
+                "MetalTotal"
+            ],
+            "code": "# Add metal usage constraint\nmodel.addConstr(NumberOfCheapBoxes * MetalCheap + NumberOfExpensiveBoxes * MetalExpensive <= MetalTotal, name=\"metal_usage\")"
+        },
+        {
+            "description": "Acid usage constraint ensuring total acid used does not exceed total available.",
+            "status": "coded",
+            "formulation": "\\textup{AcidCheap} \\cdot \\textup{NumberOfCheapBoxes} + \\textup{AcidExpensive} \\cdot \\textup{NumberOfExpensiveBoxes} \\leq \\textup{AcidTotal}",
+            "related_variables": [
+                "NumberOfCheapBoxes",
+                "NumberOfExpensiveBoxes"
+            ],
+            "related_parameters": [
+                "AcidCheap",
+                "AcidExpensive",
+                "AcidTotal"
+            ],
+            "code": "# Add acid usage constraint\nmodel.addConstr(AcidCheap * NumberOfCheapBoxes + AcidExpensive * NumberOfExpensiveBoxes <= AcidTotal, name=\"acid_usage_constraint\")"
+        },
+        {
+            "description": "Heat production constraint ensuring total heat produced does not exceed the maximum allowed.",
+            "status": "coded",
+            "formulation": "\\textup{HeatCheap} \\cdot \\textup{NumberOfCheapBoxes} + \\textup{HeatExpensive} \\cdot \\textup{NumberOfExpensiveBoxes} \\leq \\textup{HeatMax}",
+            "related_variables": [
+                "NumberOfCheapBoxes",
+                "NumberOfExpensiveBoxes"
+            ],
+            "related_parameters": [
+                "HeatCheap",
+                "HeatExpensive",
+                "HeatMax"
+            ],
+            "code": "# Add heat production constraint\nmodel.addConstr(\n    NumberOfCheapBoxes * HeatCheap + NumberOfExpensiveBoxes * HeatExpensive <= HeatMax,\n    name=\"heat_production_constraint\"\n)"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of cheap boxes to be produced (decision variable).",
+            "symbol": "NumberOfCheapBoxes",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfCheapBoxes = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfCheapBoxes\")"
+        },
+        {
+            "definition": "The number of expensive boxes to be produced (decision variable).",
+            "symbol": "NumberOfExpensiveBoxes",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfExpensiveBoxes = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfExpensiveBoxes\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the amount of foam produced from manufacturing cheap and expensive boxes.",
+            "status": "coded",
+            "formulation": "\\textup{Maximize} \\quad \\textup{FoamCheap} \\cdot \\textup{NumberOfCheapBoxes} + \\textup{FoamExpensive} \\cdot \\textup{NumberOfExpensiveBoxes}",
+            "related_variables": [
+                "NumberOfCheapBoxes",
+                "NumberOfExpensiveBoxes"
+            ],
+            "related_parameters": [
+                "FoamCheap",
+                "FoamExpensive"
+            ],
+            "code": "# Set objective\nmodel.setObjective(FoamCheap * NumberOfCheapBoxes + FoamExpensive * NumberOfExpensiveBoxes, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413154321_nl4opt_prob_122/",
+    "problem_path": "data/nl4opt/prob_122/"
+}

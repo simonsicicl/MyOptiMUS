@@ -1,0 +1,176 @@
+{
+    "background": "The problem involves determining the production quantity for a set of products in a week, given production rates, a profit per ton for each product, a limited number of available hours, and constraints on the minimum and maximum sales for each product.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "symbol": "ProductNum",
+            "definition": "The number of products",
+            "shape": [],
+            "code": "ProductNum = data[\"ProductNum\"] # scalar parameter"
+        },
+        {
+            "symbol": "ProductionRate",
+            "definition": "The production rate of each product in tons per hour",
+            "shape": [
+                "ProductNum"
+            ],
+            "code": "ProductionRate = np.array(data[\"ProductionRate\"]) # ['ProductNum']"
+        },
+        {
+            "symbol": "ProfitPerTon",
+            "definition": "The profit per ton for each product",
+            "shape": [
+                "ProductNum"
+            ],
+            "code": "ProfitPerTon = np.array(data[\"ProfitPerTon\"]) # ['ProductNum']"
+        },
+        {
+            "symbol": "MinimumSale",
+            "definition": "The lower limit on the tons of each product sold in a week",
+            "shape": [
+                "ProductNum"
+            ],
+            "code": "MinimumSale = np.array(data[\"MinimumSale\"]) # ['ProductNum']"
+        },
+        {
+            "symbol": "MaximumSale",
+            "definition": "The upper limit on the tons of each product sold in a week",
+            "shape": [
+                "ProductNum"
+            ],
+            "code": "MaximumSale = np.array(data[\"MaximumSale\"]) # ['ProductNum']"
+        },
+        {
+            "symbol": "AvailableHours",
+            "definition": "The total available hours in a week for production",
+            "shape": [],
+            "code": "AvailableHours = data[\"AvailableHours\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Each product p must have a non-negative production quantity",
+            "status": "coded",
+            "formulation": "\\forall p \\in \\{1, \\ldots, \\textup{ProductNum}\\}, \\quad \\textup{ProductionQuantity}_p \\geq 0",
+            "related_variables": [
+                "ProductionQuantity"
+            ],
+            "related_parameters": [
+                "ProductNum"
+            ],
+            "code": "# Non-negative production quantity constraint for each product\nfor p in range(ProductNum):\n    model.addConstr(ProductionQuantity[p] >= 0, name=\"non_negativity_constraint_p{0}\".format(p))"
+        },
+        {
+            "description": "Total production hours for all products must not exceed available hours",
+            "status": "coded",
+            "formulation": "\\sum_{p=1}^{\\textup{ProductNum}} \\frac{\\textup{ProductionQuantity}_{p}}{\\textup{ProductionRate}_{p}} \\leq \\textup{AvailableHours}",
+            "related_variables": [
+                "ProductionQuantity"
+            ],
+            "related_parameters": [
+                "ProductNum",
+                "ProductionRate",
+                "AvailableHours"
+            ],
+            "code": "# Add total production hours constraint\ntotal_production_hours = gp.quicksum(ProductionQuantity[p] / ProductionRate[p] for p in range(ProductNum))\nmodel.addConstr(total_production_hours <= AvailableHours, name=\"total_production_hours\")"
+        },
+        {
+            "description": "Each product must be sold in amounts at least equal to the specified minimum sale amount for the respective product.",
+            "status": "coded",
+            "formulation": "\\textup{ProductionQuantity}_{p} \\geq \\textup{MinimumSale}_{p} \\quad \\forall p \\in \\{1, \\ldots, \\textup{ProductNum} \\}",
+            "related_variables": [
+                "ProductionQuantity"
+            ],
+            "related_parameters": [
+                "MinimumSale"
+            ],
+            "code": "# Ensure each product is produced at least its minimum sale amount\nfor p in range(ProductNum):\n    model.addConstr(ProductionQuantity[p] >= MinimumSale[p], name=f\"min_sale_prod_{p}\")"
+        },
+        {
+            "description": "Each product must be sold in amounts no more than its maximum sale limit",
+            "status": "coded",
+            "formulation": "\\textup{ProductionQuantity}_p \\leq \\textup{MaximumSale}_p \\quad \\forall p \\in \\{1, 2, ..., \\textup{ProductNum}\\}",
+            "related_variables": [
+                "ProductionQuantity"
+            ],
+            "related_parameters": [
+                "MaximumSale",
+                "ProductNum"
+            ],
+            "code": "# Ensure each product is sold no more than its maximum sale limit\nfor p in range(ProductNum):\n    model.addConstr(ProductionQuantity[p] <= MaximumSale[p], name=f\"max_sales_{p}\")"
+        },
+        {
+            "description": "The total production time for all products must not exceed the available hours",
+            "status": "coded",
+            "formulation": "\\sum_{p=1}^{\\textup{ProductNum}} (\\frac{\\textup{ProductionQuantity}[p]}{\\textup{ProductionRate}[p]}) \\leq \\textup{AvailableHours}",
+            "related_variables": [
+                "ProductionQuantity"
+            ],
+            "related_parameters": [
+                "ProductionRate",
+                "AvailableHours",
+                "ProductNum"
+            ],
+            "code": "# Add constraint for total production time not exceeding available hours\ntotal_production_time = gp.quicksum((ProductionQuantity[p] / ProductionRate[p]) for p in range(ProductNum))\nmodel.addConstr(total_production_time <= AvailableHours, name=\"production_time_limit\")"
+        },
+        {
+            "description": "Each product must be produced at least the minimum sale quantity",
+            "status": "runtime_error",
+            "formulation": "\\textup{ProductionQuantity}[p] \\geq \\textup{MinimumSale}[p], \\quad \\forall p \\in \\{1, ..., \\textup{ProductNum}\\}",
+            "related_variables": [
+                "ProductionQuantity"
+            ],
+            "related_parameters": [
+                "MinimumSale",
+                "ProductNum"
+            ],
+            "code": "```"
+        },
+        {
+            "description": "Each product must be produced at most the maximum sale quantity",
+            "status": "coded",
+            "formulation": "\\textup{ProductionQuantity}[p] \\leq \\textup{MaximumSale}[p], \\quad \\forall p \\in \\{1, ..., \\textup{ProductNum}\\}",
+            "related_variables": [
+                "ProductionQuantity"
+            ],
+            "related_parameters": [
+                "MaximumSale",
+                "ProductNum"
+            ],
+            "code": "```"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The production quantity of product p in tons",
+            "symbol": "ProductionQuantity",
+            "shape": [
+                "ProductNum"
+            ],
+            "status": "coded",
+            "code": "ProductionQuantity = model.addVars(ProductNum, vtype=gp.GRB.CONTINUOUS, name=\"ProductionQuantity\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total profit gained from all products within the limited available production hours",
+            "status": "coded",
+            "formulation": "\\max \\sum_{p=1}^{\\textup{ProductNum}} (\\textup{ProfitPerTon}[p] \\times \\textup{ProductionQuantity}[p])",
+            "related_variables": [
+                "ProductionQuantity"
+            ],
+            "related_parameters": [
+                "ProfitPerTon",
+                "ProductNum"
+            ],
+            "code": "# Define the objective function\nmodel.setObjective(gp.quicksum(ProfitPerTon[p] * ProductionQuantity[p] for p in range(ProductNum)), gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "runtime_error",
+    "solver_output_status": "runtime_error",
+    "error_message": "Traceback (most recent call last):\n  File \"/Users/simonsici/Desktop/MyOptiMUS/evaluator.py\", line 45, in run\n    exec(last_line, local_env, local_env)\n  File \"<string>\", line 1\n    ```\n    ^\nSyntaxError: invalid syntax\n",
+    "obj_val": null,
+    "log_path": "logs/log_20250413142520_complexor_steel3/",
+    "problem_path": "data/complexor/steel3/",
+    "prep_code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/complexor/steel3/data.json\", \"r\") as f:\n    data = json.load(f)\n"
+}

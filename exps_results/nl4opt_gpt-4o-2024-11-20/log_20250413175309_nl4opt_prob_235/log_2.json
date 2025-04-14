@@ -1,0 +1,215 @@
+{
+    "background": "A dentist must optimize the number of molars and canines to fill with a limited supply of resin and a goal to minimize the use of pain killer, while adhering to specific requirements for molars and canines.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Total units of resin available",
+            "symbol": "TotalResin",
+            "value": 3000,
+            "shape": [],
+            "code": "TotalResin = data[\"TotalResin\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of resin required per molar",
+            "symbol": "ResinMolar",
+            "value": 20,
+            "shape": [],
+            "code": "ResinMolar = data[\"ResinMolar\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of resin required per canine",
+            "symbol": "ResinCanine",
+            "value": 15,
+            "shape": [],
+            "code": "ResinCanine = data[\"ResinCanine\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of pain killer required per molar",
+            "symbol": "PainKillerMolar",
+            "value": 3,
+            "shape": [],
+            "code": "PainKillerMolar = data[\"PainKillerMolar\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of pain killer required per canine",
+            "symbol": "PainKillerCanine",
+            "value": 2.3,
+            "shape": [],
+            "code": "PainKillerCanine = data[\"PainKillerCanine\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum percentage of cavities to be filled in canines",
+            "symbol": "MinCaninePercentage",
+            "value": 0.6,
+            "shape": [],
+            "code": "MinCaninePercentage = data[\"MinCaninePercentage\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of molars required to be filled",
+            "symbol": "MinMolars",
+            "value": 45,
+            "shape": [],
+            "code": "MinMolars = data[\"MinMolars\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The total resin used for all filled cavities (molars and canines) cannot exceed the total available resin (TotalResin).",
+            "status": "coded",
+            "formulation": "\\textup{NumMolars} \\times \\textup{ResinMolar} + \\textup{NumCanines} \\times \\textup{ResinCanine} \\leq \\textup{TotalResin}",
+            "related_variables": [
+                "NumMolars",
+                "NumCanines"
+            ],
+            "related_parameters": [
+                "ResinMolar",
+                "ResinCanine",
+                "TotalResin"
+            ],
+            "code": "# Add constraint to ensure total resin used does not exceed available resin\nmodel.addConstr(NumMolars * ResinMolar + NumCanines * ResinCanine <= TotalResin, name=\"resin_limit\")"
+        },
+        {
+            "description": "At least MinCaninePercentage of cavities filled must be canines.",
+            "status": "coded",
+            "formulation": "\\textup{NumCanines} \\geq \\frac{\\textup{MinCaninePercentage} \\cdot \\textup{NumMolars}}{1 - \\textup{MinCaninePercentage}}",
+            "related_variables": [
+                "NumMolars",
+                "NumCanines"
+            ],
+            "related_parameters": [
+                "MinCaninePercentage"
+            ],
+            "code": "# Add constraint: At least MinCaninePercentage of cavities filled must be canines\nmodel.addConstr(NumCanines >= (MinCaninePercentage * NumMolars) / (1 - MinCaninePercentage), name=\"canine_min_percentage\")"
+        },
+        {
+            "description": "At least MinMolars molars must be filled",
+            "status": "coded",
+            "formulation": "\\\\textup{NumMolars} \\\\geq \\\\textup{MinMolars}",
+            "related_variables": [
+                "NumMolars"
+            ],
+            "related_parameters": [
+                "MinMolars"
+            ],
+            "code": "# Add the constraint that at least MinMolars molars must be filled\nmodel.addConstr(NumMolars >= MinMolars, name=\"min_molars_filled\")"
+        },
+        {
+            "description": "Ensure the number of molars filled is non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumMolars} \\geq 0",
+            "related_variables": [
+                "NumMolars"
+            ],
+            "related_parameters": [],
+            "code": "# The non-negativity of the continuous variable NumMolars is already enforced by default in Gurobi"
+        },
+        {
+            "description": "The number of canines to be filled must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumCanines} \\geq 0",
+            "related_variables": [
+                "NumCanines"
+            ],
+            "related_parameters": [],
+            "code": "# Add non-negativity constraint for NumCanines\nmodel.addConstr(NumCanines >= 0, name=\"non_negativity_NumCanines\")"
+        },
+        {
+            "description": "The total resin used must not exceed the available resin.",
+            "status": "coded",
+            "formulation": "\\textup{ResinMolar} \\cdot \\textup{NumMolars} + \\textup{ResinCanine} \\cdot \\textup{NumCanines} \\leq \\textup{TotalResin}",
+            "related_variables": [
+                "NumMolars",
+                "NumCanines"
+            ],
+            "related_parameters": [
+                "ResinMolar",
+                "ResinCanine",
+                "TotalResin"
+            ],
+            "code": "# Add constraint to ensure total resin used does not exceed available resin\nmodel.addConstr(ResinMolar * NumMolars + ResinCanine * NumCanines <= TotalResin, name=\"resin_usage_limit\")"
+        },
+        {
+            "description": "At least a minimum number of molars must be filled.",
+            "status": "coded",
+            "formulation": "\\textup{NumMolars} \\geq \\textup{MinMolars}",
+            "related_variables": [
+                "NumMolars"
+            ],
+            "related_parameters": [
+                "MinMolars"
+            ],
+            "code": "# Add constraint ensuring at least the minimum number of molars filled\nmodel.addConstr(NumMolars >= MinMolars, name=\"min_molars_constraint\")"
+        },
+        {
+            "description": "A minimum percentage of filled cavities must be canines.",
+            "status": "coded",
+            "formulation": "\\textup{NumCanines} \\geq \\textup{MinCaninePercentage} \\cdot \\textup{TotalCavities}",
+            "related_variables": [
+                "NumCanines",
+                "TotalCavities"
+            ],
+            "related_parameters": [
+                "MinCaninePercentage"
+            ],
+            "code": "# Add constraint to ensure a minimum percentage of filled cavities are canines\nmodel.addConstr(NumCanines >= MinCaninePercentage * TotalCavities, name=\"min_canine_percentage\")"
+        },
+        {
+            "description": "TotalCavities must be equal to the sum of NumMolars and NumCanines.",
+            "status": "coded",
+            "formulation": "\\textup{TotalCavities} = \\textup{NumMolars} + \\textup{NumCanines}",
+            "related_variables": [
+                "NumMolars",
+                "NumCanines",
+                "TotalCavities"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint to ensure TotalCavities equals the sum of NumMolars and NumCanines\nmodel.addConstr(TotalCavities == NumMolars + NumCanines, name=\"TotalCavities_balance\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of molars filled.",
+            "symbol": "NumMolars",
+            "shape": [],
+            "status": "coded",
+            "code": "NumMolars = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumMolars\")"
+        },
+        {
+            "definition": "The number of canines filled.",
+            "symbol": "NumCanines",
+            "shape": [],
+            "status": "coded",
+            "code": "NumCanines = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumCanines\")"
+        },
+        {
+            "definition": "The total number of cavities filled.",
+            "symbol": "TotalCavities",
+            "shape": [],
+            "status": "coded",
+            "code": "TotalCavities = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TotalCavities\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total amount of pain killer needed for filling cavities.",
+            "status": "coded",
+            "formulation": "\\textup{Minimize:} \\\\ \\quad \\textup{PainKillerMolar} \\cdot \\textup{NumMolars} + \\textup{PainKillerCanine} \\cdot \\textup{NumCanines}",
+            "related_variables": [
+                "NumMolars",
+                "NumCanines"
+            ],
+            "related_parameters": [
+                "PainKillerMolar",
+                "PainKillerCanine"
+            ],
+            "code": "# Set objective\nmodel.setObjective(PainKillerMolar * NumMolars + PainKillerCanine * NumCanines, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 290.25,
+    "log_path": "logs/log_20250413175309_nl4opt_prob_235/",
+    "problem_path": "data/nl4opt/prob_235/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_235/data.json\", \"r\") as f:\n    data = json.load(f)\n\nTotalResin = data[\"TotalResin\"] # scalar parameter\nResinMolar = data[\"ResinMolar\"] # scalar parameter\nResinCanine = data[\"ResinCanine\"] # scalar parameter\nPainKillerMolar = data[\"PainKillerMolar\"] # scalar parameter\nPainKillerCanine = data[\"PainKillerCanine\"] # scalar parameter\nMinCaninePercentage = data[\"MinCaninePercentage\"] # scalar parameter\nMinMolars = data[\"MinMolars\"] # scalar parameter\nNumMolars = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumMolars\")\nNumCanines = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumCanines\")\nTotalCavities = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TotalCavities\")\n\n# Add constraint to ensure total resin used does not exceed available resin\nmodel.addConstr(NumMolars * ResinMolar + NumCanines * ResinCanine <= TotalResin, name=\"resin_limit\")\n\n# Add constraint: At least MinCaninePercentage of cavities filled must be canines\nmodel.addConstr(NumCanines >= (MinCaninePercentage * NumMolars) / (1 - MinCaninePercentage), name=\"canine_min_percentage\")\n\n# Add the constraint that at least MinMolars molars must be filled\nmodel.addConstr(NumMolars >= MinMolars, name=\"min_molars_filled\")\n\n# The non-negativity of the continuous variable NumMolars is already enforced by default in Gurobi\n\n# Add non-negativity constraint for NumCanines\nmodel.addConstr(NumCanines >= 0, name=\"non_negativity_NumCanines\")\n\n# Add constraint to ensure total resin used does not exceed available resin\nmodel.addConstr(ResinMolar * NumMolars + ResinCanine * NumCanines <= TotalResin, name=\"resin_usage_limit\")\n\n# Add constraint ensuring at least the minimum number of molars filled\nmodel.addConstr(NumMolars >= MinMolars, name=\"min_molars_constraint\")\n\n# Add constraint to ensure a minimum percentage of filled cavities are canines\nmodel.addConstr(NumCanines >= MinCaninePercentage * TotalCavities, name=\"min_canine_percentage\")\n\n# Add constraint to ensure TotalCavities equals the sum of NumMolars and NumCanines\nmodel.addConstr(TotalCavities == NumMolars + NumCanines, name=\"TotalCavities_balance\")\n\n# Set objective\nmodel.setObjective(PainKillerMolar * NumMolars + PainKillerCanine * NumCanines, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

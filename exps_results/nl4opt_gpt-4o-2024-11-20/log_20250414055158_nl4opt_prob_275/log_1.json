@@ -1,0 +1,177 @@
+{
+    "background": "A baking process requires the mixing of chemicals A and B, where chemical A can be hazardous, and the mix must take minimum time to be effective while adhering to safety and minimum quantity requirements.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Time for one unit of chemical A to be effective",
+            "symbol": "TimeA",
+            "value": 30,
+            "shape": [],
+            "code": "TimeA = data[\"TimeA\"] # scalar parameter"
+        },
+        {
+            "definition": "Time for one unit of chemical B to be effective",
+            "symbol": "TimeB",
+            "value": 45,
+            "shape": [],
+            "code": "TimeB = data[\"TimeB\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum allowed ratio of chemical A to chemical B",
+            "symbol": "MaxRatioAtoB",
+            "value": 0.33,
+            "shape": [],
+            "code": "MaxRatioAtoB = data[\"MaxRatioAtoB\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum required units of chemical A",
+            "symbol": "MinUnitsA",
+            "value": 300,
+            "shape": [],
+            "code": "MinUnitsA = data[\"MinUnitsA\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum total required units of chemicals",
+            "symbol": "MinTotalUnits",
+            "value": 1500,
+            "shape": [],
+            "code": "MinTotalUnits = data[\"MinTotalUnits\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of units of chemical A must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{UnitsA} \\geq 0",
+            "related_variables": [
+                "UnitsA"
+            ],
+            "related_parameters": [],
+            "code": "# Add non-negativity constraint for UnitsA\nmodel.addConstr(UnitsA >= 0, name=\"non_negativity_UnitsA\")"
+        },
+        {
+            "description": "The number of units of chemical B must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{UnitsB} \\geq 0",
+            "related_variables": [
+                "UnitsB"
+            ],
+            "related_parameters": [],
+            "code": "# The variable UnitsB is already defined with the non-negativity constraint as it is a continuous variable with no lower bound added."
+        },
+        {
+            "description": "For every unit of chemical B, there can be at most MaxRatioAtoB units of chemical A.",
+            "status": "coded",
+            "formulation": "\\textup{UnitsA} \\leq \\textup{MaxRatioAtoB} \\cdot \\textup{UnitsB}",
+            "related_variables": [
+                "UnitsA",
+                "UnitsB"
+            ],
+            "related_parameters": [
+                "MaxRatioAtoB"
+            ],
+            "code": "# Add constraint ensuring UnitsA is at most MaxRatioAtoB times UnitsB\nmodel.addConstr(UnitsA <= MaxRatioAtoB * UnitsB, name=\"chemical_ratio_constraint\")"
+        },
+        {
+            "description": "At least MinUnitsA units of chemical A must be present in the mixer.",
+            "status": "coded",
+            "formulation": "\\\\textup{UnitsA} \\\\geq \\\\textup{MinUnitsA}",
+            "related_variables": [
+                "UnitsA"
+            ],
+            "related_parameters": [
+                "MinUnitsA"
+            ],
+            "code": "# Add constraint ensuring at least MinUnitsA units of chemical A are in the mixer\nmodel.addConstr(UnitsA >= MinUnitsA, name=\"min_units_A\")"
+        },
+        {
+            "description": "The total number of units in the mixer must be at least MinTotalUnits.",
+            "status": "coded",
+            "formulation": "\\\\textup{UnitsA} + \\\\textup{UnitsB} \\\\geq \\\\textup{MinTotalUnits}",
+            "related_variables": [
+                "UnitsA",
+                "UnitsB"
+            ],
+            "related_parameters": [
+                "MinTotalUnits"
+            ],
+            "code": "# Add constraint to ensure the total units in the mixer satisfy the minimum requirement\nmodel.addConstr(UnitsA + UnitsB >= MinTotalUnits, name=\"mixer_min_total_units\")"
+        },
+        {
+            "description": "Chemical A must meet the minimum quantity requirement.",
+            "status": "coded",
+            "formulation": "\\textup{UnitsA} \\geq \\textup{MinUnitsA}",
+            "related_variables": [
+                "UnitsA"
+            ],
+            "related_parameters": [
+                "MinUnitsA"
+            ],
+            "code": "# Add minimum quantity constraint for chemical A\nmodel.addConstr(UnitsA >= MinUnitsA, name=\"min_quantity_chemical_A\")"
+        },
+        {
+            "description": "Total units of chemicals A and B must meet the minimum requirement.",
+            "status": "coded",
+            "formulation": "\\textup{UnitsA} + \\textup{UnitsB} \\geq \\textup{MinTotalUnits}",
+            "related_variables": [
+                "UnitsA",
+                "UnitsB"
+            ],
+            "related_parameters": [
+                "MinTotalUnits"
+            ],
+            "code": "# Add constraint to ensure the total units of chemicals A and B meet the minimum requirement\nmodel.addConstr(UnitsA + UnitsB >= MinTotalUnits, name=\"min_total_units_constraint\")"
+        },
+        {
+            "description": "The ratio of chemical A to chemical B must not exceed the given maximum ratio.",
+            "status": "coded",
+            "formulation": "\\textup{UnitsA} \\leq \\textup{MaxRatioAtoB} \\cdot \\textup{UnitsB}",
+            "related_variables": [
+                "UnitsA",
+                "UnitsB"
+            ],
+            "related_parameters": [
+                "MaxRatioAtoB"
+            ],
+            "code": "# Add constraint for the ratio of UnitsA to UnitsB\nmodel.addConstr(UnitsA <= MaxRatioAtoB * UnitsB, name=\"ratio_constraint_A_to_B\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of units of chemical A used in the process",
+            "symbol": "UnitsA",
+            "shape": [],
+            "status": "coded",
+            "code": "UnitsA = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"UnitsA\")"
+        },
+        {
+            "definition": "The number of units of chemical B used in the process",
+            "symbol": "UnitsB",
+            "shape": [],
+            "status": "coded",
+            "code": "UnitsB = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"UnitsB\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total effective time of chemicals A and B in the mixer.",
+            "status": "coded",
+            "formulation": "\\textup{Minimize:} \\quad (\\textup{TimeA} \\cdot \\textup{UnitsA}) + (\\textup{TimeB} \\cdot \\textup{UnitsB})",
+            "related_variables": [
+                "UnitsA",
+                "UnitsB"
+            ],
+            "related_parameters": [
+                "TimeA",
+                "TimeB"
+            ],
+            "code": "# Set objective\nmodel.setObjective((TimeA * UnitsA) + (TimeB * UnitsB), gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250414055158_nl4opt_prob_275/",
+    "problem_path": "data/nl4opt/prob_275/"
+}

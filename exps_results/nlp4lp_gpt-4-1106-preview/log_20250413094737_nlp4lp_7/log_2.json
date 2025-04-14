@@ -1,0 +1,192 @@
+{
+    "background": "The problem is to find the optimal control profile that minimizes the maximum thrust required over a certain duration, considering initial and final conditions for position and velocity.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Initial position of the object",
+            "symbol": "X0",
+            "value": 0,
+            "shape": [],
+            "code": "X0 = data[\"X0\"] # scalar parameter"
+        },
+        {
+            "definition": "Initial velocity of the object",
+            "symbol": "V0",
+            "value": 0,
+            "shape": [],
+            "code": "V0 = data[\"V0\"] # scalar parameter"
+        },
+        {
+            "definition": "Final position of the object",
+            "symbol": "XT",
+            "value": 0,
+            "shape": [],
+            "code": "XT = data[\"XT\"] # scalar parameter"
+        },
+        {
+            "definition": "Final velocity of the object",
+            "symbol": "VT",
+            "value": 0,
+            "shape": [],
+            "code": "VT = data[\"VT\"] # scalar parameter"
+        },
+        {
+            "definition": "Time duration for the journey",
+            "symbol": "T",
+            "value": 0,
+            "shape": [],
+            "code": "T = data[\"T\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Thrust limits are determined by minimizing the maximum absolute value of acceleration over time T, considering initial and final conditions for position and velocity",
+            "status": "coded",
+            "formulation": "\\max_{t \\in [0, T]} | a(t) | \\leq \\textup{ThrustMax}",
+            "related_variables": [
+                "ThrustMax",
+                "AccelerationTimeT"
+            ],
+            "related_parameters": [
+                "X0",
+                "V0",
+                "XT",
+                "VT",
+                "T"
+            ],
+            "code": "# Add thrust limit constraint such that the maximum absolute value of acceleration over time T does not exceed ThrustMax\nfor t in range(T):\n    model.addConstr(AccelerationTimeT[t] <= ThrustMax, name=\"thrust_limit_upper_time_{}\".format(t))\n    model.addConstr(AccelerationTimeT[t] >= -ThrustMax, name=\"thrust_limit_lower_time_{}\".format(t))"
+        },
+        {
+            "description": "Dynamic constraints for the position of the object over time",
+            "status": "runtime_error",
+            "formulation": "X(T) = X0 + V0 \\cdot T + \\frac{1}{2} \\int_{0}^{T} a(t) \\, dt",
+            "related_variables": [
+                "AccelerationTimeT"
+            ],
+            "related_parameters": [
+                "X0",
+                "V0",
+                "T"
+            ],
+            "code": "# Integrate acceleration over time to get the change in position due to acceleration\nmodel.addConstr(X0 + V0 * T + 0.5 * gp.quicksum(AccelerationTimeT[t] * (1/T) for t in range(T)) == X(T), name=\"dynamic_position_constraint\")"
+        },
+        {
+            "description": "Dynamic constraints for the velocity of the object over time",
+            "status": "coded",
+            "formulation": "V(T) = V0 + \\int_{0}^{T} a(t) \\, dt",
+            "related_variables": [
+                "AccelerationTimeT"
+            ],
+            "related_parameters": [
+                "V0",
+                "T"
+            ],
+            "code": "```"
+        },
+        {
+            "description": "Minimum and maximum acceleration bounds to prevent infinite thrust",
+            "status": "coded",
+            "formulation": "-\\textup{ThrustMax} \\leq a(t) \\leq \\textup{ThrustMax} \\quad \\forall t \\in [0, T]",
+            "related_variables": [
+                "ThrustMax",
+                "AccelerationTimeT"
+            ],
+            "related_parameters": [
+                "T"
+            ],
+            "code": "# Add acceleration bounds constraints\nfor t in range(T):\n    model.addConstr(AccelerationTimeT[t] <= ThrustMax, name=\"max_accel_{}\".format(t))\n    model.addConstr(AccelerationTimeT[t] >= -ThrustMax, name=\"min_accel_{}\".format(t))"
+        },
+        {
+            "description": "Boundary condition for the initial position",
+            "status": "coded",
+            "formulation": "X(0) = X0",
+            "related_variables": [],
+            "related_parameters": [
+                "X0"
+            ],
+            "code": "# Boundary condition for the initial position\nmodel.addConstr(X[0] == X0, name=\"initial_position\")"
+        },
+        {
+            "description": "Boundary condition for the final position",
+            "status": "coded",
+            "formulation": "X(T) = XT",
+            "related_variables": [],
+            "related_parameters": [
+                "XT",
+                "T"
+            ],
+            "code": "XT = data[\"XT\"] # scalar parameter\nT = data[\"T\"] # scalar parameter\n\n# Boundary condition for the final position\nmodel.addConstr(X[T] == XT, name=\"final_position_boundary\")"
+        },
+        {
+            "description": "Boundary condition for the initial velocity",
+            "status": "coded",
+            "formulation": "V(0) = V0",
+            "related_variables": [],
+            "related_parameters": [
+                "V0"
+            ],
+            "code": "# Boundary condition for the initial velocity\nmodel.addConstr(V[0] == V0, name=\"initial_velocity\")"
+        },
+        {
+            "description": "Boundary condition for the final velocity",
+            "status": "coded",
+            "formulation": "V(T) = VT",
+            "related_variables": [],
+            "related_parameters": [
+                "VT",
+                "T"
+            ],
+            "code": "# Boundary condition for the final velocity\nmodel.addConstr(V[T] == VT, name=\"final_velocity\")"
+        },
+        {
+            "description": "Constraint to ensure the thrust at any time is less than or equal to the maximum thrust required",
+            "status": "coded",
+            "formulation": "\\textup{AccelerationTimeT}_{t} \\leq \\textup{ThrustMax} \\quad \\forall t \\in \\{1, \\dots, \\textup{T}\\}",
+            "related_variables": [
+                "AccelerationTimeT",
+                "ThrustMax"
+            ],
+            "related_parameters": [
+                "T"
+            ],
+            "code": "# Ensure thrust at any time is less than or equal to the maximum thrust required\nfor t in range(T):\n    model.addConstr(AccelerationTimeT[t] <= ThrustMax, name=f\"thrust_limit_time_{t}\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The maximum thrust required over the time",
+            "symbol": "ThrustMax",
+            "shape": [],
+            "status": "coded",
+            "code": "ThrustMax = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"ThrustMax\")"
+        },
+        {
+            "definition": "The acceleration of the object at time t",
+            "symbol": "AccelerationTimeT",
+            "shape": [
+                "T"
+            ],
+            "status": "coded",
+            "code": "AccelerationTimeT = model.addVars(T, vtype=gp.GRB.CONTINUOUS, name=\"AccelerationTimeT\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the maximum thrust required across the given duration T",
+            "status": "coded",
+            "formulation": "\\min \\quad \\textup{ThrustMax}",
+            "related_variables": [
+                "ThrustMax"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(ThrustMax, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "runtime_error",
+    "solver_output_status": "runtime_error",
+    "error_message": "Traceback (most recent call last):\n  File \"c:\\Users\\Simon\\Desktop\\Courses\\ECE 570\\ECE570_Project\\MyOptiMUS\\evaluator.py\", line 45, in run\n    exec(last_line, local_env, local_env)\n  File \"<string>\", line 2, in <module>\nNameError: name 'X' is not defined\n",
+    "obj_val": null,
+    "log_path": "logs/log_20250413094737_nlp4lp_7/",
+    "problem_path": "data/nlp4lp/7/",
+    "prep_code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nlp4lp/7/data.json\", \"r\") as f:\n    data = json.load(f)\n"
+}

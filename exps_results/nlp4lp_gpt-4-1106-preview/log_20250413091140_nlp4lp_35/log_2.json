@@ -1,0 +1,122 @@
+{
+    "background": "The production involves multiple products and machines, with each product requiring specific production time on each machine and yielding a certain profit.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of different products",
+            "symbol": "NumProducts",
+            "value": "",
+            "shape": [],
+            "code": "NumProducts = data[\"NumProducts\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of different machines",
+            "symbol": "NumMachines",
+            "value": "",
+            "shape": [],
+            "code": "NumMachines = data[\"NumMachines\"] # scalar parameter"
+        },
+        {
+            "definition": "Time to produce one unit of product k on machine m",
+            "symbol": "ProduceTime",
+            "value": "",
+            "shape": [
+                "NumProducts",
+                "NumMachines"
+            ],
+            "code": "ProduceTime = np.array(data[\"ProduceTime\"]) # ['NumProducts', 'NumMachines']"
+        },
+        {
+            "definition": "Total available time on machine m",
+            "symbol": "AvailableTime",
+            "value": "",
+            "shape": [
+                "NumMachines"
+            ],
+            "code": "AvailableTime = np.array(data[\"AvailableTime\"]) # ['NumMachines']"
+        },
+        {
+            "definition": "Profit from producing one unit of product k",
+            "symbol": "Profit",
+            "value": "",
+            "shape": [
+                "NumProducts"
+            ],
+            "code": "Profit = np.array(data[\"Profit\"]) # ['NumProducts']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Each product k must be produced in non-negative quantities",
+            "status": "coded",
+            "formulation": "\\forall k \\in \\{1, \\ldots, \\textup{NumProducts}\\}: \\quad \\textup{ProductQuantity}_k \\geq 0",
+            "related_variables": [
+                "ProductQuantity"
+            ],
+            "related_parameters": [
+                "NumProducts"
+            ],
+            "code": "# Add non-negativity constraints for each product quantity\nfor k in range(NumProducts):\n    model.addConstr(ProductQuantity[k] >= 0, name=f\"nonnegativity_product_{k}\")"
+        },
+        {
+            "description": "For each machine m, the total production time for all products cannot exceed the available time for that machine",
+            "status": "coded",
+            "formulation": "\\forall m \\in \\{1, \\ldots, \\textup{NumMachines}\\}: \\quad \\sum_{k=1}^{\\textup{NumProducts}} (\\textup{ProduceTime}_{k,m} \\times \\textup{ProductQuantity}_{k}) \\leq \\textup{AvailableTime}_{m}",
+            "related_variables": [
+                "ProductQuantity"
+            ],
+            "related_parameters": [
+                "NumMachines",
+                "NumProducts",
+                "ProduceTime",
+                "AvailableTime"
+            ],
+            "code": "# Add production time constraints for each machine\nfor m in range(NumMachines):\n    model.addConstr(\n        gp.quicksum(ProduceTime[k, m] * ProductQuantity[k] for k in range(NumProducts)) <= AvailableTime[m], \n        name=\"machine_time_{}\".format(m)\n    )"
+        },
+        {
+            "description": "Each machine has a limited available time for production",
+            "status": "coded",
+            "formulation": "\\sum_{k=1}^{\\textup{NumProducts}} \\textup{ProduceTime}_{km} \\cdot \\textup{ProductQuantity}_{k} \\leq \\textup{AvailableTime}_{m} \\quad \\forall m \\in \\{1, \\ldots, \\textup{NumMachines}\\}",
+            "related_variables": [
+                "ProductQuantity"
+            ],
+            "related_parameters": [
+                "ProduceTime",
+                "AvailableTime"
+            ],
+            "code": "for m in range(NumMachines):\n    model.addConstr(gp.quicksum(ProduceTime[k, m] * ProductQuantity[k] for k in range(NumProducts)) <= AvailableTime[m], name=f\"AvailableTime_machine_{m}\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Quantity of product k to be produced",
+            "symbol": "ProductQuantity",
+            "shape": [
+                "NumProducts"
+            ],
+            "status": "coded",
+            "code": "ProductQuantity = model.addVars(NumProducts, vtype=gp.GRB.CONTINUOUS, name=\"ProductQuantity\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total profit from producing different products",
+            "status": "coded",
+            "formulation": "\\max\\quad \\sum_{k=1}^{\\textup{NumProducts}} \\textup{Profit}_{k} \\cdot \\textup{ProductQuantity}_{k}",
+            "related_variables": [
+                "ProductQuantity"
+            ],
+            "related_parameters": [
+                "Profit"
+            ],
+            "code": "# Set objective\nmodel.setObjective(gp.quicksum(Profit[k] * ProductQuantity[k] for k in range(NumProducts)), gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 1000.0,
+    "log_path": "logs/log_20250413091140_nlp4lp_35/",
+    "problem_path": "data/nlp4lp/35/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nlp4lp/35/data.json\", \"r\") as f:\n    data = json.load(f)\n\nNumProducts = data[\"NumProducts\"] # scalar parameter\nNumMachines = data[\"NumMachines\"] # scalar parameter\nProduceTime = np.array(data[\"ProduceTime\"]) # ['NumProducts', 'NumMachines']\nAvailableTime = np.array(data[\"AvailableTime\"]) # ['NumMachines']\nProfit = np.array(data[\"Profit\"]) # ['NumProducts']\nProductQuantity = model.addVars(NumProducts, vtype=gp.GRB.CONTINUOUS, name=\"ProductQuantity\")\n\n# Add non-negativity constraints for each product quantity\nfor k in range(NumProducts):\n    model.addConstr(ProductQuantity[k] >= 0, name=f\"nonnegativity_product_{k}\")\n\n# Add production time constraints for each machine\nfor m in range(NumMachines):\n    model.addConstr(\n        gp.quicksum(ProduceTime[k, m] * ProductQuantity[k] for k in range(NumProducts)) <= AvailableTime[m], \n        name=\"machine_time_{}\".format(m)\n    )\n\nfor m in range(NumMachines):\n    model.addConstr(gp.quicksum(ProduceTime[k, m] * ProductQuantity[k] for k in range(NumProducts)) <= AvailableTime[m], name=f\"AvailableTime_machine_{m}\")\n\n# Set objective\nmodel.setObjective(gp.quicksum(Profit[k] * ProductQuantity[k] for k in range(NumProducts)), gp.GRB.MAXIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

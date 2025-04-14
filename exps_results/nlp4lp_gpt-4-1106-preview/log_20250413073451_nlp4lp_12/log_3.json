@@ -1,0 +1,208 @@
+{
+    "background": "A production and inventory schedule over a set number of periods requires minimization of the total cost, which is a combination of production costs, storage costs for inventory, and switching costs for changing production.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Demand for the product in each period i",
+            "symbol": "Deliver",
+            "value": "",
+            "shape": [
+                "T"
+            ],
+            "code": "Deliver = np.array(data[\"Deliver\"]) # ['T']"
+        },
+        {
+            "definition": "Cost to hold one unit of product in storage for one period",
+            "symbol": "StorageCost",
+            "value": 0.0,
+            "shape": [],
+            "code": "StorageCost = data[\"StorageCost\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost to switch the production from one period to another",
+            "symbol": "SwitchCost",
+            "value": 0.0,
+            "shape": [],
+            "code": "SwitchCost = data[\"SwitchCost\"] # scalar parameter"
+        },
+        {
+            "definition": "Total number of periods",
+            "symbol": "T",
+            "value": 0,
+            "shape": [],
+            "code": "T = data[\"T\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Production amounts in each period must be non-negative",
+            "status": "coded",
+            "formulation": "\\forall t \\in \\{1, \\ldots, T\\}, \\quad \\textup{Production}_{t} \\geq 0",
+            "related_variables": [
+                "Production"
+            ],
+            "related_parameters": [
+                "T"
+            ],
+            "code": "# Production amounts in each period must be non-negative\nfor t in range(T):\n    model.addConstr(Production[t] >= 0, name=f\"prod_nonneg_{t}\")"
+        },
+        {
+            "description": "Inventory levels must be non-negative in each period",
+            "status": "coded",
+            "formulation": "Inventory_{t} \\geq 0, \\quad \\forall t \\in \\textup{T}",
+            "related_variables": [
+                "Inventory"
+            ],
+            "related_parameters": [
+                "T"
+            ],
+            "code": "# Add non-negativity constraints for inventory levels in each period\nfor t in range(T):\n    model.addConstr(Inventory[t] >= 0, name=f\"inventory_nonnegativity_{t}\")"
+        },
+        {
+            "description": "Production in each period must meet delivery requirement while accounting for inventory",
+            "status": "coded",
+            "formulation": "\\textup{Production}_t + \\textup{Inventory}_{t-1} \\geq \\textup{Deliver}_t \\quad \\forall t \\in \\{1, \\ldots, T\\}",
+            "related_variables": [
+                "Production",
+                "Inventory"
+            ],
+            "related_parameters": [
+                "Deliver"
+            ],
+            "code": "# Production in each period must meet delivery requirement while accounting for inventory\nfor t in range(1, T):\n    model.addConstr(Production[t] + Inventory[t-1] >= Deliver[t], name=f\"delivery_req_{t}\")"
+        },
+        {
+            "description": "Switch cost is incurred when changing production between periods, if any",
+            "status": "coded",
+            "formulation": "\\sum_{t=1}^{T} \\textup{SwitchCost} \\cdot \\textup{SwitchIndicator}_{t} \\leq \\textup{SwitchCost} \\cdot (T - 1)",
+            "related_variables": [
+                "SwitchIndicator"
+            ],
+            "related_parameters": [
+                "SwitchCost",
+                "T"
+            ],
+            "code": "# Constrain the total switch cost over all periods to be less than or equal to the switch cost for (T-1) switches\nmodel.addConstr(gp.quicksum(SwitchIndicator[t] for t in range(T)) * SwitchCost <= SwitchCost * (T - 1), name=\"total_switch_cost\")"
+        },
+        {
+            "description": "The inventory level is defined by the inventory of the previous period plus production minus delivery in each period",
+            "status": "coded",
+            "formulation": "Inventory_{t} = Inventory_{t-1} + Production_{t} - \\textup{Deliver}_{t}, \\quad \\forall t \\in \\textup{T}",
+            "related_variables": [
+                "Inventory",
+                "Production"
+            ],
+            "related_parameters": [
+                "Deliver"
+            ],
+            "code": "# Inventory balance constraint for each period\nfor t in range(1, T):  # Starting from period 1 as there is no Inventory_{t-1} for t=0\n    model.addConstr(Inventory[t] == Inventory[t - 1] + Production[t] - Deliver[t], name=f\"inventory_balance_{t}\")"
+        },
+        {
+            "description": "Non-negative inventory constraint in period 0, considering no initial inventory",
+            "status": "coded",
+            "formulation": "\\textup{Inventory}_0 = 0",
+            "related_variables": [
+                "Inventory"
+            ],
+            "related_parameters": [],
+            "code": "# Add non-negative inventory constraint for period 0, considering no initial inventory\nmodel.addConstr(Inventory[0] == 0, name=\"inventory_period_0\")"
+        },
+        {
+            "description": "Inventory balance constraint, representing the change in inventory from one period to the next",
+            "status": "coded",
+            "formulation": "\\textup{Inventory}_t = \\textup{Production}_t + \\textup{Inventory}_{t-1} - \\textup{Deliver}_t \\quad \\forall t \\in \\{1, \\ldots, T\\}",
+            "related_variables": [
+                "Production",
+                "Inventory"
+            ],
+            "related_parameters": [
+                "Deliver"
+            ],
+            "code": "# Add inventory balance constraints for each period t\nfor t in range(1, T):\n    model.addConstr(Inventory[t] == Production[t] + Inventory[t-1] - Deliver[t], name=f\"inventory_balance_period_{t}\")"
+        },
+        {
+            "description": "Switch indicator should be 1 if production level changes from t-1 to t",
+            "status": "coded",
+            "formulation": "\\textup{SwitchIndicator}_{t} \\geq \\textup{Production}_{t} - \\textup{Production}_{t-1}, \\quad \\forall t \\in \\{2, \\ldots, T\\}",
+            "related_variables": [
+                "SwitchIndicator",
+                "Production"
+            ],
+            "related_parameters": [],
+            "code": "T = len(data[\"some_key_representing_time_periods\"])\n\nProduction = model.addVars(T, vtype=gp.GRB.CONTINUOUS, name=\"Production\")\nSwitchIndicator = model.addVars(T, vtype=gp.GRB.BINARY, name=\"SwitchIndicator\")\n\nfor t in range(2, T+1):\n    model.addConstr(SwitchIndicator[t] >= SwitchIndicator[t-1] - Production[t] + Production[t-1], name=f\"SwitchIndicator_{t}\")"
+        },
+        {
+            "description": "Switch indicator should be 1 if production level changes from t-1 to t (other direction)",
+            "status": "coded",
+            "formulation": "\\textup{SwitchIndicator}_{t} \\geq \\textup{Production}_{t-1} - \\textup{Production}_{t}, \\quad \\forall t \\in \\{2, \\ldots, T\\}",
+            "related_variables": [
+                "SwitchIndicator",
+                "Production"
+            ],
+            "related_parameters": [],
+            "code": "# Add switch indicator constraints\nfor t in range(2, T+1):\n    model.addConstr(SwitchIndicator[t] >= Production[t-1] - Production[t], name=\"switch_indicator_{}\".format(t))"
+        },
+        {
+            "description": "Switch indicator should be binary",
+            "status": "coded",
+            "formulation": "\\textup{SwitchIndicator}_{t} \\in \\{0, 1\\}, \\quad \\forall t \\in \\{2, \\ldots, T\\}",
+            "related_variables": [
+                "SwitchIndicator"
+            ],
+            "related_parameters": [],
+            "code": "# No code needed since the binary nature of SwitchIndicator is already defined during its creation."
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Amount of product produced in period t",
+            "symbol": "Production",
+            "shape": [
+                "T"
+            ],
+            "status": "coded",
+            "code": "Production = model.addVars(T, vtype=gp.GRB.CONTINUOUS, name=\"Production\")"
+        },
+        {
+            "definition": "Inventory level in period t",
+            "symbol": "Inventory",
+            "shape": [
+                "T"
+            ],
+            "status": "coded",
+            "code": "Inventory = model.addVars(T, vtype=gp.GRB.CONTINUOUS, name=\"Inventory\")"
+        },
+        {
+            "definition": "Binary variable indicating a switch in production level between two consecutive periods",
+            "symbol": "SwitchIndicator",
+            "shape": [
+                "T"
+            ],
+            "status": "coded",
+            "code": "SwitchIndicator = model.addVars(T, vtype=gp.GRB.BINARY, name=\"SwitchIndicator\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total cost of production and inventory over T periods, which includes inventory holding costs and production switching costs",
+            "status": "coded",
+            "formulation": "\\textup{Minimize} \\quad Z = \\sum_{t=1}^{T} (\\textup{StorageCost} \\cdot \\textup{Inventory}_{t} + \\textup{SwitchCost} \\cdot \\textup{SwitchIndicator}_{t})",
+            "related_variables": [
+                "Inventory",
+                "SwitchIndicator"
+            ],
+            "related_parameters": [
+                "StorageCost",
+                "SwitchCost"
+            ],
+            "code": "# Set the objective function\nmodel.setObjective(gp.quicksum(StorageCost * Inventory[t] + SwitchCost * SwitchIndicator[t] for t in range(T)), gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "runtime_error",
+    "solver_output_status": "runtime_error",
+    "error_message": "Traceback (most recent call last):\n  File \"c:\\Users\\Simon\\Desktop\\Courses\\ECE 570\\ECE570_Project\\MyOptiMUS\\evaluator.py\", line 45, in run\n    exec(last_line, local_env, local_env)\n  File \"<string>\", line 3, in <module>\nKeyError: 12\n",
+    "obj_val": null,
+    "log_path": "logs/log_20250413073451_nlp4lp_12/",
+    "problem_path": "data/nlp4lp/12/",
+    "prep_code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nlp4lp/12/data.json\", \"r\") as f:\n    data = json.load(f)\n"
+}

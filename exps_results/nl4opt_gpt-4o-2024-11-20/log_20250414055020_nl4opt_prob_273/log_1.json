@@ -1,0 +1,142 @@
+{
+    "background": "A company must use camels or trucks to deliver goods to rural cities. Camels and trucks each have different unit capacities and trip durations.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of units of goods delivered per trip by camel caravan",
+            "symbol": "UnitsCamel",
+            "value": 50,
+            "shape": [],
+            "code": "UnitsCamel = data[\"UnitsCamel\"] # scalar parameter"
+        },
+        {
+            "definition": "Travel time per trip for camel caravan",
+            "symbol": "TimeCamel",
+            "value": 12,
+            "shape": [],
+            "code": "TimeCamel = data[\"TimeCamel\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of units of goods delivered per trip by desert truck",
+            "symbol": "UnitsTruck",
+            "value": 150,
+            "shape": [],
+            "code": "UnitsTruck = data[\"UnitsTruck\"] # scalar parameter"
+        },
+        {
+            "definition": "Travel time per trip for desert truck",
+            "symbol": "TimeTruck",
+            "value": 5,
+            "shape": [],
+            "code": "TimeTruck = data[\"TimeTruck\"] # scalar parameter"
+        },
+        {
+            "definition": "Total units of goods that need to be delivered",
+            "symbol": "GoodsTotal",
+            "value": 1500,
+            "shape": [],
+            "code": "GoodsTotal = data[\"GoodsTotal\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of camel caravans must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfCamelCaravans} \\geq 0",
+            "related_variables": [
+                "NumberOfCamelCaravans"
+            ],
+            "related_parameters": [],
+            "code": "# The constraint is already defined inherently by the non-negative domain of the variable\n# Since no additional code is needed, the variable's range is satisfied by its definition."
+        },
+        {
+            "description": "The number of desert trucks dispatched by the company must be a non-negative value.",
+            "status": "coded",
+            "formulation": "\\\\textup{NumberOfDesertTrucks} \\\\geq 0",
+            "related_variables": [
+                "NumberOfDesertTrucks"
+            ],
+            "related_parameters": [],
+            "code": "# The non-negativity of the \"NumberOfDesertTrucks\" variable is already ensured by defining it as a continuous variable with no lower bound constraint. No additional code is required."
+        },
+        {
+            "description": "The total units delivered by camel caravans and desert trucks must be at least equal to GoodsTotal.",
+            "status": "coded",
+            "formulation": "\\\\textup{NumberOfCamelCaravans} \\\\times \\\\textup{UnitsCamel} + \\\\textup{NumberOfDesertTrucks} \\\\times \\\\textup{UnitsTruck} \\\\geq \\\\textup{GoodsTotal}",
+            "related_variables": [
+                "NumberOfCamelCaravans",
+                "NumberOfDesertTrucks"
+            ],
+            "related_parameters": [
+                "UnitsCamel",
+                "UnitsTruck",
+                "GoodsTotal"
+            ],
+            "code": "# Ensure that the total units delivered by camel caravans and desert trucks meet or exceed GoodsTotal\nmodel.addConstr(NumberOfCamelCaravans * UnitsCamel + NumberOfDesertTrucks * UnitsTruck >= GoodsTotal, name=\"delivery_requirement\")"
+        },
+        {
+            "description": "The total goods transported by camel caravans and desert trucks must be at least GoodsTotal.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfCamelCaravans} \\\\times \\textup{UnitsCamel} + \\textup{NumberOfDesertTrucks} \\\\times \\textup{UnitsTruck} \\geq \\textup{GoodsTotal}",
+            "related_variables": [
+                "NumberOfCamelCaravans",
+                "NumberOfDesertTrucks"
+            ],
+            "related_parameters": [
+                "GoodsTotal",
+                "UnitsCamel",
+                "UnitsTruck"
+            ],
+            "code": "# Add constraint ensuring total goods transported meet or exceed GoodsTotal\nmodel.addConstr(\n    NumberOfCamelCaravans * UnitsCamel + NumberOfDesertTrucks * UnitsTruck >= GoodsTotal,\n    name=\"total_goods_constraint\"\n)"
+        },
+        {
+            "description": "The number of camel caravans and the number of desert trucks dispatched must both be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfCamelCaravans} \\geq 0, \\quad \\textup{NumberOfDesertTrucks} \\geq 0",
+            "related_variables": [
+                "NumberOfCamelCaravans",
+                "NumberOfDesertTrucks"
+            ],
+            "related_parameters": [],
+            "code": "# Variables are already defined and constraints are inherently ensured by their non-negativity (due to gp.GRB.CONTINUOUS type)."
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of camel caravans dispatched by the company.",
+            "symbol": "NumberOfCamelCaravans",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfCamelCaravans = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfCamelCaravans\")"
+        },
+        {
+            "definition": "The number of desert trucks dispatched by the company.",
+            "symbol": "NumberOfDesertTrucks",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfDesertTrucks = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfDesertTrucks\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of hours required to deliver GoodsTotal units of goods.",
+            "status": "coded",
+            "formulation": "\\textup{Minimize} \\quad \\textup{Total Hours} = \\textup{NumberOfCamelCaravans} \\\\times \\textup{TimeCamel} + \\textup{NumberOfDesertTrucks} \\\\times \\textup{TimeTruck}",
+            "related_variables": [
+                "NumberOfCamelCaravans",
+                "NumberOfDesertTrucks"
+            ],
+            "related_parameters": [
+                "TimeCamel",
+                "TimeTruck"
+            ],
+            "code": "# Set objective\nmodel.setObjective(NumberOfCamelCaravans * TimeCamel + NumberOfDesertTrucks * TimeTruck, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250414055020_nl4opt_prob_273/",
+    "problem_path": "data/nl4opt/prob_273/"
+}

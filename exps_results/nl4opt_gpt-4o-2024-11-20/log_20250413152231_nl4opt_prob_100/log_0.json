@@ -1,0 +1,173 @@
+{
+    "background": "A patient requires a specific medication plan involving two types of pills. Each pill has different levels of pain and anxiety medication, as well as different discharge effects.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Pain medication per Pill 1",
+            "symbol": "PainPillOne",
+            "value": 0.2,
+            "shape": [],
+            "code": "PainPillOne = data[\"PainPillOne\"] # scalar parameter"
+        },
+        {
+            "definition": "Anxiety medication per Pill 1",
+            "symbol": "AnxietyPillOne",
+            "value": 0.3,
+            "shape": [],
+            "code": "AnxietyPillOne = data[\"AnxietyPillOne\"] # scalar parameter"
+        },
+        {
+            "definition": "Discharge caused by Pill 1",
+            "symbol": "DischargePillOne",
+            "value": 0.3,
+            "shape": [],
+            "code": "DischargePillOne = data[\"DischargePillOne\"] # scalar parameter"
+        },
+        {
+            "definition": "Pain medication per Pill 2",
+            "symbol": "PainPillTwo",
+            "value": 0.6,
+            "shape": [],
+            "code": "PainPillTwo = data[\"PainPillTwo\"] # scalar parameter"
+        },
+        {
+            "definition": "Anxiety medication per Pill 2",
+            "symbol": "AnxietyPillTwo",
+            "value": 0.2,
+            "shape": [],
+            "code": "AnxietyPillTwo = data[\"AnxietyPillTwo\"] # scalar parameter"
+        },
+        {
+            "definition": "Discharge caused by Pill 2",
+            "symbol": "DischargePillTwo",
+            "value": 0.1,
+            "shape": [],
+            "code": "DischargePillTwo = data[\"DischargePillTwo\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum units of pain medication allowed",
+            "symbol": "MaxPainMedication",
+            "value": 6,
+            "shape": [],
+            "code": "MaxPainMedication = data[\"MaxPainMedication\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum units of anxiety medication required",
+            "symbol": "MinAnxietyMedication",
+            "value": 3,
+            "shape": [],
+            "code": "MinAnxietyMedication = data[\"MinAnxietyMedication\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of Pill 1 administered to the patient must be non-negative.",
+            "status": "formulated",
+            "formulation": "\\textup{PillOneUnits} \\geq 0",
+            "related_variables": [
+                "PillOneUnits"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "The number of Pill 2 administered to the patient must be non-negative.",
+            "status": "formulated",
+            "formulation": "\\textup{PillTwoUnits} \\geq 0",
+            "related_variables": [
+                "PillTwoUnits"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "The total pain medication provided by Pill 1 and Pill 2 must not exceed the maximum allowed units (MaxPainMedication).",
+            "status": "formulated",
+            "formulation": "(\\textup{PainPillOne} \\cdot \\textup{PillOneUnits}) + (\\textup{PainPillTwo} \\cdot \\textup{PillTwoUnits}) \\leq \\textup{MaxPainMedication}",
+            "related_variables": [
+                "PillOneUnits",
+                "PillTwoUnits"
+            ],
+            "related_parameters": [
+                "PainPillOne",
+                "PainPillTwo",
+                "MaxPainMedication"
+            ]
+        },
+        {
+            "description": "The combined anxiety medication provided by Pill 1 and Pill 2 must be at least the minimum required anxiety medication.",
+            "status": "formulated",
+            "formulation": "\\\\textup{AnxietyPillOne} \\\\cdot \\\\textup{PillOneUnits} + \\\\textup{AnxietyPillTwo} \\\\cdot \\\\textup{PillTwoUnits} \\\\geq \\\\textup{MinAnxietyMedication}",
+            "related_variables": [
+                "PillOneUnits",
+                "PillTwoUnits"
+            ],
+            "related_parameters": [
+                "AnxietyPillOne",
+                "AnxietyPillTwo",
+                "MinAnxietyMedication"
+            ]
+        },
+        {
+            "description": "The total amount of pain medication provided by both pills should not exceed the maximum allowed.",
+            "status": "formulated",
+            "formulation": "\\textup{PainPillOne} \\cdot \\textup{PillOneUnits} + \\textup{PainPillTwo} \\cdot \\textup{PillTwoUnits} \\leq \\textup{MaxPainMedication}",
+            "related_variables": [
+                "PillOneUnits",
+                "PillTwoUnits"
+            ],
+            "related_parameters": [
+                "PainPillOne",
+                "PainPillTwo",
+                "MaxPainMedication"
+            ]
+        },
+        {
+            "description": "The total amount of anxiety medication provided by both pills should meet the minimum required.",
+            "status": "formulated",
+            "formulation": "\\textup{AnxietyPillOne} \\cdot \\textup{PillOneUnits} + \\textup{AnxietyPillTwo} \\cdot \\textup{PillTwoUnits} \\geq \\textup{MinAnxietyMedication}",
+            "related_variables": [
+                "PillOneUnits",
+                "PillTwoUnits"
+            ],
+            "related_parameters": [
+                "AnxietyPillOne",
+                "AnxietyPillTwo",
+                "MinAnxietyMedication"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of Pill 1 administered to the patient",
+            "symbol": "PillOneUnits",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "The number of Pill 2 administered to the patient",
+            "symbol": "PillTwoUnits",
+            "shape": [],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total discharge resulting from the medication plan.",
+            "status": "formulated",
+            "formulation": "\\textup{Minimize:} \\quad \\textup{DischargePillOne} \\cdot \\textup{PillOneUnits} + \\textup{DischargePillTwo} \\cdot \\textup{PillTwoUnits}",
+            "related_variables": [
+                "PillOneUnits",
+                "PillTwoUnits"
+            ],
+            "related_parameters": [
+                "DischargePillOne",
+                "DischargePillTwo"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413152231_nl4opt_prob_100/",
+    "problem_path": "data/nl4opt/prob_100/"
+}

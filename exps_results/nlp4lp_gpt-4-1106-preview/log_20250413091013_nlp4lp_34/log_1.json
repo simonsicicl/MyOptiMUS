@@ -1,0 +1,228 @@
+{
+    "background": "The problem involves scheduling generators to operate during different periods of the day in order to meet a specified electricity demand at minimum cost. Each generator has its own operational constraints and costs associated with running, producing extra power, and starting up.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Total number of periods",
+            "symbol": "T",
+            "value": "",
+            "shape": [],
+            "code": "T = data[\"T\"] # scalar parameter"
+        },
+        {
+            "definition": "Total number of generators",
+            "symbol": "K",
+            "value": "",
+            "shape": [],
+            "code": "K = data[\"K\"] # scalar parameter"
+        },
+        {
+            "definition": "Demand during period t",
+            "symbol": "Demand",
+            "value": "",
+            "shape": [
+                "T"
+            ],
+            "code": "Demand = np.array(data[\"Demand\"]) # ['T']"
+        },
+        {
+            "definition": "Number of generator k",
+            "symbol": "NumGenerator",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "NumGenerator = np.array(data[\"NumGenerator\"]) # ['K']"
+        },
+        {
+            "definition": "Minimum level of generator k",
+            "symbol": "MinLevel",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "MinLevel = np.array(data[\"MinLevel\"]) # ['K']"
+        },
+        {
+            "definition": "Maximum level of generator k",
+            "symbol": "MaxLevel",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "MaxLevel = np.array(data[\"MaxLevel\"]) # ['K']"
+        },
+        {
+            "definition": "Running cost of generator k",
+            "symbol": "RunCost",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "RunCost = np.array(data[\"RunCost\"]) # ['K']"
+        },
+        {
+            "definition": "Extra cost of generator k",
+            "symbol": "ExtraCost",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "ExtraCost = np.array(data[\"ExtraCost\"]) # ['K']"
+        },
+        {
+            "definition": "Start-up cost of generator k",
+            "symbol": "StartCost",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "StartCost = np.array(data[\"StartCost\"]) # ['K']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "For each period, the sum of the output from all generators must meet or exceed the demand",
+            "status": "coded",
+            "formulation": "\\sum_{k=1}^{\\textup{K}} \\textup{GeneratorOutput}_{tk} \\geq \\textup{Demand}_t \\quad \\forall t \\in \\{1, ..., \\textup{T}\\}",
+            "related_variables": [
+                "GeneratorOutput"
+            ],
+            "related_parameters": [
+                "Demand"
+            ],
+            "code": "# Meet or exceed demand constraint for each period\nfor t in range(T):\n    model.addConstr(gp.quicksum(GeneratorOutput[t, k] for k in range(K)) >= Demand[t], name=f\"demand_constraint_{t}\")"
+        },
+        {
+            "description": "Each generator can operate only within its minimum and maximum levels for each period of the day",
+            "status": "coded",
+            "formulation": "\\forall k \\in \\{1, \\ldots, K\\}, \\quad \\forall t \\in \\{1, \\ldots, T\\}, \\quad \\textup{MinLevel}_k \\leq \\textup{GeneratorOutput}_{tk} \\leq \\textup{MaxLevel}_k",
+            "related_variables": [
+                "GeneratorOutput"
+            ],
+            "related_parameters": [
+                "T",
+                "K",
+                "MinLevel",
+                "MaxLevel"
+            ],
+            "code": "```"
+        },
+        {
+            "description": "The total number of generators used at each period t cannot exceed the available number of each generator k",
+            "status": "coded",
+            "formulation": "\\sum_{t=1}^{\\textup{T}} \\textup{GeneratorOn}_{t,k} \\leq \\textup{NumGenerator}_{k} \\quad \\forall k \\in \\{1, ..., \\textup{K}\\}",
+            "related_variables": [
+                "GeneratorOn"
+            ],
+            "related_parameters": [
+                "NumGenerator",
+                "T",
+                "K"
+            ],
+            "code": "# Add constraints for the total number of generators used at each period\nfor k in range(K):\n    model.addConstr(gp.quicksum(GeneratorOn[t, k] for t in range(T)) <= NumGenerator[k], name=\"gen_usage_limit_{}\".format(k))"
+        },
+        {
+            "description": "Linking GeneratorOutput and GeneratorOn variables to ensure GeneratorOutput is zero when GeneratorOn is zero",
+            "status": "coded",
+            "formulation": "\\textup{GeneratorOutput}_{t,k} \\leq M \\times \\textup{GeneratorOn}_{t,k} \\quad \\forall t \\in \\{1, ..., \\textup{T}\\}, \\forall k \\in \\{1, ..., \\textup{K}\\}",
+            "related_variables": [
+                "GeneratorOutput",
+                "GeneratorOn"
+            ],
+            "related_parameters": [
+                "T",
+                "K"
+            ],
+            "code": "# Linking GeneratorOutput and GeneratorOn variables\nM = gp.GRB.INFINITY\nfor t in range(T):\n    for k in range(K):\n        model.addConstr(GeneratorOutput[t, k] <= M * GeneratorOn[t, k], name=f\"link_gen_output_on_{t}_{k}\")"
+        },
+        {
+            "description": "Ensure GeneratorOutput is at least MinLevel if GeneratorOn is one",
+            "status": "coded",
+            "formulation": "\\textup{GeneratorOutput}_{t,k} \\geq \\textup{MinLevel}_{k} \\times \\textup{GeneratorOn}_{t,k} \\quad \\forall t \\in \\{1, ..., \\textup{T}\\}, \\forall k \\in \\{1, ..., \\textup{K}\\}",
+            "related_variables": [
+                "GeneratorOutput",
+                "GeneratorOn"
+            ],
+            "related_parameters": [
+                "MinLevel",
+                "T",
+                "K"
+            ],
+            "code": "# Ensure GeneratorOutput is at least MinLevel if GeneratorOn is one\nfor t in range(T):\n    for k in range(K):\n        model.addConstr(GeneratorOutput[t, k] >= MinLevel[k] * GeneratorOn[t, k], name=\"min_output_gen_on\")"
+        },
+        {
+            "description": "Binary flag for extra cost when GeneratorOutput exceeds Maximum level (threshold) of generator.",
+            "status": "coded",
+            "formulation": "\\textup{ExtraCostFlag}_{tk} = \\begin{cases} 1, \\quad \\textup{if} \\quad \\textup{GeneratorOutput}_{tk} > \\textup{MaxLevel}_{k} \\\\ 0, \\quad \\textup{otherwise} \\end{cases}",
+            "related_variables": [
+                "GeneratorOutput",
+                "ExtraCostFlag"
+            ],
+            "related_parameters": [
+                "T",
+                "K",
+                "MaxLevel"
+            ],
+            "code": "# Add extra cost flag constraints\nfor t in range(T):\n    for k in range(K):\n        model.addConstr((GeneratorOutput[t, k] - MaxLevel[k] <= 0) >> (ExtraCostFlag[t, k] == 0), name=\"extra_cost_flag_0\")\n        model.addConstr((GeneratorOutput[t, k] - MaxLevel[k] > 0) >> (ExtraCostFlag[t, k] == 1), name=\"extra_cost_flag_1\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Output of generator k at time t",
+            "symbol": "GeneratorOutput",
+            "shape": [
+                "T",
+                "K"
+            ],
+            "status": "coded",
+            "code": "GeneratorOutput = model.addVars(T, K, vtype=gp.GRB.CONTINUOUS, name=\"GeneratorOutput\")"
+        },
+        {
+            "definition": "Binary variable indicating if generator k is on at time t",
+            "symbol": "GeneratorOn",
+            "shape": [
+                "T",
+                "K"
+            ],
+            "status": "coded",
+            "code": "GeneratorOn = model.addVars(T, K, vtype=gp.GRB.BINARY, name=\"GeneratorOn\")"
+        },
+        {
+            "definition": "Binary flag indicating if extra cost applies for generator k at time t",
+            "symbol": "ExtraCostFlag",
+            "shape": [
+                "T",
+                "K"
+            ],
+            "status": "coded",
+            "code": "ExtraCostFlag = model.addVars(T, K, vtype=gp.GRB.BINARY, name=\"ExtraCostFlag\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total cost of running generators, accounting for running costs, extra costs, and start-up costs.",
+            "status": "coded",
+            "formulation": "\\min \\sum_{t=1}^{\\textup{T}} \\sum_{k=1}^{\\textup{K}} (\\textup{GeneratorOutput}_{tk} \\times \\textup{RunCost}_{k} + \\textup{ExtraCostFlag}_{tk} \\times \\textup{ExtraCost}_{k} + \\textup{GeneratorOn}_{tk} \\times \\textup{StartCost}_{k})",
+            "related_variables": [
+                "GeneratorOutput",
+                "GeneratorOn",
+                "ExtraCostFlag"
+            ],
+            "related_parameters": [
+                "T",
+                "K",
+                "RunCost",
+                "ExtraCost",
+                "StartCost"
+            ],
+            "code": "# Define the objective function\nmodel.setObjective(\n    gp.quicksum(\n        GeneratorOutput[t, k] * RunCost[k] +\n        ExtraCostFlag[t, k] * ExtraCost[k] +\n        GeneratorOn[t, k] * StartCost[k]\n        for t in range(T) for k in range(K)\n    ),\n    gp.GRB.MINIMIZE\n)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413091013_nlp4lp_34/",
+    "problem_path": "data/nlp4lp/34/"
+}

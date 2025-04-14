@@ -1,0 +1,224 @@
+{
+    "background": "An engineering school is hosting a bridge building competition where students aim to build the maximum number of beam and truss bridges using limited supplies of Popsicle sticks and glue to maximize the total mass the bridges can support.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of Popsicle sticks required for a beam bridge",
+            "symbol": "PopsicleBeam",
+            "value": 30,
+            "shape": [],
+            "code": "PopsicleBeam = data[\"PopsicleBeam\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of glue required for a beam bridge",
+            "symbol": "GlueBeam",
+            "value": 5,
+            "shape": [],
+            "code": "GlueBeam = data[\"GlueBeam\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of Popsicle sticks required for a truss bridge",
+            "symbol": "PopsicleTruss",
+            "value": 50,
+            "shape": [],
+            "code": "PopsicleTruss = data[\"PopsicleTruss\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of glue required for a truss bridge",
+            "symbol": "GlueTruss",
+            "value": 8,
+            "shape": [],
+            "code": "GlueTruss = data[\"GlueTruss\"] # scalar parameter"
+        },
+        {
+            "definition": "Total available Popsicle sticks",
+            "symbol": "TotalPopsicles",
+            "value": 600,
+            "shape": [],
+            "code": "TotalPopsicles = data[\"TotalPopsicles\"] # scalar parameter"
+        },
+        {
+            "definition": "Total available units of glue",
+            "symbol": "TotalGlue",
+            "value": 100,
+            "shape": [],
+            "code": "TotalGlue = data[\"TotalGlue\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of truss bridges",
+            "symbol": "MaxTruss",
+            "value": 5,
+            "shape": [],
+            "code": "MaxTruss = data[\"MaxTruss\"] # scalar parameter"
+        },
+        {
+            "definition": "Mass supported by a beam bridge",
+            "symbol": "MassBeam",
+            "value": 40,
+            "shape": [],
+            "code": "MassBeam = data[\"MassBeam\"] # scalar parameter"
+        },
+        {
+            "definition": "Mass supported by a truss bridge",
+            "symbol": "MassTruss",
+            "value": 60,
+            "shape": [],
+            "code": "MassTruss = data[\"MassTruss\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Number of beam bridges should be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfBeamBridges} \\geq 0",
+            "related_variables": [
+                "NumberOfBeamBridges"
+            ],
+            "related_parameters": [],
+            "code": "# Since NumberOfBeamBridges is already guaranteed to be non-negative by its variable type definition,\n# no additional constraint is needed.\n# The variable is an integer and Gurobi, by default, does not allow negative values for integer variables."
+        },
+        {
+            "description": "Number of truss bridges should be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfTrussBridges} \\geq 0",
+            "related_variables": [
+                "NumberOfTrussBridges"
+            ],
+            "related_parameters": [],
+            "code": "# Since the variable NumberOfTrussBridges is already ensured to be an integer, we only need to add a constraint to enforce its non-negativity.\nmodel.addConstr(NumberOfTrussBridges >= 0, name=\"truss_bridge_nonnegativity\")"
+        },
+        {
+            "description": "Total use of Popsicle sticks must not exceed the total available Popsicle sticks",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfBeamBridges} \\cdot \\textup{PopsicleBeam} + \\textup{NumberOfTrussBridges} \\cdot \\textup{PopsicleTruss} \\leq \\textup{TotalPopsicles}",
+            "related_variables": [
+                "NumberOfBeamBridges",
+                "NumberOfTrussBridges"
+            ],
+            "related_parameters": [
+                "PopsicleBeam",
+                "PopsicleTruss",
+                "TotalPopsicles"
+            ],
+            "code": "# Total use of Popsicle sticks must not exceed the total available Popsicle sticks\nmodel.addConstr(NumberOfBeamBridges * PopsicleBeam + NumberOfTrussBridges * PopsicleTruss <= TotalPopsicles, \n                name=\"Popsicle_Stick_Usage\")"
+        },
+        {
+            "description": "The total consumption of glue for building the bridges must not exceed the TotalGlue available",
+            "status": "coded",
+            "formulation": "\\textup{GlueBeam} \\times \\textup{NumberOfBeamBridges} + \\textup{GlueTruss} \\times \\textup{NumberOfTrussBridges} \\leq \\textup{TotalGlue}",
+            "related_variables": [
+                "NumberOfBeamBridges",
+                "NumberOfTrussBridges"
+            ],
+            "related_parameters": [
+                "GlueBeam",
+                "GlueTruss",
+                "TotalGlue"
+            ],
+            "code": "# Add constraint for the total consumption of glue for building bridges\nmodel.addConstr(\n    GlueBeam * NumberOfBeamBridges + GlueTruss * NumberOfTrussBridges <= TotalGlue,\n    name=\"glue_consumption\"\n)"
+        },
+        {
+            "description": "Each team can build at most 'MaxTruss' truss bridges in the competition",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfTrussBridges} \\leq \\textup{MaxTruss}",
+            "related_variables": [
+                "NumberOfTrussBridges"
+            ],
+            "related_parameters": [
+                "MaxTruss"
+            ],
+            "code": "# Add truss bridge constraint\nmodel.addConstr(NumberOfTrussBridges <= MaxTruss, name=\"max_truss_bridges\")"
+        },
+        {
+            "description": "The number of beam bridges must be greater than the number of truss bridges",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfBeamBridges} \\geq \\textup{NumberOfTrussBridges} + 1",
+            "related_variables": [
+                "NumberOfBeamBridges",
+                "NumberOfTrussBridges"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint: Number of beam bridges must be greater than the number of truss bridges by at least one\nmodel.addConstr(NumberOfBeamBridges >= NumberOfTrussBridges + 1, name=\"beam_vs_truss_constraint\")"
+        },
+        {
+            "description": "The total number of Popsicle sticks used should not exceed the total available Popsicle sticks",
+            "status": "coded",
+            "formulation": "PopsicleBeam \\cdot NumberOfBeamBridges + PopsicleTruss \\cdot NumberOfTrussBridges \\leq TotalPopsicles",
+            "related_variables": [
+                "NumberOfBeamBridges",
+                "NumberOfTrussBridges"
+            ],
+            "related_parameters": [
+                "PopsicleBeam",
+                "PopsicleTruss",
+                "TotalPopsicles"
+            ],
+            "code": "# Constraint: The total number of Popsicle sticks used should not exceed the total available Popsicle sticks\nmodel.addConstr(PopsicleBeam * NumberOfBeamBridges + PopsicleTruss * NumberOfTrussBridges <= TotalPopsicles, name=\"Popsicle_Stick_Usage\")"
+        },
+        {
+            "description": "The total units of glue used should not exceed the total available units of glue",
+            "status": "coded",
+            "formulation": "GlueBeam \\cdot NumberOfBeamBridges + GlueTruss \\cdot NumberOfTrussBridges \\leq TotalGlue",
+            "related_variables": [
+                "NumberOfBeamBridges",
+                "NumberOfTrussBridges"
+            ],
+            "related_parameters": [
+                "GlueBeam",
+                "GlueTruss",
+                "TotalGlue"
+            ],
+            "code": "GlueBeam = data[\"GlueBeam\"]  # scalar parameter\nGlueTruss = data[\"GlueTruss\"]  # scalar parameter\nTotalGlue = data[\"TotalGlue\"]  # scalar parameter\n\n# Add constraint for total units of glue used not to exceed total available units of glue\nmodel.addConstr(GlueBeam * NumberOfBeamBridges + GlueTruss * NumberOfTrussBridges <= TotalGlue, name=\"total_glue_usage\")"
+        },
+        {
+            "description": "The number of truss bridges should not exceed the maximum number of truss bridges allowed",
+            "status": "coded",
+            "formulation": "NumberOfTrussBridges \\leq MaxTruss",
+            "related_variables": [
+                "NumberOfTrussBridges"
+            ],
+            "related_parameters": [
+                "MaxTruss"
+            ],
+            "code": "# Constraint: Number of truss bridges should not exceed the maximum allowed\nmodel.addConstr(NumberOfTrussBridges <= MaxTruss, \"truss_bridge_limit\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of beam bridges built in the competition",
+            "symbol": "NumberOfBeamBridges",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfBeamBridges = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfBeamBridges\")"
+        },
+        {
+            "definition": "Number of truss bridges built in the competition",
+            "symbol": "NumberOfTrussBridges",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfTrussBridges = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfTrussBridges\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total mass that the built bridges can support",
+            "status": "coded",
+            "formulation": "\\textup{Maximize} \\quad \\textup{TotalSupportedMass} = \\textup{MassBeam} \\cdot \\textup{NumberOfBeamBridges} + \\textup{MassTruss} \\cdot \\textup{NumberOfTrussBridges}",
+            "related_variables": [
+                "NumberOfBeamBridges",
+                "NumberOfTrussBridges"
+            ],
+            "related_parameters": [
+                "MassBeam",
+                "MassTruss"
+            ],
+            "code": "# Define the objective function\nTotalSupportedMass = MassBeam * NumberOfBeamBridges + MassTruss * NumberOfTrussBridges\n\n# Set objective\nmodel.setObjective(TotalSupportedMass, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413133046_nl4opt_prob_147/",
+    "problem_path": "data/nl4opt/prob_147/"
+}

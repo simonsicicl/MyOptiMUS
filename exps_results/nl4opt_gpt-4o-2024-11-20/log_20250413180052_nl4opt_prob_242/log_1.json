@@ -1,0 +1,234 @@
+{
+    "background": "A fitness enthusiast aiming to comply with dietary restrictions evaluates the composition of meals consisting of salmon and eggs to meet specific caloric and protein intake requirements while minimizing sodium consumption.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Calories per bowl of salmon",
+            "symbol": "CaloriesSalmon",
+            "value": 300,
+            "shape": [],
+            "code": "CaloriesSalmon = data[\"CaloriesSalmon\"] # scalar parameter"
+        },
+        {
+            "definition": "Protein per bowl of salmon",
+            "symbol": "ProteinSalmon",
+            "value": 15,
+            "shape": [],
+            "code": "ProteinSalmon = data[\"ProteinSalmon\"] # scalar parameter"
+        },
+        {
+            "definition": "Sodium per bowl of salmon",
+            "symbol": "SodiumSalmon",
+            "value": 80,
+            "shape": [],
+            "code": "SodiumSalmon = data[\"SodiumSalmon\"] # scalar parameter"
+        },
+        {
+            "definition": "Calories per bowl of eggs",
+            "symbol": "CaloriesEggs",
+            "value": 200,
+            "shape": [],
+            "code": "CaloriesEggs = data[\"CaloriesEggs\"] # scalar parameter"
+        },
+        {
+            "definition": "Protein per bowl of eggs",
+            "symbol": "ProteinEggs",
+            "value": 8,
+            "shape": [],
+            "code": "ProteinEggs = data[\"ProteinEggs\"] # scalar parameter"
+        },
+        {
+            "definition": "Sodium per bowl of eggs",
+            "symbol": "SodiumEggs",
+            "value": 20,
+            "shape": [],
+            "code": "SodiumEggs = data[\"SodiumEggs\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum proportion of meals that can be eggs",
+            "symbol": "MaxEggProportion",
+            "value": 0.4,
+            "shape": [],
+            "code": "MaxEggProportion = data[\"MaxEggProportion\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum total calories required",
+            "symbol": "MinTotalCalories",
+            "value": 2000,
+            "shape": [],
+            "code": "MinTotalCalories = data[\"MinTotalCalories\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum total protein required",
+            "symbol": "MinTotalProtein",
+            "value": 90,
+            "shape": [],
+            "code": "MinTotalProtein = data[\"MinTotalProtein\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of salmon meals must be non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{NumberSalmonMeals} \\\\geq 0",
+            "related_variables": [
+                "NumberSalmonMeals"
+            ],
+            "related_parameters": [],
+            "code": "# No additional code needed since the variable \"NumberSalmonMeals\" is defined with non-negativity by default through its lower bound of 0 in Gurobi."
+        },
+        {
+            "description": "The number of egg meals is non-negative, ensuring the variable cannot take negative values.",
+            "status": "coded",
+            "formulation": "\\textup{NumberEggMeals} \\geq 0",
+            "related_variables": [
+                "NumberEggMeals"
+            ],
+            "related_parameters": [],
+            "code": "# Variable 'NumberEggMeals' is already non-negative due to its default domain in Gurobi (continuous domain variables are non-negative by default unless specified otherwise)."
+        },
+        {
+            "description": "At most MaxEggProportion of the meals can be eggs.",
+            "status": "coded",
+            "formulation": "\\textup{NumberEggMeals} \\leq \\textup{MaxEggProportion} \\cdot \\textup{TotalMeals}",
+            "related_variables": [
+                "NumberEggMeals",
+                "TotalMeals"
+            ],
+            "related_parameters": [
+                "MaxEggProportion"
+            ],
+            "code": "# Adding the constraint to ensure at most MaxEggProportion of meals can be eggs\nmodel.addConstr(NumberEggMeals <= MaxEggProportion * TotalMeals, name=\"max_egg_meal_proportion\")"
+        },
+        {
+            "description": "The total caloric intake must be at least MinTotalCalories calories.",
+            "status": "coded",
+            "formulation": "\\textup{CaloriesSalmon} * \\textup{NumberSalmonMeals} + \\textup{CaloriesEggs} * \\textup{NumberEggMeals} \\geq \\textup{MinTotalCalories}",
+            "related_variables": [
+                "NumberSalmonMeals",
+                "NumberEggMeals"
+            ],
+            "related_parameters": [
+                "CaloriesSalmon",
+                "CaloriesEggs",
+                "MinTotalCalories"
+            ],
+            "code": "# Add total caloric intake constraint\nmodel.addConstr(\n    CaloriesSalmon * NumberSalmonMeals + CaloriesEggs * NumberEggMeals >= MinTotalCalories,\n    name=\"total_caloric_intake\"\n)"
+        },
+        {
+            "description": "The total protein intake from salmon and egg meals must be at least MinTotalProtein grams.",
+            "status": "coded",
+            "formulation": "\\\\textup{ProteinSalmon} \\\\cdot \\\\textup{NumberSalmonMeals} + \\\\textup{ProteinEggs} \\\\cdot \\\\textup{NumberEggMeals} \\\\geq \\\\textup{MinTotalProtein}",
+            "related_variables": [
+                "NumberSalmonMeals",
+                "NumberEggMeals"
+            ],
+            "related_parameters": [
+                "ProteinSalmon",
+                "ProteinEggs",
+                "MinTotalProtein"
+            ],
+            "code": "# Add a constraint to ensure total protein intake is at least MinTotalProtein\nmodel.addConstr(\n    ProteinSalmon * NumberSalmonMeals + ProteinEggs * NumberEggMeals >= MinTotalProtein,\n    name=\"protein_intake_constraint\"\n)"
+        },
+        {
+            "description": "TotalMeals is the sum of salmon and egg meals.",
+            "status": "coded",
+            "formulation": "\\textup{TotalMeals} = \\textup{NumberSalmonMeals} + \\textup{NumberEggMeals}",
+            "related_variables": [
+                "TotalMeals",
+                "NumberSalmonMeals",
+                "NumberEggMeals"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint: TotalMeals equals the sum of salmon and egg meals\nmodel.addConstr(TotalMeals == NumberSalmonMeals + NumberEggMeals, name=\"TotalMeals_calculation\")"
+        },
+        {
+            "description": "Ensure the minimum caloric requirement is met.",
+            "status": "coded",
+            "formulation": "\\textup{NumberSalmonMeals} * \\textup{CaloriesSalmon} + \\textup{NumberEggMeals} * \\textup{CaloriesEggs} \\geq \\textup{MinTotalCalories}",
+            "related_variables": [
+                "NumberSalmonMeals",
+                "NumberEggMeals"
+            ],
+            "related_parameters": [
+                "CaloriesSalmon",
+                "CaloriesEggs",
+                "MinTotalCalories"
+            ],
+            "code": "# Add constraint to ensure the minimum caloric requirement is met\nmodel.addConstr(\n    NumberSalmonMeals * CaloriesSalmon + NumberEggMeals * CaloriesEggs >= MinTotalCalories,\n    name=\"min_caloric_requirement\"\n)"
+        },
+        {
+            "description": "Ensure the minimum protein requirement is met.",
+            "status": "coded",
+            "formulation": "\\textup{NumberSalmonMeals} * \\textup{ProteinSalmon} + \\textup{NumberEggMeals} * \\textup{ProteinEggs} \\geq \\textup{MinTotalProtein}",
+            "related_variables": [
+                "NumberSalmonMeals",
+                "NumberEggMeals"
+            ],
+            "related_parameters": [
+                "ProteinSalmon",
+                "ProteinEggs",
+                "MinTotalProtein"
+            ],
+            "code": "# Add constraint to ensure the minimum protein requirement is met\nmodel.addConstr(\n    NumberSalmonMeals * ProteinSalmon + NumberEggMeals * ProteinEggs >= MinTotalProtein, \n    name=\"min_protein_requirement\"\n)"
+        },
+        {
+            "description": "Ensure the proportion of egg meals is within the maximum allowable limit.",
+            "status": "coded",
+            "formulation": "\\textup{NumberEggMeals} \\leq \\textup{MaxEggProportion} * (\\textup{NumberSalmonMeals} + \\textup{NumberEggMeals})",
+            "related_variables": [
+                "NumberSalmonMeals",
+                "NumberEggMeals"
+            ],
+            "related_parameters": [
+                "MaxEggProportion"
+            ],
+            "code": "# Add constraint to ensure the proportion of egg meals is within the maximum allowable limit\nmodel.addConstr(NumberEggMeals <= MaxEggProportion * (NumberSalmonMeals + NumberEggMeals), name=\"max_egg_proportion\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of salmon meals consumed.",
+            "symbol": "NumberSalmonMeals",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberSalmonMeals = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberSalmonMeals\")"
+        },
+        {
+            "definition": "The number of egg meals consumed.",
+            "symbol": "NumberEggMeals",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberEggMeals = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberEggMeals\")"
+        },
+        {
+            "definition": "The total number of meals consumed.",
+            "symbol": "TotalMeals",
+            "shape": [],
+            "status": "coded",
+            "code": "TotalMeals = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TotalMeals\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize total sodium intake.",
+            "status": "coded",
+            "formulation": "\\textup{Minimize} \\quad \\textup{TotalSodium} = \\textup{NumberSalmonMeals} * \\textup{SodiumSalmon} + \\textup{NumberEggMeals} * \\textup{SodiumEggs}",
+            "related_variables": [
+                "NumberSalmonMeals",
+                "NumberEggMeals"
+            ],
+            "related_parameters": [
+                "SodiumSalmon",
+                "SodiumEggs"
+            ],
+            "code": "# Set objective\nmodel.setObjective(NumberSalmonMeals * SodiumSalmon + NumberEggMeals * SodiumEggs, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413180052_nl4opt_prob_242/",
+    "problem_path": "data/nl4opt/prob_242/"
+}

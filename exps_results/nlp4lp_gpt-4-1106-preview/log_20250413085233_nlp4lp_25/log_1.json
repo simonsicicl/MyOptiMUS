@@ -1,0 +1,165 @@
+{
+    "background": "A mining company needs to select which mines to operate and determine the production output to maximize profit, considering operational constraints and meeting clients' required material quality.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of mines",
+            "symbol": "K",
+            "value": 0,
+            "shape": [],
+            "code": "K = data[\"K\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of mines that can be operated in a year",
+            "symbol": "MaxWork",
+            "value": 0,
+            "shape": [],
+            "code": "MaxWork = data[\"MaxWork\"] # scalar parameter"
+        },
+        {
+            "definition": "Royalty cost for operating mine k",
+            "symbol": "Royalty",
+            "value": 0,
+            "shape": [
+                "K"
+            ],
+            "code": "Royalty = np.array(data[\"Royalty\"]) # ['K']"
+        },
+        {
+            "definition": "Production limit for mine k",
+            "symbol": "Limit",
+            "value": 0,
+            "shape": [
+                "K"
+            ],
+            "code": "Limit = np.array(data[\"Limit\"]) # ['K']"
+        },
+        {
+            "definition": "Quality of the material from mine k",
+            "symbol": "Quality",
+            "value": 0,
+            "shape": [
+                "K"
+            ],
+            "code": "Quality = np.array(data[\"Quality\"]) # ['K']"
+        },
+        {
+            "definition": "Required quality of the material for client i",
+            "symbol": "RequiredQuality",
+            "value": 0,
+            "shape": [
+                "I"
+            ],
+            "code": "RequiredQuality = np.array(data[\"RequiredQuality\"]) # ['I']"
+        },
+        {
+            "definition": "Price per unit of material sold",
+            "symbol": "Price",
+            "value": 0,
+            "shape": [],
+            "code": "Price = data[\"Price\"] # scalar parameter"
+        },
+        {
+            "definition": "Discount on the royalty cost per unit of material sold",
+            "symbol": "Discount",
+            "value": 0,
+            "shape": [],
+            "code": "Discount = data[\"Discount\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Number of operated mines should not exceed the maximum number of mines that can be operated, MaxWork",
+            "status": "coded",
+            "formulation": "\\sum_{k=1}^{\\textup{K}} \\textup{IsMineOperational}_{k} \\leq \\textup{MaxWork}",
+            "related_variables": [
+                "IsMineOperational"
+            ],
+            "related_parameters": [
+                "K",
+                "MaxWork"
+            ],
+            "code": "# Constraint: Number of operated mines should not exceed MaxWork\nmodel.addConstr(gp.quicksum(IsMineOperational[k] for k in range(K)) <= MaxWork, name=\"max_mines_operational\")"
+        },
+        {
+            "description": "Each mine produces a non-negative amount of material",
+            "status": "coded",
+            "formulation": "\\forall k \\in \\{1, 2, ..., K\\}, \\quad 0 \\leq \\textup{MaterialProduced}_k",
+            "related_variables": [
+                "MaterialProduced"
+            ],
+            "related_parameters": [
+                "K"
+            ],
+            "code": "# Add constraint for non-negative amount of material produced by each mine\nfor k in range(K):\n    model.addConstr(MaterialProduced[k] >= 0, name=f\"non_negative_production_{k}\")"
+        },
+        {
+            "description": "Each mine k must not produce more than its production limit",
+            "status": "coded",
+            "formulation": "\\forall k \\in K, \\quad \\textup{MaterialProduced}_k \\leq \\textup{Limit}_k",
+            "related_variables": [
+                "MaterialProduced"
+            ],
+            "related_parameters": [
+                "Limit"
+            ],
+            "code": "# Add production limit constraints for each mine\nfor k in K:\n    model.addConstr(MaterialProduced[k] <= Limit[k], name=f\"prod_limit_{k}\")"
+        },
+        {
+            "description": "Material from each operating mine must meet the required quality for each client",
+            "status": "coded",
+            "formulation": "\\forall i \\in \\textup{Clients}, \\quad \\forall k \\in \\textup{Mines}, \\quad \\textup{Quality}_k \\geq \\textup{RequiredQuality}_i",
+            "related_variables": [
+                "IsMineOperational"
+            ],
+            "related_parameters": [
+                "Quality",
+                "RequiredQuality"
+            ],
+            "code": "# Ensure quality of material from each operating mine meets required quality for each client\nfor i in range(I):\n    for k in range(K):\n        model.addConstr((IsMineOperational[k] * Quality[k]) >= RequiredQuality[i], name=f\"quality_client_{i}_mine_{k}\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Binary variable indicating whether mine k is operational",
+            "symbol": "IsMineOperational",
+            "shape": [
+                "K"
+            ],
+            "status": "coded",
+            "code": "IsMineOperational = model.addVars(K, vtype=gp.GRB.BINARY, name=\"IsMineOperational\")"
+        },
+        {
+            "definition": "Continuous variable representing the amount of material produced by mine k",
+            "symbol": "MaterialProduced",
+            "shape": [
+                "K"
+            ],
+            "status": "coded",
+            "code": "MaterialProduced = model.addVars(K, vtype=gp.GRB.CONTINUOUS, name=\"MaterialProduced\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the company's total profit, which is the revenue from selling the material minus the royalty costs considering the discount per unit sold.",
+            "status": "coded",
+            "formulation": "\\max \\sum_{k=1}^{K} (\\textup{Price} \\cdot \\textup{MaterialProduced}_{k} - (\\textup{Royalty}_{k} - \\textup{Price} \\cdot \\textup{Discount}) \\cdot \\textup{IsMineOperational}_{k})",
+            "related_variables": [
+                "IsMineOperational",
+                "MaterialProduced"
+            ],
+            "related_parameters": [
+                "Price",
+                "Royalty",
+                "Discount"
+            ],
+            "code": "# Set objective\nmodel.setObjective(gp.quicksum((Price * MaterialProduced[k] - (Royalty[k] - Price * Discount) * IsMineOperational[k]) for k in range(K)), gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413085233_nlp4lp_25/",
+    "problem_path": "data/nlp4lp/25/"
+}

@@ -1,0 +1,228 @@
+{
+    "background": "A drug company needs to determine the optimal number of hours to run two factories producing allergy pills and fever reducing pills, considering production rates and limited availability of a rare compound required by both factories.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Allergy pills produced per hour by factory 1",
+            "symbol": "AllergyPillsFactory1",
+            "value": 20,
+            "shape": [],
+            "code": "AllergyPillsFactory1 = data[\"AllergyPillsFactory1\"] # scalar parameter"
+        },
+        {
+            "definition": "Fever reducing pills produced per hour by factory 1",
+            "symbol": "FeverPillsFactory1",
+            "value": 15,
+            "shape": [],
+            "code": "FeverPillsFactory1 = data[\"FeverPillsFactory1\"] # scalar parameter"
+        },
+        {
+            "definition": "Allergy pills produced per hour by factory 2",
+            "symbol": "AllergyPillsFactory2",
+            "value": 10,
+            "shape": [],
+            "code": "AllergyPillsFactory2 = data[\"AllergyPillsFactory2\"] # scalar parameter"
+        },
+        {
+            "definition": "Fever reducing pills produced per hour by factory 2",
+            "symbol": "FeverPillsFactory2",
+            "value": 30,
+            "shape": [],
+            "code": "FeverPillsFactory2 = data[\"FeverPillsFactory2\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of rare compound required by factory 1",
+            "symbol": "CompoundFactory1",
+            "value": 20,
+            "shape": [],
+            "code": "CompoundFactory1 = data[\"CompoundFactory1\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of rare compound required by factory 2",
+            "symbol": "CompoundFactory2",
+            "value": 30,
+            "shape": [],
+            "code": "CompoundFactory2 = data[\"CompoundFactory2\"] # scalar parameter"
+        },
+        {
+            "definition": "Total units of the rare compound available",
+            "symbol": "TotalCompound",
+            "value": 1000,
+            "shape": [],
+            "code": "TotalCompound = data[\"TotalCompound\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum required allergy pills",
+            "symbol": "MinAllergyPills",
+            "value": 700,
+            "shape": [],
+            "code": "MinAllergyPills = data[\"MinAllergyPills\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum required fever reducing pills",
+            "symbol": "MinFeverPills",
+            "value": 600,
+            "shape": [],
+            "code": "MinFeverPills = data[\"MinFeverPills\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Constraint ensuring the total usage of the rare compound across both factories does not exceed the available amount.",
+            "status": "coded",
+            "formulation": "\\\\textup{CompoundFactory1} \\\\cdot \\\\textup{HoursFactory1} + \\\\textup{CompoundFactory2} \\\\cdot \\\\textup{HoursFactory2} \\\\leq \\\\textup{TotalCompound}",
+            "related_variables": [
+                "HoursFactory1",
+                "HoursFactory2"
+            ],
+            "related_parameters": [
+                "CompoundFactory1",
+                "CompoundFactory2",
+                "TotalCompound"
+            ],
+            "code": "# Adding a constraint to ensure total usage of the rare compound across both factories does not exceed available capacity.\nmodel.addConstr(\n    HoursFactory1 * CompoundFactory1 + HoursFactory2 * CompoundFactory2 <= TotalCompound,\n    name=\"rare_compound_usage\"\n)"
+        },
+        {
+            "description": "The total allergy pills produced must be at least \\textup{MinAllergyPills}.",
+            "status": "coded",
+            "formulation": "\\textup{AllergyPillsFactory1} \\cdot \\textup{HoursFactory1} + \\textup{AllergyPillsFactory2} \\cdot \\textup{HoursFactory2} \\geq \\textup{MinAllergyPills}",
+            "related_variables": [
+                "HoursFactory1",
+                "HoursFactory2"
+            ],
+            "related_parameters": [
+                "AllergyPillsFactory1",
+                "AllergyPillsFactory2",
+                "MinAllergyPills"
+            ],
+            "code": "# Add constraint to ensure total allergy pills produced is at least MinAllergyPills\nmodel.addConstr(AllergyPillsFactory1 * HoursFactory1 + AllergyPillsFactory2 * HoursFactory2 >= MinAllergyPills, name=\"min_allergy_pills\")"
+        },
+        {
+            "description": "Ensure that at least MinFeverPills fever reducing pills are produced",
+            "status": "coded",
+            "formulation": "(\\textup{HoursFactory1} \\\\cdot \\\\textup{FeverPillsFactory1}) + (\\textup{HoursFactory2} \\\\cdot \\\\textup{FeverPillsFactory2}) \\\\geq \\\\textup{MinFeverPills}",
+            "related_variables": [
+                "HoursFactory1",
+                "HoursFactory2"
+            ],
+            "related_parameters": [
+                "FeverPillsFactory1",
+                "FeverPillsFactory2",
+                "MinFeverPills"
+            ],
+            "code": "# Ensure that at least MinFeverPills fever reducing pills are produced\nmodel.addConstr(\n    (HoursFactory1 * FeverPillsFactory1) + (HoursFactory2 * FeverPillsFactory2) >= MinFeverPills,\n    name=\"MinFeverPillsConstraint\"\n)"
+        },
+        {
+            "description": "The non-negativity constraint for factory operational hours.",
+            "status": "coded",
+            "formulation": "\\textup{HoursFactory1} \\geq 0, \\quad \\textup{HoursFactory2} \\geq 0",
+            "related_variables": [
+                "HoursFactory1",
+                "HoursFactory2"
+            ],
+            "related_parameters": [],
+            "code": "# The non-negativity constraint for factory operational hours is enforced inherently by setting the lower bound to 0 when defining the variables (vtype=gp.GRB.CONTINUOUS).  \n# Hence, no additional code is needed."
+        },
+        {
+            "description": "Non-negativity constraint for hours of operation for Factory 1.",
+            "status": "coded",
+            "formulation": "\\\\textup{HoursFactory1} \\\\geq 0",
+            "related_variables": [
+                "HoursFactory1"
+            ],
+            "related_parameters": [],
+            "code": "# Non-negativity constraint for HoursFactory1\nmodel.addConstr(HoursFactory1 >= 0, name=\"non_negativity_hoursfactory1\")"
+        },
+        {
+            "description": "Non-negativity constraint for hours of operation for Factory 2.",
+            "status": "coded",
+            "formulation": "\\\\textup{HoursFactory2} \\\\geq 0",
+            "related_variables": [
+                "HoursFactory2"
+            ],
+            "related_parameters": [],
+            "code": "# Non-negativity constraint for HoursFactory2\nmodel.addConstr(HoursFactory2 >= 0, name=\"non_negativity_hours_factory2\")"
+        },
+        {
+            "description": "Minimum production requirement for allergy pills.",
+            "status": "coded",
+            "formulation": "\\\\textup{AllergyPillsFactory1} \\\\cdot \\\\textup{HoursFactory1} + \\\\textup{AllergyPillsFactory2} \\\\cdot \\\\textup{HoursFactory2} \\\\geq \\\\textup{MinAllergyPills}",
+            "related_variables": [
+                "HoursFactory1",
+                "HoursFactory2"
+            ],
+            "related_parameters": [
+                "AllergyPillsFactory1",
+                "AllergyPillsFactory2",
+                "MinAllergyPills"
+            ],
+            "code": "# Add minimum production requirement constraint for allergy pills\nmodel.addConstr(AllergyPillsFactory1 * HoursFactory1 + AllergyPillsFactory2 * HoursFactory2 >= MinAllergyPills, name=\"min_allergy_pills\")"
+        },
+        {
+            "description": "Minimum production requirement for fever-reducing pills.",
+            "status": "coded",
+            "formulation": "\\\\textup{FeverPillsFactory1} \\\\cdot \\\\textup{HoursFactory1} + \\\\textup{FeverPillsFactory2} \\\\cdot \\\\textup{HoursFactory2} \\\\geq \\\\textup{MinFeverPills}",
+            "related_variables": [
+                "HoursFactory1",
+                "HoursFactory2"
+            ],
+            "related_parameters": [
+                "FeverPillsFactory1",
+                "FeverPillsFactory2",
+                "MinFeverPills"
+            ],
+            "code": "# Add minimum production constraints for fever-reducing pills\nmodel.addConstr(\n    FeverPillsFactory1 * HoursFactory1 + FeverPillsFactory2 * HoursFactory2 >= MinFeverPills, \n    name=\"min_fever_pills_production\"\n)"
+        },
+        {
+            "description": "Limited availability of the rare compound across both factories.",
+            "status": "coded",
+            "formulation": "\\\\textup{CompoundFactory1} \\\\cdot \\\\textup{HoursFactory1} + \\\\textup{CompoundFactory2} \\\\cdot \\\\textup{HoursFactory2} \\\\leq \\\\textup{TotalCompound}",
+            "related_variables": [
+                "HoursFactory1",
+                "HoursFactory2"
+            ],
+            "related_parameters": [
+                "CompoundFactory1",
+                "CompoundFactory2",
+                "TotalCompound"
+            ],
+            "code": "# Add constraint for limited availability of the rare compound across both factories\nmodel.addConstr(\n    CompoundFactory1 * HoursFactory1 + CompoundFactory2 * HoursFactory2 <= TotalCompound,\n    name=\"rare_compound_limit\"\n)"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of hours Factory 1 operates.",
+            "symbol": "HoursFactory1",
+            "shape": [],
+            "status": "coded",
+            "code": "HoursFactory1 = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"HoursFactory1\")"
+        },
+        {
+            "definition": "Number of hours Factory 2 operates.",
+            "symbol": "HoursFactory2",
+            "shape": [],
+            "status": "coded",
+            "code": "HoursFactory2 = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"HoursFactory2\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total operational time of Factory 1 and Factory 2.",
+            "status": "coded",
+            "formulation": "\\\\textup{Minimize:} \\\\ \\textup{HoursFactory1} + \\textup{HoursFactory2}",
+            "related_variables": [
+                "HoursFactory1",
+                "HoursFactory2"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(HoursFactory1 + HoursFactory2, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 36.666666666666664,
+    "log_path": "logs/log_20250413152740_nl4opt_prob_106/",
+    "problem_path": "data/nl4opt/prob_106/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_106/data.json\", \"r\") as f:\n    data = json.load(f)\n\nAllergyPillsFactory1 = data[\"AllergyPillsFactory1\"] # scalar parameter\nFeverPillsFactory1 = data[\"FeverPillsFactory1\"] # scalar parameter\nAllergyPillsFactory2 = data[\"AllergyPillsFactory2\"] # scalar parameter\nFeverPillsFactory2 = data[\"FeverPillsFactory2\"] # scalar parameter\nCompoundFactory1 = data[\"CompoundFactory1\"] # scalar parameter\nCompoundFactory2 = data[\"CompoundFactory2\"] # scalar parameter\nTotalCompound = data[\"TotalCompound\"] # scalar parameter\nMinAllergyPills = data[\"MinAllergyPills\"] # scalar parameter\nMinFeverPills = data[\"MinFeverPills\"] # scalar parameter\nHoursFactory1 = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"HoursFactory1\")\nHoursFactory2 = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"HoursFactory2\")\n\n# Adding a constraint to ensure total usage of the rare compound across both factories does not exceed available capacity.\nmodel.addConstr(\n    HoursFactory1 * CompoundFactory1 + HoursFactory2 * CompoundFactory2 <= TotalCompound,\n    name=\"rare_compound_usage\"\n)\n\n# Add constraint to ensure total allergy pills produced is at least MinAllergyPills\nmodel.addConstr(AllergyPillsFactory1 * HoursFactory1 + AllergyPillsFactory2 * HoursFactory2 >= MinAllergyPills, name=\"min_allergy_pills\")\n\n# Ensure that at least MinFeverPills fever reducing pills are produced\nmodel.addConstr(\n    (HoursFactory1 * FeverPillsFactory1) + (HoursFactory2 * FeverPillsFactory2) >= MinFeverPills,\n    name=\"MinFeverPillsConstraint\"\n)\n\n# The non-negativity constraint for factory operational hours is enforced inherently by setting the lower bound to 0 when defining the variables (vtype=gp.GRB.CONTINUOUS).  \n# Hence, no additional code is needed.\n\n# Non-negativity constraint for HoursFactory1\nmodel.addConstr(HoursFactory1 >= 0, name=\"non_negativity_hoursfactory1\")\n\n# Non-negativity constraint for HoursFactory2\nmodel.addConstr(HoursFactory2 >= 0, name=\"non_negativity_hours_factory2\")\n\n# Add minimum production requirement constraint for allergy pills\nmodel.addConstr(AllergyPillsFactory1 * HoursFactory1 + AllergyPillsFactory2 * HoursFactory2 >= MinAllergyPills, name=\"min_allergy_pills\")\n\n# Add minimum production constraints for fever-reducing pills\nmodel.addConstr(\n    FeverPillsFactory1 * HoursFactory1 + FeverPillsFactory2 * HoursFactory2 >= MinFeverPills, \n    name=\"min_fever_pills_production\"\n)\n\n# Add constraint for limited availability of the rare compound across both factories\nmodel.addConstr(\n    CompoundFactory1 * HoursFactory1 + CompoundFactory2 * HoursFactory2 <= TotalCompound,\n    name=\"rare_compound_limit\"\n)\n\n# Set objective\nmodel.setObjective(HoursFactory1 + HoursFactory2, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

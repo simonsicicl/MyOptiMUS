@@ -1,0 +1,210 @@
+{
+    "background": "A factory needs to provide transportation for its employees using a mix of taxis and company cars, taking into account the capacities of each and specific limits on company car usage.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of employees that a taxi ride can take",
+            "symbol": "TaxiCapacity",
+            "value": 2,
+            "shape": [],
+            "code": "TaxiCapacity = data[\"TaxiCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of employees that a company car ride can take",
+            "symbol": "CarCapacity",
+            "value": 3,
+            "shape": [],
+            "code": "CarCapacity = data[\"CarCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum proportion of the total rides that can be company car rides",
+            "symbol": "MaxCarRideProportion",
+            "value": 0.6,
+            "shape": [],
+            "code": "MaxCarRideProportion = data[\"MaxCarRideProportion\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of company car rides",
+            "symbol": "MinCarRides",
+            "value": 30,
+            "shape": [],
+            "code": "MinCarRides = data[\"MinCarRides\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of employees to be transported",
+            "symbol": "MinEmployees",
+            "value": 500,
+            "shape": [],
+            "code": "MinEmployees = data[\"MinEmployees\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Each taxi ride can carry up to TaxiCapacity employees",
+            "status": "formulated",
+            "formulation": "\\textup{EmployeesInTaxis} \\leq \\textup{NumberOfTaxiRides} \\times \\textup{TaxiCapacity}",
+            "related_variables": [
+                "EmployeesInTaxis",
+                "NumberOfTaxiRides"
+            ],
+            "related_parameters": [
+                "TaxiCapacity"
+            ]
+        },
+        {
+            "description": "Each company car ride can carry up to CarCapacity employees",
+            "status": "formulated",
+            "formulation": "\\textup{NumberOfEmployeesInCompanyCars} \\leq \\textup{NumberOfCompanyCarRides} \\times \\textup{CarCapacity}",
+            "related_variables": [
+                "NumberOfEmployeesInCompanyCars",
+                "NumberOfCompanyCarRides"
+            ],
+            "related_parameters": [
+                "CarCapacity"
+            ]
+        },
+        {
+            "description": "At most MaxCarRideProportion of the rides can be company car rides",
+            "status": "formulated",
+            "formulation": "\\textup{NumberOfCompanyCarRides} \\leq \\frac{\\textup{MaxCarRideProportion}}{1 - \\textup{MaxCarRideProportion}} \\times \\textup{NumberOfTaxiRides}",
+            "related_variables": [
+                "NumberOfCompanyCarRides",
+                "NumberOfTaxiRides"
+            ],
+            "related_parameters": [
+                "MaxCarRideProportion"
+            ]
+        },
+        {
+            "description": "There must be at least MinCarRides of company car rides",
+            "status": "formulated",
+            "formulation": "\\textup{NumberOfCompanyCarRides} \\geq \\textup{MinCarRides}",
+            "related_variables": [
+                "NumberOfCompanyCarRides"
+            ],
+            "related_parameters": [
+                "MinCarRides"
+            ]
+        },
+        {
+            "description": "There must be enough rides to transport at least MinEmployees employees",
+            "status": "formulated",
+            "formulation": "\\textup{EmployeesInTaxis} + \\textup{NumberOfEmployeesInCompanyCars} \\geq \\textup{MinEmployees}",
+            "related_variables": [
+                "EmployeesInTaxis",
+                "NumberOfEmployeesInCompanyCars"
+            ],
+            "related_parameters": [
+                "MinEmployees"
+            ]
+        },
+        {
+            "description": "The number of taxi rides must be a non-negative integer value",
+            "status": "formulated",
+            "formulation": "\\textup{NumberOfTaxiRides} \\geq 0",
+            "related_variables": [
+                "NumberOfTaxiRides"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Number of company car rides is non-negative",
+            "status": "formulated",
+            "formulation": "\\textup{NumberOfCompanyCarRides} \\geq 0",
+            "related_variables": [
+                "NumberOfCompanyCarRides"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "The number of taxi rides is calculated based on the total number of employees transported by taxis and the capacity of a taxi",
+            "status": "formulated",
+            "formulation": "\\textup{NumberOfTaxiRides} \\geq \\lceil \\frac{\\textup{EmployeesInTaxis}}{\\textup{TaxiCapacity}} \\rceil",
+            "related_variables": [
+                "NumberOfTaxiRides",
+                "EmployeesInTaxis"
+            ],
+            "related_parameters": [
+                "TaxiCapacity"
+            ]
+        },
+        {
+            "description": "Ensure minimum number of company car rides is met",
+            "status": "formulated",
+            "formulation": "\\textup{NumberOfCompanyCarRides} \\geq \\textup{MinCarRides}",
+            "related_variables": [
+                "NumberOfCompanyCarRides"
+            ],
+            "related_parameters": [
+                "MinCarRides"
+            ]
+        },
+        {
+            "description": "Ensure the total number of rides, including both taxi and company car rides, meet the minimum employees to be transported",
+            "status": "formulated",
+            "formulation": "\\textup{EmployeesInTaxis} + \\textup{NumberOfEmployeesInCompanyCars} \\geq \\textup{MinEmployees}",
+            "related_variables": [
+                "EmployeesInTaxis",
+                "NumberOfEmployeesInCompanyCars"
+            ],
+            "related_parameters": [
+                "MinEmployees"
+            ]
+        },
+        {
+            "description": "Maximum proportion of the total rides that can be company car rides",
+            "status": "formulated",
+            "formulation": "\\textup{NumberOfCompanyCarRides} \\leq \\textup{MaxCarRideProportion} \\times (\\textup{NumberOfCompanyCarRides} + \\textup{NumberOfTaxiRides})",
+            "related_variables": [
+                "NumberOfCompanyCarRides",
+                "NumberOfTaxiRides"
+            ],
+            "related_parameters": [
+                "MaxCarRideProportion"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Total number of employees transported by taxis",
+            "symbol": "EmployeesInTaxis",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "Number of taxi rides",
+            "symbol": "NumberOfTaxiRides",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "Total number of employees transported by company cars",
+            "symbol": "NumberOfEmployeesInCompanyCars",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "Number of company car rides",
+            "symbol": "NumberOfCompanyCarRides",
+            "shape": [],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of taxi rides",
+            "status": "formulated",
+            "formulation": "\\min \\textup{NumberOfTaxiRides}",
+            "related_variables": [
+                "NumberOfTaxiRides"
+            ],
+            "related_parameters": []
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413152700_nl4opt_prob_188/",
+    "problem_path": "data/nl4opt/prob_188/"
+}

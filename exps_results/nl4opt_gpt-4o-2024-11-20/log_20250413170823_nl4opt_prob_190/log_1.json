@@ -1,0 +1,239 @@
+{
+    "background": "A grape farmer needs to determine the optimal number of small and large crates to use for transporting grapes, based on crate capacities and constraints regarding customer preferences, crate availability, and truck capacity.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Capacity of a small crate",
+            "symbol": "SmallCrateCapacity",
+            "value": 200,
+            "shape": [],
+            "code": "SmallCrateCapacity = data[\"SmallCrateCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Capacity of a large crate",
+            "symbol": "LargeCrateCapacity",
+            "value": 500,
+            "shape": [],
+            "code": "LargeCrateCapacity = data[\"LargeCrateCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum ratio of small crates to large crates",
+            "symbol": "SmallToLargeRatio",
+            "value": 3,
+            "shape": [],
+            "code": "SmallToLargeRatio = data[\"SmallToLargeRatio\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of small crates available",
+            "symbol": "MaxSmallCrates",
+            "value": 100,
+            "shape": [],
+            "code": "MaxSmallCrates = data[\"MaxSmallCrates\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of large crates available",
+            "symbol": "MaxLargeCrates",
+            "value": 50,
+            "shape": [],
+            "code": "MaxLargeCrates = data[\"MaxLargeCrates\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum total number of crates the truck can take",
+            "symbol": "MaxTotalCrates",
+            "value": 60,
+            "shape": [],
+            "code": "MaxTotalCrates = data[\"MaxTotalCrates\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of large crates that must be used",
+            "symbol": "MinLargeCrates",
+            "value": 10,
+            "shape": [],
+            "code": "MinLargeCrates = data[\"MinLargeCrates\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of small crates must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{SmallCrates} \\geq 0",
+            "related_variables": [
+                "SmallCrates"
+            ],
+            "related_parameters": [],
+            "code": "# The variable SmallCrates is already defined as non-negative due to its default properties (continuous variables in Gurobi are non-negative unless stated otherwise); no additional constraint is needed."
+        },
+        {
+            "description": "The number of large crates used for transporting grapes must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{LargeCrates} \\geq 0",
+            "related_variables": [
+                "LargeCrates"
+            ],
+            "related_parameters": [],
+            "code": "# No additional code needed since the variable \"LargeCrates\" is already defined with non-negativity guaranteed by being a continuous variable in gurobipy."
+        },
+        {
+            "description": "The number of small crates is at least SmallToLargeRatio times the number of large crates.",
+            "status": "coded",
+            "formulation": "\\textup{SmallCrates} \\geq \\textup{SmallToLargeRatio} \\cdot \\textup{LargeCrates}",
+            "related_variables": [
+                "SmallCrates",
+                "LargeCrates"
+            ],
+            "related_parameters": [
+                "SmallToLargeRatio"
+            ],
+            "code": "# Add constraint for the minimum ratio of small crates to large crates\nmodel.addConstr(SmallCrates >= SmallToLargeRatio * LargeCrates, name=\"min_small_to_large_crates_ratio\")"
+        },
+        {
+            "description": "The number of small crates used cannot exceed the maximum limit defined by MaxSmallCrates.",
+            "status": "coded",
+            "formulation": "\\textup{SmallCrates} \\leq \\textup{MaxSmallCrates}",
+            "related_variables": [
+                "SmallCrates"
+            ],
+            "related_parameters": [
+                "MaxSmallCrates"
+            ],
+            "code": "# Add constraint ensuring the number of small crates used does not exceed the maximum limit\nmodel.addConstr(SmallCrates <= MaxSmallCrates, name=\"max_small_crates_limit\")"
+        },
+        {
+            "description": "The number of large crates used cannot exceed the maximum allowed, MaxLargeCrates.",
+            "status": "coded",
+            "formulation": "\\textup{LargeCrates} \\leq \\textup{MaxLargeCrates}",
+            "related_variables": [
+                "LargeCrates"
+            ],
+            "related_parameters": [
+                "MaxLargeCrates"
+            ],
+            "code": "# Add constraint to ensure the number of large crates used does not exceed the maximum allowed\nmodel.addConstr(LargeCrates <= MaxLargeCrates, name=\"max_large_crates_constraint\")"
+        },
+        {
+            "description": "The sum of the number of small and large crates must not exceed the maximum total number of crates available.",
+            "status": "coded",
+            "formulation": "\\textup{SmallCrates} + \\textup{LargeCrates} \\leq \\textup{MaxTotalCrates}",
+            "related_variables": [
+                "SmallCrates",
+                "LargeCrates"
+            ],
+            "related_parameters": [
+                "MaxTotalCrates"
+            ],
+            "code": "# Add constraint for total number of crates\nmodel.addConstr(SmallCrates + LargeCrates <= MaxTotalCrates, name=\"total_crates_constraint\")"
+        },
+        {
+            "description": "The number of large crates used must be at least the minimum number required.",
+            "status": "coded",
+            "formulation": "\\\\textup{LargeCrates} \\\\geq \\\\textup{MinLargeCrates}",
+            "related_variables": [
+                "LargeCrates"
+            ],
+            "related_parameters": [
+                "MinLargeCrates"
+            ],
+            "code": "# Add constraint to ensure the number of large crates used meets the minimum requirement  \nmodel.addConstr(LargeCrates >= MinLargeCrates, name=\"min_large_crates_requirement\")"
+        },
+        {
+            "description": "Ensure the minimum ratio of small crates to large crates.",
+            "status": "coded",
+            "formulation": "\\textup{SmallCrates} \\geq \\textup{SmallToLargeRatio} \\cdot \\textup{LargeCrates}",
+            "related_variables": [
+                "SmallCrates",
+                "LargeCrates"
+            ],
+            "related_parameters": [
+                "SmallToLargeRatio"
+            ],
+            "code": "# Add constraint to ensure the minimum ratio of small crates to large crates\nmodel.addConstr(SmallCrates >= SmallToLargeRatio * LargeCrates, name=\"min_ratio_small_large_crates\")"
+        },
+        {
+            "description": "Do not exceed the maximum number of small crates available.",
+            "status": "coded",
+            "formulation": "\\textup{SmallCrates} \\leq \\textup{MaxSmallCrates}",
+            "related_variables": [
+                "SmallCrates"
+            ],
+            "related_parameters": [
+                "MaxSmallCrates"
+            ],
+            "code": "# Add constraint to ensure the number of small crates does not exceed the maximum available\nmodel.addConstr(SmallCrates <= MaxSmallCrates, name=\"max_small_crates_constraint\")"
+        },
+        {
+            "description": "Do not exceed the maximum number of large crates available.",
+            "status": "coded",
+            "formulation": "\\textup{LargeCrates} \\leq \\textup{MaxLargeCrates}",
+            "related_variables": [
+                "LargeCrates"
+            ],
+            "related_parameters": [
+                "MaxLargeCrates"
+            ],
+            "code": "# Add constraint to ensure the number of large crates does not exceed the maximum available\nmodel.addConstr(LargeCrates <= MaxLargeCrates, name=\"max_large_crates_constraint\")"
+        },
+        {
+            "description": "Ensure the truck does not surpass its maximum total capacity of crates.",
+            "status": "coded",
+            "formulation": "\\textup{SmallCrates} + \\textup{LargeCrates} \\leq \\textup{MaxTotalCrates}",
+            "related_variables": [
+                "SmallCrates",
+                "LargeCrates"
+            ],
+            "related_parameters": [
+                "MaxTotalCrates"
+            ],
+            "code": "# Add constraint to ensure the truck does not surpass its maximum total capacity of crates\nmodel.addConstr(SmallCrates + LargeCrates <= MaxTotalCrates, name=\"truck_capacity\")"
+        },
+        {
+            "description": "Ensure that the minimum number of large crates is used.",
+            "status": "coded",
+            "formulation": "\\textup{LargeCrates} \\geq \\textup{MinLargeCrates}",
+            "related_variables": [
+                "LargeCrates"
+            ],
+            "related_parameters": [
+                "MinLargeCrates"
+            ],
+            "code": "# Add constraint to ensure the minimum number of large crates is used\nmodel.addConstr(LargeCrates >= MinLargeCrates, name=\"min_large_crates_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of small crates used for transporting grapes.",
+            "symbol": "SmallCrates",
+            "shape": [],
+            "status": "coded",
+            "code": "SmallCrates = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"SmallCrates\")"
+        },
+        {
+            "definition": "The number of large crates used for transporting grapes.",
+            "symbol": "LargeCrates",
+            "shape": [],
+            "status": "coded",
+            "code": "LargeCrates = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"LargeCrates\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total number of grapes transported in the crates.",
+            "status": "coded",
+            "formulation": "\\textup{Maximize:} \\quad \\textup{TotalGrapes} = (\\textup{SmallCrates} \\cdot \\textup{SmallCrateCapacity}) + (\\textup{LargeCrates} \\cdot \\textup{LargeCrateCapacity})",
+            "related_variables": [
+                "SmallCrates",
+                "LargeCrates"
+            ],
+            "related_parameters": [
+                "SmallCrateCapacity",
+                "LargeCrateCapacity"
+            ],
+            "code": "# Set objective\nmodel.setObjective((SmallCrates * SmallCrateCapacity) + (LargeCrates * LargeCrateCapacity), gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413170823_nl4opt_prob_190/",
+    "problem_path": "data/nl4opt/prob_190/"
+}

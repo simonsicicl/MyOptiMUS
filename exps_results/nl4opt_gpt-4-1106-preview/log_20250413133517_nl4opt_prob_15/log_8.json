@@ -1,0 +1,200 @@
+{
+    "background": "A store employs senior citizens and young adults, who have different wages.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Wage for senior citizens per week",
+            "symbol": "WageSenior",
+            "value": 500,
+            "shape": [],
+            "code": "WageSenior = data[\"WageSenior\"] # scalar parameter"
+        },
+        {
+            "definition": "Wage for young adults per week",
+            "symbol": "WageYoung",
+            "value": 750,
+            "shape": [],
+            "code": "WageYoung = data[\"WageYoung\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum weekly wage bill",
+            "symbol": "MaxWageBill",
+            "value": 30000,
+            "shape": [],
+            "code": "MaxWageBill = data[\"MaxWageBill\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of workers required per day",
+            "symbol": "MinWorkers",
+            "value": 50,
+            "shape": [],
+            "code": "MinWorkers = data[\"MinWorkers\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of young adults required per day",
+            "symbol": "MinYoung",
+            "value": 10,
+            "shape": [],
+            "code": "MinYoung = data[\"MinYoung\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum fraction of young adults relative to senior citizens",
+            "symbol": "YoungToSeniorRatio",
+            "value": 0.33,
+            "shape": [],
+            "code": "YoungToSeniorRatio = data[\"YoungToSeniorRatio\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Total weekly wage bill for all employees must not exceed the maximum allowed wage bill",
+            "status": "coded",
+            "formulation": "\\textup{NumSeniors} \\times \\textup{WageSenior} + \\textup{NumYoungAdults} \\times \\textup{WageYoung} \\leq \\textup{MaxWageBill}",
+            "related_variables": [
+                "NumSeniors",
+                "NumYoungAdults"
+            ],
+            "related_parameters": [
+                "WageSenior",
+                "WageYoung",
+                "MaxWageBill"
+            ],
+            "code": "# Maximum weekly wage bill constraint\nmodel.addConstr(NumSeniors * WageSenior + NumYoungAdults * WageYoung <= MaxWageBill, name=\"max_wage_bill\")"
+        },
+        {
+            "description": "Each day at least MinWorkers must be on duty",
+            "status": "coded",
+            "formulation": "\\sum_{d=1}^{7} (\\textup{SeniorsOnDutyDay}_{d} + \\textup{YoungAdultsOnDutyDay}_{d}) \\geq 7 \\times \\textup{MinWorkers}",
+            "related_variables": [
+                "SeniorsOnDutyDay",
+                "YoungAdultsOnDutyDay"
+            ],
+            "related_parameters": [
+                "MinWorkers"
+            ],
+            "code": "# Ensure minimum workers are on duty each day\nfor d in range(7):\n    model.addConstr(SeniorsOnDutyDay[d] + YoungAdultsOnDutyDay[d] >= MinWorkers, name=\"min_workers_day_{}\".format(d))"
+        },
+        {
+            "description": "Each day there must be at least a minimum number of young adults on duty",
+            "status": "coded",
+            "formulation": "\\textup{YoungAdultsOnDutyDay}_d \\geq \\textup{MinYoung} \\quad \\forall d",
+            "related_variables": [
+                "YoungAdultsOnDutyDay"
+            ],
+            "related_parameters": [
+                "MinYoung"
+            ],
+            "code": "# Add constraint to ensure minimum number of young adults on duty each day\nfor d in YoungAdultsOnDutyDay.keys():\n    model.addConstr(YoungAdultsOnDutyDay[d] >= MinYoung, name=f\"min_young_adults_day_{d}\")"
+        },
+        {
+            "description": "Young adults must be at least YoungToSeniorRatio times the number of senior citizens",
+            "status": "coded",
+            "formulation": "\\textup{NumYoungAdults} \\geq \\textup{YoungToSeniorRatio} \\times \\textup{NumSeniors}",
+            "related_variables": [
+                "NumYoungAdults",
+                "NumSeniors"
+            ],
+            "related_parameters": [
+                "YoungToSeniorRatio"
+            ],
+            "code": "# Add constraint to ensure number of young adults is at least YoungToSeniorRatio times the number of senior citizens\nmodel.addConstr(NumYoungAdults >= YoungToSeniorRatio * NumSeniors, name=\"young_to_senior_ratio\")"
+        },
+        {
+            "description": "The number of senior citizens employed per week must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumSeniors} \\geq 0",
+            "related_variables": [
+                "NumSeniors"
+            ],
+            "related_parameters": [],
+            "code": "# Since NumSeniors is already defined as an integer variable, we just need to add a constraint to ensure it is non-negative\nmodel.addConstr(NumSeniors >= 0, name=\"senior_citizens_non_negative\")"
+        },
+        {
+            "description": "The number of young adults employed per week must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumYoungAdults} \\geq 0",
+            "related_variables": [
+                "NumYoungAdults"
+            ],
+            "related_parameters": [],
+            "code": "# Since NumYoungAdults is already required to be an INTEGER variable, the non-negative constraint is inherently satisfied by the variable's definition.\n# Hence, we do not need an additional constraint to ensure non-negativity."
+        },
+        {
+            "description": "The number of senior citizens employed per week must be an integer.",
+            "status": "coded",
+            "formulation": "\\textup{NumSeniors} \\in \\mathbb{Z}",
+            "related_variables": [
+                "NumSeniors"
+            ],
+            "related_parameters": [],
+            "code": "# As the variable NumSeniors is already defined to be an integer, no additional constraint code is needed"
+        },
+        {
+            "description": "The number of young adults employed per week must be an integer.",
+            "status": "coded",
+            "formulation": "\\textup{NumYoungAdults} \\in \\mathbb{Z}",
+            "related_variables": [
+                "NumYoungAdults"
+            ],
+            "related_parameters": [],
+            "code": "# The variable NumYoungAdults is already defined as an integer. No additional constraint is required."
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of senior citizens employed per week",
+            "symbol": "NumSeniors",
+            "shape": [],
+            "status": "coded",
+            "code": "NumSeniors = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumSeniors\")"
+        },
+        {
+            "definition": "Number of young adults employed per week",
+            "symbol": "NumYoungAdults",
+            "shape": [],
+            "status": "coded",
+            "code": "NumYoungAdults = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumYoungAdults\")"
+        },
+        {
+            "definition": "Number of senior citizens on duty on day d",
+            "symbol": "SeniorsOnDutyDay",
+            "shape": [
+                "d"
+            ],
+            "status": "runtime_error",
+            "code": "d = data['dimension_key']  # Replace 'dimension_key' with the actual key that represents the dimension for 'd'\nSeniorsOnDutyDay = model.addVars(d, vtype=gp.GRB.INTEGER, name='SeniorsOnDutyDay')"
+        },
+        {
+            "definition": "Number of young adults on duty on day d",
+            "symbol": "YoungAdultsOnDutyDay",
+            "shape": [
+                "d"
+            ],
+            "status": "coded",
+            "code": "YoungAdultsOnDutyDay = model.addVars(d, vtype=gp.GRB.INTEGER, name=\"YoungAdultsOnDutyDay\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the weekly wage bill for the store, based on the number of senior citizens and young adults employed per week and their respective wages.",
+            "status": "coded",
+            "formulation": "Minimize: \\textup{WageSenior} \\times \\textup{NumSeniors} + \\textup{WageYoung} \\times \\textup{NumYoungAdults}",
+            "related_variables": [
+                "NumSeniors",
+                "NumYoungAdults"
+            ],
+            "related_parameters": [
+                "WageSenior",
+                "WageYoung"
+            ],
+            "code": "# Set objective\nmodel.setObjective(WageSenior * NumSeniors + WageYoung * NumYoungAdults, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "runtime_error",
+    "solver_output_status": "runtime_error",
+    "error_message": "Traceback (most recent call last):\n  File \"c:\\Users\\Simon\\Desktop\\Courses\\ECE 570\\ECE570_Project\\MyOptiMUS\\evaluator.py\", line 39, in run\n    exec(last_line, local_env, local_env)\n  File \"<string>\", line 1, in <module>\nKeyError: 'dimension_key'\n",
+    "obj_val": null,
+    "log_path": "logs/log_20250413133517_nl4opt_prob_15/",
+    "problem_path": "data/nl4opt/prob_15/",
+    "prep_code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_15/data.json\", \"r\") as f:\n    data = json.load(f)\n"
+}

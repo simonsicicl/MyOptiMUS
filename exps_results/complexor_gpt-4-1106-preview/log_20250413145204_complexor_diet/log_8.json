@@ -1,0 +1,225 @@
+{
+    "background": "This is a diet optimization problem involving the selection of a set of foods that meet nutritional needs within specified ranges while minimizing total cost.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "symbol": "NutrientCount",
+            "definition": "The number of different nutrients",
+            "shape": [],
+            "code": "NutrientCount = data[\"NutrientCount\"] # scalar parameter"
+        },
+        {
+            "symbol": "FoodCount",
+            "definition": "The number of different foods",
+            "shape": [],
+            "code": "FoodCount = data[\"FoodCount\"] # scalar parameter"
+        },
+        {
+            "symbol": "Cost",
+            "definition": "The cost of each food item",
+            "shape": [
+                "FoodCount"
+            ],
+            "code": "Cost = np.array(data[\"Cost\"]) # ['FoodCount']"
+        },
+        {
+            "symbol": "FoodMin",
+            "definition": "The minimum quantity of each food that can be bought",
+            "shape": [
+                "FoodCount"
+            ],
+            "code": "FoodMin = np.array(data[\"FoodMin\"]) # ['FoodCount']"
+        },
+        {
+            "symbol": "FoodMax",
+            "definition": "The maximum quantity of each food that can be bought",
+            "shape": [
+                "FoodCount"
+            ],
+            "code": "FoodMax = np.array(data[\"FoodMax\"]) # ['FoodCount']"
+        },
+        {
+            "symbol": "NutrientMin",
+            "definition": "The minimum required quantity of each nutrient",
+            "shape": [
+                "NutrientCount"
+            ],
+            "code": "NutrientMin = np.array(data[\"NutrientMin\"]) # ['NutrientCount']"
+        },
+        {
+            "symbol": "NutrientMax",
+            "definition": "The maximum allowed quantity of each nutrient",
+            "shape": [
+                "NutrientCount"
+            ],
+            "code": "NutrientMax = np.array(data[\"NutrientMax\"]) # ['NutrientCount']"
+        },
+        {
+            "symbol": "AmountNutrient",
+            "definition": "The amount of each nutrient in each food",
+            "shape": [
+                "FoodCount",
+                "NutrientCount"
+            ],
+            "code": "AmountNutrient = np.array(data[\"AmountNutrient\"]) # ['FoodCount', 'NutrientCount']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Each food's purchased amount should be no less than its minimum required amount",
+            "status": "coded",
+            "formulation": "\\textup{AmountFood}_j \\geq \\textup{FoodMin}_j, \\quad \\forall j \\in \\{1, \\dots, \\textup{FoodCount}\\}",
+            "related_variables": [
+                "AmountFood"
+            ],
+            "related_parameters": [
+                "FoodMin",
+                "FoodCount"
+            ],
+            "code": "# Each food's purchased amount should be no less than its minimum required amount\nfor j in range(FoodCount):\n    model.addConstr(AmountFood[j] >= FoodMin[j], name=f\"min_food_purchase_{j}\")"
+        },
+        {
+            "description": "For each food j, the amount bought must be less than or equal to FoodMax_j",
+            "status": "coded",
+            "formulation": "\\forall j : 0 \\leq \\textup{AmountFood}_{j} \\leq \\textup{FoodMax}_{j}",
+            "related_variables": [
+                "AmountFood"
+            ],
+            "related_parameters": [
+                "FoodMax"
+            ],
+            "code": "FoodCount = len(FoodMax)  # This line is added to define FoodCount\nAmountFood = model.addVars(FoodCount, vtype=gp.GRB.CONTINUOUS, name=\"AmountFood\")"
+        },
+        {
+            "description": "Each nutrient's total amount from all foods must be greater than or equal to the minimum required quantity for that nutrient",
+            "status": "coded",
+            "formulation": "\\sum_{j=1}^{\\textup{FoodCount}} (\\textup{AmountNutrient}_{ji} \\cdot \\textup{AmountFood}_{j}) \\geq \\textup{NutrientMin}_{i} \\quad \\forall i \\in \\{1, \\ldots, \\textup{NutrientCount}\\}",
+            "related_variables": [
+                "AmountFood"
+            ],
+            "related_parameters": [
+                "NutrientCount",
+                "FoodCount",
+                "AmountNutrient",
+                "NutrientMin"
+            ],
+            "code": "# Add constraints to ensure each nutrient's total amount from all foods is greater or equal to the minimum required\nfor i in range(NutrientCount):\n    model.addConstr(gp.quicksum(AmountNutrient[j, i] * AmountFood[j] for j in range(FoodCount)) >= NutrientMin[i], \n                    name=f\"nutrient_min_req_{i}\")"
+        },
+        {
+            "description": "Total nutrient intake from the selected foods must not exceed the maximum allowed quantity for each nutrient",
+            "status": "coded",
+            "formulation": "\\sum_{j=1}^{\\textup{FoodCount}} \\textup{AmountNutrient}_{ji} \\cdot \\textup{AmountFood}_{j} \\leq \\textup{NutrientMax}_{i} \\quad \\forall i \\in \\{1, \\ldots, \\textup{NutrientCount}\\}",
+            "related_variables": [
+                "AmountFood"
+            ],
+            "related_parameters": [
+                "FoodCount",
+                "NutrientCount",
+                "NutrientMax",
+                "AmountNutrient"
+            ],
+            "code": "# Add maximum nutrient intake constraints\nfor i in range(NutrientCount):\n    model.addConstr(gp.quicksum(AmountNutrient[j, i] * AmountFood[j] for j in range(FoodCount)) <= NutrientMax[i], \n                    name=\"max_nutrient_{}\".format(i))"
+        },
+        {
+            "description": "All food quantities must be non-negative.",
+            "status": "coded",
+            "formulation": "\\forall i \\in \\{1, \\dots, \\textup{FoodCount}\\}, \\quad \\textup{AmountFood}_i \\geq 0",
+            "related_variables": [
+                "AmountFood"
+            ],
+            "related_parameters": [
+                "FoodCount"
+            ],
+            "code": "# Add constraints for non-negativity of food quantities\nfor i in range(FoodCount):\n    model.addConstr(AmountFood[i] >= 0, name=\"non_negativity_food_{}\".format(i))"
+        },
+        {
+            "description": "Ensure that the amount of nutrient j from all foods i is at least the minimum required quantity of nutrient j",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{\\textup{FoodCount}} \\textup{AmountNutrient}_{ij} \\cdot \\textup{AmountFood}_i \\geq \\textup{NutrientMin}_j, \\quad \\forall j \\in \\{1, \\ldots, \\textup{NutrientCount}\\}",
+            "related_variables": [
+                "AmountFood"
+            ],
+            "related_parameters": [
+                "AmountNutrient",
+                "NutrientMin",
+                "FoodCount",
+                "NutrientCount"
+            ],
+            "code": "# Ensure that the amount of nutrient j from all foods i is at least the minimum required quantity of nutrient j\nfor j in range(NutrientCount):\n    model.addConstr(gp.quicksum(AmountNutrient[i, j] * AmountFood[i] for i in range(FoodCount)) >= NutrientMin[j], \n                    name=f\"min_nutrient_{j}\")"
+        },
+        {
+            "description": "Ensure that the amount of nutrient j from all foods i does not exceed the maximum allowed quantity of nutrient j",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{\\textup{FoodCount}} \\textup{AmountNutrient}_{ij} \\cdot \\textup{AmountFood}_i \\leq \\textup{NutrientMax}_j, \\quad \\forall j \\in \\{1, \\ldots, \\textup{NutrientCount}\\}",
+            "related_variables": [
+                "AmountFood"
+            ],
+            "related_parameters": [
+                "AmountNutrient",
+                "NutrientMax",
+                "FoodCount",
+                "NutrientCount"
+            ],
+            "code": "# Ensure that the amount of nutrient j from all foods i does not exceed the maximum allowed quantity of nutrient j\nfor j in range(NutrientCount):\n    model.addConstr(gp.quicksum(AmountNutrient[i, j] * AmountFood[i] for i in range(FoodCount)) <= NutrientMax[j], \n                    name=f\"nutrient_max_{j}\")"
+        },
+        {
+            "description": "Ensure that the amount of each food i bought is at least the minimum quantity allowed for that food",
+            "status": "runtime_error",
+            "formulation": "\\textup{AmountFood}_i \\geq \\textup{FoodMin}_i, \\quad \\forall i \\in \\{1, \\ldots, \\textup{FoodCount}\\}",
+            "related_variables": [
+                "AmountFood"
+            ],
+            "related_parameters": [
+                "FoodMin",
+                "FoodCount"
+            ],
+            "code": "```"
+        },
+        {
+            "description": "Ensure that the amount of each food i bought does not exceed the maximum quantity allowed for that food",
+            "status": "coded",
+            "formulation": "\\textup{AmountFood}_i \\leq \\textup{FoodMax}_i, \\quad \\forall i \\in \\{1, \\ldots, \\textup{FoodCount}\\}",
+            "related_variables": [
+                "AmountFood"
+            ],
+            "related_parameters": [
+                "FoodMax",
+                "FoodCount"
+            ],
+            "code": "```"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The amount of each food that is bought",
+            "symbol": "AmountFood",
+            "shape": [
+                "FoodCount"
+            ],
+            "status": "coded",
+            "code": "AmountFood = model.addVars(FoodCount, vtype=gp.GRB.CONTINUOUS, name=\"AmountFood\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total cost of buying foods",
+            "status": "coded",
+            "formulation": "\\textup{Minimize}\\quad \\sum_{i=1}^{\\textup{FoodCount}} \\textup{Cost}_i \\cdot \\textup{AmountFood}_i",
+            "related_variables": [
+                "AmountFood"
+            ],
+            "related_parameters": [
+                "Cost",
+                "FoodCount"
+            ],
+            "code": "```"
+        }
+    ],
+    "solution_status": "runtime_error",
+    "solver_output_status": "runtime_error",
+    "error_message": "Traceback (most recent call last):\n  File \"/Users/simonsici/Desktop/MyOptiMUS/evaluator.py\", line 45, in run\n    exec(last_line, local_env, local_env)\n  File \"<string>\", line 1\n    ```\n    ^\nSyntaxError: invalid syntax\n",
+    "obj_val": null,
+    "log_path": "logs/log_20250413145204_complexor_diet/",
+    "problem_path": "data/complexor/diet/",
+    "prep_code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/complexor/diet/data.json\", \"r\") as f:\n    data = json.load(f)\n"
+}

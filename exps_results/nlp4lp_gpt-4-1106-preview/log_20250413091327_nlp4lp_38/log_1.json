@@ -1,0 +1,159 @@
+{
+    "background": "The problem focuses on finding an optimal trading strategy that involves deciding on the quantity of goods to buy and sell each month, considering storage capacity and associated costs.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Maximum storage capacity",
+            "symbol": "Capacity",
+            "value": 0,
+            "shape": [],
+            "code": "Capacity = data[\"Capacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost of holding one unit of product",
+            "symbol": "HoldingCost",
+            "value": 0,
+            "shape": [],
+            "code": "HoldingCost = data[\"HoldingCost\"] # scalar parameter"
+        },
+        {
+            "definition": "Selling price in each period",
+            "symbol": "Price",
+            "value": 0,
+            "shape": [
+                "N"
+            ],
+            "code": "Price = np.array(data[\"Price\"]) # ['N']"
+        },
+        {
+            "definition": "Cost of buying in each period",
+            "symbol": "Cost",
+            "value": 0,
+            "shape": [
+                "N"
+            ],
+            "code": "Cost = np.array(data[\"Cost\"]) # ['N']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The quantity of goods in storage must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{GoodsInStorage}_t \\geq 0, \\quad \\forall t \\in \\{1, \\ldots, N\\}",
+            "related_variables": [
+                "GoodsInStorage"
+            ],
+            "related_parameters": [],
+            "code": "# Add non-negativity constraints for goods in storage\nfor t in range(N):\n    model.addConstr(GoodsInStorage[t] >= 0, name=f\"GoodsInStorage_nonnegativity_{t}\")"
+        },
+        {
+            "description": "Non-negativity constraint on the amount of goods sold each period",
+            "status": "coded",
+            "formulation": "\\forall t \\in \\{1, \\ldots, N\\}, \\quad \\textup{GoodsSold}_t \\geq 0",
+            "related_variables": [
+                "GoodsSold"
+            ],
+            "related_parameters": [],
+            "code": "# Add non-negativity constraints on the amount of goods sold each period\nfor t in range(N):\n    model.addConstr(GoodsSold[t] >= 0, name=f\"non_negativity_{t}\")"
+        },
+        {
+            "description": "Quantity of goods bought in each period must be non-negative",
+            "status": "coded",
+            "formulation": "\\forall t \\in \\{1, ..., N\\}, \\quad \\textup{GoodsBought}_{t} \\geq 0",
+            "related_variables": [
+                "GoodsBought"
+            ],
+            "related_parameters": [],
+            "code": "# Add non-negativity constraints for goods bought in each period\nfor t in range(N):\n    model.addConstr(GoodsBought[t] >= 0, name=f\"non_negativity_{t}\")"
+        },
+        {
+            "description": "The amount of goods stored must not exceed the maximum storage capacity.",
+            "status": "coded",
+            "formulation": "\\textup{GoodsInStorage}_t \\leq \\textup{Capacity} \\quad \\forall t \\in \\{1, \\ldots, N\\}",
+            "related_variables": [
+                "GoodsInStorage"
+            ],
+            "related_parameters": [
+                "Capacity"
+            ],
+            "code": "# Ensure that the goods stored do not exceed the maximum storage capacity for each time period\nfor t in range(N):\n    model.addConstr(GoodsInStorage[t] <= Capacity, name=\"storage_capacity_{}\".format(t))"
+        },
+        {
+            "description": "Ensure that the quantity of goods stored does not exceed the capacity at any time period",
+            "status": "coded",
+            "formulation": "\\textup{GoodsInStorage}_i \\leq \\textup{Capacity} \\quad \\forall i \\in \\{1, \\ldots, N\\}",
+            "related_variables": [
+                "GoodsInStorage"
+            ],
+            "related_parameters": [
+                "Capacity"
+            ],
+            "code": "# Ensure that the quantity of goods stored does not exceed the capacity at any time period\nfor i in range(N):\n    model.addConstr(GoodsInStorage[i] <= Capacity, name=\"capacity_constraint_{}\".format(i))"
+        },
+        {
+            "description": "Goods in storage at the end of each period is the storage from the previous period plus goods bought minus goods sold",
+            "status": "coded",
+            "formulation": "\\textup{GoodsInStorage}_i = \\textup{GoodsInStorage}_{i-1} + \\textup{GoodsBought}_i - \\textup{GoodsSold}_i \\quad \\forall i \\in \\{2, \\ldots, N\\} \\quad \\textup{with} \\quad \\textup{GoodsInStorage}_1 = \\textup{GoodsBought}_1 - \\textup{GoodsSold}_1",
+            "related_variables": [
+                "GoodsInStorage",
+                "GoodsBought",
+                "GoodsSold"
+            ],
+            "related_parameters": [],
+            "code": "# Define the initial goods in storage constraint\nmodel.addConstr(GoodsInStorage[0] == GoodsBought[0] - GoodsSold[0], name=\"init_goods_storage\")\n\n# Define the goods in storage balance constraints for each period from 2 to N\nfor i in range(1, N):\n    model.addConstr(\n        (GoodsInStorage[i] == GoodsInStorage[i - 1] + GoodsBought[i] - GoodsSold[i]),\n        name=f\"goods_storage_balance_{i+1}\"\n    )"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Quantity of goods in storage for each time period",
+            "symbol": "GoodsInStorage",
+            "shape": [
+                "N"
+            ],
+            "status": "coded",
+            "code": "GoodsInStorage = model.addVars(N, vtype=gp.GRB.CONTINUOUS, name=\"GoodsInStorage\")"
+        },
+        {
+            "definition": "Quantity of goods sold for each time period",
+            "symbol": "GoodsSold",
+            "shape": [
+                "N"
+            ],
+            "status": "coded",
+            "code": "GoodsSold = model.addVars(N, vtype=gp.GRB.CONTINUOUS, name=\"GoodsSold\")"
+        },
+        {
+            "definition": "Quantity of goods bought for each time period",
+            "symbol": "GoodsBought",
+            "shape": [
+                "N"
+            ],
+            "status": "coded",
+            "code": "GoodsBought = model.addVars(N, vtype=gp.GRB.CONTINUOUS, name=\"GoodsBought\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total profit over all time periods from buying and selling goods",
+            "status": "coded",
+            "formulation": "\\max \\sum_{i=1}^{N} (\\textup{Price}_i \\times \\textup{GoodsSold}_i - \\textup{Cost}_i \\times \\textup{GoodsBought}_i - \\textup{HoldingCost} \\times \\textup{GoodsInStorage}_i)",
+            "related_variables": [
+                "GoodsSold",
+                "GoodsBought",
+                "GoodsInStorage"
+            ],
+            "related_parameters": [
+                "Price",
+                "Cost",
+                "HoldingCost"
+            ],
+            "code": "# Set objective\nmodel.setObjective(\n    gp.quicksum(\n        Price[i] * GoodsSold[i] - Cost[i] * GoodsBought[i] - HoldingCost * GoodsInStorage[i]\n        for i in range(N)\n    ), \n    gp.GRB.MAXIMIZE\n)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413091327_nlp4lp_38/",
+    "problem_path": "data/nlp4lp/38/"
+}

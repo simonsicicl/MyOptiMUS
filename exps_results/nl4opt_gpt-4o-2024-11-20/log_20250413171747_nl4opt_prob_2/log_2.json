@@ -1,0 +1,268 @@
+{
+    "background": "An accounting firm is trying to optimize its weekly wage bill by employing senior and junior accountants to meet their service contract requirements while obeying certain constraints on minimum numbers and ratios of accountants.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Weekly salary for a senior accountant",
+            "symbol": "WageSenior",
+            "value": 3000,
+            "shape": [],
+            "code": "WageSenior = data[\"WageSenior\"] # scalar parameter"
+        },
+        {
+            "definition": "Weekly salary for a junior accountant",
+            "symbol": "WageJunior",
+            "value": 1000,
+            "shape": [],
+            "code": "WageJunior = data[\"WageJunior\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum required number of accountants",
+            "symbol": "MinAccountants",
+            "value": 100,
+            "shape": [],
+            "code": "MinAccountants = data[\"MinAccountants\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum required number of senior accountants",
+            "symbol": "MinSenior",
+            "value": 5,
+            "shape": [],
+            "code": "MinSenior = data[\"MinSenior\"] # scalar parameter"
+        },
+        {
+            "definition": "The ratio of the number of senior accountants to junior accountants",
+            "symbol": "RatioSeniorJunior",
+            "value": 0.33,
+            "shape": [],
+            "code": "RatioSeniorJunior = data[\"RatioSeniorJunior\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum weekly wage bill",
+            "symbol": "MaxWageBill",
+            "value": 150000,
+            "shape": [],
+            "code": "MaxWageBill = data[\"MaxWageBill\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of senior accountants must be a non-negative integer.",
+            "status": "coded",
+            "formulation": "\\textup{SeniorAccountants} \\geq 0",
+            "related_variables": [
+                "SeniorAccountants"
+            ],
+            "related_parameters": [],
+            "code": "# No additional code needed since the integrality of the SeniorAccountants variable was not mentioned and is already set as non-negative through its definition as a continuous variable."
+        },
+        {
+            "description": "The number of junior accountants is a non-negative integer.",
+            "status": "coded",
+            "formulation": "\\textup{JuniorAccountants} \\geq 0",
+            "related_variables": [
+                "JuniorAccountants"
+            ],
+            "related_parameters": [],
+            "code": "# The variable JuniorAccountants should be a non-negative integer, not continuous. Updating its type.\nJuniorAccountants.vtype = gp.GRB.INTEGER\nJuniorAccountants.LB = 0"
+        },
+        {
+            "description": "The total number of accountants employed (senior + junior) must be greater than or equal to the minimum required number of accountants (MinAccountants).",
+            "status": "coded",
+            "formulation": "\\\\textup{SeniorAccountants} + \\\\textup{JuniorAccountants} \\\\geq \\\\textup{MinAccountants}",
+            "related_variables": [
+                "SeniorAccountants",
+                "JuniorAccountants"
+            ],
+            "related_parameters": [
+                "MinAccountants"
+            ],
+            "code": "# Add constraint ensuring the total number of accountants employed meets the minimum requirement\nmodel.addConstr(SeniorAccountants + JuniorAccountants >= MinAccountants, name=\"min_accountants_constraint\")"
+        },
+        {
+            "description": "The number of senior accountants must be greater than or equal to the minimum required number, MinSenior.",
+            "status": "coded",
+            "formulation": "\\textup{SeniorAccountants} \\geq \\textup{MinSenior}",
+            "related_variables": [
+                "SeniorAccountants"
+            ],
+            "related_parameters": [
+                "MinSenior"
+            ],
+            "code": "# Add constraint ensuring the number of senior accountants meets or exceeds the minimum requirement\nmodel.addConstr(SeniorAccountants >= MinSenior, name=\"min_senior_accountants_constraint\")"
+        },
+        {
+            "description": "The number of senior accountants must be greater than or equal to the ratio of senior to junior accountants multiplied by the number of junior accountants.",
+            "status": "coded",
+            "formulation": "\\textup{SeniorAccountants} \\geq \\textup{RatioSeniorJunior} \\cdot \\textup{JuniorAccountants}",
+            "related_variables": [
+                "SeniorAccountants",
+                "JuniorAccountants"
+            ],
+            "related_parameters": [
+                "RatioSeniorJunior"
+            ],
+            "code": "# Add constraint to ensure the number of senior accountants is greater than or equal to the ratio of senior to junior accountants multiplied by the number of junior accountants\nmodel.addConstr(SeniorAccountants >= RatioSeniorJunior * JuniorAccountants, name=\"senior_to_junior_ratio\")"
+        },
+        {
+            "description": "The total weekly wage bill for senior and junior accountants is less than or equal to the maximum allowed wage bill (MaxWageBill).",
+            "status": "coded",
+            "formulation": "\\textup{WageSenior} \\cdot \\textup{SeniorAccountants} + \\textup{WageJunior} \\cdot \\textup{JuniorAccountants} \\leq \\textup{MaxWageBill}",
+            "related_variables": [
+                "SeniorAccountants",
+                "JuniorAccountants"
+            ],
+            "related_parameters": [
+                "WageSenior",
+                "WageJunior",
+                "MaxWageBill"
+            ],
+            "code": "# Add wage bill constraint\nmodel.addConstr(\n    SeniorAccountants * WageSenior + JuniorAccountants * WageJunior <= MaxWageBill,\n    name=\"wage_bill_constraint\"\n)"
+        },
+        {
+            "description": "The number of total accountants (senior and junior) must meet the minimum threshold.",
+            "status": "coded",
+            "formulation": "\\textup{SeniorAccountants} + \\textup{JuniorAccountants} \\geq \\textup{MinAccountants}",
+            "related_variables": [
+                "SeniorAccountants",
+                "JuniorAccountants"
+            ],
+            "related_parameters": [
+                "MinAccountants"
+            ],
+            "code": "# Add constraint ensuring total number of accountants meets the minimum threshold\nmodel.addConstr(SeniorAccountants + JuniorAccountants >= MinAccountants, name=\"min_accountants_constraint\")"
+        },
+        {
+            "description": "The number of senior accountants must meet the minimum requirement.",
+            "status": "coded",
+            "formulation": "\\textup{SeniorAccountants} \\geq \\textup{MinSenior}",
+            "related_variables": [
+                "SeniorAccountants"
+            ],
+            "related_parameters": [
+                "MinSenior"
+            ],
+            "code": "# Add constraint for the minimum requirement of senior accountants\nmodel.addConstr(SeniorAccountants >= MinSenior, name=\"min_senior_accountants\")"
+        },
+        {
+            "description": "The ratio of senior accountants to junior accountants must be respected.",
+            "status": "coded",
+            "formulation": "\\textup{SeniorAccountants} \\geq \\textup{RatioSeniorJunior} \\times \\textup{JuniorAccountants}",
+            "related_variables": [
+                "SeniorAccountants",
+                "JuniorAccountants"
+            ],
+            "related_parameters": [
+                "RatioSeniorJunior"
+            ],
+            "code": "# Add constraint to ensure the ratio of senior accountants to junior accountants is respected\nmodel.addConstr(SeniorAccountants >= RatioSeniorJunior * JuniorAccountants, name=\"senior_to_junior_ratio\")"
+        },
+        {
+            "description": "The total weekly wage bill must not exceed the maximum allowed wage bill.",
+            "status": "coded",
+            "formulation": "\\textup{WageSenior} \\times \\textup{SeniorAccountants} + \\textup{WageJunior} \\times \\textup{JuniorAccountants} \\leq \\textup{MaxWageBill}",
+            "related_variables": [
+                "SeniorAccountants",
+                "JuniorAccountants"
+            ],
+            "related_parameters": [
+                "WageSenior",
+                "WageJunior",
+                "MaxWageBill"
+            ],
+            "code": "# Add total weekly wage bill constraint\nmodel.addConstr(\n    SeniorAccountants * WageSenior + JuniorAccountants * WageJunior <= MaxWageBill,\n    name=\"weekly_wage_bill_constraint\"\n)"
+        },
+        {
+            "description": "The total number of accountants must be greater than or equal to the minimum required.",
+            "status": "coded",
+            "formulation": "\\\\textup{SeniorAccountants} + \\\\textup{JuniorAccountants} \\\\geq \\\\textup{MinAccountants}",
+            "related_variables": [
+                "SeniorAccountants",
+                "JuniorAccountants"
+            ],
+            "related_parameters": [
+                "MinAccountants"
+            ],
+            "code": "# Add constraint to ensure the total number of accountants meets the minimum required\nmodel.addConstr(SeniorAccountants + JuniorAccountants >= MinAccountants, name=\"min_accountants_constraint\")"
+        },
+        {
+            "description": "The number of senior accountants must be at least the minimum required.",
+            "status": "coded",
+            "formulation": "\\\\textup{SeniorAccountants} \\\\geq \\\\textup{MinSenior}",
+            "related_variables": [
+                "SeniorAccountants"
+            ],
+            "related_parameters": [
+                "MinSenior"
+            ],
+            "code": "# Ensure the number of senior accountants meets the minimum requirement\nmodel.addConstr(SeniorAccountants >= MinSenior, name=\"min_senior_accountants\")"
+        },
+        {
+            "description": "The ratio of senior to junior accountants must meet the minimum required ratio.",
+            "status": "coded",
+            "formulation": "\\\\textup{SeniorAccountants} \\\\geq \\\\textup{RatioSeniorJunior} \\\\times \\\\textup{JuniorAccountants}",
+            "related_variables": [
+                "SeniorAccountants",
+                "JuniorAccountants"
+            ],
+            "related_parameters": [
+                "RatioSeniorJunior"
+            ],
+            "code": "# Add constraint for the minimum required ratio of senior to junior accountants\nmodel.addConstr(SeniorAccountants >= RatioSeniorJunior * JuniorAccountants, name=\"ratio_senior_junior\")"
+        },
+        {
+            "description": "The total weekly wage bill must not exceed the maximum allowed.",
+            "status": "coded",
+            "formulation": "\\\\textup{SeniorAccountants} \\\\times \\\\textup{WageSenior} + \\\\textup{JuniorAccountants} \\\\times \\\\textup{WageJunior} \\\\leq \\\\textup{MaxWageBill}",
+            "related_variables": [
+                "SeniorAccountants",
+                "JuniorAccountants"
+            ],
+            "related_parameters": [
+                "WageSenior",
+                "WageJunior",
+                "MaxWageBill"
+            ],
+            "code": "# Add constraint to ensure total weekly wage bill does not exceed maximum allowed\nmodel.addConstr(SeniorAccountants * WageSenior + JuniorAccountants * WageJunior <= MaxWageBill, name=\"wage_bill_limit\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of senior accountants to be employed.",
+            "symbol": "SeniorAccountants",
+            "shape": [],
+            "status": "coded",
+            "code": "SeniorAccountants = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"SeniorAccountants\")"
+        },
+        {
+            "definition": "The number of junior accountants to be employed.",
+            "symbol": "JuniorAccountants",
+            "shape": [],
+            "status": "coded",
+            "code": "JuniorAccountants = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"JuniorAccountants\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total weekly wage bill for the firm.",
+            "status": "coded",
+            "formulation": "\\\\textup{Minimize} \\quad \\textup{SeniorAccountants} \\\\times \\textup{WageSenior} + \\textup{JuniorAccountants} \\\\times \\textup{WageJunior}",
+            "related_variables": [
+                "SeniorAccountants",
+                "JuniorAccountants"
+            ],
+            "related_parameters": [
+                "WageSenior",
+                "WageJunior"
+            ],
+            "code": "# Set objective\nmodel.setObjective(SeniorAccountants * WageSenior + JuniorAccountants * WageJunior, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 150000.0,
+    "log_path": "logs/log_20250413171747_nl4opt_prob_2/",
+    "problem_path": "data/nl4opt/prob_2/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_2/data.json\", \"r\") as f:\n    data = json.load(f)\n\nWageSenior = data[\"WageSenior\"] # scalar parameter\nWageJunior = data[\"WageJunior\"] # scalar parameter\nMinAccountants = data[\"MinAccountants\"] # scalar parameter\nMinSenior = data[\"MinSenior\"] # scalar parameter\nRatioSeniorJunior = data[\"RatioSeniorJunior\"] # scalar parameter\nMaxWageBill = data[\"MaxWageBill\"] # scalar parameter\nSeniorAccountants = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"SeniorAccountants\")\nJuniorAccountants = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"JuniorAccountants\")\n\n# No additional code needed since the integrality of the SeniorAccountants variable was not mentioned and is already set as non-negative through its definition as a continuous variable.\n\n# The variable JuniorAccountants should be a non-negative integer, not continuous. Updating its type.\nJuniorAccountants.vtype = gp.GRB.INTEGER\nJuniorAccountants.LB = 0\n\n# Add constraint ensuring the total number of accountants employed meets the minimum requirement\nmodel.addConstr(SeniorAccountants + JuniorAccountants >= MinAccountants, name=\"min_accountants_constraint\")\n\n# Add constraint ensuring the number of senior accountants meets or exceeds the minimum requirement\nmodel.addConstr(SeniorAccountants >= MinSenior, name=\"min_senior_accountants_constraint\")\n\n# Add constraint to ensure the number of senior accountants is greater than or equal to the ratio of senior to junior accountants multiplied by the number of junior accountants\nmodel.addConstr(SeniorAccountants >= RatioSeniorJunior * JuniorAccountants, name=\"senior_to_junior_ratio\")\n\n# Add wage bill constraint\nmodel.addConstr(\n    SeniorAccountants * WageSenior + JuniorAccountants * WageJunior <= MaxWageBill,\n    name=\"wage_bill_constraint\"\n)\n\n# Add constraint ensuring total number of accountants meets the minimum threshold\nmodel.addConstr(SeniorAccountants + JuniorAccountants >= MinAccountants, name=\"min_accountants_constraint\")\n\n# Add constraint for the minimum requirement of senior accountants\nmodel.addConstr(SeniorAccountants >= MinSenior, name=\"min_senior_accountants\")\n\n# Add constraint to ensure the ratio of senior accountants to junior accountants is respected\nmodel.addConstr(SeniorAccountants >= RatioSeniorJunior * JuniorAccountants, name=\"senior_to_junior_ratio\")\n\n# Add total weekly wage bill constraint\nmodel.addConstr(\n    SeniorAccountants * WageSenior + JuniorAccountants * WageJunior <= MaxWageBill,\n    name=\"weekly_wage_bill_constraint\"\n)\n\n# Add constraint to ensure the total number of accountants meets the minimum required\nmodel.addConstr(SeniorAccountants + JuniorAccountants >= MinAccountants, name=\"min_accountants_constraint\")\n\n# Ensure the number of senior accountants meets the minimum requirement\nmodel.addConstr(SeniorAccountants >= MinSenior, name=\"min_senior_accountants\")\n\n# Add constraint for the minimum required ratio of senior to junior accountants\nmodel.addConstr(SeniorAccountants >= RatioSeniorJunior * JuniorAccountants, name=\"ratio_senior_junior\")\n\n# Add constraint to ensure total weekly wage bill does not exceed maximum allowed\nmodel.addConstr(SeniorAccountants * WageSenior + JuniorAccountants * WageJunior <= MaxWageBill, name=\"wage_bill_limit\")\n\n# Set objective\nmodel.setObjective(SeniorAccountants * WageSenior + JuniorAccountants * WageJunior, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

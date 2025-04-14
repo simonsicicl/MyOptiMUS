@@ -1,0 +1,157 @@
+{
+    "background": "A manufacturer needs to decide the production quantity of different parts, considering machine constraints, to maximize profit.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "The number of machines available",
+            "symbol": "M",
+            "value": "",
+            "shape": [],
+            "code": "M = data[\"M\"] # scalar parameter"
+        },
+        {
+            "definition": "The number of types of parts to produce",
+            "symbol": "P",
+            "value": "",
+            "shape": [],
+            "code": "P = data[\"P\"] # scalar parameter"
+        },
+        {
+            "definition": "The time required to produce a batch on machine m for part p",
+            "symbol": "TimeRequired",
+            "value": "",
+            "shape": [
+                "M",
+                "P"
+            ],
+            "code": "TimeRequired = np.array(data[\"TimeRequired\"]) # ['M', 'P']"
+        },
+        {
+            "definition": "The cost of operating machine m for a month",
+            "symbol": "MachineCosts",
+            "value": "",
+            "shape": [
+                "M"
+            ],
+            "code": "MachineCosts = np.array(data[\"MachineCosts\"]) # ['M']"
+        },
+        {
+            "definition": "The time each machine m is available for production each month",
+            "symbol": "Availability",
+            "value": "",
+            "shape": [
+                "M"
+            ],
+            "code": "Availability = np.array(data[\"Availability\"]) # ['M']"
+        },
+        {
+            "definition": "The price at which part p can be sold",
+            "symbol": "Prices",
+            "value": "",
+            "shape": [
+                "P"
+            ],
+            "code": "Prices = np.array(data[\"Prices\"]) # ['P']"
+        },
+        {
+            "definition": "The setup time required before producing a batch of part p",
+            "symbol": "SetupTime",
+            "value": "",
+            "shape": [
+                "P"
+            ],
+            "code": "SetupTime = np.array(data[\"SetupTime\"]) # ['P']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Each machine can be used for up to its availability hours per month.",
+            "status": "formulated",
+            "formulation": "\\sum_{p=1}^{\\textup{P}} (\\textup{ProductionBatch}_{m,p} \\cdot \\textup{TimeRequired}_{m,p}) \\leq \\textup{Availability}_m \\quad \\forall m \\in \\{1, \\ldots, \\textup{M}\\}",
+            "related_variables": [
+                "ProductionBatch"
+            ],
+            "related_parameters": [
+                "TimeRequired",
+                "Availability",
+                "M",
+                "P"
+            ]
+        },
+        {
+            "description": "Total production and setup time for part p on machine m should not exceed available time for machine m",
+            "status": "formulated",
+            "formulation": "\\textup{TimeRequired}_{m,p} \\cdot \\textup{ProductionBatch}_{m,p} + \\textup{SetupTime}_p \\leq \\textup{Availability}_m \\quad \\forall m \\in M, \\forall p \\in P",
+            "related_variables": [
+                "ProductionBatch"
+            ],
+            "related_parameters": [
+                "TimeRequired",
+                "SetupTime",
+                "Availability"
+            ]
+        },
+        {
+            "description": "Each produced batch of any part on any machine must be non-negative",
+            "status": "formulated",
+            "formulation": "\\forall m \\in \\{1, \\ldots, M\\}, \\quad \\forall p \\in \\{1, \\ldots, P\\}, \\quad \\textup{ProductionBatch}_{mp} \\geq 0",
+            "related_variables": [
+                "ProductionBatch"
+            ],
+            "related_parameters": [
+                "M",
+                "P"
+            ]
+        },
+        {
+            "description": "Constraint for calculating the total production of each part across all machines",
+            "status": "formulated",
+            "formulation": "\\forall p \\in \\{1,\\dots,P\\}, \\quad \\textup{TotalProduction}_p = \\sum_{m=1}^{M} \\textup{ProductionBatch}_{m,p}",
+            "related_variables": [
+                "ProductionBatch",
+                "TotalProduction"
+            ],
+            "related_parameters": []
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of batches of part p produced on machine m",
+            "symbol": "ProductionBatch",
+            "shape": [
+                "M",
+                "P"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "Total number of part p produced across all machines",
+            "symbol": "TotalProduction",
+            "shape": [
+                "P"
+            ],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize profit which is the total revenue from selling parts minus the total operating costs of the machines",
+            "status": "formulated",
+            "formulation": "\\max \\left( \\sum_{p=1}^{P} \\textup{Prices}_p \\cdot \\textup{TotalProduction}_p - \\sum_{m=1}^{M} \\textup{MachineCosts}_m \\right)",
+            "related_variables": [
+                "ProductionBatch",
+                "TotalProduction"
+            ],
+            "related_parameters": [
+                "MachineCosts",
+                "Prices"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413094050_nlp4lp_62/",
+    "problem_path": "data/nlp4lp/62/"
+}

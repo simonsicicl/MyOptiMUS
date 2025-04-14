@@ -1,0 +1,195 @@
+{
+    "background": "A cruise company has to decide the number of large and small cruise ship trips to conduct. Large ships carry more customers but produce more pollution than small ships.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of customers a large cruise ship can carry",
+            "symbol": "LargeShipCapacity",
+            "value": 2000,
+            "shape": [],
+            "code": "LargeShipCapacity = data[\"LargeShipCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Pollution units produced by a large cruise ship trip",
+            "symbol": "LargeShipPollution",
+            "value": 20,
+            "shape": [],
+            "code": "LargeShipPollution = data[\"LargeShipPollution\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of customers a small cruise ship can carry",
+            "symbol": "SmallShipCapacity",
+            "value": 800,
+            "shape": [],
+            "code": "SmallShipCapacity = data[\"SmallShipCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Pollution units produced by a small cruise ship trip",
+            "symbol": "SmallShipPollution",
+            "value": 15,
+            "shape": [],
+            "code": "SmallShipPollution = data[\"SmallShipPollution\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of large cruise ship trips",
+            "symbol": "MaxLargeShipTrips",
+            "value": 7,
+            "shape": [],
+            "code": "MaxLargeShipTrips = data[\"MaxLargeShipTrips\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum percentage of total trips that must be by small cruise ships",
+            "symbol": "MinSmallShipTripPercent",
+            "value": 0.4,
+            "shape": [],
+            "code": "MinSmallShipTripPercent = data[\"MinSmallShipTripPercent\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of customers the company aims to transport",
+            "symbol": "MinCustomers",
+            "value": 20000,
+            "shape": [],
+            "code": "MinCustomers = data[\"MinCustomers\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of large cruise ship trips must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{LargeShipTrips} \\geq 0",
+            "related_variables": [
+                "LargeShipTrips"
+            ],
+            "related_parameters": [],
+            "code": "# Non-negativity constraint for the number of large cruise ship trips\nmodel.addConstr(LargeShipTrips >= 0, name=\"non_negative_LargeShipTrips\")"
+        },
+        {
+            "description": "The number of small cruise ship trips is non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{SmallShipTrips} \\\\geq 0",
+            "related_variables": [
+                "SmallShipTrips"
+            ],
+            "related_parameters": [],
+            "code": "# The variable \"SmallShipTrips\" already has non-negativity enforced internally due to its type being CONTINUOUS in gurobipy."
+        },
+        {
+            "description": "The number of large cruise ship trips is at most MaxLargeShipTrips",
+            "status": "coded",
+            "formulation": "\\textup{LargeShipTrips} \\leq \\textup{MaxLargeShipTrips}",
+            "related_variables": [
+                "LargeShipTrips"
+            ],
+            "related_parameters": [
+                "MaxLargeShipTrips"
+            ],
+            "code": "# Add constraint to ensure the number of large cruise ship trips does not exceed MaxLargeShipTrips\nmodel.addConstr(LargeShipTrips <= MaxLargeShipTrips, name=\"max_large_ship_trips\")"
+        },
+        {
+            "description": "At least MinSmallShipTripPercent of total trips must be small cruise ship trips.",
+            "status": "coded",
+            "formulation": "(1 - \\textup{MinSmallShipTripPercent}) \\\\cdot \\textup{SmallShipTrips} \\\\geq \\textup{MinSmallShipTripPercent} \\\\cdot \\textup{LargeShipTrips}",
+            "related_variables": [
+                "LargeShipTrips",
+                "SmallShipTrips"
+            ],
+            "related_parameters": [
+                "MinSmallShipTripPercent"
+            ],
+            "code": "# Add constraint to enforce that at least MinSmallShipTripPercent of total trips are small cruise ship trips\nmodel.addConstr((1 - MinSmallShipTripPercent) * SmallShipTrips >= MinSmallShipTripPercent * LargeShipTrips, \n                name=\"min_small_ship_trip_constraint\")"
+        },
+        {
+            "description": "Ensure the total number of customers transported is at least the minimum required (MinCustomers).",
+            "status": "coded",
+            "formulation": "\\textup{LargeShipCapacity} \\cdot \\textup{LargeShipTrips} + \\textup{SmallShipCapacity} \\cdot \\textup{SmallShipTrips} \\geq \\textup{MinCustomers}",
+            "related_variables": [
+                "LargeShipTrips",
+                "SmallShipTrips"
+            ],
+            "related_parameters": [
+                "LargeShipCapacity",
+                "SmallShipCapacity",
+                "MinCustomers"
+            ],
+            "code": "# Add a constraint to ensure the total number of customers transported is at least the minimum required (MinCustomers)\nmodel.addConstr(\n    LargeShipCapacity * LargeShipTrips + SmallShipCapacity * SmallShipTrips >= MinCustomers,\n    name=\"min_customers_constraint\"\n)"
+        },
+        {
+            "description": "The maximum number of large cruise ship trips allowed.",
+            "status": "coded",
+            "formulation": "\\textup{LargeShipTrips} \\leq \\textup{MaxLargeShipTrips}",
+            "related_variables": [
+                "LargeShipTrips"
+            ],
+            "related_parameters": [
+                "MaxLargeShipTrips"
+            ],
+            "code": "# Add the constraint for the maximum number of large cruise ship trips\nmodel.addConstr(LargeShipTrips <= MaxLargeShipTrips, name=\"max_large_ship_trips\")"
+        },
+        {
+            "description": "The minimum percentage of total trips that must be by small cruise ships.",
+            "status": "coded",
+            "formulation": "\\textup{SmallShipTrips} \\geq \\textup{MinSmallShipTripPercent} \\cdot (\\textup{LargeShipTrips} + \\textup{SmallShipTrips})",
+            "related_variables": [
+                "SmallShipTrips",
+                "LargeShipTrips"
+            ],
+            "related_parameters": [
+                "MinSmallShipTripPercent"
+            ],
+            "code": "# Add the minimum percentage constraint for small cruise ship trips\nmodel.addConstr(SmallShipTrips >= MinSmallShipTripPercent * (LargeShipTrips + SmallShipTrips), name=\"min_small_ship_trip_percentage\")"
+        },
+        {
+            "description": "The total number of customers transported must meet or exceed the company's target.",
+            "status": "coded",
+            "formulation": "\\textup{LargeShipTrips} \\cdot \\textup{LargeShipCapacity} + \\textup{SmallShipTrips} \\cdot \\textup{SmallShipCapacity} \\geq \\textup{MinCustomers}",
+            "related_variables": [
+                "LargeShipTrips",
+                "SmallShipTrips"
+            ],
+            "related_parameters": [
+                "LargeShipCapacity",
+                "SmallShipCapacity",
+                "MinCustomers"
+            ],
+            "code": "# Add constraint to ensure total customers transported meets or exceeds target\nmodel.addConstr(\n    LargeShipTrips * LargeShipCapacity + SmallShipTrips * SmallShipCapacity >= MinCustomers,\n    name=\"min_customers_constraint\"\n)"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of large cruise ship trips to be conducted.",
+            "symbol": "LargeShipTrips",
+            "shape": [],
+            "status": "coded",
+            "code": "LargeShipTrips = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"LargeShipTrips\")"
+        },
+        {
+            "definition": "The number of small cruise ship trips to be conducted.",
+            "symbol": "SmallShipTrips",
+            "shape": [],
+            "status": "coded",
+            "code": "SmallShipTrips = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"SmallShipTrips\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total amount of pollution produced by the cruise ships.",
+            "status": "coded",
+            "formulation": "\\textup{Minimize:} \\quad \\textup{LargeShipTrips} \\cdot \\textup{LargeShipPollution} + \\textup{SmallShipTrips} \\cdot \\textup{SmallShipPollution}",
+            "related_variables": [
+                "LargeShipTrips",
+                "SmallShipTrips"
+            ],
+            "related_parameters": [
+                "LargeShipPollution",
+                "SmallShipPollution"
+            ],
+            "code": "# Set objective\nmodel.setObjective(LargeShipTrips * LargeShipPollution + SmallShipTrips * SmallShipPollution, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413180334_nl4opt_prob_245/",
+    "problem_path": "data/nl4opt/prob_245/"
+}

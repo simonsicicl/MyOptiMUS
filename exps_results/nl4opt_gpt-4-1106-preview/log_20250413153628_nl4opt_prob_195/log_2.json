@@ -1,0 +1,196 @@
+{
+    "background": "A magic school sends letters using carrier pigeons and owls, which have different capacities and treat requirements for sending letters.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of letters a carrier pigeon can carry at a time",
+            "symbol": "CarrierCapacity",
+            "value": 2,
+            "shape": [],
+            "code": "CarrierCapacity = data[\"CarrierCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of letters an owl can carry at a time",
+            "symbol": "OwlCapacity",
+            "value": 5,
+            "shape": [],
+            "code": "OwlCapacity = data[\"OwlCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum percentage of birds that can be owls",
+            "symbol": "MaxOwlPercentage",
+            "value": 0.4,
+            "shape": [],
+            "code": "MaxOwlPercentage = data[\"MaxOwlPercentage\"] # scalar parameter"
+        },
+        {
+            "definition": "Total treats available for the birds",
+            "symbol": "TotalTreats",
+            "value": 1000,
+            "shape": [],
+            "code": "TotalTreats = data[\"TotalTreats\"] # scalar parameter"
+        },
+        {
+            "definition": "Treats required for one service by a carrier pigeon",
+            "symbol": "TreatsPerCarrier",
+            "value": 3,
+            "shape": [],
+            "code": "TreatsPerCarrier = data[\"TreatsPerCarrier\"] # scalar parameter"
+        },
+        {
+            "definition": "Treats required for one service by an owl",
+            "symbol": "TreatsPerOwl",
+            "value": 5,
+            "shape": [],
+            "code": "TreatsPerOwl = data[\"TreatsPerOwl\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of carrier pigeons that must be used",
+            "symbol": "MinCarrierPigeons",
+            "value": 20,
+            "shape": [],
+            "code": "MinCarrierPigeons = data[\"MinCarrierPigeons\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of carrier pigeons used must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{CarrierPigeonsUsed} \\geq 0",
+            "related_variables": [
+                "CarrierPigeonsUsed"
+            ],
+            "related_parameters": [],
+            "code": "# The non-negativity constraint for CarrierPigeonsUsed is inherent to the variable declaration (integer type)\n# Therefore, no separate constraint is needed as Gurobi handles non-negativity for variables by default."
+        },
+        {
+            "description": "Number of owls used must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{OwlsUsed} \\geq 0",
+            "related_variables": [
+                "OwlsUsed"
+            ],
+            "related_parameters": [],
+            "code": "# The variable OwlsUsed should already be non-negative due to its declaration as an INTEGER\n# No additional constraints are needed"
+        },
+        {
+            "description": "At most MaxOwlPercentage percent of the total number of birds used can be owls",
+            "status": "coded",
+            "formulation": "\\textup{OwlsUsed} - \\textup{MaxOwlPercentage} \\times \\textup{OwlsUsed} \\leq \\textup{MaxOwlPercentage} \\times \\textup{CarrierPigeonsUsed}",
+            "related_variables": [
+                "CarrierPigeonsUsed",
+                "OwlsUsed"
+            ],
+            "related_parameters": [
+                "MaxOwlPercentage"
+            ],
+            "code": "# At most MaxOwlPercentage percent of the total number of birds used can be owls\nmodel.addConstr(OwlsUsed - MaxOwlPercentage * (CarrierPigeonsUsed + OwlsUsed) <= 0, name=\"MaxOwlPercentageConstraint\")"
+        },
+        {
+            "description": "Total treats used by carrier pigeons and owls cannot exceed TotalTreats",
+            "status": "coded",
+            "formulation": "\\textup{CarrierPigeonsUsed} \\times \\textup{TreatsPerCarrier} + \\textup{OwlsUsed} \\times \\textup{TreatsPerOwl} \\leq \\textup{TotalTreats}",
+            "related_variables": [
+                "CarrierPigeonsUsed",
+                "OwlsUsed"
+            ],
+            "related_parameters": [
+                "TreatsPerCarrier",
+                "TreatsPerOwl",
+                "TotalTreats"
+            ],
+            "code": "# Constraint: Total treats used by carrier pigeons and owls cannot exceed TotalTreats\nmodel.addConstr(CarrierPigeonsUsed * TreatsPerCarrier + OwlsUsed * TreatsPerOwl <= TotalTreats, \"TotalTreatsConstraint\")"
+        },
+        {
+            "description": "At least a minimum number of carrier pigeons must be used",
+            "status": "coded",
+            "formulation": "\\textup{CarrierPigeonsUsed} \\geq \\textup{MinCarrierPigeons}",
+            "related_variables": [
+                "CarrierPigeonsUsed"
+            ],
+            "related_parameters": [
+                "MinCarrierPigeons"
+            ],
+            "code": "# At least a minimum number of carrier pigeons must be used constraint\nmodel.addConstr(CarrierPigeonsUsed >= MinCarrierPigeons, name=\"min_carrier_pigeons\")"
+        },
+        {
+            "description": "The sum of treats used by carrier pigeons and owls must not exceed the total treats available",
+            "status": "coded",
+            "formulation": "\\textup{TreatsPerCarrier} \\times \\textup{CarrierPigeonsUsed} + \\textup{TreatsPerOwl} \\times \\textup{OwlsUsed} \\leq \\textup{TotalTreats}",
+            "related_variables": [
+                "CarrierPigeonsUsed",
+                "OwlsUsed"
+            ],
+            "related_parameters": [
+                "TotalTreats",
+                "TreatsPerCarrier",
+                "TreatsPerOwl"
+            ],
+            "code": "# Treats constraint for carrier pigeons and owls\nmodel.addConstr(TreatsPerCarrier * CarrierPigeonsUsed + TreatsPerOwl * OwlsUsed <= TotalTreats, \"TreatsConstraint\")"
+        },
+        {
+            "description": "The number of owls used must not exceed the maximum percentage allowed of the total number of birds",
+            "status": "coded",
+            "formulation": "\\textup{OwlsUsed} \\leq \\textup{MaxOwlPercentage} \\times (\\textup{CarrierPigeonsUsed} + \\textup{OwlsUsed})",
+            "related_variables": [
+                "CarrierPigeonsUsed",
+                "OwlsUsed"
+            ],
+            "related_parameters": [
+                "MaxOwlPercentage"
+            ],
+            "code": "# Constraint: Number of owls used must not exceed the maximum percentage allowed of the total number of birds\nmodel.addConstr(OwlsUsed <= MaxOwlPercentage * (CarrierPigeonsUsed + OwlsUsed), name=\"max_owls_percentage\")"
+        },
+        {
+            "description": "The number of carrier pigeons used must meet the minimum required",
+            "status": "coded",
+            "formulation": "\\textup{CarrierPigeonsUsed} \\geq \\textup{MinCarrierPigeons}",
+            "related_variables": [
+                "CarrierPigeonsUsed"
+            ],
+            "related_parameters": [
+                "MinCarrierPigeons"
+            ],
+            "code": "# Add constraint to ensure a minimum number of carrier pigeons are used\nmodel.addConstr(CarrierPigeonsUsed >= MinCarrierPigeons, name=\"min_carrier_pigeons\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of carrier pigeons used",
+            "symbol": "CarrierPigeonsUsed",
+            "shape": [],
+            "status": "coded",
+            "code": "CarrierPigeonsUsed = model.addVar(vtype=gp.GRB.INTEGER, name=\"CarrierPigeonsUsed\")"
+        },
+        {
+            "definition": "Number of owls used",
+            "symbol": "OwlsUsed",
+            "shape": [],
+            "status": "coded",
+            "code": "OwlsUsed = model.addVar(vtype=gp.GRB.INTEGER, name=\"OwlsUsed\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total number of letters that can be sent by carrier pigeons and owls",
+            "status": "coded",
+            "formulation": "\\max (\\textup{CarrierCapacity} \\times \\textup{CarrierPigeonsUsed} + \\textup{OwlCapacity} \\times \\textup{OwlsUsed})",
+            "related_variables": [
+                "CarrierPigeonsUsed",
+                "OwlsUsed"
+            ],
+            "related_parameters": [
+                "CarrierCapacity",
+                "OwlCapacity"
+            ],
+            "code": "# Set objective\nmodel.setObjective(CarrierCapacity * CarrierPigeonsUsed + OwlCapacity * OwlsUsed, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 841.0,
+    "log_path": "logs/log_20250413153628_nl4opt_prob_195/",
+    "problem_path": "data/nl4opt/prob_195/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_195/data.json\", \"r\") as f:\n    data = json.load(f)\n\nCarrierCapacity = data[\"CarrierCapacity\"] # scalar parameter\nOwlCapacity = data[\"OwlCapacity\"] # scalar parameter\nMaxOwlPercentage = data[\"MaxOwlPercentage\"] # scalar parameter\nTotalTreats = data[\"TotalTreats\"] # scalar parameter\nTreatsPerCarrier = data[\"TreatsPerCarrier\"] # scalar parameter\nTreatsPerOwl = data[\"TreatsPerOwl\"] # scalar parameter\nMinCarrierPigeons = data[\"MinCarrierPigeons\"] # scalar parameter\nCarrierPigeonsUsed = model.addVar(vtype=gp.GRB.INTEGER, name=\"CarrierPigeonsUsed\")\nOwlsUsed = model.addVar(vtype=gp.GRB.INTEGER, name=\"OwlsUsed\")\n\n# The non-negativity constraint for CarrierPigeonsUsed is inherent to the variable declaration (integer type)\n# Therefore, no separate constraint is needed as Gurobi handles non-negativity for variables by default.\n\n# The variable OwlsUsed should already be non-negative due to its declaration as an INTEGER\n# No additional constraints are needed\n\n# At most MaxOwlPercentage percent of the total number of birds used can be owls\nmodel.addConstr(OwlsUsed - MaxOwlPercentage * (CarrierPigeonsUsed + OwlsUsed) <= 0, name=\"MaxOwlPercentageConstraint\")\n\n# Constraint: Total treats used by carrier pigeons and owls cannot exceed TotalTreats\nmodel.addConstr(CarrierPigeonsUsed * TreatsPerCarrier + OwlsUsed * TreatsPerOwl <= TotalTreats, \"TotalTreatsConstraint\")\n\n# At least a minimum number of carrier pigeons must be used constraint\nmodel.addConstr(CarrierPigeonsUsed >= MinCarrierPigeons, name=\"min_carrier_pigeons\")\n\n# Treats constraint for carrier pigeons and owls\nmodel.addConstr(TreatsPerCarrier * CarrierPigeonsUsed + TreatsPerOwl * OwlsUsed <= TotalTreats, \"TreatsConstraint\")\n\n# Constraint: Number of owls used must not exceed the maximum percentage allowed of the total number of birds\nmodel.addConstr(OwlsUsed <= MaxOwlPercentage * (CarrierPigeonsUsed + OwlsUsed), name=\"max_owls_percentage\")\n\n# Add constraint to ensure a minimum number of carrier pigeons are used\nmodel.addConstr(CarrierPigeonsUsed >= MinCarrierPigeons, name=\"min_carrier_pigeons\")\n\n# Set objective\nmodel.setObjective(CarrierCapacity * CarrierPigeonsUsed + OwlCapacity * OwlsUsed, gp.GRB.MAXIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

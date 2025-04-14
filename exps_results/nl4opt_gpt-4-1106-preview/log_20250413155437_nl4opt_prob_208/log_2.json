@@ -1,0 +1,183 @@
+{
+    "background": "Calcium and Magnesium are essential elements for health, and are contained in two different health supplements, A and B. A patient needs to consume these supplements to meet daily nutritional requirements at a minimum cost.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Amount of Calcium in one serving of health supplement A",
+            "symbol": "CaA",
+            "value": 30,
+            "shape": [],
+            "code": "CaA = data[\"CaA\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of Magnesium in one serving of health supplement A",
+            "symbol": "MgA",
+            "value": 50,
+            "shape": [],
+            "code": "MgA = data[\"MgA\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of Calcium in one serving of health supplement B",
+            "symbol": "CaB",
+            "value": 60,
+            "shape": [],
+            "code": "CaB = data[\"CaB\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of Magnesium in one serving of health supplement B",
+            "symbol": "MgB",
+            "value": 10,
+            "shape": [],
+            "code": "MgB = data[\"MgB\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost per serving of health supplement A",
+            "symbol": "CostA",
+            "value": 14,
+            "shape": [],
+            "code": "CostA = data[\"CostA\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost per serving of health supplement B",
+            "symbol": "CostB",
+            "value": 25,
+            "shape": [],
+            "code": "CostB = data[\"CostB\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum required amount of Calcium per day",
+            "symbol": "MinCa",
+            "value": 400,
+            "shape": [],
+            "code": "MinCa = data[\"MinCa\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum required amount of Magnesium per day",
+            "symbol": "MinMg",
+            "value": 50,
+            "shape": [],
+            "code": "MinMg = data[\"MinMg\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Number of servings of health supplement A is non-negative",
+            "status": "coded",
+            "formulation": "x_{\\textup{A}} \\geq 0",
+            "related_variables": [
+                "xA"
+            ],
+            "related_parameters": [],
+            "code": "# The number of servings of health supplement A is already non-negative through the variable definition\n# No need to add an extra constraint."
+        },
+        {
+            "description": "The number of servings of health supplement B must be non-negative.",
+            "status": "coded",
+            "formulation": "x_{\\textup{B}} \\geq 0",
+            "related_variables": [
+                "xB"
+            ],
+            "related_parameters": [],
+            "code": "# Add non-negativity constraint for the servings of health supplement B\nmodel.addConstr(xB >= 0, name=\"health_supplement_B_nonnegativity\")"
+        },
+        {
+            "description": "Total Calcium from servings of A and B must be at least MinCa grams",
+            "status": "coded",
+            "formulation": "\\textup{CaA} \\cdot \\textup{xA} + \\textup{CaB} \\cdot \\textup{xB} \\geq \\textup{MinCa}",
+            "related_variables": [
+                "xA",
+                "xB"
+            ],
+            "related_parameters": [
+                "CaA",
+                "CaB",
+                "MinCa"
+            ],
+            "code": "# Add constraint for minimum calcium requirement\nmodel.addConstr(CaA * xA + CaB * xB >= MinCa, name=\"min_calcium_requirement\")"
+        },
+        {
+            "description": "Total Magnesium from servings of A and B must be at least MinMg grams",
+            "status": "coded",
+            "formulation": "\\textup{MgA} \\times \\textup{xA} + \\textup{MgB} \\times \\textup{xB} \\geq \\textup{MinMg}",
+            "related_variables": [
+                "xA",
+                "xB"
+            ],
+            "related_parameters": [
+                "MgA",
+                "MgB",
+                "MinMg"
+            ],
+            "code": "# Constraint: Total Magnesium from servings of A and B must be at least MinMg grams\nmodel.addConstr(MgA * xA + MgB * xB >= MinMg, name=\"min_magnesium_requirement\")"
+        },
+        {
+            "description": "Ensure that the total amount of Calcium consumed per day meets or exceeds the minimum requirement",
+            "status": "coded",
+            "formulation": "\\textup{CaA} \\times \\textup{xA} + \\textup{CaB} \\times \\textup{xB} \\geq \\textup{MinCa}",
+            "related_variables": [
+                "xA",
+                "xB"
+            ],
+            "related_parameters": [
+                "CaA",
+                "CaB",
+                "MinCa"
+            ],
+            "code": "# Ensure that the total amount of Calcium consumed per day meets or exceeds the minimum requirement\nmodel.addConstr(CaA * xA + CaB * xB >= MinCa, name=\"calcium_requirement\")"
+        },
+        {
+            "description": "Ensure that the total amount of Magnesium consumed per day meets or exceeds the minimum requirement",
+            "status": "coded",
+            "formulation": "\\textup{MgA} \\times \\textup{xA} + \\textup{MgB} \\times \\textup{xB} \\geq \\textup{MinMg}",
+            "related_variables": [
+                "xA",
+                "xB"
+            ],
+            "related_parameters": [
+                "MgA",
+                "MgB",
+                "MinMg"
+            ],
+            "code": "# Constraint for minimum Magnesium requirement\nmodel.addConstr(MgA * xA + MgB * xB >= MinMg, name=\"min_magnesium\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of servings of health supplement A",
+            "symbol": "xA",
+            "shape": [],
+            "status": "coded",
+            "code": "xA = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"xA\")"
+        },
+        {
+            "definition": "Number of servings of health supplement B",
+            "symbol": "xB",
+            "shape": [],
+            "status": "coded",
+            "code": "xB = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"xB\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total daily cost of health supplements for the patient",
+            "status": "coded",
+            "formulation": "\\textup{minimize} \\quad \\textup{TotalDailyCost} = \\textup{CostA} \\times \\textup{xA} + \\textup{CostB} \\times \\textup{xB}",
+            "related_variables": [
+                "xA",
+                "xB"
+            ],
+            "related_parameters": [
+                "CostA",
+                "CostB"
+            ],
+            "code": "# Set objective function\nmodel.setObjective(CostA * xA + CostB * xB, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 166.66666666666669,
+    "log_path": "logs/log_20250413155437_nl4opt_prob_208/",
+    "problem_path": "data/nl4opt/prob_208/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_208/data.json\", \"r\") as f:\n    data = json.load(f)\n\nCaA = data[\"CaA\"] # scalar parameter\nMgA = data[\"MgA\"] # scalar parameter\nCaB = data[\"CaB\"] # scalar parameter\nMgB = data[\"MgB\"] # scalar parameter\nCostA = data[\"CostA\"] # scalar parameter\nCostB = data[\"CostB\"] # scalar parameter\nMinCa = data[\"MinCa\"] # scalar parameter\nMinMg = data[\"MinMg\"] # scalar parameter\nxA = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"xA\")\nxB = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"xB\")\n\n# The number of servings of health supplement A is already non-negative through the variable definition\n# No need to add an extra constraint.\n\n# Add non-negativity constraint for the servings of health supplement B\nmodel.addConstr(xB >= 0, name=\"health_supplement_B_nonnegativity\")\n\n# Add constraint for minimum calcium requirement\nmodel.addConstr(CaA * xA + CaB * xB >= MinCa, name=\"min_calcium_requirement\")\n\n# Constraint: Total Magnesium from servings of A and B must be at least MinMg grams\nmodel.addConstr(MgA * xA + MgB * xB >= MinMg, name=\"min_magnesium_requirement\")\n\n# Ensure that the total amount of Calcium consumed per day meets or exceeds the minimum requirement\nmodel.addConstr(CaA * xA + CaB * xB >= MinCa, name=\"calcium_requirement\")\n\n# Constraint for minimum Magnesium requirement\nmodel.addConstr(MgA * xA + MgB * xB >= MinMg, name=\"min_magnesium\")\n\n# Set objective function\nmodel.setObjective(CostA * xA + CostB * xB, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

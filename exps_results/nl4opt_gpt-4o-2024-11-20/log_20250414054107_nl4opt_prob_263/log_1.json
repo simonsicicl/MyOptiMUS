@@ -1,0 +1,205 @@
+{
+    "background": "A drop-in clinic has two testing methods with different time requirements and a certain ratio that must be maintained between the number of blood tests performed and the number of ear tests. The clinic operates for a limited amount of time.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Time taken by one blood test",
+            "symbol": "BloodTestTime",
+            "value": 30,
+            "shape": [],
+            "code": "BloodTestTime = data[\"BloodTestTime\"] # scalar parameter"
+        },
+        {
+            "definition": "Time taken by one ear test",
+            "symbol": "EarTestTime",
+            "value": 5,
+            "shape": [],
+            "code": "EarTestTime = data[\"EarTestTime\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum ratio of blood tests to ear tests",
+            "symbol": "BloodEarRatio",
+            "value": 0.33,
+            "shape": [],
+            "code": "BloodEarRatio = data[\"BloodEarRatio\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of ear tests",
+            "symbol": "MinEarTests",
+            "value": 12,
+            "shape": [],
+            "code": "MinEarTests = data[\"MinEarTests\"] # scalar parameter"
+        },
+        {
+            "definition": "Total operational time available",
+            "symbol": "TotalTime",
+            "value": 7525,
+            "shape": [],
+            "code": "TotalTime = data[\"TotalTime\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The time spent on blood tests is non-negative, which implies a non-negativity constraint on the number of blood tests performed.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfBloodTests} \\geq 0",
+            "related_variables": [
+                "NumberOfBloodTests"
+            ],
+            "related_parameters": [
+                "BloodTestTime"
+            ],
+            "code": "# The variable \"NumberOfBloodTests\" is already defined as non-negative (CONTINUOUS type by default)."
+        },
+        {
+            "description": "The time spent on ear tests is non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfEarTests} \\geq 0",
+            "related_variables": [
+                "NumberOfEarTests"
+            ],
+            "related_parameters": [],
+            "code": "# Add non-negativity constraint for the number of ear tests\nmodel.addConstr(NumberOfEarTests >= 0, name=\"non_negative_ear_tests\")"
+        },
+        {
+            "description": "Blood tests performed should be at least BloodEarRatio times the ear tests performed",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfBloodTests} \\geq \\textup{BloodEarRatio} \\cdot \\textup{NumberOfEarTests}",
+            "related_variables": [
+                "NumberOfBloodTests",
+                "NumberOfEarTests"
+            ],
+            "related_parameters": [
+                "BloodEarRatio"
+            ],
+            "code": "# Add constraint to ensure NumberOfBloodTests is at least BloodEarRatio times NumberOfEarTests\nmodel.addConstr(NumberOfBloodTests >= BloodEarRatio * NumberOfEarTests, name=\"blood_ear_ratio_constraint\")"
+        },
+        {
+            "description": "Ensure the clinic administers at least the minimum required number of ear tests.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfEarTests} \\geq \\textup{MinEarTests}",
+            "related_variables": [
+                "NumberOfEarTests"
+            ],
+            "related_parameters": [
+                "MinEarTests"
+            ],
+            "code": "# Add minimum ear tests constraint\nmodel.addConstr(NumberOfEarTests >= MinEarTests, name=\"min_ear_tests\")"
+        },
+        {
+            "description": "The total time used for all tests cannot exceed the total available operational time.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfBloodTests} \\cdot \\textup{BloodTestTime} + \\textup{NumberOfEarTests} \\cdot \\textup{EarTestTime} \\leq \\textup{TotalTime}",
+            "related_variables": [
+                "NumberOfBloodTests",
+                "NumberOfEarTests"
+            ],
+            "related_parameters": [
+                "BloodTestTime",
+                "EarTestTime",
+                "TotalTime"
+            ],
+            "code": "# Add time usage constraint\nmodel.addConstr(NumberOfBloodTests * BloodTestTime + NumberOfEarTests * EarTestTime <= TotalTime, \n                name=\"time_usage_constraint\")"
+        },
+        {
+            "description": "The ratio of blood tests to ear tests must be at least BloodEarRatio.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfBloodTests} \\geq \\textup{NumberOfEarTests} \\cdot \\textup{BloodEarRatio}",
+            "related_variables": [
+                "NumberOfBloodTests",
+                "NumberOfEarTests"
+            ],
+            "related_parameters": [
+                "BloodEarRatio"
+            ],
+            "code": "# Add constraint to ensure the ratio of blood tests to ear tests is at least BloodEarRatio\nmodel.addConstr(NumberOfBloodTests >= NumberOfEarTests * BloodEarRatio, name=\"blood_ear_ratio_constraint\")"
+        },
+        {
+            "description": "The number of ear tests must be at least the minimum required.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfEarTests} \\geq \\textup{MinEarTests}",
+            "related_variables": [
+                "NumberOfEarTests"
+            ],
+            "related_parameters": [
+                "MinEarTests"
+            ],
+            "code": "# Add minimum ear test constraint\nmodel.addConstr(NumberOfEarTests >= MinEarTests, name=\"min_ear_tests\")"
+        },
+        {
+            "description": "Total time constraint ensuring that the combined time for performing all tests does not exceed the available operational time.",
+            "status": "coded",
+            "formulation": "\\\\textup{BloodTestTime} \\\\cdot \\\\textup{NumberOfBloodTests} + \\\\textup{EarTestTime} \\\\cdot \\\\textup{NumberOfEarTests} \\\\leq \\\\textup{TotalTime}",
+            "related_variables": [
+                "NumberOfBloodTests",
+                "NumberOfEarTests"
+            ],
+            "related_parameters": [
+                "BloodTestTime",
+                "EarTestTime",
+                "TotalTime"
+            ],
+            "code": "# Add total time constraint ensuring tests do not exceed available operational time\nmodel.addConstr(\n    NumberOfBloodTests * BloodTestTime + NumberOfEarTests * EarTestTime <= TotalTime, \n    name=\"total_time_constraint\"\n)"
+        },
+        {
+            "description": "Ratio constraint ensuring that the number of blood tests is at least the specified ratio of the number of ear tests.",
+            "status": "coded",
+            "formulation": "\\\\textup{NumberOfBloodTests} \\\\geq \\\\textup{BloodEarRatio} \\\\cdot \\\\textup{NumberOfEarTests}",
+            "related_variables": [
+                "NumberOfBloodTests",
+                "NumberOfEarTests"
+            ],
+            "related_parameters": [
+                "BloodEarRatio"
+            ],
+            "code": "# Add ratio constraint between blood tests and ear tests\nmodel.addConstr(NumberOfBloodTests >= BloodEarRatio * NumberOfEarTests, name=\"blood_to_ear_ratio\")"
+        },
+        {
+            "description": "Constraint ensuring that the number of ear tests is at least the specified minimum.",
+            "status": "coded",
+            "formulation": "\\\\textup{NumberOfEarTests} \\\\geq \\\\textup{MinEarTests}",
+            "related_variables": [
+                "NumberOfEarTests"
+            ],
+            "related_parameters": [
+                "MinEarTests"
+            ],
+            "code": "# Add constraint to ensure the number of ear tests is at least the specified minimum\nmodel.addConstr(NumberOfEarTests >= MinEarTests, name=\"min_ear_tests_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of blood tests performed",
+            "symbol": "NumberOfBloodTests",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfBloodTests = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfBloodTests\")"
+        },
+        {
+            "definition": "The number of ear tests performed",
+            "symbol": "NumberOfEarTests",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfEarTests = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfEarTests\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total number of tests performed by the clinic, which is the sum of blood tests and ear tests.",
+            "status": "coded",
+            "formulation": "\\\\textup{Maximize: } \\\\textup{NumberOfBloodTests} + \\\\textup{NumberOfEarTests}",
+            "related_variables": [
+                "NumberOfBloodTests",
+                "NumberOfEarTests"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(NumberOfBloodTests + NumberOfEarTests, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250414054107_nl4opt_prob_263/",
+    "problem_path": "data/nl4opt/prob_263/"
+}

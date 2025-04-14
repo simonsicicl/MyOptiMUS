@@ -1,0 +1,145 @@
+{
+    "background": "An international shipping company needs to transport containers using a fleet of large and small ships with different capacities, subject to port size restrictions and contract obligations.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Capacity of a large ship",
+            "symbol": "LargeShipCapacity",
+            "value": 500,
+            "shape": [],
+            "code": "LargeShipCapacity = data[\"LargeShipCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Capacity of a small ship",
+            "symbol": "SmallShipCapacity",
+            "value": 200,
+            "shape": [],
+            "code": "SmallShipCapacity = data[\"SmallShipCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum total number of containers required to be transported",
+            "symbol": "MinContainers",
+            "value": 3000,
+            "shape": [],
+            "code": "MinContainers = data[\"MinContainers\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Number of large ships must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfLargeShips} \\geq 0",
+            "related_variables": [
+                "NumberOfLargeShips"
+            ],
+            "related_parameters": [],
+            "code": "# Add non-negativity constraint for the number of large ships\nmodel.addConstr(NumberOfLargeShips >= 0, name=\"nonneg_large_ships\")"
+        },
+        {
+            "description": "The number of small ships must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfSmallShips} \\geq 0",
+            "related_variables": [
+                "NumberOfSmallShips"
+            ],
+            "related_parameters": [],
+            "code": "# Constraint: The number of small ships must be non-negative\nmodel.addConstr(NumberOfSmallShips >= 0, name=\"non_negative_small_ships\")"
+        },
+        {
+            "description": "The number of large ships cannot exceed the number of small ships",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfLargeShips} \\leq \\textup{NumberOfSmallShips}",
+            "related_variables": [
+                "NumberOfLargeShips",
+                "NumberOfSmallShips"
+            ],
+            "related_parameters": [],
+            "code": "model.addConstr(NumberOfLargeShips <= NumberOfSmallShips, name=\"large_ships_leq_small_ships\")"
+        },
+        {
+            "description": "At least MinContainers containers must be transported",
+            "status": "coded",
+            "formulation": "\\textup{TotalNumberOfContainers} \\geq \\textup{MinContainers}",
+            "related_variables": [
+                "TotalNumberOfContainers"
+            ],
+            "related_parameters": [
+                "MinContainers"
+            ],
+            "code": "# Ensure that the total number of containers transported is at least the minimum required\nmodel.addConstr(TotalNumberOfContainers >= MinContainers, name=\"min_containers_constraint\")"
+        },
+        {
+            "description": "Total number of containers is the sum of containers carried by all large and small ships",
+            "status": "coded",
+            "formulation": "\\textup{TotalNumberOfContainers} = \\textup{NumberOfLargeShips} \\times \\textup{LargeShipCapacity} + \\textup{NumberOfSmallShips} \\times \\textup{SmallShipCapacity}",
+            "related_variables": [
+                "NumberOfLargeShips",
+                "NumberOfSmallShips",
+                "TotalNumberOfContainers"
+            ],
+            "related_parameters": [
+                "LargeShipCapacity",
+                "SmallShipCapacity"
+            ],
+            "code": "# Constraint for the total number of containers transported by the fleet\nmodel.addConstr(TotalNumberOfContainers == NumberOfLargeShips * LargeShipCapacity + NumberOfSmallShips * SmallShipCapacity, name=\"total_containers\")"
+        },
+        {
+            "description": "Ensure that the total capacity of the ships meets or exceeds the minimum number of containers required",
+            "status": "coded",
+            "formulation": "\\textup{LargeShipCapacity} \\times \\textup{NumberOfLargeShips} + \\textup{SmallShipCapacity} \\times \\textup{NumberOfSmallShips} \\geq \\textup{MinContainers}",
+            "related_variables": [
+                "NumberOfLargeShips",
+                "NumberOfSmallShips"
+            ],
+            "related_parameters": [
+                "LargeShipCapacity",
+                "SmallShipCapacity",
+                "MinContainers"
+            ],
+            "code": "# Ensure that the total capacity of the ships meets or exceeds the minimum number of containers required\nmodel.addConstr(LargeShipCapacity * NumberOfLargeShips + SmallShipCapacity * NumberOfSmallShips >= MinContainers, name=\"capacity_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of large ships in the fleet",
+            "symbol": "NumberOfLargeShips",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfLargeShips = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfLargeShips\")"
+        },
+        {
+            "definition": "Number of small ships in the fleet",
+            "symbol": "NumberOfSmallShips",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfSmallShips = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfSmallShips\")"
+        },
+        {
+            "definition": "Total number of containers transported by the fleet",
+            "symbol": "TotalNumberOfContainers",
+            "shape": [],
+            "status": "coded",
+            "code": "TotalNumberOfContainers = model.addVar(vtype=gp.GRB.INTEGER, name=\"TotalNumberOfContainers\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of ships used to fulfill the contract",
+            "status": "coded",
+            "formulation": "\\min \\textup{NumberOfLargeShips} + \\textup{NumberOfSmallShips}",
+            "related_variables": [
+                "NumberOfLargeShips",
+                "NumberOfSmallShips"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(NumberOfLargeShips + NumberOfSmallShips, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 9.0,
+    "log_path": "logs/log_20250413153733_nl4opt_prob_196/",
+    "problem_path": "data/nl4opt/prob_196/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_196/data.json\", \"r\") as f:\n    data = json.load(f)\n\nLargeShipCapacity = data[\"LargeShipCapacity\"] # scalar parameter\nSmallShipCapacity = data[\"SmallShipCapacity\"] # scalar parameter\nMinContainers = data[\"MinContainers\"] # scalar parameter\nNumberOfLargeShips = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfLargeShips\")\nNumberOfSmallShips = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfSmallShips\")\nTotalNumberOfContainers = model.addVar(vtype=gp.GRB.INTEGER, name=\"TotalNumberOfContainers\")\n\n# Add non-negativity constraint for the number of large ships\nmodel.addConstr(NumberOfLargeShips >= 0, name=\"nonneg_large_ships\")\n\n# Constraint: The number of small ships must be non-negative\nmodel.addConstr(NumberOfSmallShips >= 0, name=\"non_negative_small_ships\")\n\nmodel.addConstr(NumberOfLargeShips <= NumberOfSmallShips, name=\"large_ships_leq_small_ships\")\n\n# Ensure that the total number of containers transported is at least the minimum required\nmodel.addConstr(TotalNumberOfContainers >= MinContainers, name=\"min_containers_constraint\")\n\n# Constraint for the total number of containers transported by the fleet\nmodel.addConstr(TotalNumberOfContainers == NumberOfLargeShips * LargeShipCapacity + NumberOfSmallShips * SmallShipCapacity, name=\"total_containers\")\n\n# Ensure that the total capacity of the ships meets or exceeds the minimum number of containers required\nmodel.addConstr(LargeShipCapacity * NumberOfLargeShips + SmallShipCapacity * NumberOfSmallShips >= MinContainers, name=\"capacity_constraint\")\n\n# Set objective\nmodel.setObjective(NumberOfLargeShips + NumberOfSmallShips, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

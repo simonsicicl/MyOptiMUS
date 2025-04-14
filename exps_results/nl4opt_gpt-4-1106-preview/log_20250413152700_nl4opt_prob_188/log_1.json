@@ -1,0 +1,226 @@
+{
+    "background": "A factory needs to provide transportation for its employees using a mix of taxis and company cars, taking into account the capacities of each and specific limits on company car usage.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of employees that a taxi ride can take",
+            "symbol": "TaxiCapacity",
+            "value": 2,
+            "shape": [],
+            "code": "TaxiCapacity = data[\"TaxiCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of employees that a company car ride can take",
+            "symbol": "CarCapacity",
+            "value": 3,
+            "shape": [],
+            "code": "CarCapacity = data[\"CarCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum proportion of the total rides that can be company car rides",
+            "symbol": "MaxCarRideProportion",
+            "value": 0.6,
+            "shape": [],
+            "code": "MaxCarRideProportion = data[\"MaxCarRideProportion\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of company car rides",
+            "symbol": "MinCarRides",
+            "value": 30,
+            "shape": [],
+            "code": "MinCarRides = data[\"MinCarRides\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of employees to be transported",
+            "symbol": "MinEmployees",
+            "value": 500,
+            "shape": [],
+            "code": "MinEmployees = data[\"MinEmployees\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Each taxi ride can carry up to TaxiCapacity employees",
+            "status": "coded",
+            "formulation": "\\textup{EmployeesInTaxis} \\leq \\textup{NumberOfTaxiRides} \\times \\textup{TaxiCapacity}",
+            "related_variables": [
+                "EmployeesInTaxis",
+                "NumberOfTaxiRides"
+            ],
+            "related_parameters": [
+                "TaxiCapacity"
+            ],
+            "code": "```"
+        },
+        {
+            "description": "Each company car ride can carry up to CarCapacity employees",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfEmployeesInCompanyCars} \\leq \\textup{NumberOfCompanyCarRides} \\times \\textup{CarCapacity}",
+            "related_variables": [
+                "NumberOfEmployeesInCompanyCars",
+                "NumberOfCompanyCarRides"
+            ],
+            "related_parameters": [
+                "CarCapacity"
+            ],
+            "code": "# Add constraint for the capacity of company car rides\nmodel.addConstr(NumberOfEmployeesInCompanyCars <= NumberOfCompanyCarRides * CarCapacity, name=\"car_ride_capacity\")"
+        },
+        {
+            "description": "At most MaxCarRideProportion of the rides can be company car rides",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfCompanyCarRides} \\leq \\frac{\\textup{MaxCarRideProportion}}{1 - \\textup{MaxCarRideProportion}} \\times \\textup{NumberOfTaxiRides}",
+            "related_variables": [
+                "NumberOfCompanyCarRides",
+                "NumberOfTaxiRides"
+            ],
+            "related_parameters": [
+                "MaxCarRideProportion"
+            ],
+            "code": "# At most MaxCarRideProportion of the rides can be company car rides\nmodel.addConstr(NumberOfCompanyCarRides <= (MaxCarRideProportion / (1 - MaxCarRideProportion)) * NumberOfTaxiRides, \"CompanyCarRideProportionConstraint\")"
+        },
+        {
+            "description": "There must be at least MinCarRides of company car rides",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfCompanyCarRides} \\geq \\textup{MinCarRides}",
+            "related_variables": [
+                "NumberOfCompanyCarRides"
+            ],
+            "related_parameters": [
+                "MinCarRides"
+            ],
+            "code": "# Add constraint for the minimum number of company car rides\nmodel.addConstr(NumberOfCompanyCarRides >= MinCarRides, name=\"min_car_rides_constraint\")"
+        },
+        {
+            "description": "There must be enough rides to transport at least MinEmployees employees",
+            "status": "coded",
+            "formulation": "\\textup{EmployeesInTaxis} + \\textup{NumberOfEmployeesInCompanyCars} \\geq \\textup{MinEmployees}",
+            "related_variables": [
+                "EmployeesInTaxis",
+                "NumberOfEmployeesInCompanyCars"
+            ],
+            "related_parameters": [
+                "MinEmployees"
+            ],
+            "code": "# Constraint to guarantee enough rides for at least MinEmployees employees\nmodel.addConstr(EmployeesInTaxis + NumberOfEmployeesInCompanyCars >= MinEmployees, name=\"MinEmployeesConstraint\")"
+        },
+        {
+            "description": "The number of taxi rides must be a non-negative integer value",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfTaxiRides} \\geq 0",
+            "related_variables": [
+                "NumberOfTaxiRides"
+            ],
+            "related_parameters": [],
+            "code": "# Since NumberOfTaxiRides is already guaranteed to be an integer variable in its definition,\n# no additional constraint is necessary to ensure it is non-negative.\n# Gurobi's default lower bound of 0 for integer variables covers the non-negativity constraint."
+        },
+        {
+            "description": "Number of company car rides is non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfCompanyCarRides} \\geq 0",
+            "related_variables": [
+                "NumberOfCompanyCarRides"
+            ],
+            "related_parameters": [],
+            "code": "model.addConstr(NumberOfCompanyCarRides >= 0, name=\"non_negativity_company_car_rides\")"
+        },
+        {
+            "description": "The number of taxi rides is calculated based on the total number of employees transported by taxis and the capacity of a taxi",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfTaxiRides} \\geq \\lceil \\frac{\\textup{EmployeesInTaxis}}{\\textup{TaxiCapacity}} \\rceil",
+            "related_variables": [
+                "NumberOfTaxiRides",
+                "EmployeesInTaxis"
+            ],
+            "related_parameters": [
+                "TaxiCapacity"
+            ],
+            "code": "from math import ceil\n\n# Since we need to use the ceiling of the division, we introduce an auxiliary continuous variable\nAuxNumberOfTaxiRides = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"AuxNumberOfTaxiRides\")\n\n# Add the constraint that links the auxiliary variable to the integer number of taxi rides\n# It will make sure that the number of taxi rides is at least the ceiling of the employee-to-capacity ratio\nmodel.addConstr(AuxNumberOfTaxiRides >= EmployeesInTaxis / TaxiCapacity, name=\"AuxNumberOfTaxiRides_constr\")\n\n# Since NumberOfTaxiRides represents the actual (integer) number of taxi rides taken,\n# and AuxNumberOfTaxiRides represents the continuous relaxation (non-integer), we add another constraint\n# to ensure NumberOfTaxiRides is greater or equal to the ceiling of AuxNumberOfTaxiRides\nmodel.addConstr(NumberOfTaxiRides >= AuxNumberOfTaxiRides, name=\"CeilConstraint\")\n\n# We need to add another constraint to make sure that when AuxNumberOfTaxiRides is integer, \n# it is the same as NumberOfTaxiRides, this is done by not allowing AuxNumberOfTaxiRides to take integer values\n# that are less than NumberOfTaxiRides\nmodel.addConstr(AuxNumberOfTaxiRides <= NumberOfTaxiRides - 1 + 1/gp.GRB.INFINITY, name=\"IntegralityConstraint\")"
+        },
+        {
+            "description": "Ensure minimum number of company car rides is met",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfCompanyCarRides} \\geq \\textup{MinCarRides}",
+            "related_variables": [
+                "NumberOfCompanyCarRides"
+            ],
+            "related_parameters": [
+                "MinCarRides"
+            ],
+            "code": "# Ensure minimum number of company car rides is met\nmodel.addConstr(NumberOfCompanyCarRides >= MinCarRides, name=\"min_company_car_rides\")"
+        },
+        {
+            "description": "Ensure the total number of rides, including both taxi and company car rides, meet the minimum employees to be transported",
+            "status": "coded",
+            "formulation": "\\textup{EmployeesInTaxis} + \\textup{NumberOfEmployeesInCompanyCars} \\geq \\textup{MinEmployees}",
+            "related_variables": [
+                "EmployeesInTaxis",
+                "NumberOfEmployeesInCompanyCars"
+            ],
+            "related_parameters": [
+                "MinEmployees"
+            ],
+            "code": "```"
+        },
+        {
+            "description": "Maximum proportion of the total rides that can be company car rides",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfCompanyCarRides} \\leq \\textup{MaxCarRideProportion} \\times (\\textup{NumberOfCompanyCarRides} + \\textup{NumberOfTaxiRides})",
+            "related_variables": [
+                "NumberOfCompanyCarRides",
+                "NumberOfTaxiRides"
+            ],
+            "related_parameters": [
+                "MaxCarRideProportion"
+            ],
+            "code": "# Maximum proportion constraint for company car rides\ntotalRides = NumberOfCompanyCarRides + NumberOfTaxiRides\nmodel.addConstr(NumberOfCompanyCarRides <= MaxCarRideProportion * totalRides, name=\"max_company_car_proportion\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Total number of employees transported by taxis",
+            "symbol": "EmployeesInTaxis",
+            "shape": [],
+            "status": "coded",
+            "code": "EmployeesInTaxis = model.addVar(vtype=gp.GRB.INTEGER, name=\"EmployeesInTaxis\")"
+        },
+        {
+            "definition": "Number of taxi rides",
+            "symbol": "NumberOfTaxiRides",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfTaxiRides = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfTaxiRides\")"
+        },
+        {
+            "definition": "Total number of employees transported by company cars",
+            "symbol": "NumberOfEmployeesInCompanyCars",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfEmployeesInCompanyCars = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfEmployeesInCompanyCars\")"
+        },
+        {
+            "definition": "Number of company car rides",
+            "symbol": "NumberOfCompanyCarRides",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfCompanyCarRides = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfCompanyCarRides\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of taxi rides",
+            "status": "coded",
+            "formulation": "\\min \\textup{NumberOfTaxiRides}",
+            "related_variables": [
+                "NumberOfTaxiRides"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(NumberOfTaxiRides, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413152700_nl4opt_prob_188/",
+    "problem_path": "data/nl4opt/prob_188/"
+}

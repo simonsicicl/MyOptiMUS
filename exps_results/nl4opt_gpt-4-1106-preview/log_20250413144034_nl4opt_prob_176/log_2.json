@@ -1,0 +1,126 @@
+{
+    "background": "A jam company needs to determine the minimum number of small and large jars to meet a minimum volume requirement for shipping jam, with a preference for small jars over large ones.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Volume of jam that a small jar can hold",
+            "symbol": "SmallJarVolume",
+            "value": 50,
+            "shape": [],
+            "code": "SmallJarVolume = data[\"SmallJarVolume\"] # scalar parameter"
+        },
+        {
+            "definition": "Volume of jam that a large jar can hold",
+            "symbol": "LargeJarVolume",
+            "value": 200,
+            "shape": [],
+            "code": "LargeJarVolume = data[\"LargeJarVolume\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum total volume of jam needed for shipment",
+            "symbol": "MinimumVolume",
+            "value": 100000,
+            "shape": [],
+            "code": "MinimumVolume = data[\"MinimumVolume\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of large jars must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{LargeJars} \\geq 0",
+            "related_variables": [
+                "LargeJars"
+            ],
+            "related_parameters": [],
+            "code": "model.addConstr(LargeJars >= 0, name=\"large_jars_non_negative\")"
+        },
+        {
+            "description": "The number of small jars must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{SmallJars} \\geq 0",
+            "related_variables": [
+                "SmallJars"
+            ],
+            "related_parameters": [],
+            "code": "model.addConstr(SmallJars >= 0, name=\"small_jars_non_negative\")"
+        },
+        {
+            "description": "The number of large jars does not exceed the number of small jars",
+            "status": "coded",
+            "formulation": "\\textup{LargeJars} \\leq \\textup{SmallJars}",
+            "related_variables": [
+                "LargeJars",
+                "SmallJars"
+            ],
+            "related_parameters": [],
+            "code": "# Ensure the number of large jars does not exceed the number of small jars\nmodel.addConstr(LargeJars <= SmallJars, name=\"large_jars_leq_small_jars\")"
+        },
+        {
+            "description": "Total volume of jam in jars is at least MinimumVolume milliliters",
+            "status": "coded",
+            "formulation": "\\textup{SmallJarVolume} \\times \\textup{SmallJars} + \\textup{LargeJarVolume} \\times \\textup{LargeJars} \\geq \\textup{MinimumVolume}",
+            "related_variables": [
+                "SmallJars",
+                "LargeJars"
+            ],
+            "related_parameters": [
+                "SmallJarVolume",
+                "LargeJarVolume",
+                "MinimumVolume"
+            ],
+            "code": "# Add constraint to ensure the total volume of jam meets the minimum required volume\nmodel.addConstr(SmallJarVolume * SmallJars + LargeJarVolume * LargeJars >= MinimumVolume, name=\"min_total_volume\")"
+        },
+        {
+            "description": "Ensure that the total volume of jam shipped meets or exceeds the MinimumVolume requirement favoring small jars",
+            "status": "coded",
+            "formulation": "\\textup{SmallJarVolume} \\times \\textup{SmallJars} + \\textup{LargeJarVolume} \\times \\textup{LargeJars} \\geq \\textup{MinimumVolume}",
+            "related_variables": [
+                "SmallJars",
+                "LargeJars"
+            ],
+            "related_parameters": [
+                "SmallJarVolume",
+                "LargeJarVolume",
+                "MinimumVolume"
+            ],
+            "code": "# Ensure that the total volume of jam shipped meets or exceeds the minimum requirement\nmodel.addConstr(SmallJarVolume * SmallJars + LargeJarVolume * LargeJars >= MinimumVolume, name=\"MinimumVolumeRequirement\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of large jars needed to meet the minimum volume requirement",
+            "symbol": "LargeJars",
+            "shape": [],
+            "status": "coded",
+            "code": "LargeJars = model.addVar(vtype=gp.GRB.INTEGER, name=\"LargeJars\")"
+        },
+        {
+            "definition": "The number of small jars needed to meet the minimum volume requirement",
+            "symbol": "SmallJars",
+            "shape": [],
+            "status": "coded",
+            "code": "SmallJars = model.addVar(vtype=gp.GRB.INTEGER, name=\"SmallJars\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of jars used to ship at least MinimumVolume ml of jam",
+            "status": "coded",
+            "formulation": "\\min \\textup{LargeJars} + \\textup{SmallJars}",
+            "related_variables": [
+                "LargeJars",
+                "SmallJars"
+            ],
+            "related_parameters": [],
+            "code": "# Define objective function\nmodel.setObjective(LargeJars + SmallJars, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 800.0,
+    "log_path": "logs/log_20250413144034_nl4opt_prob_176/",
+    "problem_path": "data/nl4opt/prob_176/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_176/data.json\", \"r\") as f:\n    data = json.load(f)\n\nSmallJarVolume = data[\"SmallJarVolume\"] # scalar parameter\nLargeJarVolume = data[\"LargeJarVolume\"] # scalar parameter\nMinimumVolume = data[\"MinimumVolume\"] # scalar parameter\nLargeJars = model.addVar(vtype=gp.GRB.INTEGER, name=\"LargeJars\")\nSmallJars = model.addVar(vtype=gp.GRB.INTEGER, name=\"SmallJars\")\n\nmodel.addConstr(LargeJars >= 0, name=\"large_jars_non_negative\")\n\nmodel.addConstr(SmallJars >= 0, name=\"small_jars_non_negative\")\n\n# Ensure the number of large jars does not exceed the number of small jars\nmodel.addConstr(LargeJars <= SmallJars, name=\"large_jars_leq_small_jars\")\n\n# Add constraint to ensure the total volume of jam meets the minimum required volume\nmodel.addConstr(SmallJarVolume * SmallJars + LargeJarVolume * LargeJars >= MinimumVolume, name=\"min_total_volume\")\n\n# Ensure that the total volume of jam shipped meets or exceeds the minimum requirement\nmodel.addConstr(SmallJarVolume * SmallJars + LargeJarVolume * LargeJars >= MinimumVolume, name=\"MinimumVolumeRequirement\")\n\n# Define objective function\nmodel.setObjective(LargeJars + SmallJars, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

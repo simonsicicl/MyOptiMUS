@@ -1,0 +1,148 @@
+{
+    "background": "A golf course needs to minimize the total number of carts used to transport guests while adhering to space limitations and minimum guest requirements.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of guests that a golf cart can take",
+            "symbol": "GolfCartCapacity",
+            "value": 4,
+            "shape": [],
+            "code": "GolfCartCapacity = data[\"GolfCartCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of guests that a pull cart can take",
+            "symbol": "PullCartCapacity",
+            "value": 1,
+            "shape": [],
+            "code": "PullCartCapacity = data[\"PullCartCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum proportion of carts that can be golf carts",
+            "symbol": "MaxGolfCartProportion",
+            "value": 0.6,
+            "shape": [],
+            "code": "MaxGolfCartProportion = data[\"MaxGolfCartProportion\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of guests the golf course needs to transport",
+            "symbol": "MinGuests",
+            "value": 80,
+            "shape": [],
+            "code": "MinGuests = data[\"MinGuests\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of golf carts must be non-negative",
+            "status": "coded",
+            "formulation": "GolfCarts \\geq 0",
+            "related_variables": [
+                "GolfCarts"
+            ],
+            "related_parameters": [],
+            "code": "# The number of golf carts must be non-negative\nmodel.addConstr(GolfCarts >= 0, name=\"golf_carts_nonnegativity\")"
+        },
+        {
+            "description": "Number of pull carts must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{PullCarts} \\geq 0",
+            "related_variables": [
+                "PullCarts"
+            ],
+            "related_parameters": [],
+            "code": "# Since PullCarts has already been added as an integer variable, we only need to set the constraint that it must be non-negative.\nmodel.addConstr(PullCarts >= 0, name=\"non_negative_pull_carts\")"
+        },
+        {
+            "description": "At most MaxGolfCartProportion of the total number of carts can be golf carts",
+            "status": "coded",
+            "formulation": "\\textup{GolfCarts} \\leq \\textup{MaxGolfCartProportion} \\times (\\textup{GolfCarts} + \\textup{PullCarts})",
+            "related_variables": [
+                "GolfCarts",
+                "PullCarts"
+            ],
+            "related_parameters": [
+                "MaxGolfCartProportion"
+            ],
+            "code": "# Add constraint: At most MaxGolfCartProportion of the total number of carts can be golf carts\nmodel.addConstr(GolfCarts <= MaxGolfCartProportion * (GolfCarts + PullCarts), \"max_golf_cart_proportion\")"
+        },
+        {
+            "description": "Ensure that at least the minimum number of guests can be transported",
+            "status": "coded",
+            "formulation": "\\textup{GolfCarts} \\times \\textup{GolfCartCapacity} + \\textup{PullCarts} \\times \\textup{PullCartCapacity} \\geq \\textup{MinGuests}",
+            "related_variables": [
+                "GolfCarts",
+                "PullCarts"
+            ],
+            "related_parameters": [
+                "GolfCartCapacity",
+                "PullCartCapacity",
+                "MinGuests"
+            ],
+            "code": "# Ensure that at least the minimum number of guests can be transported\nmodel.addConstr(GolfCarts * GolfCartCapacity + PullCarts * PullCartCapacity >= MinGuests, name=\"min_guests_transport\")"
+        },
+        {
+            "description": "Ensure the minimum number of guests can be transported",
+            "status": "coded",
+            "formulation": "\\textup{GolfCartCapacity} \\times \\textup{GolfCarts} + \\textup{PullCartCapacity} \\times \\textup{PullCarts} \\geq \\textup{MinGuests}",
+            "related_variables": [
+                "GolfCarts",
+                "PullCarts"
+            ],
+            "related_parameters": [
+                "GolfCartCapacity",
+                "PullCartCapacity",
+                "MinGuests"
+            ],
+            "code": "# Ensure the minimum number of guests can be transported\nmodel.addConstr((GolfCartCapacity * GolfCarts) + (PullCartCapacity * PullCarts) >= MinGuests, name=\"min_guests_transport\")"
+        },
+        {
+            "description": "Limit the number of golf carts based on the maximum proportion of carts that can be golf carts",
+            "status": "coded",
+            "formulation": "\\textup{GolfCarts} \\leq \\textup{MaxGolfCartProportion} \\times (\\textup{GolfCarts} + \\textup{PullCarts})",
+            "related_variables": [
+                "GolfCarts",
+                "PullCarts"
+            ],
+            "related_parameters": [
+                "MaxGolfCartProportion"
+            ],
+            "code": "# Add constraint to limit the number of golf carts based on the maximum proportion\nmodel.addConstr(GolfCarts <= MaxGolfCartProportion * (GolfCarts + PullCarts), name=\"max_golf_cart_proportion\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of golf carts used",
+            "symbol": "GolfCarts",
+            "shape": [],
+            "status": "coded",
+            "code": "GolfCarts = model.addVar(vtype=gp.GRB.INTEGER, name=\"GolfCarts\")"
+        },
+        {
+            "definition": "Number of pull carts used",
+            "symbol": "PullCarts",
+            "shape": [],
+            "status": "coded",
+            "code": "PullCarts = model.addVar(vtype=gp.GRB.INTEGER, name=\"PullCarts\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of carts needed to transport guests",
+            "status": "coded",
+            "formulation": "\\min \\quad \\textup{GolfCarts} + \\textup{PullCarts}",
+            "related_variables": [
+                "GolfCarts",
+                "PullCarts"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(GolfCarts + PullCarts, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 29.0,
+    "log_path": "logs/log_20250413174225_nl4opt_prob_265/",
+    "problem_path": "data/nl4opt/prob_265/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_265/data.json\", \"r\") as f:\n    data = json.load(f)\n\nGolfCartCapacity = data[\"GolfCartCapacity\"] # scalar parameter\nPullCartCapacity = data[\"PullCartCapacity\"] # scalar parameter\nMaxGolfCartProportion = data[\"MaxGolfCartProportion\"] # scalar parameter\nMinGuests = data[\"MinGuests\"] # scalar parameter\nGolfCarts = model.addVar(vtype=gp.GRB.INTEGER, name=\"GolfCarts\")\nPullCarts = model.addVar(vtype=gp.GRB.INTEGER, name=\"PullCarts\")\n\n# The number of golf carts must be non-negative\nmodel.addConstr(GolfCarts >= 0, name=\"golf_carts_nonnegativity\")\n\n# Since PullCarts has already been added as an integer variable, we only need to set the constraint that it must be non-negative.\nmodel.addConstr(PullCarts >= 0, name=\"non_negative_pull_carts\")\n\n# Add constraint: At most MaxGolfCartProportion of the total number of carts can be golf carts\nmodel.addConstr(GolfCarts <= MaxGolfCartProportion * (GolfCarts + PullCarts), \"max_golf_cart_proportion\")\n\n# Ensure that at least the minimum number of guests can be transported\nmodel.addConstr(GolfCarts * GolfCartCapacity + PullCarts * PullCartCapacity >= MinGuests, name=\"min_guests_transport\")\n\n# Ensure the minimum number of guests can be transported\nmodel.addConstr((GolfCartCapacity * GolfCarts) + (PullCartCapacity * PullCarts) >= MinGuests, name=\"min_guests_transport\")\n\n# Add constraint to limit the number of golf carts based on the maximum proportion\nmodel.addConstr(GolfCarts <= MaxGolfCartProportion * (GolfCarts + PullCarts), name=\"max_golf_cart_proportion\")\n\n# Set objective\nmodel.setObjective(GolfCarts + PullCarts, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

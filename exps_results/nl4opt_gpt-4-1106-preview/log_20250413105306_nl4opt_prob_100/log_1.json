@@ -1,0 +1,182 @@
+{
+    "background": "A patient requires a specific medication plan involving two types of pills. Each pill has different levels of pain and anxiety medication, as well as different discharge effects.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Pain medication per Pill 1",
+            "symbol": "PainPillOne",
+            "value": 0.2,
+            "shape": [],
+            "code": "PainPillOne = data[\"PainPillOne\"] # scalar parameter"
+        },
+        {
+            "definition": "Anxiety medication per Pill 1",
+            "symbol": "AnxietyPillOne",
+            "value": 0.3,
+            "shape": [],
+            "code": "AnxietyPillOne = data[\"AnxietyPillOne\"] # scalar parameter"
+        },
+        {
+            "definition": "Discharge caused by Pill 1",
+            "symbol": "DischargePillOne",
+            "value": 0.3,
+            "shape": [],
+            "code": "DischargePillOne = data[\"DischargePillOne\"] # scalar parameter"
+        },
+        {
+            "definition": "Pain medication per Pill 2",
+            "symbol": "PainPillTwo",
+            "value": 0.6,
+            "shape": [],
+            "code": "PainPillTwo = data[\"PainPillTwo\"] # scalar parameter"
+        },
+        {
+            "definition": "Anxiety medication per Pill 2",
+            "symbol": "AnxietyPillTwo",
+            "value": 0.2,
+            "shape": [],
+            "code": "AnxietyPillTwo = data[\"AnxietyPillTwo\"] # scalar parameter"
+        },
+        {
+            "definition": "Discharge caused by Pill 2",
+            "symbol": "DischargePillTwo",
+            "value": 0.1,
+            "shape": [],
+            "code": "DischargePillTwo = data[\"DischargePillTwo\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum units of pain medication allowed",
+            "symbol": "MaxPainMedication",
+            "value": 6,
+            "shape": [],
+            "code": "MaxPainMedication = data[\"MaxPainMedication\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum units of anxiety medication required",
+            "symbol": "MinAnxietyMedication",
+            "value": 3,
+            "shape": [],
+            "code": "MinAnxietyMedication = data[\"MinAnxietyMedication\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of Pill 1 prescribed should be non-negative.",
+            "status": "coded",
+            "formulation": "x_1 \\geq 0",
+            "related_variables": [
+                "x_1"
+            ],
+            "related_parameters": [],
+            "code": "# Add non-negativity constraint for Pill 1\nmodel.addConstr(x_1 >= 0, name=\"non_negativity_pill_1\")"
+        },
+        {
+            "description": "Number of Pill 2 must be non-negative",
+            "status": "coded",
+            "formulation": "x_2 \\geq 0",
+            "related_variables": [
+                "x_2"
+            ],
+            "related_parameters": [],
+            "code": "# Ensure that the number of units of Pill 2 is non-negative\nmodel.addConstr(x_2 >= 0, name=\"pill2_non_negative\")"
+        },
+        {
+            "description": "Total pain medication provided by Pill 1 and Pill 2 should not exceed the maximum allowed",
+            "status": "coded",
+            "formulation": "PainPillOne \\cdot x_1 + PainPillTwo \\cdot x_2 \\leq MaxPainMedication",
+            "related_variables": [
+                "x_1",
+                "x_2"
+            ],
+            "related_parameters": [
+                "PainPillOne",
+                "PainPillTwo",
+                "MaxPainMedication"
+            ],
+            "code": "# Add constraint for maximum allowed pain medication\nmodel.addConstr(PainPillOne * x_1 + PainPillTwo * x_2 <= MaxPainMedication, name=\"max_pain_medication\")"
+        },
+        {
+            "description": "The total anxiety medication provided by Pill 1 and Pill 2 must be at least MinAnxietyMedication",
+            "status": "coded",
+            "formulation": "AnxietyPillOne \\cdot x_1 + AnxietyPillTwo \\cdot x_2 \\geq MinAnxietyMedication",
+            "related_variables": [
+                "x_1",
+                "x_2"
+            ],
+            "related_parameters": [
+                "AnxietyPillOne",
+                "AnxietyPillTwo",
+                "MinAnxietyMedication"
+            ],
+            "code": "# Add constraint for the minimum anxiety medication required\nmodel.addConstr(AnxietyPillOne * x_1 + AnxietyPillTwo * x_2 >= MinAnxietyMedication, name=\"min_anxiety_med\")"
+        },
+        {
+            "description": "The total units of pain medication must not exceed the maximum allowed",
+            "status": "coded",
+            "formulation": "\\textup{PainPillOne} \\cdot \\textup{x}_1 + \\textup{PainPillTwo} \\cdot \\textup{x}_2 \\leq \\textup{MaxPainMedication}",
+            "related_variables": [
+                "x_1",
+                "x_2"
+            ],
+            "related_parameters": [
+                "PainPillOne",
+                "PainPillTwo",
+                "MaxPainMedication"
+            ],
+            "code": "# Add constraint for the maximum allowed pain medication\nmodel.addConstr(PainPillOne * x_1 + PainPillTwo * x_2 <= MaxPainMedication, name=\"max_pain_medication\")"
+        },
+        {
+            "description": "The total units of anxiety medication must meet or exceed the minimum required",
+            "status": "coded",
+            "formulation": "\\textup{AnxietyPillOne} \\cdot \\textup{x}_1 + \\textup{AnxietyPillTwo} \\cdot \\textup{x}_2 \\geq \\textup{MinAnxietyMedication}",
+            "related_variables": [
+                "x_1",
+                "x_2"
+            ],
+            "related_parameters": [
+                "AnxietyPillOne",
+                "AnxietyPillTwo",
+                "MinAnxietyMedication"
+            ],
+            "code": "# Constraint: The total units of anxiety medication must meet or exceed the minimum required\nmodel.addConstr(AnxietyPillOne * x_1 + AnxietyPillTwo * x_2 >= MinAnxietyMedication, name=\"min_anxiety_medication\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of units of Pill 1 to be administered",
+            "symbol": "x_1",
+            "shape": [],
+            "status": "coded",
+            "code": "x_1 = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"x_1\")"
+        },
+        {
+            "definition": "Number of units of Pill 2 to be administered",
+            "symbol": "x_2",
+            "shape": [],
+            "status": "coded",
+            "code": "x_2 = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"x_2\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total discharge from the medication plan",
+            "status": "coded",
+            "formulation": "\\min \\quad \\textup{DischargePillOne} \\cdot \\textup{x}_1 + \\textup{DischargePillTwo} \\cdot \\textup{x}_2",
+            "related_variables": [
+                "x_1",
+                "x_2"
+            ],
+            "related_parameters": [
+                "DischargePillOne",
+                "DischargePillTwo"
+            ],
+            "code": "# Objective: Minimize the total discharge from the medication plan\nmodel.setObjective(DischargePillOne * x_1 + DischargePillTwo * x_2, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413105306_nl4opt_prob_100/",
+    "problem_path": "data/nl4opt/prob_100/"
+}

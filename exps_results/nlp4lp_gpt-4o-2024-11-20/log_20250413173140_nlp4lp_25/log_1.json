@@ -1,0 +1,270 @@
+{
+    "background": "A mining company needs to select which mines to operate and determine the production output to maximize profit, considering operational constraints and meeting clients' required material quality.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of mines",
+            "symbol": "K",
+            "value": 0,
+            "shape": [],
+            "code": "K = data[\"K\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of mines that can be operated in a year",
+            "symbol": "MaxWork",
+            "value": 0,
+            "shape": [],
+            "code": "MaxWork = data[\"MaxWork\"] # scalar parameter"
+        },
+        {
+            "definition": "Royalty cost for operating mine k",
+            "symbol": "Royalty",
+            "value": 0,
+            "shape": [
+                "K"
+            ],
+            "code": "Royalty = np.array(data[\"Royalty\"]) # ['K']"
+        },
+        {
+            "definition": "Production limit for mine k",
+            "symbol": "Limit",
+            "value": 0,
+            "shape": [
+                "K"
+            ],
+            "code": "Limit = np.array(data[\"Limit\"]) # ['K']"
+        },
+        {
+            "definition": "Quality of the material from mine k",
+            "symbol": "Quality",
+            "value": 0,
+            "shape": [
+                "K"
+            ],
+            "code": "Quality = np.array(data[\"Quality\"]) # ['K']"
+        },
+        {
+            "definition": "Required quality of the material for client i",
+            "symbol": "RequiredQuality",
+            "value": 0,
+            "shape": [
+                "I"
+            ],
+            "code": "RequiredQuality = np.array(data[\"RequiredQuality\"]) # ['I']"
+        },
+        {
+            "definition": "Price per unit of material sold",
+            "symbol": "Price",
+            "value": 0,
+            "shape": [],
+            "code": "Price = data[\"Price\"] # scalar parameter"
+        },
+        {
+            "definition": "Discount on the royalty cost per unit of material sold",
+            "symbol": "Discount",
+            "value": 0,
+            "shape": [],
+            "code": "Discount = data[\"Discount\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The total number of operated mines should not exceed \\textup{MaxWork}.",
+            "status": "coded",
+            "formulation": "\\sum_{k=1}^{\\textup{K}} \\textup{OperateMine}_{k} \\leq \\textup{MaxWork}",
+            "related_variables": [
+                "OperateMine"
+            ],
+            "related_parameters": [
+                "MaxWork",
+                "K"
+            ],
+            "code": "# Add constraint to ensure the total number of operated mines does not exceed MaxWork\nmodel.addConstr(gp.quicksum(OperateMine[k] for k in range(K)) <= MaxWork, name=\"max_operated_mines\")"
+        },
+        {
+            "description": "Each mine k produces a non-negative amount of material, and production is limited to zero if the mine is not operated.",
+            "status": "coded",
+            "formulation": "\\textup{MineProduction}_{k} \\geq 0, \\quad \\forall k \\in \\{1, 2, ..., \\textup{K}\\} \\\\ \\textup{MineProduction}_{k} \\leq \\textup{Limit}_{k} \\cdot \\textup{OperateMine}_{k}, \\quad \\forall k \\in \\{1, 2, ..., \\textup{K}\\}",
+            "related_variables": [
+                "OperateMine",
+                "MineProduction"
+            ],
+            "related_parameters": [
+                "Limit",
+                "K"
+            ],
+            "code": "# Add production constraints for each mine\nfor k in range(K):\n    # Ensure production is non-negative and limited by operation status\n    model.addConstr(MineProduction[k] >= 0, name=f\"non_negative_production_{k}\")\n    model.addConstr(MineProduction[k] <= Limit[k] * OperateMine[k], name=f\"production_limit_{k}\")"
+        },
+        {
+            "description": "Ensure that each mine's production does not exceed its production limit and is logically tied to its operation status.",
+            "status": "coded",
+            "formulation": "\\textup{MineProduction}_{k} \\leq \\textup{Limit}_{k} \\cdot \\textup{OperateMine}_{k} \\quad \\forall \\, k \\in K",
+            "related_variables": [
+                "MineProduction",
+                "OperateMine"
+            ],
+            "related_parameters": [
+                "Limit",
+                "K"
+            ],
+            "code": "# Add constraints to ensure mine production is within the limit and tied to operation status\nfor k in range(K):\n    model.addConstr(MineProduction[k] <= Limit[k] * OperateMine[k], name=f\"mine_production_limit_{k}\")"
+        },
+        {
+            "description": "Ensure that the quality of material from each mine k assigned to a client i meets the RequiredQuality of the client.",
+            "status": "coded",
+            "formulation": "\\textup{Quality}_{k} \\\\cdot \\\\textup{AssignMineToClient}_{k, i} \\\\geq \\\\textup{RequiredQuality}_{i} \\\\cdot \\\\textup{AssignMineToClient}_{k, i}, \\\\quad \\\\forall k, i",
+            "related_variables": [
+                "AssignMineToClient",
+                "OperateMine"
+            ],
+            "related_parameters": [
+                "Quality",
+                "RequiredQuality"
+            ],
+            "code": "# Add quality constraints to ensure each mine k assigned to client i meets the client's required quality\nfor k in range(K):\n    for i in range(I):\n        model.addConstr(Quality[k] * AssignMineToClient[k, i] >= RequiredQuality[i] * AssignMineToClient[k, i], \n                        name=f\"quality_constraint_k{k}_i{i}\")"
+        },
+        {
+            "description": "Ensure that a mine can only be assigned to a client if it is operational.",
+            "status": "coded",
+            "formulation": "\\textup{AssignMineToClient}_{k, i} \\\\leq \\\\textup{OperateMine}_{k}, \\\\quad \\\\forall k, i",
+            "related_variables": [
+                "AssignMineToClient",
+                "OperateMine"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraints to ensure a mine can only be assigned to a client if it is operational\nfor k in range(K):\n    for i in range(I):\n        model.addConstr(AssignMineToClient[k, i] <= OperateMine[k], name=f\"assign_if_operational_{k}_{i}\")"
+        },
+        {
+            "description": "Ensure each client is served by at least one mine.",
+            "status": "coded",
+            "formulation": "\\\\sum_{k=1}^{K} \\\\textup{AssignMineToClient}_{k, i} \\\\geq 1, \\\\quad \\\\forall i",
+            "related_variables": [
+                "AssignMineToClient"
+            ],
+            "related_parameters": [
+                "K"
+            ],
+            "code": "# Add constraints to ensure each client is served by at least one mine\nfor i in range(I):\n    model.addConstr(gp.quicksum(AssignMineToClient[k, i] for k in range(K)) >= 1, name=f\"client_served_{i}\")"
+        },
+        {
+            "description": "The production from a mine cannot exceed its production limit.",
+            "status": "coded",
+            "formulation": "\\textup{MineProduction}_{k} \\leq \\textup{Limit}_{k}, \\quad \\forall k \\in \\{1, ..., K\\}",
+            "related_variables": [
+                "MineProduction"
+            ],
+            "related_parameters": [
+                "Limit"
+            ],
+            "code": "# Add production limit constraints\nfor k in range(K):\n    model.addConstr(MineProduction[k] <= Limit[k], name=f\"production_limit_{k}\")"
+        },
+        {
+            "description": "A mine cannot produce material unless it is operated.",
+            "status": "coded",
+            "formulation": "\\textup{MineProduction}_{k} \\leq \\textup{Limit}_{k} \\cdot \\textup{OperateMine}_{k}, \\quad \\forall k \\in \\{1, ..., K\\}",
+            "related_variables": [
+                "MineProduction",
+                "OperateMine"
+            ],
+            "related_parameters": [
+                "Limit"
+            ],
+            "code": "# Add constraints to ensure a mine cannot produce material unless it is operated\nfor k in range(K):\n    model.addConstr(MineProduction[k] <= Limit[k] * OperateMine[k], name=f\"mine_production_limit_{k}\")"
+        },
+        {
+            "description": "The total number of operated mines cannot exceed the maximum allowed.",
+            "status": "coded",
+            "formulation": "\\sum_{k=1}^{K} \\textup{OperateMine}_{k} \\leq \\textup{MaxWork}",
+            "related_variables": [
+                "OperateMine"
+            ],
+            "related_parameters": [
+                "MaxWork"
+            ],
+            "code": "# Add constraint to ensure the total number of operated mines does not exceed the maximum allowed\nmodel.addConstr(OperateMine.sum() <= MaxWork, name=\"max_operated_mines\")"
+        },
+        {
+            "description": "The quality of material from a mine assigned to a client must meet the client's required quality.",
+            "status": "coded",
+            "formulation": "\\textup{Quality}_{k} \\cdot \\textup{AssignMineToClient}_{k,i} \\geq \\textup{RequiredQuality}_{i} \\cdot \\textup{AssignMineToClient}_{k,i}, \\quad \\forall k \\in \\{1,...,K\\}, \\forall i \\in \\{1,...,I\\}",
+            "related_variables": [
+                "AssignMineToClient"
+            ],
+            "related_parameters": [
+                "Quality",
+                "RequiredQuality",
+                "I",
+                "K"
+            ],
+            "code": "# Add quality requirement constraints\nfor k in range(K):\n    for i in range(I):\n        model.addConstr(\n            Quality[k] * AssignMineToClient[k, i] >= RequiredQuality[i] * AssignMineToClient[k, i],\n            name=f\"quality_requirement_k{k}_i{i}\"\n        )"
+        },
+        {
+            "description": "A mine can only be assigned to a client if it is operated.",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{I} \\textup{AssignMineToClient}_{k,i} \\leq \\textup{OperateMine}_{k}, \\quad \\forall k \\in \\{1, ..., K\\}",
+            "related_variables": [
+                "AssignMineToClient",
+                "OperateMine"
+            ],
+            "related_parameters": [
+                "I",
+                "K"
+            ],
+            "code": "# Add constraints to ensure a mine can only be assigned to a client if it is operated\nfor k in range(K):\n    model.addConstr(\n        gp.quicksum(AssignMineToClient[k, i] for i in range(I)) <= OperateMine[k],\n        name=f\"mine_assignment_operation_{k}\"\n    )"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Binary variable indicating if mine k is operated (1 if operated; 0 otherwise).",
+            "symbol": "OperateMine",
+            "shape": [
+                "K"
+            ],
+            "status": "coded",
+            "code": "OperateMine = model.addVars(K, vtype=gp.GRB.BINARY, name=\"OperateMine\")"
+        },
+        {
+            "definition": "Continuous variable representing the amount of material produced by mine k.",
+            "symbol": "MineProduction",
+            "shape": [
+                "K"
+            ],
+            "status": "coded",
+            "code": "MineProduction = model.addVars(K, vtype=gp.GRB.CONTINUOUS, name=\"MineProduction\")"
+        },
+        {
+            "definition": "Binary variable indicating if mine k is assigned to client i (1 if assigned; 0 otherwise).",
+            "symbol": "AssignMineToClient",
+            "shape": [
+                "K",
+                "I"
+            ],
+            "status": "coded",
+            "code": "AssignMineToClient = model.addVars(K, I, vtype=gp.GRB.BINARY, name=\"AssignMineToClient\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the company's profit from operating the mines and selling materials produced.",
+            "status": "coded",
+            "formulation": "\\textup{Maximize Profit} = \\textup{Price} \\cdot (\\sum_{k=1}^{K} \\textup{MineProduction}_{k}) - \\sum_{k=1}^{K} \\left[ (\\textup{Royalty}_{k} - \\textup{Discount} \\cdot \\textup{MineProduction}_{k}) \\cdot \\textup{OperateMine}_{k} \\right]",
+            "related_variables": [
+                "MineProduction",
+                "OperateMine"
+            ],
+            "related_parameters": [
+                "Price",
+                "Royalty",
+                "Discount",
+                "K"
+            ],
+            "code": "# Set objective\nmodel.setObjective(\n    Price * gp.quicksum(MineProduction[k] for k in range(K)) -\n    gp.quicksum((Royalty[k] - Discount * MineProduction[k]) * OperateMine[k] for k in range(K)),\n    gp.GRB.MAXIMIZE\n)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413173140_nlp4lp_25/",
+    "problem_path": "data/nlp4lp/25/"
+}

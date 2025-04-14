@@ -1,0 +1,319 @@
+{
+    "background": "Custom Tees needs to allocate a budget for purchasing clicks from different advertisement types to maximize the number of unique clicks.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of advertisement types",
+            "symbol": "A",
+            "value": "",
+            "shape": [],
+            "code": "A = data[\"A\"] # scalar parameter"
+        },
+        {
+            "definition": "Total budget for purchasing clicks",
+            "symbol": "Budget",
+            "value": "",
+            "shape": [],
+            "code": "Budget = data[\"Budget\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost of purchasing a click from advertisement type a",
+            "symbol": "Costs",
+            "value": "",
+            "shape": [
+                "A"
+            ],
+            "code": "Costs = np.array(data[\"Costs\"]) # ['A']"
+        },
+        {
+            "definition": "Number of maximum clicks that can be purchased from advertisement type a",
+            "symbol": "MaxClicks",
+            "value": "",
+            "shape": [
+                "A"
+            ],
+            "code": "MaxClicks = np.array(data[\"MaxClicks\"]) # ['A']"
+        },
+        {
+            "definition": "Number of young audience clicks from advertisement type a",
+            "symbol": "YoungClicks",
+            "value": "",
+            "shape": [
+                "A"
+            ],
+            "code": "YoungClicks = np.array(data[\"YoungClicks\"]) # ['A']"
+        },
+        {
+            "definition": "Number of old audience clicks from advertisement type a",
+            "symbol": "OldClicks",
+            "value": "",
+            "shape": [
+                "A"
+            ],
+            "code": "OldClicks = np.array(data[\"OldClicks\"]) # ['A']"
+        },
+        {
+            "definition": "Number of unique clicks from advertisement type a",
+            "symbol": "UniqueClicks",
+            "value": "",
+            "shape": [
+                "A"
+            ],
+            "code": "UniqueClicks = np.array(data[\"UniqueClicks\"]) # ['A']"
+        },
+        {
+            "definition": "Goal for number of clicks from young audience",
+            "symbol": "GoalYoung",
+            "value": "",
+            "shape": [],
+            "code": "GoalYoung = data[\"GoalYoung\"] # scalar parameter"
+        },
+        {
+            "definition": "Goal for number of clicks from old audience",
+            "symbol": "GoalOld",
+            "value": "",
+            "shape": [],
+            "code": "GoalOld = data[\"GoalOld\"] # scalar parameter"
+        },
+        {
+            "definition": "Goal for number of unique clicks from young audience",
+            "symbol": "GoalUniqueYoung",
+            "value": "",
+            "shape": [],
+            "code": "GoalUniqueYoung = data[\"GoalUniqueYoung\"] # scalar parameter"
+        },
+        {
+            "definition": "Goal for number of unique clicks from old audience",
+            "symbol": "GoalUniqueOld",
+            "value": "",
+            "shape": [],
+            "code": "GoalUniqueOld = data[\"GoalUniqueOld\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Total cost of clicks from all advertisement types must not exceed Budget",
+            "status": "coded",
+            "formulation": "\\sum_{a=1}^{\\textup{A}} \\textup{Costs}_a \\cdot \\textup{ClicksPurchased}_a \\leq \\textup{Budget}",
+            "related_variables": [
+                "ClicksPurchased"
+            ],
+            "related_parameters": [
+                "Costs",
+                "Budget"
+            ],
+            "code": "# Total cost constraint\ntotal_cost_expr = gp.quicksum(Costs[a] * ClicksPurchased[a] for a in range(A))\nmodel.addConstr(total_cost_expr <= Budget, name=\"TotalCostConstraint\")"
+        },
+        {
+            "description": "Each advertisement type must not exceed its corresponding maximum number of clicks",
+            "status": "coded",
+            "formulation": "\\forall a \\in \\{1, \\dots, \\textup{A}\\}, \\quad \\textup{ClicksPurchased}_a \\leq \\textup{MaxClicks}_a",
+            "related_variables": [
+                "ClicksPurchased"
+            ],
+            "related_parameters": [
+                "A",
+                "MaxClicks"
+            ],
+            "code": "# Ensure each advertisement type does not exceed its maximum number of clicks\nfor a in range(A):\n    model.addConstr(ClicksPurchased[a] <= MaxClicks[a], name=f\"max_clicks_ad_type_{a}\")"
+        },
+        {
+            "description": "The total number of young audience clicks from all advertisement types must be at least the specified goal for young audience clicks",
+            "status": "coded",
+            "formulation": "\\sum_{a=1}^{A} (\\textup{YoungClicks}[a] \\cdot \\textup{ClicksPurchased}[a]) \\geq \\textup{GoalYoung}",
+            "related_variables": [
+                "ClicksPurchased"
+            ],
+            "related_parameters": [
+                "A",
+                "YoungClicks",
+                "GoalYoung"
+            ],
+            "code": "# Total young audience clicks goal constraint\nyoung_clicks_expr = gp.quicksum(YoungClicks[a] * ClicksPurchased[a] for a in range(A))\nmodel.addConstr(young_clicks_expr >= GoalYoung, name=\"young_audience_clicks_goal\")"
+        },
+        {
+            "description": "Total number of old audience clicks from all advertisement types must reach at least GoalOld",
+            "status": "coded",
+            "formulation": "\\sum_{a=1}^{\\textup{A}} (\\textup{OldClicks}_a \\times \\textup{ClicksPurchased}_a) \\geq \\textup{GoalOld}",
+            "related_variables": [
+                "ClicksPurchased"
+            ],
+            "related_parameters": [
+                "OldClicks",
+                "GoalOld"
+            ],
+            "code": "# Add constraint for achieving at least the goal for old audience clicks\nold_clicks_constraint = gp.quicksum(OldClicks[a] * ClicksPurchased[a] for a in range(A)) >= GoalOld\nmodel.addConstr(old_clicks_constraint, name=\"old_clicks_goal\")"
+        },
+        {
+            "description": "Ensure the total number of unique young audience clicks meets the goal",
+            "status": "coded",
+            "formulation": "\\sum_{a=1}^{A} \\textup{UniqueYoungClicks}_a \\geq \\textup{GoalUniqueYoung}",
+            "related_variables": [
+                "UniqueYoungClicks"
+            ],
+            "related_parameters": [
+                "GoalUniqueYoung",
+                "A"
+            ],
+            "code": "# Ensure the total number of unique young audience clicks meets the goal\nmodel.addConstr(gp.quicksum(UniqueYoungClicks[a] for a in range(A)) >= GoalUniqueYoung, name=\"young_audience_goal\")"
+        },
+        {
+            "description": "Total number of unique old audience clicks from all advertisement types must reach at least GoalUniqueOld",
+            "status": "coded",
+            "formulation": "\\sum_{a=1}^{\\textup{A}} \\textup{OldClicks}_a \\geq \\textup{GoalUniqueOld}",
+            "related_variables": [
+                "OldClicks"
+            ],
+            "related_parameters": [
+                "GoalUniqueOld",
+                "A"
+            ],
+            "code": "# Add constraint for reaching at least the goal number of unique old audience clicks\nold_clicks_sum = gp.quicksum(OldClicks[a] for a in range(A))\nmodel.addConstr(old_clicks_sum >= GoalUniqueOld, name=\"unique_old_audience_clicks_goal\")"
+        },
+        {
+            "description": "Number of clicks from each advertisement type is non-negative",
+            "status": "runtime_error",
+            "formulation": "\\forall a \\in A, \\quad \\textup{ClicksPurchased}_a \\geq 0",
+            "related_variables": [
+                "ClicksPurchased"
+            ],
+            "related_parameters": [
+                "A"
+            ],
+            "code": "# Add non-negativity constraints for the number of clicks from each advertisement type\nfor a in A:\n    model.addConstr(ClicksPurchased[a] >= 0, name=\"clicks_nonnegativity\")"
+        },
+        {
+            "description": "Unique young clicks for an ad type cannot exceed the total clicks purchased or the number of young clicks from that ad type",
+            "status": "coded",
+            "formulation": "\\textup{UniqueYoungClicks}_a \\leq \\textup{ClicksPurchased}_a",
+            "related_variables": [
+                "UniqueYoungClicks",
+                "ClicksPurchased"
+            ],
+            "related_parameters": [
+                "A"
+            ],
+            "code": "# Unique young clicks for an ad type cannot exceed the total clicks purchased\nfor a in range(A):\n    model.addConstr(UniqueYoungClicks[a] <= ClicksPurchased[a], name=f\"unique_young_clicks_limit_{a}\")"
+        },
+        {
+            "description": "Unique young clicks for an ad type cannot exceed the predefined number of young clicks from that ad type",
+            "status": "coded",
+            "formulation": "\\textup{UniqueYoungClicks}_a \\leq \\textup{YoungClicks}_a",
+            "related_variables": [
+                "UniqueYoungClicks"
+            ],
+            "related_parameters": [
+                "YoungClicks",
+                "A"
+            ],
+            "code": "# Constraint to ensure unique young clicks for an ad type do not exceed young clicks from that ad type\nfor a in range(A):\n    model.addConstr(UniqueYoungClicks[a] <= YoungClicks[a], name=f\"unique_young_clicks_limit_{a}\")"
+        },
+        {
+            "description": "Ensure the total cost does not exceed budget",
+            "status": "coded",
+            "formulation": "\\sum_{a=1}^{\\textup{A}} \\textup{ClicksPurchased}_{a} \\times \\textup{Costs}_{a} \\leq \\textup{Budget}",
+            "related_variables": [
+                "ClicksPurchased"
+            ],
+            "related_parameters": [
+                "A",
+                "Budget",
+                "Costs"
+            ],
+            "code": "# Ensure the total cost does not exceed budget\ntotal_cost = gp.quicksum(ClicksPurchased[a] * Costs[a] for a in range(A))\nmodel.addConstr(total_cost <= Budget, name=\"budget_constraint\")"
+        },
+        {
+            "description": "Ensure the number of clicks purchased does not exceed the maximum available clicks",
+            "status": "coded",
+            "formulation": "\\textup{ClicksPurchased}_{a} \\leq \\textup{MaxClicks}_{a} \\quad \\forall a \\in \\{1, \\ldots, \\textup{A}\\}",
+            "related_variables": [
+                "ClicksPurchased"
+            ],
+            "related_parameters": [
+                "A",
+                "MaxClicks"
+            ],
+            "code": "# Ensure the number of clicks purchased does not exceed the maximum available clicks\nfor a in range(A):\n    model.addConstr(ClicksPurchased[a] <= MaxClicks[a], name=f\"max_clicks_{a}\")"
+        },
+        {
+            "description": "Ensure the number of clicks purchased is at least the unique clicks from young audience as a lower bound if the respective goal is specified",
+            "status": "coded",
+            "formulation": "\\textup{ClicksPurchased}_{a} \\geq \\textup{UniqueYoungClicks}_{a} \\quad \\forall a \\in \\{1, \\ldots, \\textup{A}\\}",
+            "related_variables": [
+                "ClicksPurchased",
+                "UniqueYoungClicks"
+            ],
+            "related_parameters": [
+                "A"
+            ],
+            "code": "# Ensure that ClicksPurchased is at least UniqueYoungClicks for each advertisement type if the respective goal is specified\nfor a in range(A):\n    model.addConstr(ClicksPurchased[a] >= UniqueYoungClicks[a], name=\"clicks_purchased_lb_ad_type_{}\".format(a))"
+        },
+        {
+            "description": "Ensure the total number of unique young audience clicks meets the goal if specified",
+            "status": "coded",
+            "formulation": "\\sum_{a=1}^{\\textup{A}} \\textup{UniqueYoungClicks}_{a} \\geq \\textup{GoalUniqueYoung}",
+            "related_variables": [
+                "UniqueYoungClicks"
+            ],
+            "related_parameters": [
+                "A",
+                "GoalUniqueYoung"
+            ],
+            "code": "# Ensure the total number of unique young audience clicks meets the goal if specified\nmodel.addConstr(gp.quicksum(UniqueYoungClicks[a] for a in range(A)) >= GoalUniqueYoung, name=\"YoungAudienceClicksGoal\")"
+        },
+        {
+            "description": "Ensure the sum of unique clicks from all advertisement types is counted as the total number of clicks purchased",
+            "status": "coded",
+            "formulation": "\\textup{ClicksPurchased}_{a} = \\textup{UniqueClicks}_{a} \\quad \\forall a \\in \\{1, \\ldots, \\textup{A}\\}",
+            "related_variables": [
+                "ClicksPurchased",
+                "UniqueClicks"
+            ],
+            "related_parameters": [
+                "A"
+            ],
+            "code": "# Ensure the sum of unique clicks from all advertisement types is counted as the total number of clicks purchased.\nfor a in range(A):\n    model.addConstr(ClicksPurchased[a] == UniqueClicks[a], name=f\"clicks_count_{a}\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of clicks purchased for advertisement type a",
+            "symbol": "ClicksPurchased",
+            "shape": [
+                "A"
+            ],
+            "status": "coded",
+            "code": "ClicksPurchased = model.addVars(A, vtype=gp.GRB.INTEGER, name=\"ClicksPurchased\")"
+        },
+        {
+            "definition": "The number of unique young audience clicks for advertisement type a",
+            "symbol": "UniqueYoungClicks",
+            "shape": [
+                "A"
+            ],
+            "status": "coded",
+            "code": "UniqueYoungClicks = model.addVars(A, vtype=gp.GRB.INTEGER, name=\"UniqueYoungClicks\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total number of unique clicks from all advertisement types within the given budget",
+            "status": "coded",
+            "formulation": "\\textup{Maximize} \\sum_{a=1}^{\\textup{A}} \\textup{ClicksPurchased}_{a}",
+            "related_variables": [
+                "ClicksPurchased"
+            ],
+            "related_parameters": [
+                "A"
+            ],
+            "code": "# Set objective\nmodel.setObjective(gp.quicksum(ClicksPurchased[a] for a in range(A)), gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "runtime_error",
+    "solver_output_status": "runtime_error",
+    "error_message": "Traceback (most recent call last):\n  File \"c:\\Users\\Simon\\Desktop\\Courses\\ECE 570\\ECE570_Project\\MyOptiMUS\\evaluator.py\", line 45, in run\n    exec(last_line, local_env, local_env)\n  File \"<string>\", line 2, in <module>\nTypeError: 'int' object is not iterable\n",
+    "obj_val": null,
+    "log_path": "logs/log_20250413102409_nlp4lp_54/",
+    "problem_path": "data/nlp4lp/54/",
+    "prep_code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nlp4lp/54/data.json\", \"r\") as f:\n    data = json.load(f)\n"
+}

@@ -1,0 +1,118 @@
+{
+    "background": "A company is looking to minimize the total transportation cost of transporting goods from its depots to ports.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of depots",
+            "symbol": "numdepot",
+            "value": "",
+            "shape": [
+                "I"
+            ],
+            "code": "numdepot = np.array(data[\"numdepot\"]) # ['I']"
+        },
+        {
+            "definition": "Number of ports",
+            "symbol": "numport",
+            "value": "",
+            "shape": [
+                "J"
+            ],
+            "code": "numport = np.array(data[\"numport\"]) # ['J']"
+        },
+        {
+            "definition": "Cost per unit distance for transporting goods",
+            "symbol": "Price",
+            "value": "",
+            "shape": [],
+            "code": "Price = data[\"Price\"] # scalar parameter"
+        },
+        {
+            "definition": "Distance between depot i and port j",
+            "symbol": "Distance",
+            "value": "",
+            "shape": [
+                "I",
+                "J"
+            ],
+            "code": "Distance = np.array(data[\"Distance\"]) # ['I', 'J']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of depots I (numdepot) must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{numdepot} \\geq 0",
+            "related_variables": [],
+            "related_parameters": [
+                "numdepot"
+            ],
+            "code": "# No code is required because the parameter \"numdepot\" is already non-negative by definition and no variable is involved in the constraint."
+        },
+        {
+            "description": "The number of ports is non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{numport} \\geq 0",
+            "related_variables": [],
+            "related_parameters": [
+                "numport"
+            ],
+            "code": "# This constraint enforces the number of ports (numport) is non-negative. However, since numport is a parameter, no code is needed as constraints do not operate directly on non-decision variables."
+        },
+        {
+            "description": "Ensure that the cost per unit distance (Price) is non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{Price} \\geq 0",
+            "related_variables": [],
+            "related_parameters": [
+                "Price"
+            ],
+            "code": "# No code needed since \"Price\" is a parameter and its non-negativity is already ensured by its data definition."
+        },
+        {
+            "description": "The distance between each depot i and port j must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{Distance}_{ij} \\geq 0 \\quad \\forall \\quad i \\in \\{1, \\dots, I\\}, \\quad j \\in \\{1, \\dots, J\\}",
+            "related_variables": [],
+            "related_parameters": [
+                "Distance"
+            ],
+            "code": "# No constraint code is needed, as the distance (Distance_{ij}) being non-negative is implied by data definition or preprocessing."
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The quantity of goods transported from depot i to port j",
+            "symbol": "GoodsTransported",
+            "shape": [
+                "numdepot",
+                "numport"
+            ],
+            "status": "coded",
+            "code": "GoodsTransported = model.addVars(numdepot, numport, vtype=gp.GRB.CONTINUOUS, name=\"GoodsTransported\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total transportation cost from depots to ports",
+            "status": "coded",
+            "formulation": "\\min \\quad \\textup{Price} \\cdot \\sum_{i=1}^{\\textup{numdepot}} \\sum_{j=1}^{\\textup{numport}} \\textup{Distance}_{i,j} \\cdot \\textup{GoodsTransported}_{i,j}",
+            "related_variables": [
+                "GoodsTransported"
+            ],
+            "related_parameters": [
+                "Price",
+                "Distance",
+                "numdepot",
+                "numport"
+            ],
+            "code": "# Set objective\nmodel.setObjective(gp.quicksum(Price * Distance[i, j] * GoodsTransported[i, j] for i in range(numdepot) for j in range(numport)), gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413154129_nlp4lp_45/",
+    "problem_path": "data/nlp4lp/45/"
+}

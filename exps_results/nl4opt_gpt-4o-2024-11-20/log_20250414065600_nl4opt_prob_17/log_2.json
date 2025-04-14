@@ -1,0 +1,294 @@
+{
+    "background": "Elm Furniture produces chairs and dressers, generating profit from each.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Profit for each chair produced",
+            "symbol": "ProfitChair",
+            "value": 43,
+            "shape": [],
+            "code": "ProfitChair = data[\"ProfitChair\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit for each dresser produced",
+            "symbol": "ProfitDresser",
+            "value": 52,
+            "shape": [],
+            "code": "ProfitDresser = data[\"ProfitDresser\"] # scalar parameter"
+        },
+        {
+            "definition": "Total gallons of stain available per week",
+            "symbol": "TotalStain",
+            "value": 17,
+            "shape": [],
+            "code": "TotalStain = data[\"TotalStain\"] # scalar parameter"
+        },
+        {
+            "definition": "Total lengths of oak wood available per week",
+            "symbol": "TotalOak",
+            "value": 11,
+            "shape": [],
+            "code": "TotalOak = data[\"TotalOak\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of stain required for one chair",
+            "symbol": "StainPerChair",
+            "value": 1.4,
+            "shape": [],
+            "code": "StainPerChair = data[\"StainPerChair\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of oak wood required for one chair",
+            "symbol": "OakPerChair",
+            "value": 2,
+            "shape": [],
+            "code": "OakPerChair = data[\"OakPerChair\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of stain required for one dresser",
+            "symbol": "StainPerDresser",
+            "value": 1.1,
+            "shape": [],
+            "code": "StainPerDresser = data[\"StainPerDresser\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of oak wood required for one dresser",
+            "symbol": "OakPerDresser",
+            "value": 3,
+            "shape": [],
+            "code": "OakPerDresser = data[\"OakPerDresser\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of chairs produced must be an integer value.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfChairs} \\in \\mathbb{Z}",
+            "related_variables": [
+                "NumberOfChairs"
+            ],
+            "related_parameters": [],
+            "code": "# Change integrality of the variable to ensure NumberOfChairs is an integer\nNumberOfChairs.vtype = gp.GRB.INTEGER"
+        },
+        {
+            "description": "The number of dressers must be an integer value.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfDressers} \\in \\mathbb{Z}",
+            "related_variables": [
+                "NumberOfDressers"
+            ],
+            "related_parameters": [],
+            "code": "# Ensure the variable 'NumberOfDressers' is an integer\nNumberOfDressers.vtype = gp.GRB.INTEGER"
+        },
+        {
+            "description": "Number of chairs is non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfChairs} \\geq 0",
+            "related_variables": [
+                "NumberOfChairs"
+            ],
+            "related_parameters": [],
+            "code": "# Number of chairs must be non-negative\nmodel.addConstr(NumberOfChairs >= 0, name=\"non_negative_chairs_constraint\")"
+        },
+        {
+            "description": "Ensure that the number of dressers produced is non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{NumberOfDressers} \\\\geq 0",
+            "related_variables": [
+                "NumberOfDressers"
+            ],
+            "related_parameters": [],
+            "code": "# No code needed, as non-negativity is inherent to the variable type (CONTINUOUS in gurobipy)"
+        },
+        {
+            "description": "The total stain used for chairs and dressers cannot exceed the total amount of stain available (\\textup{TotalStain}) per week.",
+            "status": "coded",
+            "formulation": "\\textup{StainPerChair} \\cdot \\textup{NumberOfChairs} + \\textup{StainPerDresser} \\cdot \\textup{NumberOfDressers} \\leq \\textup{TotalStain}",
+            "related_variables": [
+                "NumberOfChairs",
+                "NumberOfDressers"
+            ],
+            "related_parameters": [
+                "StainPerChair",
+                "StainPerDresser",
+                "TotalStain"
+            ],
+            "code": "# Add constraint for total stain usage\nmodel.addConstr(StainPerChair * NumberOfChairs + StainPerDresser * NumberOfDressers <= TotalStain, name=\"stain_usage_limit\")"
+        },
+        {
+            "description": "Total oak wood used for chairs and dressers cannot exceed TotalOak lengths per week.",
+            "status": "coded",
+            "formulation": "\\\\textup{NumberOfChairs} \\\\times \\\\textup{OakPerChair} + \\\\textup{NumberOfDressers} \\\\times \\\\textup{OakPerDresser} \\\\leq \\\\textup{TotalOak}",
+            "related_variables": [
+                "NumberOfChairs",
+                "NumberOfDressers"
+            ],
+            "related_parameters": [
+                "OakPerChair",
+                "OakPerDresser",
+                "TotalOak"
+            ],
+            "code": "# Add constraint for total oak wood usage\nmodel.addConstr(\n    NumberOfChairs * OakPerChair + NumberOfDressers * OakPerDresser <= TotalOak,\n    name=\"total_oak_usage\"\n)"
+        },
+        {
+            "description": "The total amount of stain used by chairs and dressers must not exceed the total stain available.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfChairs} \\cdot \\textup{StainPerChair} + \\textup{NumberOfDressers} \\cdot \\textup{StainPerDresser} \\leq \\textup{TotalStain}",
+            "related_variables": [
+                "NumberOfChairs",
+                "NumberOfDressers"
+            ],
+            "related_parameters": [
+                "StainPerChair",
+                "StainPerDresser",
+                "TotalStain"
+            ],
+            "code": "# Add constraint for stain availability\nmodel.addConstr(\n    NumberOfChairs * StainPerChair + NumberOfDressers * StainPerDresser <= TotalStain,\n    name=\"stain_availability\"\n)"
+        },
+        {
+            "description": "Each dresser produced requires \\textup{StainPerDresser} gallons of stain.",
+            "status": "coded",
+            "formulation": "\\textup{TotalStainUsedByDressers} = \\textup{NumberOfDressers} \\times \\textup{StainPerDresser}",
+            "related_variables": [
+                "NumberOfDressers"
+            ],
+            "related_parameters": [
+                "StainPerDresser"
+            ],
+            "code": "# Constraint enforcing the relationship between total stain used and the number of dressers produced\nTotalStainUsedByDressers = NumberOfDressers * StainPerDresser"
+        },
+        {
+            "description": "The constraint ensures that the total length of oak wood used for the production of chairs and dressers does not exceed the available total oak wood per week.",
+            "status": "coded",
+            "formulation": "\\\\textup{OakPerChair} \\\\cdot \\\\textup{NumberOfChairs} + \\\\textup{OakPerDresser} \\\\cdot \\\\textup{NumberOfDressers} \\\\leq \\\\textup{TotalOak}",
+            "related_variables": [
+                "NumberOfChairs",
+                "NumberOfDressers"
+            ],
+            "related_parameters": [
+                "OakPerChair",
+                "OakPerDresser",
+                "TotalOak"
+            ],
+            "code": "# Add oak wood usage constraint\nmodel.addConstr(OakPerChair * NumberOfChairs + OakPerDresser * NumberOfDressers <= TotalOak, name=\"oak_wood_limit\")"
+        },
+        {
+            "description": "Each dresser requires OakPerDresser lengths of oak wood.",
+            "status": "coded",
+            "formulation": "\\textup{TotalOakUsedByDressers} \\leq \\textup{TotalOak}",
+            "related_variables": [
+                "TotalOakUsedByDressers"
+            ],
+            "related_parameters": [
+                "TotalOak"
+            ],
+            "code": "# Add constraint for oak wood usage by dressers\nmodel.addConstr(TotalOakUsedByDressers <= TotalOak, name=\"oak_wood_usage_constraint\")"
+        },
+        {
+            "description": "The number of dressers must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfDressers} \\geq 0",
+            "related_variables": [
+                "NumberOfDressers"
+            ],
+            "related_parameters": [],
+            "code": "# No additional code needed since the variable \"NumberOfDressers\" is defined with non-negativity by default in Gurobi (continuous variables have a non-negative domain unless specified otherwise)."
+        },
+        {
+            "description": "The total oak wood used by dressers is equal to the number of dressers produced multiplied by OakPerDresser.",
+            "status": "coded",
+            "formulation": "\\textup{TotalOakUsedByDressers} = \\textup{NumberOfDressers} \\times \\textup{OakPerDresser}",
+            "related_variables": [
+                "TotalOakUsedByDressers",
+                "NumberOfDressers"
+            ],
+            "related_parameters": [
+                "OakPerDresser"
+            ],
+            "code": "# Add equality constraint for TotalOakUsedByDressers\nmodel.addConstr(TotalOakUsedByDressers == NumberOfDressers * OakPerDresser, name=\"oak_wood_dresser_constraint\")"
+        },
+        {
+            "description": "The total stain used for chairs and dressers cannot exceed the available stain",
+            "status": "coded",
+            "formulation": "\\textup{StainPerChair} \\cdot \\textup{NumberOfChairs} + \\textup{StainPerDresser} \\cdot \\textup{NumberOfDressers} \\leq \\textup{TotalStain}",
+            "related_variables": [
+                "NumberOfChairs",
+                "NumberOfDressers"
+            ],
+            "related_parameters": [
+                "StainPerChair",
+                "StainPerDresser",
+                "TotalStain"
+            ],
+            "code": "# Add stain availability constraint\nmodel.addConstr(StainPerChair * NumberOfChairs + StainPerDresser * NumberOfDressers <= TotalStain, name=\"stain_availability\")"
+        },
+        {
+            "description": "The total oak wood used for chairs and dressers cannot exceed the available oak wood",
+            "status": "coded",
+            "formulation": "\\textup{OakPerChair} \\cdot \\textup{NumberOfChairs} + \\textup{OakPerDresser} \\cdot \\textup{NumberOfDressers} \\leq \\textup{TotalOak}",
+            "related_variables": [
+                "NumberOfChairs",
+                "NumberOfDressers"
+            ],
+            "related_parameters": [
+                "OakPerChair",
+                "OakPerDresser",
+                "TotalOak"
+            ],
+            "code": "# Add constraint to limit the total oak wood usage\nmodel.addConstr(OakPerChair * NumberOfChairs + OakPerDresser * NumberOfDressers <= TotalOak, name=\"oak_wood_limit\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of chairs produced in a week",
+            "symbol": "NumberOfChairs",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfChairs = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfChairs\")"
+        },
+        {
+            "definition": "The number of dressers produced in a week",
+            "symbol": "NumberOfDressers",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfDressers = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfDressers\")"
+        },
+        {
+            "definition": "The total amount of stain used for producing dressers in a week",
+            "symbol": "TotalStainUsedByDressers",
+            "shape": [],
+            "status": "coded",
+            "code": "TotalStainUsedByDressers = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TotalStainUsedByDressers\")"
+        },
+        {
+            "definition": "The total amount of oak wood consumed by all produced dressers in a week.",
+            "symbol": "TotalOakUsedByDressers",
+            "shape": [],
+            "status": "coded",
+            "code": "TotalOakUsedByDressers = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TotalOakUsedByDressers\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total profit from producing chairs and dressers",
+            "status": "coded",
+            "formulation": "\\textup{Maximize:} \\quad \\textup{ProfitChair} \\cdot \\textup{NumberOfChairs} + \\textup{ProfitDresser} \\cdot \\textup{NumberOfDressers}",
+            "related_variables": [
+                "NumberOfChairs",
+                "NumberOfDressers"
+            ],
+            "related_parameters": [
+                "ProfitChair",
+                "ProfitDresser"
+            ],
+            "code": "# Set objective\nmodel.setObjective(ProfitChair * NumberOfChairs + ProfitDresser * NumberOfDressers, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 224.0,
+    "log_path": "logs/log_20250414065600_nl4opt_prob_17/",
+    "problem_path": "data/nl4opt/prob_17/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_17/data.json\", \"r\") as f:\n    data = json.load(f)\n\nProfitChair = data[\"ProfitChair\"] # scalar parameter\nProfitDresser = data[\"ProfitDresser\"] # scalar parameter\nTotalStain = data[\"TotalStain\"] # scalar parameter\nTotalOak = data[\"TotalOak\"] # scalar parameter\nStainPerChair = data[\"StainPerChair\"] # scalar parameter\nOakPerChair = data[\"OakPerChair\"] # scalar parameter\nStainPerDresser = data[\"StainPerDresser\"] # scalar parameter\nOakPerDresser = data[\"OakPerDresser\"] # scalar parameter\nNumberOfChairs = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfChairs\")\nNumberOfDressers = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfDressers\")\nTotalStainUsedByDressers = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TotalStainUsedByDressers\")\nTotalOakUsedByDressers = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TotalOakUsedByDressers\")\n\n# Change integrality of the variable to ensure NumberOfChairs is an integer\nNumberOfChairs.vtype = gp.GRB.INTEGER\n\n# Ensure the variable 'NumberOfDressers' is an integer\nNumberOfDressers.vtype = gp.GRB.INTEGER\n\n# Number of chairs must be non-negative\nmodel.addConstr(NumberOfChairs >= 0, name=\"non_negative_chairs_constraint\")\n\n# No code needed, as non-negativity is inherent to the variable type (CONTINUOUS in gurobipy)\n\n# Add constraint for total stain usage\nmodel.addConstr(StainPerChair * NumberOfChairs + StainPerDresser * NumberOfDressers <= TotalStain, name=\"stain_usage_limit\")\n\n# Add constraint for total oak wood usage\nmodel.addConstr(\n    NumberOfChairs * OakPerChair + NumberOfDressers * OakPerDresser <= TotalOak,\n    name=\"total_oak_usage\"\n)\n\n# Add constraint for stain availability\nmodel.addConstr(\n    NumberOfChairs * StainPerChair + NumberOfDressers * StainPerDresser <= TotalStain,\n    name=\"stain_availability\"\n)\n\n# Constraint enforcing the relationship between total stain used and the number of dressers produced\nTotalStainUsedByDressers = NumberOfDressers * StainPerDresser\n\n# Add oak wood usage constraint\nmodel.addConstr(OakPerChair * NumberOfChairs + OakPerDresser * NumberOfDressers <= TotalOak, name=\"oak_wood_limit\")\n\n# Add constraint for oak wood usage by dressers\nmodel.addConstr(TotalOakUsedByDressers <= TotalOak, name=\"oak_wood_usage_constraint\")\n\n# No additional code needed since the variable \"NumberOfDressers\" is defined with non-negativity by default in Gurobi (continuous variables have a non-negative domain unless specified otherwise).\n\n# Add equality constraint for TotalOakUsedByDressers\nmodel.addConstr(TotalOakUsedByDressers == NumberOfDressers * OakPerDresser, name=\"oak_wood_dresser_constraint\")\n\n# Add stain availability constraint\nmodel.addConstr(StainPerChair * NumberOfChairs + StainPerDresser * NumberOfDressers <= TotalStain, name=\"stain_availability\")\n\n# Add constraint to limit the total oak wood usage\nmodel.addConstr(OakPerChair * NumberOfChairs + OakPerDresser * NumberOfDressers <= TotalOak, name=\"oak_wood_limit\")\n\n# Set objective\nmodel.setObjective(ProfitChair * NumberOfChairs + ProfitDresser * NumberOfDressers, gp.GRB.MAXIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

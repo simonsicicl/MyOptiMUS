@@ -1,0 +1,159 @@
+{
+    "background": "The problem involves shipping multiple products from various origins to multiple destinations, with the goal of minimizing the total shipping cost while meeting supply and demand constraints.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "symbol": "OriginNum",
+            "definition": "The number of origins",
+            "shape": [],
+            "code": "OriginNum = data[\"OriginNum\"] # scalar parameter"
+        },
+        {
+            "symbol": "DestinationNum",
+            "definition": "The number of destinations",
+            "shape": [],
+            "code": "DestinationNum = data[\"DestinationNum\"] # scalar parameter"
+        },
+        {
+            "symbol": "ProductNum",
+            "definition": "The number of products",
+            "shape": [],
+            "code": "ProductNum = data[\"ProductNum\"] # scalar parameter"
+        },
+        {
+            "symbol": "Supply",
+            "definition": "The supply of each product at each origin",
+            "shape": [
+                "OriginNum",
+                "ProductNum"
+            ],
+            "code": "Supply = np.array(data[\"Supply\"]) # ['OriginNum', 'ProductNum']"
+        },
+        {
+            "symbol": "Demand",
+            "definition": "The demand of each product at each destination",
+            "shape": [
+                "ProductNum",
+                "DestinationNum"
+            ],
+            "code": "Demand = np.array(data[\"Demand\"]) # ['ProductNum', 'DestinationNum']"
+        },
+        {
+            "symbol": "Limit",
+            "definition": "The limit on the total amount of all products shipped from each origin to each destination",
+            "shape": [
+                "OriginNum",
+                "DestinationNum"
+            ],
+            "code": "Limit = np.array(data[\"Limit\"]) # ['OriginNum', 'DestinationNum']"
+        },
+        {
+            "symbol": "Cost",
+            "definition": "The cost of shipping one unit of each product from each origin to each destination",
+            "shape": [
+                "OriginNum",
+                "DestinationNum",
+                "ProductNum"
+            ],
+            "code": "Cost = np.array(data[\"Cost\"]) # ['OriginNum', 'DestinationNum', 'ProductNum']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "For each origin i and product p, the total amount shipped equals the supply of that product at that origin.",
+            "status": "coded",
+            "formulation": "\\sum_{j=1}^{\\textup{DestinationNum}} \\textup{AmountShipped}_{i,j,p} = \\textup{Supply}_{i,p}, \\quad \\forall i = 1, \\dots, \\textup{OriginNum}, \\, \\forall p = 1, \\dots, \\textup{ProductNum}",
+            "related_variables": [
+                "AmountShipped"
+            ],
+            "related_parameters": [
+                "Supply",
+                "OriginNum",
+                "DestinationNum",
+                "ProductNum"
+            ],
+            "code": "# Add constraints to ensure total amount shipped equals supply at each origin for each product\nfor i in range(OriginNum):\n    for p in range(ProductNum):\n        model.addConstr(\n            gp.quicksum(AmountShipped[i, j, p] for j in range(DestinationNum)) == Supply[i, p],\n            name=f\"supply_balance_origin_{i}_product_{p}\"\n        )"
+        },
+        {
+            "description": "For each destination j and product p, the total amount received equals the demand for that product at that destination.",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{\\textup{OriginNum}} \\textup{AmountShipped}_{i,j,p} = \\textup{Demand}_{j,p}, \\quad \\forall j \\in [1, \\textup{DestinationNum}], \\quad \\forall p \\in [1, \\textup{ProductNum}]",
+            "related_variables": [
+                "AmountShipped"
+            ],
+            "related_parameters": [
+                "Demand",
+                "OriginNum",
+                "DestinationNum",
+                "ProductNum"
+            ],
+            "code": "# Add demand satisfaction constraints\nfor j in range(DestinationNum):\n    for p in range(ProductNum):\n        model.addConstr(\n            gp.quicksum(AmountShipped[i, j, p] for i in range(OriginNum)) == Demand[p, j],\n            name=f\"demand_satisfaction_j{j}_p{p}\"\n        )"
+        },
+        {
+            "description": "For each origin i and destination j, the total amount of all products shipped does not exceed Limit_{i,j}",
+            "status": "coded",
+            "formulation": "\\sum_{p=1}^{\\textup{ProductNum}} \\textup{AmountShipped}_{i,j,p} \\leq \\textup{Limit}_{i,j}, \\quad \\forall \\; i=1,\\dots,\\textup{OriginNum}, \\; j=1,\\dots,\\textup{DestinationNum}",
+            "related_variables": [
+                "AmountShipped"
+            ],
+            "related_parameters": [
+                "OriginNum",
+                "DestinationNum",
+                "ProductNum",
+                "Limit"
+            ],
+            "code": "# Add constraints ensuring the total amount shipped from each origin i to each destination j does not exceed the limit\nfor i in range(OriginNum):\n    for j in range(DestinationNum):\n        model.addConstr(gp.quicksum(AmountShipped[i, j, p] for p in range(ProductNum)) <= Limit[i, j], name=f\"shipment_limit_{i}_{j}\")"
+        },
+        {
+            "description": "All shipping quantities are non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{AmountShipped}_{i,j,p} \\geq 0, \\quad \\forall \\ i \\in \\{1, \\dots, \\textup{OriginNum}\\}, \\ j \\in \\{1, \\dots, \\textup{DestinationNum}\\}, \\ p \\in \\{1, \\dots, \\textup{ProductNum}\\}",
+            "related_variables": [
+                "AmountShipped"
+            ],
+            "related_parameters": [
+                "OriginNum",
+                "DestinationNum",
+                "ProductNum"
+            ],
+            "code": "# Add non-negativity constraints for AmountShipped\nfor i in range(OriginNum):\n    for j in range(DestinationNum):\n        for p in range(ProductNum):\n            model.addConstr(AmountShipped[i, j, p] >= 0, name=f\"nonnegativity_{i}_{j}_{p}\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The amount of product p shipped from origin i to destination j",
+            "symbol": "AmountShipped",
+            "shape": [
+                "OriginNum",
+                "DestinationNum",
+                "ProductNum"
+            ],
+            "status": "coded",
+            "code": "AmountShipped = model.addVars(OriginNum, DestinationNum, ProductNum, vtype=gp.GRB.CONTINUOUS, name=\"AmountShipped\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total cost of shipping all products from the origins to the destinations",
+            "status": "coded",
+            "formulation": "\\min \\quad \\sum_{i=1}^{\\textup{OriginNum}} \\sum_{j=1}^{\\textup{DestinationNum}} \\sum_{p=1}^{\\textup{ProductNum}} \\textup{Cost}_{i,j,p} \\cdot \\textup{AmountShipped}_{i,j,p}",
+            "related_variables": [
+                "AmountShipped"
+            ],
+            "related_parameters": [
+                "Cost",
+                "OriginNum",
+                "DestinationNum",
+                "ProductNum"
+            ],
+            "code": "# Set objective\nmodel.setObjective(gp.quicksum(Cost[i, j, p] * AmountShipped[i, j, p] for i in range(OriginNum) for j in range(DestinationNum) for p in range(ProductNum)), gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 199500.0,
+    "log_path": "logs/log_20250413150704_complexor_multi/",
+    "problem_path": "data/complexor/multi/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/complexor/multi/data.json\", \"r\") as f:\n    data = json.load(f)\n\nOriginNum = data[\"OriginNum\"] # scalar parameter\nDestinationNum = data[\"DestinationNum\"] # scalar parameter\nProductNum = data[\"ProductNum\"] # scalar parameter\nSupply = np.array(data[\"Supply\"]) # ['OriginNum', 'ProductNum']\nDemand = np.array(data[\"Demand\"]) # ['ProductNum', 'DestinationNum']\nLimit = np.array(data[\"Limit\"]) # ['OriginNum', 'DestinationNum']\nCost = np.array(data[\"Cost\"]) # ['OriginNum', 'DestinationNum', 'ProductNum']\nAmountShipped = model.addVars(OriginNum, DestinationNum, ProductNum, vtype=gp.GRB.CONTINUOUS, name=\"AmountShipped\")\n\n# Add constraints to ensure total amount shipped equals supply at each origin for each product\nfor i in range(OriginNum):\n    for p in range(ProductNum):\n        model.addConstr(\n            gp.quicksum(AmountShipped[i, j, p] for j in range(DestinationNum)) == Supply[i, p],\n            name=f\"supply_balance_origin_{i}_product_{p}\"\n        )\n\n# Add demand satisfaction constraints\nfor j in range(DestinationNum):\n    for p in range(ProductNum):\n        model.addConstr(\n            gp.quicksum(AmountShipped[i, j, p] for i in range(OriginNum)) == Demand[p, j],\n            name=f\"demand_satisfaction_j{j}_p{p}\"\n        )\n\n# Add constraints ensuring the total amount shipped from each origin i to each destination j does not exceed the limit\nfor i in range(OriginNum):\n    for j in range(DestinationNum):\n        model.addConstr(gp.quicksum(AmountShipped[i, j, p] for p in range(ProductNum)) <= Limit[i, j], name=f\"shipment_limit_{i}_{j}\")\n\n# Add non-negativity constraints for AmountShipped\nfor i in range(OriginNum):\n    for j in range(DestinationNum):\n        for p in range(ProductNum):\n            model.addConstr(AmountShipped[i, j, p] >= 0, name=f\"nonnegativity_{i}_{j}_{p}\")\n\n# Set objective\nmodel.setObjective(gp.quicksum(Cost[i, j, p] * AmountShipped[i, j, p] for i in range(OriginNum) for j in range(DestinationNum) for p in range(ProductNum)), gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

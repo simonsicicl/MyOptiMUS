@@ -1,0 +1,301 @@
+{
+    "background": "Custom Tees needs to allocate a budget for purchasing clicks from different advertisement types to maximize the number of unique clicks.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of advertisement types",
+            "symbol": "A",
+            "value": "",
+            "shape": [],
+            "code": "A = data[\"A\"] # scalar parameter"
+        },
+        {
+            "definition": "Total budget for purchasing clicks",
+            "symbol": "Budget",
+            "value": "",
+            "shape": [],
+            "code": "Budget = data[\"Budget\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost of purchasing a click from advertisement type a",
+            "symbol": "Costs",
+            "value": "",
+            "shape": [
+                "A"
+            ],
+            "code": "Costs = np.array(data[\"Costs\"]) # ['A']"
+        },
+        {
+            "definition": "Number of maximum clicks that can be purchased from advertisement type a",
+            "symbol": "MaxClicks",
+            "value": "",
+            "shape": [
+                "A"
+            ],
+            "code": "MaxClicks = np.array(data[\"MaxClicks\"]) # ['A']"
+        },
+        {
+            "definition": "Number of young audience clicks from advertisement type a",
+            "symbol": "YoungClicks",
+            "value": "",
+            "shape": [
+                "A"
+            ],
+            "code": "YoungClicks = np.array(data[\"YoungClicks\"]) # ['A']"
+        },
+        {
+            "definition": "Number of old audience clicks from advertisement type a",
+            "symbol": "OldClicks",
+            "value": "",
+            "shape": [
+                "A"
+            ],
+            "code": "OldClicks = np.array(data[\"OldClicks\"]) # ['A']"
+        },
+        {
+            "definition": "Number of unique clicks from advertisement type a",
+            "symbol": "UniqueClicks",
+            "value": "",
+            "shape": [
+                "A"
+            ],
+            "code": "UniqueClicks = np.array(data[\"UniqueClicks\"]) # ['A']"
+        },
+        {
+            "definition": "Goal for number of clicks from young audience",
+            "symbol": "GoalYoung",
+            "value": "",
+            "shape": [],
+            "code": "GoalYoung = data[\"GoalYoung\"] # scalar parameter"
+        },
+        {
+            "definition": "Goal for number of clicks from old audience",
+            "symbol": "GoalOld",
+            "value": "",
+            "shape": [],
+            "code": "GoalOld = data[\"GoalOld\"] # scalar parameter"
+        },
+        {
+            "definition": "Goal for number of unique clicks from young audience",
+            "symbol": "GoalUniqueYoung",
+            "value": "",
+            "shape": [],
+            "code": "GoalUniqueYoung = data[\"GoalUniqueYoung\"] # scalar parameter"
+        },
+        {
+            "definition": "Goal for number of unique clicks from old audience",
+            "symbol": "GoalUniqueOld",
+            "value": "",
+            "shape": [],
+            "code": "GoalUniqueOld = data[\"GoalUniqueOld\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Total cost of clicks from all advertisement types must not exceed Budget",
+            "status": "formulated",
+            "formulation": "\\sum_{a=1}^{\\textup{A}} \\textup{Costs}_a \\cdot \\textup{ClicksPurchased}_a \\leq \\textup{Budget}",
+            "related_variables": [
+                "ClicksPurchased"
+            ],
+            "related_parameters": [
+                "Costs",
+                "Budget"
+            ]
+        },
+        {
+            "description": "Each advertisement type must not exceed its corresponding maximum number of clicks",
+            "status": "formulated",
+            "formulation": "\\forall a \\in \\{1, \\dots, \\textup{A}\\}, \\quad \\textup{ClicksPurchased}_a \\leq \\textup{MaxClicks}_a",
+            "related_variables": [
+                "ClicksPurchased"
+            ],
+            "related_parameters": [
+                "A",
+                "MaxClicks"
+            ]
+        },
+        {
+            "description": "The total number of young audience clicks from all advertisement types must be at least the specified goal for young audience clicks",
+            "status": "formulated",
+            "formulation": "\\sum_{a=1}^{A} (\\textup{YoungClicks}[a] \\cdot \\textup{ClicksPurchased}[a]) \\geq \\textup{GoalYoung}",
+            "related_variables": [
+                "ClicksPurchased"
+            ],
+            "related_parameters": [
+                "A",
+                "YoungClicks",
+                "GoalYoung"
+            ]
+        },
+        {
+            "description": "Total number of old audience clicks from all advertisement types must reach at least GoalOld",
+            "status": "formulated",
+            "formulation": "\\sum_{a=1}^{\\textup{A}} (\\textup{OldClicks}_a \\times \\textup{ClicksPurchased}_a) \\geq \\textup{GoalOld}",
+            "related_variables": [
+                "ClicksPurchased"
+            ],
+            "related_parameters": [
+                "OldClicks",
+                "GoalOld"
+            ]
+        },
+        {
+            "description": "Ensure the total number of unique young audience clicks meets the goal",
+            "status": "formulated",
+            "formulation": "\\sum_{a=1}^{A} \\textup{UniqueYoungClicks}_a \\geq \\textup{GoalUniqueYoung}",
+            "related_variables": [
+                "UniqueYoungClicks"
+            ],
+            "related_parameters": [
+                "GoalUniqueYoung",
+                "A"
+            ]
+        },
+        {
+            "description": "Total number of unique old audience clicks from all advertisement types must reach at least GoalUniqueOld",
+            "status": "formulated",
+            "formulation": "\\sum_{a=1}^{\\textup{A}} \\textup{OldClicks}_a \\geq \\textup{GoalUniqueOld}",
+            "related_variables": [
+                "OldClicks"
+            ],
+            "related_parameters": [
+                "GoalUniqueOld",
+                "A"
+            ]
+        },
+        {
+            "description": "Number of clicks from each advertisement type is non-negative",
+            "status": "formulated",
+            "formulation": "\\forall a \\in A, \\quad \\textup{ClicksPurchased}_a \\geq 0",
+            "related_variables": [
+                "ClicksPurchased"
+            ],
+            "related_parameters": [
+                "A"
+            ]
+        },
+        {
+            "description": "Unique young clicks for an ad type cannot exceed the total clicks purchased or the number of young clicks from that ad type",
+            "status": "formulated",
+            "formulation": "\\textup{UniqueYoungClicks}_a \\leq \\textup{ClicksPurchased}_a",
+            "related_variables": [
+                "UniqueYoungClicks",
+                "ClicksPurchased"
+            ],
+            "related_parameters": [
+                "A"
+            ]
+        },
+        {
+            "description": "Unique young clicks for an ad type cannot exceed the predefined number of young clicks from that ad type",
+            "status": "formulated",
+            "formulation": "\\textup{UniqueYoungClicks}_a \\leq \\textup{YoungClicks}_a",
+            "related_variables": [
+                "UniqueYoungClicks"
+            ],
+            "related_parameters": [
+                "YoungClicks",
+                "A"
+            ]
+        },
+        {
+            "description": "Ensure the total cost does not exceed budget",
+            "status": "formulated",
+            "formulation": "\\sum_{a=1}^{\\textup{A}} \\textup{ClicksPurchased}_{a} \\times \\textup{Costs}_{a} \\leq \\textup{Budget}",
+            "related_variables": [
+                "ClicksPurchased"
+            ],
+            "related_parameters": [
+                "A",
+                "Budget",
+                "Costs"
+            ]
+        },
+        {
+            "description": "Ensure the number of clicks purchased does not exceed the maximum available clicks",
+            "status": "formulated",
+            "formulation": "\\textup{ClicksPurchased}_{a} \\leq \\textup{MaxClicks}_{a} \\quad \\forall a \\in \\{1, \\ldots, \\textup{A}\\}",
+            "related_variables": [
+                "ClicksPurchased"
+            ],
+            "related_parameters": [
+                "A",
+                "MaxClicks"
+            ]
+        },
+        {
+            "description": "Ensure the number of clicks purchased is at least the unique clicks from young audience as a lower bound if the respective goal is specified",
+            "status": "formulated",
+            "formulation": "\\textup{ClicksPurchased}_{a} \\geq \\textup{UniqueYoungClicks}_{a} \\quad \\forall a \\in \\{1, \\ldots, \\textup{A}\\}",
+            "related_variables": [
+                "ClicksPurchased",
+                "UniqueYoungClicks"
+            ],
+            "related_parameters": [
+                "A"
+            ]
+        },
+        {
+            "description": "Ensure the total number of unique young audience clicks meets the goal if specified",
+            "status": "formulated",
+            "formulation": "\\sum_{a=1}^{\\textup{A}} \\textup{UniqueYoungClicks}_{a} \\geq \\textup{GoalUniqueYoung}",
+            "related_variables": [
+                "UniqueYoungClicks"
+            ],
+            "related_parameters": [
+                "A",
+                "GoalUniqueYoung"
+            ]
+        },
+        {
+            "description": "Ensure the sum of unique clicks from all advertisement types is counted as the total number of clicks purchased",
+            "status": "formulated",
+            "formulation": "\\textup{ClicksPurchased}_{a} = \\textup{UniqueClicks}_{a} \\quad \\forall a \\in \\{1, \\ldots, \\textup{A}\\}",
+            "related_variables": [
+                "ClicksPurchased",
+                "UniqueClicks"
+            ],
+            "related_parameters": [
+                "A"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of clicks purchased for advertisement type a",
+            "symbol": "ClicksPurchased",
+            "shape": [
+                "A"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "The number of unique young audience clicks for advertisement type a",
+            "symbol": "UniqueYoungClicks",
+            "shape": [
+                "A"
+            ],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total number of unique clicks from all advertisement types within the given budget",
+            "status": "formulated",
+            "formulation": "\\textup{Maximize} \\sum_{a=1}^{\\textup{A}} \\textup{ClicksPurchased}_{a}",
+            "related_variables": [
+                "ClicksPurchased"
+            ],
+            "related_parameters": [
+                "A"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413102409_nlp4lp_54/",
+    "problem_path": "data/nlp4lp/54/"
+}

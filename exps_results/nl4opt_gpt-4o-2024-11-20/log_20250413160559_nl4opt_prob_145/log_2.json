@@ -1,0 +1,217 @@
+{
+    "background": "A drug company utilizes two different processes to produce pain killers and sleeping pills, with each process having its specific production rates for both drugs and using a certain amount of preliminary material.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Units of pain killers produced per hour by process 1",
+            "symbol": "PainKillersProcess1",
+            "value": 35,
+            "shape": [],
+            "code": "PainKillersProcess1 = data[\"PainKillersProcess1\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of sleeping pills produced per hour by process 1",
+            "symbol": "SleepingPillsProcess1",
+            "value": 12,
+            "shape": [],
+            "code": "SleepingPillsProcess1 = data[\"SleepingPillsProcess1\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of pain killers produced per hour by process 2",
+            "symbol": "PainKillersProcess2",
+            "value": 50,
+            "shape": [],
+            "code": "PainKillersProcess2 = data[\"PainKillersProcess2\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of sleeping pills produced per hour by process 2",
+            "symbol": "SleepingPillsProcess2",
+            "value": 30,
+            "shape": [],
+            "code": "SleepingPillsProcess2 = data[\"SleepingPillsProcess2\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of preliminary material required for process 1",
+            "symbol": "MaterialProcess1",
+            "value": 50,
+            "shape": [],
+            "code": "MaterialProcess1 = data[\"MaterialProcess1\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of preliminary material required for process 2",
+            "symbol": "MaterialProcess2",
+            "value": 60,
+            "shape": [],
+            "code": "MaterialProcess2 = data[\"MaterialProcess2\"] # scalar parameter"
+        },
+        {
+            "definition": "Total units of preliminary material available",
+            "symbol": "TotalMaterial",
+            "value": 2000,
+            "shape": [],
+            "code": "TotalMaterial = data[\"TotalMaterial\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum units of pain killers to be produced",
+            "symbol": "MinPainKillers",
+            "value": 1200,
+            "shape": [],
+            "code": "MinPainKillers = data[\"MinPainKillers\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum units of sleeping pills to be produced",
+            "symbol": "MinSleepingPills",
+            "value": 1200,
+            "shape": [],
+            "code": "MinSleepingPills = data[\"MinSleepingPills\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of hours process 1 is run must be non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{HoursProcess1} \\\\geq 0",
+            "related_variables": [
+                "HoursProcess1"
+            ],
+            "related_parameters": [],
+            "code": "# Ensure the number of hours process 1 is run is non-negative\nmodel.addConstr(HoursProcess1 >= 0, name=\"non_negative_hours_process1\")"
+        },
+        {
+            "description": "The number of hours process 2 is run must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{HoursProcess2} \\geq 0",
+            "related_variables": [
+                "HoursProcess2"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint for non-negativity of HoursProcess2\nmodel.addConstr(HoursProcess2 >= 0, name=\"non_negativity_hours_process2\")"
+        },
+        {
+            "description": "The total material used by both processes together should not exceed the TotalMaterial available.",
+            "status": "coded",
+            "formulation": "\\textup{HoursProcess1} \\cdot \\textup{MaterialProcess1} + \\textup{HoursProcess2} \\cdot \\textup{MaterialProcess2} \\leq \\textup{TotalMaterial}",
+            "related_variables": [
+                "HoursProcess1",
+                "HoursProcess2"
+            ],
+            "related_parameters": [
+                "MaterialProcess1",
+                "MaterialProcess2",
+                "TotalMaterial"
+            ],
+            "code": "# Add total material usage constraint\nmodel.addConstr(\n    HoursProcess1 * MaterialProcess1 + HoursProcess2 * MaterialProcess2 <= TotalMaterial,\n    name=\"total_material_usage\"\n)"
+        },
+        {
+            "description": "At least MinPainKillers units of pain killers must be produced collectively by both processes.",
+            "status": "coded",
+            "formulation": "\\textup{PainKillersProcess1} \\cdot \\textup{HoursProcess1} + \\textup{PainKillersProcess2} \\cdot \\textup{HoursProcess2} \\geq \\textup{MinPainKillers}",
+            "related_variables": [
+                "HoursProcess1",
+                "HoursProcess2"
+            ],
+            "related_parameters": [
+                "PainKillersProcess1",
+                "PainKillersProcess2",
+                "MinPainKillers"
+            ],
+            "code": "# Add constraint to ensure at least MinPainKillers units of pain killers are produced\nmodel.addConstr(\n    PainKillersProcess1 * HoursProcess1 + PainKillersProcess2 * HoursProcess2 >= MinPainKillers,\n    name=\"MinPainKillersConstraint\"\n)"
+        },
+        {
+            "description": "At least MinSleepingPills units of sleeping pills must be produced.",
+            "status": "coded",
+            "formulation": "\\\\textup{SleepingPillsProcess1} \\\\times \\\\textup{HoursProcess1} + \\\\textup{SleepingPillsProcess2} \\\\times \\\\textup{HoursProcess2} \\\\geq \\\\textup{MinSleepingPills}",
+            "related_variables": [
+                "HoursProcess1",
+                "HoursProcess2"
+            ],
+            "related_parameters": [
+                "SleepingPillsProcess1",
+                "SleepingPillsProcess2",
+                "MinSleepingPills"
+            ],
+            "code": "# Add constraint to ensure at least MinSleepingPills units of sleeping pills are produced\nmodel.addConstr(\n    SleepingPillsProcess1 * HoursProcess1 + SleepingPillsProcess2 * HoursProcess2 >= MinSleepingPills,\n    name=\"min_sleeping_pills\"\n)"
+        },
+        {
+            "description": "The total material used by both processes must not exceed the total available material.",
+            "status": "coded",
+            "formulation": "\\textup{MaterialProcess1} \\cdot \\textup{HoursProcess1} + \\textup{MaterialProcess2} \\cdot \\textup{HoursProcess2} \\leq \\textup{TotalMaterial}",
+            "related_variables": [
+                "HoursProcess1",
+                "HoursProcess2"
+            ],
+            "related_parameters": [
+                "MaterialProcess1",
+                "MaterialProcess2",
+                "TotalMaterial"
+            ],
+            "code": "# Add total material usage constraint\nmodel.addConstr(\n    MaterialProcess1 * HoursProcess1 + MaterialProcess2 * HoursProcess2 <= TotalMaterial,\n    name=\"total_material_usage\"\n)"
+        },
+        {
+            "description": "The total units of pain killers produced by both processes must meet or exceed the minimum required quantity.",
+            "status": "coded",
+            "formulation": "\\textup{PainKillersProcess1} \\cdot \\textup{HoursProcess1} + \\textup{PainKillersProcess2} \\cdot \\textup{HoursProcess2} \\geq \\textup{MinPainKillers}",
+            "related_variables": [
+                "HoursProcess1",
+                "HoursProcess2"
+            ],
+            "related_parameters": [
+                "PainKillersProcess1",
+                "PainKillersProcess2",
+                "MinPainKillers"
+            ],
+            "code": "# Add constraint to ensure the total amount of pain killers produced meets or exceeds the minimum required quantity\nmodel.addConstr(HoursProcess1 * PainKillersProcess1 + HoursProcess2 * PainKillersProcess2 >= MinPainKillers, name=\"min_painkillers_constraint\")"
+        },
+        {
+            "description": "The total units of sleeping pills produced by both processes must meet or exceed the minimum required quantity.",
+            "status": "coded",
+            "formulation": "\\textup{SleepingPillsProcess1} \\cdot \\textup{HoursProcess1} + \\textup{SleepingPillsProcess2} \\cdot \\textup{HoursProcess2} \\geq \\textup{MinSleepingPills}",
+            "related_variables": [
+                "HoursProcess1",
+                "HoursProcess2"
+            ],
+            "related_parameters": [
+                "SleepingPillsProcess1",
+                "SleepingPillsProcess2",
+                "MinSleepingPills"
+            ],
+            "code": "# Add constraint to ensure the total amount of sleeping pills produced meets or exceeds the minimum required\nmodel.addConstr(SleepingPillsProcess1 * HoursProcess1 + SleepingPillsProcess2 * HoursProcess2 >= MinSleepingPills, name=\"min_sleeping_pills\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of hours process 1 is run.",
+            "symbol": "HoursProcess1",
+            "shape": [],
+            "status": "coded",
+            "code": "HoursProcess1 = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"HoursProcess1\")"
+        },
+        {
+            "definition": "The number of hours process 2 is run.",
+            "symbol": "HoursProcess2",
+            "shape": [],
+            "status": "coded",
+            "code": "HoursProcess2 = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"HoursProcess2\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total time needed to produce the required units of pain killers and sleeping pills.",
+            "status": "coded",
+            "formulation": "\\textup{HoursProcess1} + \\textup{HoursProcess2}",
+            "related_variables": [
+                "HoursProcess1",
+                "HoursProcess2"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(HoursProcess1 + HoursProcess2, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 3,
+    "error_message": null,
+    "obj_val": "infeasible",
+    "log_path": "logs/log_20250413160559_nl4opt_prob_145/",
+    "problem_path": "data/nl4opt/prob_145/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_145/data.json\", \"r\") as f:\n    data = json.load(f)\n\nPainKillersProcess1 = data[\"PainKillersProcess1\"] # scalar parameter\nSleepingPillsProcess1 = data[\"SleepingPillsProcess1\"] # scalar parameter\nPainKillersProcess2 = data[\"PainKillersProcess2\"] # scalar parameter\nSleepingPillsProcess2 = data[\"SleepingPillsProcess2\"] # scalar parameter\nMaterialProcess1 = data[\"MaterialProcess1\"] # scalar parameter\nMaterialProcess2 = data[\"MaterialProcess2\"] # scalar parameter\nTotalMaterial = data[\"TotalMaterial\"] # scalar parameter\nMinPainKillers = data[\"MinPainKillers\"] # scalar parameter\nMinSleepingPills = data[\"MinSleepingPills\"] # scalar parameter\nHoursProcess1 = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"HoursProcess1\")\nHoursProcess2 = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"HoursProcess2\")\n\n# Ensure the number of hours process 1 is run is non-negative\nmodel.addConstr(HoursProcess1 >= 0, name=\"non_negative_hours_process1\")\n\n# Add constraint for non-negativity of HoursProcess2\nmodel.addConstr(HoursProcess2 >= 0, name=\"non_negativity_hours_process2\")\n\n# Add total material usage constraint\nmodel.addConstr(\n    HoursProcess1 * MaterialProcess1 + HoursProcess2 * MaterialProcess2 <= TotalMaterial,\n    name=\"total_material_usage\"\n)\n\n# Add constraint to ensure at least MinPainKillers units of pain killers are produced\nmodel.addConstr(\n    PainKillersProcess1 * HoursProcess1 + PainKillersProcess2 * HoursProcess2 >= MinPainKillers,\n    name=\"MinPainKillersConstraint\"\n)\n\n# Add constraint to ensure at least MinSleepingPills units of sleeping pills are produced\nmodel.addConstr(\n    SleepingPillsProcess1 * HoursProcess1 + SleepingPillsProcess2 * HoursProcess2 >= MinSleepingPills,\n    name=\"min_sleeping_pills\"\n)\n\n# Add total material usage constraint\nmodel.addConstr(\n    MaterialProcess1 * HoursProcess1 + MaterialProcess2 * HoursProcess2 <= TotalMaterial,\n    name=\"total_material_usage\"\n)\n\n# Add constraint to ensure the total amount of pain killers produced meets or exceeds the minimum required quantity\nmodel.addConstr(HoursProcess1 * PainKillersProcess1 + HoursProcess2 * PainKillersProcess2 >= MinPainKillers, name=\"min_painkillers_constraint\")\n\n# Add constraint to ensure the total amount of sleeping pills produced meets or exceeds the minimum required\nmodel.addConstr(SleepingPillsProcess1 * HoursProcess1 + SleepingPillsProcess2 * HoursProcess2 >= MinSleepingPills, name=\"min_sleeping_pills\")\n\n# Set objective\nmodel.setObjective(HoursProcess1 + HoursProcess2, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

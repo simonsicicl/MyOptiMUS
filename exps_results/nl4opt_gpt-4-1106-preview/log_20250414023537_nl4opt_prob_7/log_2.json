@@ -1,0 +1,159 @@
+{
+    "background": "A audio company makes two types of headphones: wired headphones and wireless headphones.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Maximum number of wired headphones that can be produced per day by the wired team",
+            "symbol": "MaxWired",
+            "value": 100,
+            "shape": [],
+            "code": "MaxWired = data[\"MaxWired\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of wireless headphones that can be produced per day by the wireless team",
+            "symbol": "MaxWireless",
+            "value": 170,
+            "shape": [],
+            "code": "MaxWireless = data[\"MaxWireless\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum capacity of shared audio testing machine per day",
+            "symbol": "MaxTesting",
+            "value": 150,
+            "shape": [],
+            "code": "MaxTesting = data[\"MaxTesting\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit per wired headphone",
+            "symbol": "ProfitWired",
+            "value": 50,
+            "shape": [],
+            "code": "ProfitWired = data[\"ProfitWired\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit per wireless headphone",
+            "symbol": "ProfitWireless",
+            "value": 20,
+            "shape": [],
+            "code": "ProfitWireless = data[\"ProfitWireless\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of wired headphones must be an integer value",
+            "status": "coded",
+            "formulation": "WiredHeadphones \\in \\mathbb{Z}",
+            "related_variables": [
+                "WiredHeadphones"
+            ],
+            "related_parameters": [],
+            "code": "WiredHeadphones.VType = gp.GRB.INTEGER"
+        },
+        {
+            "description": "The number of wireless headphones produced must be an integer value",
+            "status": "coded",
+            "formulation": "\\textup{WirelessHeadphones} \\in \\mathbb{Z}",
+            "related_variables": [
+                "WirelessHeadphones"
+            ],
+            "related_parameters": [],
+            "code": "WirelessHeadphones.vtype = gp.GRB.INTEGER"
+        },
+        {
+            "description": "Number of wired headphones produced must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{WiredHeadphones} \\geq 0",
+            "related_variables": [
+                "WiredHeadphones"
+            ],
+            "related_parameters": [],
+            "code": "# Constraint: Number of wired headphones produced must be non-negative\nmodel.addConstr(WiredHeadphones >= 0, name=\"non_negative_production\")"
+        },
+        {
+            "description": "Number of wireless headphones produced must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{WirelessHeadphones} \\geq 0",
+            "related_variables": [
+                "WirelessHeadphones"
+            ],
+            "related_parameters": [],
+            "code": "# Constraint: Number of wireless headphones produced must be non-negative\nmodel.addConstr(WirelessHeadphones >= 0, name=\"non_negative_production\")"
+        },
+        {
+            "description": "The number of wired headphones produced per day must not exceed the maximum daily production capacity of the wired team",
+            "status": "coded",
+            "formulation": "\\textup{WiredHeadphones} \\leq \\textup{MaxWired}",
+            "related_variables": [
+                "WiredHeadphones"
+            ],
+            "related_parameters": [
+                "MaxWired"
+            ],
+            "code": "# Add constraint for the maximum production capacity of wired headphones\nmodel.addConstr(WiredHeadphones <= MaxWired, name=\"max_wired_capacity\")"
+        },
+        {
+            "description": "The number of wireless headphones produced per day should not exceed the maximum daily production capacity of the wireless team",
+            "status": "coded",
+            "formulation": "\\textup{WirelessHeadphones} \\leq \\textup{MaxWireless}",
+            "related_variables": [
+                "WirelessHeadphones"
+            ],
+            "related_parameters": [
+                "MaxWireless"
+            ],
+            "code": "# Add constraint for the maximum daily production capacity of the wireless team\nmodel.addConstr(WirelessHeadphones <= MaxWireless, \"max_daily_wireless_capacity\")"
+        },
+        {
+            "description": "The testing machine's capacity can be used for at most MaxTesting headphones per day, combining both wired and wireless headphones",
+            "status": "coded",
+            "formulation": "\\textup{WiredHeadphones} + \\textup{WirelessHeadphones} \\leq \\textup{MaxTesting}",
+            "related_variables": [
+                "WiredHeadphones",
+                "WirelessHeadphones"
+            ],
+            "related_parameters": [
+                "MaxTesting"
+            ],
+            "code": "# Add the constraint for the testing machine's capacity\nmodel.addConstr(WiredHeadphones + WirelessHeadphones <= MaxTesting, name=\"TestingMachineCapacity\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of wired headphones produced",
+            "symbol": "WiredHeadphones",
+            "shape": [],
+            "status": "coded",
+            "code": "WiredHeadphones = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"WiredHeadphones\")"
+        },
+        {
+            "definition": "Number of wireless headphones produced",
+            "symbol": "WirelessHeadphones",
+            "shape": [],
+            "status": "coded",
+            "code": "WirelessHeadphones = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"WirelessHeadphones\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total profit from the production and sale of wired and wireless headphones",
+            "status": "coded",
+            "formulation": "\\textup{Maximize:} \\quad \\textup{ProfitWired} \\times \\textup{WiredHeadphones} + \\textup{ProfitWireless} \\times \\textup{WirelessHeadphones}",
+            "related_variables": [
+                "WiredHeadphones",
+                "WirelessHeadphones"
+            ],
+            "related_parameters": [
+                "ProfitWired",
+                "ProfitWireless"
+            ],
+            "code": "# Define the objective function\nmodel.setObjective(ProfitWired * WiredHeadphones + ProfitWireless * WirelessHeadphones, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 6000.0,
+    "log_path": "logs/log_20250414023537_nl4opt_prob_7/",
+    "problem_path": "data/nl4opt/prob_7/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_7/data.json\", \"r\") as f:\n    data = json.load(f)\n\nMaxWired = data[\"MaxWired\"] # scalar parameter\nMaxWireless = data[\"MaxWireless\"] # scalar parameter\nMaxTesting = data[\"MaxTesting\"] # scalar parameter\nProfitWired = data[\"ProfitWired\"] # scalar parameter\nProfitWireless = data[\"ProfitWireless\"] # scalar parameter\nWiredHeadphones = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"WiredHeadphones\")\nWirelessHeadphones = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"WirelessHeadphones\")\n\nWiredHeadphones.VType = gp.GRB.INTEGER\n\nWirelessHeadphones.vtype = gp.GRB.INTEGER\n\n# Constraint: Number of wired headphones produced must be non-negative\nmodel.addConstr(WiredHeadphones >= 0, name=\"non_negative_production\")\n\n# Constraint: Number of wireless headphones produced must be non-negative\nmodel.addConstr(WirelessHeadphones >= 0, name=\"non_negative_production\")\n\n# Add constraint for the maximum production capacity of wired headphones\nmodel.addConstr(WiredHeadphones <= MaxWired, name=\"max_wired_capacity\")\n\n# Add constraint for the maximum daily production capacity of the wireless team\nmodel.addConstr(WirelessHeadphones <= MaxWireless, \"max_daily_wireless_capacity\")\n\n# Add the constraint for the testing machine's capacity\nmodel.addConstr(WiredHeadphones + WirelessHeadphones <= MaxTesting, name=\"TestingMachineCapacity\")\n\n# Define the objective function\nmodel.setObjective(ProfitWired * WiredHeadphones + ProfitWireless * WirelessHeadphones, gp.GRB.MAXIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

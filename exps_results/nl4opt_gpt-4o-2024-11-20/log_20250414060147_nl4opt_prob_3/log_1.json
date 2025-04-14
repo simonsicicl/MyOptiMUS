@@ -1,0 +1,228 @@
+{
+    "background": "Ben is growing apples and pears on his orchard with TotalAcres acres available.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Total acres available for growing fruits",
+            "symbol": "TotalAcres",
+            "value": 50,
+            "shape": [],
+            "code": "TotalAcres = data[\"TotalAcres\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum acres of apples that must be grown",
+            "symbol": "MinApples",
+            "value": 5,
+            "shape": [],
+            "code": "MinApples = data[\"MinApples\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum acres of pears that must be grown",
+            "symbol": "MinPears",
+            "value": 10,
+            "shape": [],
+            "code": "MinPears = data[\"MinPears\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit per acre of growing apples",
+            "symbol": "ProfitApple",
+            "value": 2,
+            "shape": [],
+            "code": "ProfitApple = data[\"ProfitApple\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit per acre of growing pears",
+            "symbol": "ProfitPear",
+            "value": 4,
+            "shape": [],
+            "code": "ProfitPear = data[\"ProfitPear\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum ratio of pears to apples in growing",
+            "symbol": "MaxPearsToApplesRatio",
+            "value": 2,
+            "shape": [],
+            "code": "MaxPearsToApplesRatio = data[\"MaxPearsToApplesRatio\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Ensures that the number of acres allocated for apples is an integer.",
+            "status": "coded",
+            "formulation": "\\textup{AppleAcres} \\in \\mathbb{Z}",
+            "related_variables": [
+                "AppleAcres"
+            ],
+            "related_parameters": [],
+            "code": "# Change the variable \"AppleAcres\" type to integer to ensure it is an integer value\nAppleAcres.vtype = gp.GRB.INTEGER"
+        },
+        {
+            "description": "The number of pear acres must be an integer.",
+            "status": "coded",
+            "formulation": "\\textup{PearAcres} \\in \\mathbb{Z}",
+            "related_variables": [
+                "PearAcres"
+            ],
+            "related_parameters": [],
+            "code": "# Update variable type to integer since PearAcres must be an integer\nPearAcres.vtype = gp.GRB.INTEGER"
+        },
+        {
+            "description": "Number of apple acres must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{AppleAcres} \\geq 0",
+            "related_variables": [
+                "AppleAcres"
+            ],
+            "related_parameters": [],
+            "code": "# No code is needed: Gurobi variables by default have non-negativity constraints unless otherwise specified (e.g., if set to unrestricted)."
+        },
+        {
+            "description": "The number of acres allocated for growing pears must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{PearAcres} \\geq 0",
+            "related_variables": [
+                "PearAcres"
+            ],
+            "related_parameters": [],
+            "code": "# No additional code needed since the non-negativity is enforced by default due to the variable's lower bound being 0."
+        },
+        {
+            "description": "The number of acres allocated for growing apples must be at least the minimum required acres of apples (MinApples).",
+            "status": "coded",
+            "formulation": "\\textup{AppleAcres} \\geq \\textup{MinApples}",
+            "related_variables": [
+                "AppleAcres"
+            ],
+            "related_parameters": [
+                "MinApples"
+            ],
+            "code": "# Add constraint ensuring the number of acres allocated for apples meets the minimum requirement\nmodel.addConstr(AppleAcres >= MinApples, name=\"min_apples_acres\")"
+        },
+        {
+            "description": "The number of acres allocated for growing pears must be at least the minimum required by the parameter MinPears.",
+            "status": "coded",
+            "formulation": "\\textup{PearAcres} \\geq \\textup{MinPears}",
+            "related_variables": [
+                "PearAcres"
+            ],
+            "related_parameters": [
+                "MinPears"
+            ],
+            "code": "# Add constraint ensuring the minimum acres allocated for growing pears\nmodel.addConstr(PearAcres >= MinPears, name=\"min_pear_acres\")"
+        },
+        {
+            "description": "The number of pear acres is at most MaxPearsToApplesRatio times the number of apple acres",
+            "status": "coded",
+            "formulation": "\\\\textup{PearAcres} \\\\leq \\\\textup{MaxPearsToApplesRatio} \\\\cdot \\\\textup{AppleAcres}",
+            "related_variables": [
+                "AppleAcres",
+                "PearAcres"
+            ],
+            "related_parameters": [
+                "MaxPearsToApplesRatio"
+            ],
+            "code": "# Add constraint: PearAcres <= MaxPearsToApplesRatio * AppleAcres\nmodel.addConstr(PearAcres <= MaxPearsToApplesRatio * AppleAcres, name=\"pear_to_apple_ratio\")"
+        },
+        {
+            "description": "The sum of apple acres and pear acres does not exceed the total acres available for growing fruits.",
+            "status": "coded",
+            "formulation": "\\\\textup{AppleAcres} + \\\\textup{PearAcres} \\\\leq \\\\textup{TotalAcres}",
+            "related_variables": [
+                "AppleAcres",
+                "PearAcres"
+            ],
+            "related_parameters": [
+                "TotalAcres"
+            ],
+            "code": "# Add constraint to ensure total apple and pear acres do not exceed total available acres\nmodel.addConstr(AppleAcres + PearAcres <= TotalAcres, name=\"acres_constraint\")"
+        },
+        {
+            "description": "The total land allocated to apples and pears must not exceed the total available acres.",
+            "status": "coded",
+            "formulation": "\\textup{AppleAcres} + \\textup{PearAcres} \\leq \\textup{TotalAcres}",
+            "related_variables": [
+                "AppleAcres",
+                "PearAcres"
+            ],
+            "related_parameters": [
+                "TotalAcres"
+            ],
+            "code": "# Add constraint to ensure total land allocated to apples and pears does not exceed total available acres\nmodel.addConstr(AppleAcres + PearAcres <= TotalAcres, name=\"land_allocation_constraint\")"
+        },
+        {
+            "description": "The allocated acres for apples must meet the minimum requirement.",
+            "status": "coded",
+            "formulation": "\\textup{AppleAcres} \\geq \\textup{MinApples}",
+            "related_variables": [
+                "AppleAcres"
+            ],
+            "related_parameters": [
+                "MinApples"
+            ],
+            "code": "# Add minimum acreage constraint for apples\nmodel.addConstr(AppleAcres >= MinApples, name=\"min_apples_acreage\")"
+        },
+        {
+            "description": "The allocated acres for pears must meet the minimum requirement.",
+            "status": "coded",
+            "formulation": "\\textup{PearAcres} \\geq \\textup{MinPears}",
+            "related_variables": [
+                "PearAcres"
+            ],
+            "related_parameters": [
+                "MinPears"
+            ],
+            "code": "# Add minimum acreage constraint for pears\nmodel.addConstr(PearAcres >= MinPears, name=\"min_pears_acreage\")"
+        },
+        {
+            "description": "The ratio of allocated acres for pears to apples must not exceed the maximum ratio.",
+            "status": "coded",
+            "formulation": "\\textup{PearAcres} \\leq \\textup{MaxPearsToApplesRatio} \\times \\textup{AppleAcres}",
+            "related_variables": [
+                "PearAcres",
+                "AppleAcres"
+            ],
+            "related_parameters": [
+                "MaxPearsToApplesRatio"
+            ],
+            "code": "# Add constraint to ensure the ratio of PearAcres to AppleAcres does not exceed MaxPearsToApplesRatio\nmodel.addConstr(PearAcres <= MaxPearsToApplesRatio * AppleAcres, name=\"pear_to_apple_ratio\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of acres allocated for growing apples",
+            "symbol": "AppleAcres",
+            "shape": [],
+            "status": "coded",
+            "code": "AppleAcres = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"AppleAcres\")"
+        },
+        {
+            "definition": "Number of acres allocated for growing pears",
+            "symbol": "PearAcres",
+            "shape": [],
+            "status": "coded",
+            "code": "PearAcres = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"PearAcres\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize Ben's profit from growing apples and pears on the allocated land in the orchard.",
+            "status": "coded",
+            "formulation": "\\textup{Maximize:} \\quad \\textup{ProfitApple} \\times \\textup{AppleAcres} + \\textup{ProfitPear} \\times \\textup{PearAcres}",
+            "related_variables": [
+                "AppleAcres",
+                "PearAcres"
+            ],
+            "related_parameters": [
+                "ProfitApple",
+                "ProfitPear"
+            ],
+            "code": "# Set objective\nmodel.setObjective(ProfitApple * AppleAcres + ProfitPear * PearAcres, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250414060147_nl4opt_prob_3/",
+    "problem_path": "data/nl4opt/prob_3/"
+}

@@ -1,0 +1,140 @@
+{
+    "background": "The problem is to determine the optimal distribution of N different files across floppy disks in a way that minimizes the total number of floppy disks used.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Total capacity of a floppy disk",
+            "symbol": "Capacity",
+            "value": "",
+            "shape": [],
+            "code": "Capacity = data[\"Capacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Size of each file j",
+            "symbol": "Size",
+            "value": "",
+            "shape": [
+                "N"
+            ],
+            "code": "Size = np.array(data[\"Size\"]) # ['N']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The sum of file sizes on each floppy disk cannot exceed the capacity of the floppy disk.",
+            "status": "coded",
+            "formulation": "\\sum_{j=1}^{N} \\textup{Size}_j \\cdot \\textup{Allocation}_{ij} \\leq \\textup{Capacity}, \\quad \\forall i",
+            "related_variables": [
+                "Allocation"
+            ],
+            "related_parameters": [
+                "Size",
+                "Capacity"
+            ],
+            "code": "```"
+        },
+        {
+            "description": "Each file must be allocated to exactly one floppy disk",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{M} \\textup{Allocation}_{ij} = 1 \\quad \\forall j \\in \\{1, ..., N\\}",
+            "related_variables": [
+                "Allocation"
+            ],
+            "related_parameters": [],
+            "code": "# Each file must be allocated to exactly one floppy disk\nfor j in range(N):\n    model.addConstr(gp.quicksum(Allocation[j, i] for i in range(M)) == 1, name=f\"file_allocation_{j}\")"
+        },
+        {
+            "description": "File sizes are non-negative",
+            "status": "coded",
+            "formulation": "\\textup{Size}_{j} \\geq 0 \\quad \\forall j \\in \\{1, ..., N\\}",
+            "related_variables": [],
+            "related_parameters": [
+                "Size"
+            ],
+            "code": "# File sizes are non-negative constraints\nfor j in range(N):\n    model.addConstr(Size[j] >= 0, name=\"file_size_non_negative\")"
+        },
+        {
+            "description": "Ensure file j is assigned to at least one floppy disk",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{M} \\textup{Allocation}_{ji} \\geq 1 \\quad \\forall j \\in \\{1,\\ldots,N\\}",
+            "related_variables": [
+                "Allocation"
+            ],
+            "related_parameters": [],
+            "code": "# Ensure file j is assigned to at least one floppy disk\nfor j in range(N):\n    model.addConstr(gp.quicksum(Allocation[j, i] for i in range(M)) >= 1, name=f\"file_assignment_{j}\")"
+        },
+        {
+            "description": "The size of files allocated to a floppy disk cannot exceed its capacity",
+            "status": "coded",
+            "formulation": "\\sum_{j=1}^{N} \\textup{Size}_{j} \\times \\textup{Allocation}_{ji} \\leq \\textup{Capacity} \\quad \\forall i \\in \\{1,\\ldots,M\\}",
+            "related_variables": [
+                "Allocation"
+            ],
+            "related_parameters": [
+                "Size",
+                "Capacity"
+            ],
+            "code": "# Add constraints for the size of files allocated to a floppy disk cannot exceed its capacity\nfor i in range(M):\n    model.addConstr(gp.quicksum(Size[j] * Allocation[j,i] for j in range(N)) <= Capacity, name=f\"disk_capacity_{i}\")"
+        },
+        {
+            "description": "Link the use of a floppy disk to the allocation of files to that disk",
+            "status": "coded",
+            "formulation": "\\sum_{j=1}^{N} \\textup{Allocation}_{ji} \\geq \\textup{DiskUsed}_{i} \\quad \\forall i \\in \\{1,\\ldots,M\\}",
+            "related_variables": [
+                "Allocation",
+                "DiskUsed"
+            ],
+            "related_parameters": [],
+            "code": "```"
+        },
+        {
+            "description": "Binary constraint for DiskUsed variable",
+            "status": "coded",
+            "formulation": "\\textup{DiskUsed}_{i} \\in \\{0,1\\} \\quad \\forall i \\in \\{1,\\ldots,M\\}",
+            "related_variables": [
+                "DiskUsed"
+            ],
+            "related_parameters": [],
+            "code": "# The DiskUsed binary constraint is already encoded in its definition and does not need an additional constraint."
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Binary variable indicating if file j is allocated to floppy disk i",
+            "symbol": "Allocation",
+            "shape": [
+                "N",
+                "M"
+            ],
+            "status": "coded",
+            "code": "Allocation = model.addVars(N, M, vtype=gp.GRB.BINARY, name=\"Allocation\")"
+        },
+        {
+            "definition": "Binary variable indicating if floppy disk i is used",
+            "symbol": "DiskUsed",
+            "shape": [
+                "M"
+            ],
+            "status": "coded",
+            "code": "DiskUsed = model.addVars(M, vtype=gp.GRB.BINARY, name=\"DiskUsed\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of floppy disks used in the distribution",
+            "status": "coded",
+            "formulation": "\\min \\sum_{i=1}^{M} \\textup{DiskUsed}_{i}",
+            "related_variables": [
+                "DiskUsed"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(gp.quicksum(DiskUsed[i] for i in range(M)), gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413091943_nlp4lp_44/",
+    "problem_path": "data/nlp4lp/44/"
+}

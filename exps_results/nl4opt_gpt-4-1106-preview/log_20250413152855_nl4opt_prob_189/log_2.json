@@ -1,0 +1,177 @@
+{
+    "background": "A chemical company needs to transport hydrogen using two methods: high pressure tube trailers and liquefied hydrogen tankers, with different capacities and costs, aiming to fulfill a minimum volume and a budget constraint while minimizing the total number of trips.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Capacity of high-pressure tube trailer per trip",
+            "symbol": "TubeCapacity",
+            "value": 50,
+            "shape": [],
+            "code": "TubeCapacity = data[\"TubeCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost of using the high-pressure tube trailer per trip",
+            "symbol": "TubeCost",
+            "value": 500,
+            "shape": [],
+            "code": "TubeCost = data[\"TubeCost\"] # scalar parameter"
+        },
+        {
+            "definition": "Capacity of liquefied hydrogen tanker per trip",
+            "symbol": "TankerCapacity",
+            "value": 30,
+            "shape": [],
+            "code": "TankerCapacity = data[\"TankerCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost of using the liquefied hydrogen tanker per trip",
+            "symbol": "TankerCost",
+            "value": 200,
+            "shape": [],
+            "code": "TankerCost = data[\"TankerCost\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum total volume of hydrogen to be transported",
+            "symbol": "MinVolume",
+            "value": 1000,
+            "shape": [],
+            "code": "MinVolume = data[\"MinVolume\"] # scalar parameter"
+        },
+        {
+            "definition": "Available budget for transportation",
+            "symbol": "Budget",
+            "value": 3750,
+            "shape": [],
+            "code": "Budget = data[\"Budget\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of high pressure tube trailers used must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfTubeTrailersUsed} \\geq 0",
+            "related_variables": [
+                "NumberOfTubeTrailersUsed"
+            ],
+            "related_parameters": [],
+            "code": "# Since the variable NumberOfTubeTrailersUsed is already declared as non-negative by default (all variables are non-negative unless otherwise specified), there is no need to add an additional constraint.\n# Non-negativity is guaranteed by the variable type (INTEGER)."
+        },
+        {
+            "description": "The number of liquefied hydrogen tankers used must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfTankersUsed} \\geq 0",
+            "related_variables": [
+                "NumberOfTankersUsed"
+            ],
+            "related_parameters": [],
+            "code": "# Since NumberOfTankersUsed is already an integer variable, we just need to add a constraint ensuring it's non-negative\nmodel.addConstr(NumberOfTankersUsed >= 0, name=\"non_negative_tankers\")"
+        },
+        {
+            "description": "Total transported volume must be at least MinVolume cubic meters",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfTubeTrailersUsed} \\times \\textup{TubeCapacity} + \\textup{NumberOfTankersUsed} \\times \\textup{TankerCapacity} \\geq \\textup{MinVolume}",
+            "related_variables": [
+                "NumberOfTubeTrailersUsed",
+                "NumberOfTankersUsed"
+            ],
+            "related_parameters": [
+                "TubeCapacity",
+                "TankerCapacity",
+                "MinVolume"
+            ],
+            "code": "# Add constraint for the minimum total transported volume\nmodel.addConstr(NumberOfTubeTrailersUsed * TubeCapacity + NumberOfTankersUsed * TankerCapacity >= MinVolume, name=\"min_transport_volume\")"
+        },
+        {
+            "description": "Total cost constraint to ensure that the total cost of using high-pressure tube trailers and liquefied hydrogen tankers does not exceed the available budget",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfTubeTrailersUsed} \\cdot \\textup{TubeCost} + \\textup{NumberOfTankersUsed} \\cdot \\textup{TankerCost} \\leq \\textup{Budget}",
+            "related_variables": [
+                "NumberOfTubeTrailersUsed",
+                "NumberOfTankersUsed"
+            ],
+            "related_parameters": [
+                "TubeCost",
+                "TankerCost",
+                "Budget"
+            ],
+            "code": "# Add total cost constraint\ntotal_cost = NumberOfTubeTrailersUsed * TubeCost + NumberOfTankersUsed * TankerCost\nmodel.addConstr(total_cost <= Budget, name=\"budget_constraint\")"
+        },
+        {
+            "description": "The number of high-pressure tube trailer trips is less than the number of liquefied hydrogen tanker trips",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfTubeTrailersUsed} \\leq \\textup{NumberOfTankersUsed}",
+            "related_variables": [
+                "NumberOfTubeTrailersUsed",
+                "NumberOfTankersUsed"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint to ensure the number of high-pressure tube trailer trips \n# is less than the number of liquefied hydrogen tanker trips\nmodel.addConstr(NumberOfTubeTrailersUsed <= NumberOfTankersUsed, name=\"tube_trailer_vs_tanker_trips\")"
+        },
+        {
+            "description": "Ensure the minimum total volume of hydrogen is transported",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfTubeTrailersUsed} \\times \\textup{TubeCapacity} + \\textup{NumberOfTankersUsed} \\times \\textup{TankerCapacity} \\geq \\textup{MinVolume}",
+            "related_variables": [
+                "NumberOfTubeTrailersUsed",
+                "NumberOfTankersUsed"
+            ],
+            "related_parameters": [
+                "TubeCapacity",
+                "TankerCapacity",
+                "MinVolume"
+            ],
+            "code": "# Ensure the minimum total volume of hydrogen is transported\nmodel.addConstr(NumberOfTubeTrailersUsed * TubeCapacity + NumberOfTankersUsed * TankerCapacity >= MinVolume, name=\"min_hydrogen_volume_constraint\")"
+        },
+        {
+            "description": "Ensure the cost of transportation does not exceed the budget",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfTubeTrailersUsed} \\times \\textup{TubeCost} + \\textup{NumberOfTankersUsed} \\times \\textup{TankerCost} \\leq \\textup{Budget}",
+            "related_variables": [
+                "NumberOfTubeTrailersUsed",
+                "NumberOfTankersUsed"
+            ],
+            "related_parameters": [
+                "TubeCost",
+                "TankerCost",
+                "Budget"
+            ],
+            "code": "# Ensure the cost of transportation does not exceed the budget\nmodel.addConstr(NumberOfTubeTrailersUsed * TubeCost + NumberOfTankersUsed * TankerCost <= Budget, name=\"budget_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of high-pressure tube trailers used for transportation",
+            "symbol": "NumberOfTubeTrailersUsed",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfTubeTrailersUsed = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfTubeTrailersUsed\")"
+        },
+        {
+            "definition": "The number of liquefied hydrogen tankers used for transportation",
+            "symbol": "NumberOfTankersUsed",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfTankersUsed = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfTankersUsed\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of transportation trips",
+            "status": "coded",
+            "formulation": "\\min \\textup{NumberOfTubeTrailersUsed} + \\textup{NumberOfTankersUsed}",
+            "related_variables": [
+                "NumberOfTubeTrailersUsed",
+                "NumberOfTankersUsed"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(NumberOfTubeTrailersUsed + NumberOfTankersUsed, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 3,
+    "error_message": null,
+    "obj_val": "infeasible",
+    "log_path": "logs/log_20250413152855_nl4opt_prob_189/",
+    "problem_path": "data/nl4opt/prob_189/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_189/data.json\", \"r\") as f:\n    data = json.load(f)\n\nTubeCapacity = data[\"TubeCapacity\"] # scalar parameter\nTubeCost = data[\"TubeCost\"] # scalar parameter\nTankerCapacity = data[\"TankerCapacity\"] # scalar parameter\nTankerCost = data[\"TankerCost\"] # scalar parameter\nMinVolume = data[\"MinVolume\"] # scalar parameter\nBudget = data[\"Budget\"] # scalar parameter\nNumberOfTubeTrailersUsed = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfTubeTrailersUsed\")\nNumberOfTankersUsed = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfTankersUsed\")\n\n# Since the variable NumberOfTubeTrailersUsed is already declared as non-negative by default (all variables are non-negative unless otherwise specified), there is no need to add an additional constraint.\n# Non-negativity is guaranteed by the variable type (INTEGER).\n\n# Since NumberOfTankersUsed is already an integer variable, we just need to add a constraint ensuring it's non-negative\nmodel.addConstr(NumberOfTankersUsed >= 0, name=\"non_negative_tankers\")\n\n# Add constraint for the minimum total transported volume\nmodel.addConstr(NumberOfTubeTrailersUsed * TubeCapacity + NumberOfTankersUsed * TankerCapacity >= MinVolume, name=\"min_transport_volume\")\n\n# Add total cost constraint\ntotal_cost = NumberOfTubeTrailersUsed * TubeCost + NumberOfTankersUsed * TankerCost\nmodel.addConstr(total_cost <= Budget, name=\"budget_constraint\")\n\n# Add constraint to ensure the number of high-pressure tube trailer trips \n# is less than the number of liquefied hydrogen tanker trips\nmodel.addConstr(NumberOfTubeTrailersUsed <= NumberOfTankersUsed, name=\"tube_trailer_vs_tanker_trips\")\n\n# Ensure the minimum total volume of hydrogen is transported\nmodel.addConstr(NumberOfTubeTrailersUsed * TubeCapacity + NumberOfTankersUsed * TankerCapacity >= MinVolume, name=\"min_hydrogen_volume_constraint\")\n\n# Ensure the cost of transportation does not exceed the budget\nmodel.addConstr(NumberOfTubeTrailersUsed * TubeCost + NumberOfTankersUsed * TankerCost <= Budget, name=\"budget_constraint\")\n\n# Set objective\nmodel.setObjective(NumberOfTubeTrailersUsed + NumberOfTankersUsed, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

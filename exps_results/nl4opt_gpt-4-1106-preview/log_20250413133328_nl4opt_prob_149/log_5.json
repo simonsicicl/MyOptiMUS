@@ -1,0 +1,177 @@
+{
+    "background": "A chocolate company can transport boxes of chocolate using vans or trucks. Vans, which also serve as advertising, have a certain capacity and cost, differing from trucks. Both transport methods are constrained by capacity and cost, with a minimum transport requirement and a total budget. The company aims to minimize the total number of trips.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "The capacity of a van",
+            "symbol": "VanCapacity",
+            "value": 50,
+            "shape": [],
+            "code": "VanCapacity = data[\"VanCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "The capacity of a truck",
+            "symbol": "TruckCapacity",
+            "value": 80,
+            "shape": [],
+            "code": "TruckCapacity = data[\"TruckCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost per van trip",
+            "symbol": "VanCost",
+            "value": 30,
+            "shape": [],
+            "code": "VanCost = data[\"VanCost\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost per truck trip",
+            "symbol": "TruckCost",
+            "value": 50,
+            "shape": [],
+            "code": "TruckCost = data[\"TruckCost\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of boxes to transport",
+            "symbol": "MinBoxes",
+            "value": 1500,
+            "shape": [],
+            "code": "MinBoxes = data[\"MinBoxes\"] # scalar parameter"
+        },
+        {
+            "definition": "Budget for transportation",
+            "symbol": "Budget",
+            "value": 1000,
+            "shape": [],
+            "code": "Budget = data[\"Budget\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of van trips must be a non-negative value",
+            "status": "coded",
+            "formulation": "\\textup{VanTrips} \\geq 0",
+            "related_variables": [
+                "VanTrips"
+            ],
+            "related_parameters": [],
+            "code": "model.addConstr(VanTrips >= 0, name=\"van_trips_non_negative\")"
+        },
+        {
+            "description": "The number of truck trips is non-negative",
+            "status": "coded",
+            "formulation": "\\textup{TruckTrips} \\geq 0",
+            "related_variables": [
+                "TruckTrips"
+            ],
+            "related_parameters": [],
+            "code": "# Since TruckTrips is already defined as an integer variable, we just need to add a constraint to ensure it is non-negative\nmodel.addConstr(TruckTrips >= 0, name=\"non_negative_truck_trips\")"
+        },
+        {
+            "description": "Total boxes transported must be at least the minimum required number of boxes",
+            "status": "coded",
+            "formulation": "\\textup{VanTrips} \\times \\textup{VanCapacity} + \\textup{TruckTrips} \\times \\textup{TruckCapacity} \\geq \\textup{MinBoxes}",
+            "related_variables": [
+                "VanTrips",
+                "TruckTrips"
+            ],
+            "related_parameters": [
+                "VanCapacity",
+                "TruckCapacity",
+                "MinBoxes"
+            ],
+            "code": "# Add constraint for total boxes transported to be at least the minimum required number of boxes\nmodel.addConstr(VanTrips * VanCapacity + TruckTrips * TruckCapacity >= MinBoxes, name=\"min_boxes\")"
+        },
+        {
+            "description": "Total cost does not exceed Budget",
+            "status": "coded",
+            "formulation": "\\textup{VanCost} \\cdot \\textup{VanTrips} + \\textup{TruckCost} \\cdot \\textup{TruckTrips} \\leq \\textup{Budget}",
+            "related_variables": [
+                "VanTrips",
+                "TruckTrips"
+            ],
+            "related_parameters": [
+                "VanCost",
+                "TruckCost",
+                "Budget"
+            ],
+            "code": "# Ensure total cost does not exceed budget\nmodel.addConstr(VanCost * VanTrips + TruckCost * TruckTrips <= Budget, name=\"budget_constraint\")"
+        },
+        {
+            "description": "Number of van trips must be larger than the number of truck trips",
+            "status": "coded",
+            "formulation": "\\textup{VanTrips} > \\textup{TruckTrips}",
+            "related_variables": [
+                "VanTrips",
+                "TruckTrips"
+            ],
+            "related_parameters": [],
+            "code": "model.addConstr(VanTrips - TruckTrips >= 1, name=\"van_over_truck_trips\")"
+        },
+        {
+            "description": "Vans and trucks together should transport at least the minimum number of boxes required.",
+            "status": "coded",
+            "formulation": "\\textup{VanTrips} \\cdot \\textup{VanCapacity} + \\textup{TruckTrips} \\cdot \\textup{TruckCapacity} \\geq \\textup{MinBoxes}",
+            "related_variables": [
+                "VanTrips",
+                "TruckTrips"
+            ],
+            "related_parameters": [
+                "VanCapacity",
+                "TruckCapacity",
+                "MinBoxes"
+            ],
+            "code": "# Ensure vans and trucks transport at least the minimum number of boxes required\nmodel.addConstr(VanTrips * VanCapacity + TruckTrips * TruckCapacity >= MinBoxes, name=\"min_boxes_transport\")"
+        },
+        {
+            "description": "The total cost for all vans and trucks should not exceed the budget.",
+            "status": "coded",
+            "formulation": "\\textup{VanTrips} \\cdot \\textup{VanCost} + \\textup{TruckTrips} \\cdot \\textup{TruckCost} \\leq \\textup{Budget}",
+            "related_variables": [
+                "VanTrips",
+                "TruckTrips"
+            ],
+            "related_parameters": [
+                "VanCost",
+                "TruckCost",
+                "Budget"
+            ],
+            "code": "# Add constraint for the total cost of vans and trucks not to exceed the budget\nmodel.addConstr(VanTrips * VanCost + TruckTrips * TruckCost <= Budget, name=\"budget_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of trips made by vans",
+            "symbol": "VanTrips",
+            "shape": [],
+            "status": "coded",
+            "code": "VanTrips = model.addVar(vtype=gp.GRB.INTEGER, name=\"VanTrips\")"
+        },
+        {
+            "definition": "The number of trips made by trucks",
+            "symbol": "TruckTrips",
+            "shape": [],
+            "status": "coded",
+            "code": "TruckTrips = model.addVar(vtype=gp.GRB.INTEGER, name=\"TruckTrips\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of van and truck trips",
+            "status": "coded",
+            "formulation": "\\textup{Minimize} \\quad \\textup{VanTrips} + \\textup{TruckTrips}",
+            "related_variables": [
+                "VanTrips",
+                "TruckTrips"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(VanTrips + TruckTrips, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "runtime_error",
+    "solver_output_status": "runtime_error",
+    "error_message": "Traceback (most recent call last):\n  File \"c:\\Users\\Simon\\Desktop\\Courses\\ECE 570\\ECE570_Project\\MyOptiMUS\\evaluator.py\", line 45, in run\n    exec(last_line, local_env, local_env)\n  File \"<string>\", line 2, in <module>\n  File \"src\\\\gurobipy\\\\linexpr.pxi\", line 467, in gurobipy._core.LinExpr.__richcmp__\nNotImplementedError\n",
+    "obj_val": null,
+    "log_path": "logs/log_20250413133328_nl4opt_prob_149/",
+    "problem_path": "data/nl4opt/prob_149/",
+    "prep_code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_149/data.json\", \"r\") as f:\n    data = json.load(f)\n"
+}

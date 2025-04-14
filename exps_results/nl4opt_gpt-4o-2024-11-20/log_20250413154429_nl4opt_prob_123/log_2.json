@@ -1,0 +1,227 @@
+{
+    "background": "A pharmacy has a limited amount of morphine to produce painkillers and sleeping pills, both of which require morphine and digestive medicine. The objective is to minimize the total amount of digestive medicine used while adhering to pill production requirements.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Total amount of morphine available",
+            "symbol": "TotalMorphine",
+            "value": 3000,
+            "shape": [],
+            "code": "TotalMorphine = data[\"TotalMorphine\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of morphine required to make one painkiller pill",
+            "symbol": "MorphinePainkiller",
+            "value": 10,
+            "shape": [],
+            "code": "MorphinePainkiller = data[\"MorphinePainkiller\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of morphine required to make one sleeping pill",
+            "symbol": "MorphineSleepingPill",
+            "value": 6,
+            "shape": [],
+            "code": "MorphineSleepingPill = data[\"MorphineSleepingPill\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of digestive medicine required to make one painkiller pill",
+            "symbol": "DigestiveMedicinePainkiller",
+            "value": 3,
+            "shape": [],
+            "code": "DigestiveMedicinePainkiller = data[\"DigestiveMedicinePainkiller\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of digestive medicine required to make one sleeping pill",
+            "symbol": "DigestiveMedicineSleepingPill",
+            "value": 5,
+            "shape": [],
+            "code": "DigestiveMedicineSleepingPill = data[\"DigestiveMedicineSleepingPill\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of painkiller pills required",
+            "symbol": "MinPainkillers",
+            "value": 50,
+            "shape": [],
+            "code": "MinPainkillers = data[\"MinPainkillers\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum proportion of the total pills that must be sleeping pills",
+            "symbol": "MinProportionSleepingPills",
+            "value": 0.7,
+            "shape": [],
+            "code": "MinProportionSleepingPills = data[\"MinProportionSleepingPills\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The total morphine used to produce painkiller pills and sleeping pills must not exceed the available morphine supply.",
+            "status": "coded",
+            "formulation": "\\textup{MorphinePainkiller} \\cdot \\textup{NumPainkillerPills} + \\textup{MorphineSleepingPill} \\cdot \\textup{NumSleepingPills} \\leq \\textup{TotalMorphine}",
+            "related_variables": [
+                "NumPainkillerPills",
+                "NumSleepingPills"
+            ],
+            "related_parameters": [
+                "MorphinePainkiller",
+                "MorphineSleepingPill",
+                "TotalMorphine"
+            ],
+            "code": "# Add total morphine usage constraint\nmodel.addConstr(\n    MorphinePainkiller * NumPainkillerPills + MorphineSleepingPill * NumSleepingPills <= TotalMorphine,\n    name=\"total_morphine_constraint\"\n)"
+        },
+        {
+            "description": "Ensure that at least the minimum number of painkiller pills (MinPainkillers) are produced.",
+            "status": "coded",
+            "formulation": "\\textup{NumPainkillerPills} \\geq \\textup{MinPainkillers}",
+            "related_variables": [
+                "NumPainkillerPills"
+            ],
+            "related_parameters": [
+                "MinPainkillers"
+            ],
+            "code": "# Add constraint to ensure at least the minimum number of painkiller pills are produced\nmodel.addConstr(NumPainkillerPills >= MinPainkillers, name=\"min_painkiller_constraint\")"
+        },
+        {
+            "description": "At least MinProportionSleepingPills of the total pills produced should be sleeping pills.",
+            "status": "coded",
+            "formulation": "\\textup{NumSleepingPills} \\geq \\textup{MinProportionSleepingPills} \\cdot \\textup{TotalPills}",
+            "related_variables": [
+                "NumSleepingPills",
+                "TotalPills"
+            ],
+            "related_parameters": [
+                "MinProportionSleepingPills"
+            ],
+            "code": "# Add constraint to ensure at least MinProportionSleepingPills of TotalPills are sleeping pills\nmodel.addConstr(NumSleepingPills >= MinProportionSleepingPills * TotalPills, \n                name=\"min_proportion_sleeping_pills\")"
+        },
+        {
+            "description": "The total number of painkiller pills produced must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumPainkillerPills} \\geq 0",
+            "related_variables": [
+                "NumPainkillerPills"
+            ],
+            "related_parameters": [],
+            "code": "# Add non-negativity constraint for the total number of painkiller pills\nmodel.addConstr(NumPainkillerPills >= 0, name=\"non_negative_painkiller_pills\")"
+        },
+        {
+            "description": "The number of sleeping pills produced must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumSleepingPills} \\geq 0",
+            "related_variables": [
+                "NumSleepingPills"
+            ],
+            "related_parameters": [],
+            "code": "# The variable \"NumSleepingPills\" is already non-negative due to its default lower bound (0) in Gurobi."
+        },
+        {
+            "description": "TotalPills represents the sum of all pills produced (sleeping pills and painkillers).",
+            "status": "coded",
+            "formulation": "\\textup{TotalPills} = \\textup{NumSleepingPills} + \\textup{NumPainkillerPills}",
+            "related_variables": [
+                "TotalPills",
+                "NumSleepingPills",
+                "NumPainkillerPills"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint: TotalPills equals the sum of NumSleepingPills and NumPainkillerPills\nmodel.addConstr(TotalPills == NumSleepingPills + NumPainkillerPills, name=\"TotalPills_constraint\")"
+        },
+        {
+            "description": "Total morphine usage constraint",
+            "status": "coded",
+            "formulation": "\\textup{MorphinePainkiller} \\cdot \\textup{NumPainkillerPills} + \\textup{MorphineSleepingPill} \\cdot \\textup{NumSleepingPills} \\leq \\textup{TotalMorphine}",
+            "related_variables": [
+                "NumPainkillerPills",
+                "NumSleepingPills"
+            ],
+            "related_parameters": [
+                "MorphinePainkiller",
+                "MorphineSleepingPill",
+                "TotalMorphine"
+            ],
+            "code": "# Add total morphine usage constraint\nmodel.addConstr(\n    MorphinePainkiller * NumPainkillerPills + MorphineSleepingPill * NumSleepingPills <= TotalMorphine,\n    name=\"total_morphine_usage\"\n)"
+        },
+        {
+            "description": "Minimum production of painkiller pills",
+            "status": "coded",
+            "formulation": "\\textup{NumPainkillerPills} \\geq \\textup{MinPainkillers}",
+            "related_variables": [
+                "NumPainkillerPills"
+            ],
+            "related_parameters": [
+                "MinPainkillers"
+            ],
+            "code": "# Add constraint for minimum production of painkiller pills\nmodel.addConstr(NumPainkillerPills >= MinPainkillers, name=\"min_painkiller_production\")"
+        },
+        {
+            "description": "Minimum proportion of sleeping pills compared to total pills",
+            "status": "coded",
+            "formulation": "\\textup{NumSleepingPills} \\geq \\textup{MinProportionSleepingPills} \\cdot (\\textup{NumPainkillerPills} + \\textup{NumSleepingPills})",
+            "related_variables": [
+                "NumSleepingPills",
+                "NumPainkillerPills"
+            ],
+            "related_parameters": [
+                "MinProportionSleepingPills"
+            ],
+            "code": "# Add constraint to ensure a minimum proportion of sleeping pills is maintained\nmodel.addConstr(NumSleepingPills >= MinProportionSleepingPills * (NumPainkillerPills + NumSleepingPills), name=\"min_proportion_sleeping_pills\")"
+        },
+        {
+            "description": "Definition of total pills produced",
+            "status": "coded",
+            "formulation": "\\textup{TotalPills} = \\textup{NumPainkillerPills} + \\textup{NumSleepingPills}",
+            "related_variables": [
+                "NumPainkillerPills",
+                "NumSleepingPills",
+                "TotalPills"
+            ],
+            "related_parameters": [],
+            "code": "# Add total pills production constraint\nmodel.addConstr(TotalPills == NumPainkillerPills + NumSleepingPills, name=\"total_pills_production\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Total number of painkiller pills produced",
+            "symbol": "NumPainkillerPills",
+            "shape": [],
+            "status": "coded",
+            "code": "NumPainkillerPills = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumPainkillerPills\")"
+        },
+        {
+            "definition": "Total number of sleeping pills produced",
+            "symbol": "NumSleepingPills",
+            "shape": [],
+            "status": "coded",
+            "code": "NumSleepingPills = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumSleepingPills\")"
+        },
+        {
+            "definition": "The total number of pills produced, which is the sum of sleeping pills and painkiller pills.",
+            "symbol": "TotalPills",
+            "shape": [],
+            "status": "coded",
+            "code": "TotalPills = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TotalPills\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total amount of digestive medicine used in pill production",
+            "status": "coded",
+            "formulation": "\\textup{DigestiveMedicinePainkiller} \\cdot \\textup{NumPainkillerPills} + \\textup{DigestiveMedicineSleepingPill} \\cdot \\textup{NumSleepingPills}",
+            "related_variables": [
+                "NumPainkillerPills",
+                "NumSleepingPills"
+            ],
+            "related_parameters": [
+                "DigestiveMedicinePainkiller",
+                "DigestiveMedicineSleepingPill"
+            ],
+            "code": "# Set objective\nmodel.setObjective(DigestiveMedicinePainkiller * NumPainkillerPills + DigestiveMedicineSleepingPill * NumSleepingPills, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 733.3333333333333,
+    "log_path": "logs/log_20250413154429_nl4opt_prob_123/",
+    "problem_path": "data/nl4opt/prob_123/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_123/data.json\", \"r\") as f:\n    data = json.load(f)\n\nTotalMorphine = data[\"TotalMorphine\"] # scalar parameter\nMorphinePainkiller = data[\"MorphinePainkiller\"] # scalar parameter\nMorphineSleepingPill = data[\"MorphineSleepingPill\"] # scalar parameter\nDigestiveMedicinePainkiller = data[\"DigestiveMedicinePainkiller\"] # scalar parameter\nDigestiveMedicineSleepingPill = data[\"DigestiveMedicineSleepingPill\"] # scalar parameter\nMinPainkillers = data[\"MinPainkillers\"] # scalar parameter\nMinProportionSleepingPills = data[\"MinProportionSleepingPills\"] # scalar parameter\nNumPainkillerPills = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumPainkillerPills\")\nNumSleepingPills = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumSleepingPills\")\nTotalPills = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TotalPills\")\n\n# Add total morphine usage constraint\nmodel.addConstr(\n    MorphinePainkiller * NumPainkillerPills + MorphineSleepingPill * NumSleepingPills <= TotalMorphine,\n    name=\"total_morphine_constraint\"\n)\n\n# Add constraint to ensure at least the minimum number of painkiller pills are produced\nmodel.addConstr(NumPainkillerPills >= MinPainkillers, name=\"min_painkiller_constraint\")\n\n# Add constraint to ensure at least MinProportionSleepingPills of TotalPills are sleeping pills\nmodel.addConstr(NumSleepingPills >= MinProportionSleepingPills * TotalPills, \n                name=\"min_proportion_sleeping_pills\")\n\n# Add non-negativity constraint for the total number of painkiller pills\nmodel.addConstr(NumPainkillerPills >= 0, name=\"non_negative_painkiller_pills\")\n\n# The variable \"NumSleepingPills\" is already non-negative due to its default lower bound (0) in Gurobi.\n\n# Add constraint: TotalPills equals the sum of NumSleepingPills and NumPainkillerPills\nmodel.addConstr(TotalPills == NumSleepingPills + NumPainkillerPills, name=\"TotalPills_constraint\")\n\n# Add total morphine usage constraint\nmodel.addConstr(\n    MorphinePainkiller * NumPainkillerPills + MorphineSleepingPill * NumSleepingPills <= TotalMorphine,\n    name=\"total_morphine_usage\"\n)\n\n# Add constraint for minimum production of painkiller pills\nmodel.addConstr(NumPainkillerPills >= MinPainkillers, name=\"min_painkiller_production\")\n\n# Add constraint to ensure a minimum proportion of sleeping pills is maintained\nmodel.addConstr(NumSleepingPills >= MinProportionSleepingPills * (NumPainkillerPills + NumSleepingPills), name=\"min_proportion_sleeping_pills\")\n\n# Add total pills production constraint\nmodel.addConstr(TotalPills == NumPainkillerPills + NumSleepingPills, name=\"total_pills_production\")\n\n# Set objective\nmodel.setObjective(DigestiveMedicinePainkiller * NumPainkillerPills + DigestiveMedicineSleepingPill * NumSleepingPills, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

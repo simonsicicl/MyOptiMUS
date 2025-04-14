@@ -1,0 +1,163 @@
+{
+    "background": "A tourist spot offers transportation to the top of the mountains via hot-air balloons and gondola lifts, both of which have different capacities and pollution levels.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Capacity of one hot air balloon ride",
+            "symbol": "BalloonCapacity",
+            "value": 4,
+            "shape": [],
+            "code": "BalloonCapacity = data[\"BalloonCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Capacity of one gondola lift",
+            "symbol": "GondolaCapacity",
+            "value": 6,
+            "shape": [],
+            "code": "GondolaCapacity = data[\"GondolaCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Pollution produced by one hot air balloon ride",
+            "symbol": "BalloonPollution",
+            "value": 10,
+            "shape": [],
+            "code": "BalloonPollution = data[\"BalloonPollution\"] # scalar parameter"
+        },
+        {
+            "definition": "Pollution produced by one gondola lift",
+            "symbol": "GondolaPollution",
+            "value": 15,
+            "shape": [],
+            "code": "GondolaPollution = data[\"GondolaPollution\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of hot air balloon rides",
+            "symbol": "MaxBalloons",
+            "value": 10,
+            "shape": [],
+            "code": "MaxBalloons = data[\"MaxBalloons\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of visitors to be transported",
+            "symbol": "MinVisitors",
+            "value": 70,
+            "shape": [],
+            "code": "MinVisitors = data[\"MinVisitors\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of hot-air balloon rides must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfBalloons} \\geq 0",
+            "related_variables": [
+                "NumberOfBalloons"
+            ],
+            "related_parameters": [],
+            "code": "# Since NumberOfBalloons has already been defined as an integer variable, \n# we just need to add a constraint to ensure it is non-negative. \n# No need to change its integrality.\nmodel.addConstr(NumberOfBalloons >= 0, \"num_balloons_non_negative\")"
+        },
+        {
+            "description": "The number of gondola lift trips must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfGondolas} \\geq 0",
+            "related_variables": [
+                "NumberOfGondolas"
+            ],
+            "related_parameters": [],
+            "code": "# No code needed as the variable NumberOfGondolas is already defined to be non-negative by its type (INTEGER)"
+        },
+        {
+            "description": "The number of hot-air balloon rides must not exceed the maximum allowed.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfBalloons} \\leq \\textup{MaxBalloons}",
+            "related_variables": [
+                "NumberOfBalloons"
+            ],
+            "related_parameters": [
+                "MaxBalloons"
+            ],
+            "code": "model.addConstr(NumberOfBalloons <= MaxBalloons, name=\"max_balloons_constraint\")"
+        },
+        {
+            "description": "At least MinVisitors must be transported using hot-air balloons and gondola lifts.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfBalloons} \\times \\textup{BalloonCapacity} + \\textup{NumberOfGondolas} \\times \\textup{GondolaCapacity} \\geq \\textup{MinVisitors}",
+            "related_variables": [
+                "NumberOfBalloons",
+                "NumberOfGondolas"
+            ],
+            "related_parameters": [
+                "BalloonCapacity",
+                "GondolaCapacity",
+                "MinVisitors"
+            ],
+            "code": "# At least MinVisitors must be transported using hot-air balloons and gondola lifts.\nmodel.addConstr(NumberOfBalloons * BalloonCapacity + NumberOfGondolas * GondolaCapacity >= MinVisitors, \"MinVisitors_Transportation\")"
+        },
+        {
+            "description": "Ensure the minimum number of visitors is transported",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfBalloons} \\times \\textup{BalloonCapacity} + \\textup{NumberOfGondolas} \\times \\textup{GondolaCapacity} \\geq \\textup{MinVisitors}",
+            "related_variables": [
+                "NumberOfBalloons",
+                "NumberOfGondolas"
+            ],
+            "related_parameters": [
+                "BalloonCapacity",
+                "GondolaCapacity",
+                "MinVisitors"
+            ],
+            "code": "# Ensure the minimum number of visitors is transported\nmodel.addConstr(NumberOfBalloons * BalloonCapacity + NumberOfGondolas * GondolaCapacity >= MinVisitors, name=\"min_visitors\")"
+        },
+        {
+            "description": "Respect the maximum number of hot air balloon rides available",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfBalloons} \\leq \\textup{MaxBalloons}",
+            "related_variables": [
+                "NumberOfBalloons"
+            ],
+            "related_parameters": [
+                "MaxBalloons"
+            ],
+            "code": "# Add constraint to respect the maximum number of hot air balloon rides available\nmodel.addConstr(NumberOfBalloons <= MaxBalloons, name=\"max_balloons_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of hot-air balloon rides given to tourists",
+            "symbol": "NumberOfBalloons",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfBalloons = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfBalloons\")"
+        },
+        {
+            "definition": "Number of gondola lift trips given to tourists",
+            "symbol": "NumberOfGondolas",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfGondolas = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfGondolas\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total pollution produced by the hot-air balloons and gondola lifts",
+            "status": "coded",
+            "formulation": "\\textup{TotalPollution} = \\textup{NumberOfBalloons} \\times \\textup{BalloonPollution} + \\textup{NumberOfGondolas} \\times \\textup{GondolaPollution}",
+            "related_variables": [
+                "NumberOfBalloons",
+                "NumberOfGondolas"
+            ],
+            "related_parameters": [
+                "BalloonPollution",
+                "GondolaPollution"
+            ],
+            "code": "# Define the objective function\nobjective = NumberOfBalloons * BalloonPollution + NumberOfGondolas * GondolaPollution\n\n# Set the objective in the model\nmodel.setObjective(objective, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 175.0,
+    "log_path": "logs/log_20250413152056_nl4opt_prob_183/",
+    "problem_path": "data/nl4opt/prob_183/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_183/data.json\", \"r\") as f:\n    data = json.load(f)\n\nBalloonCapacity = data[\"BalloonCapacity\"] # scalar parameter\nGondolaCapacity = data[\"GondolaCapacity\"] # scalar parameter\nBalloonPollution = data[\"BalloonPollution\"] # scalar parameter\nGondolaPollution = data[\"GondolaPollution\"] # scalar parameter\nMaxBalloons = data[\"MaxBalloons\"] # scalar parameter\nMinVisitors = data[\"MinVisitors\"] # scalar parameter\nNumberOfBalloons = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfBalloons\")\nNumberOfGondolas = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfGondolas\")\n\n# Since NumberOfBalloons has already been defined as an integer variable, \n# we just need to add a constraint to ensure it is non-negative. \n# No need to change its integrality.\nmodel.addConstr(NumberOfBalloons >= 0, \"num_balloons_non_negative\")\n\n# No code needed as the variable NumberOfGondolas is already defined to be non-negative by its type (INTEGER)\n\nmodel.addConstr(NumberOfBalloons <= MaxBalloons, name=\"max_balloons_constraint\")\n\n# At least MinVisitors must be transported using hot-air balloons and gondola lifts.\nmodel.addConstr(NumberOfBalloons * BalloonCapacity + NumberOfGondolas * GondolaCapacity >= MinVisitors, \"MinVisitors_Transportation\")\n\n# Ensure the minimum number of visitors is transported\nmodel.addConstr(NumberOfBalloons * BalloonCapacity + NumberOfGondolas * GondolaCapacity >= MinVisitors, name=\"min_visitors\")\n\n# Add constraint to respect the maximum number of hot air balloon rides available\nmodel.addConstr(NumberOfBalloons <= MaxBalloons, name=\"max_balloons_constraint\")\n\n# Define the objective function\nobjective = NumberOfBalloons * BalloonPollution + NumberOfGondolas * GondolaPollution\n\n# Set the objective in the model\nmodel.setObjective(objective, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

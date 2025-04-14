@@ -1,0 +1,285 @@
+{
+    "background": "A logistics strategy is required to minimize the total costs associated with unloading, storage, and crane rentals while meeting demands and adhering to capacity constraints.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "The number of time periods",
+            "symbol": "T",
+            "value": "",
+            "shape": [],
+            "code": "T = data[\"T\"] # scalar parameter"
+        },
+        {
+            "definition": "Demand at time t",
+            "symbol": "Demands",
+            "value": "",
+            "shape": [
+                "T"
+            ],
+            "code": "Demands = np.array(data[\"Demands\"]) # ['T']"
+        },
+        {
+            "definition": "Unloading cost at time t",
+            "symbol": "UnloadCosts",
+            "value": "",
+            "shape": [
+                "T"
+            ],
+            "code": "UnloadCosts = np.array(data[\"UnloadCosts\"]) # ['T']"
+        },
+        {
+            "definition": "Unloading capacity at time t",
+            "symbol": "UnloadCapacity",
+            "value": "",
+            "shape": [
+                "T"
+            ],
+            "code": "UnloadCapacity = np.array(data[\"UnloadCapacity\"]) # ['T']"
+        },
+        {
+            "definition": "Cost for holding containers",
+            "symbol": "HoldingCost",
+            "value": 0,
+            "shape": [],
+            "code": "HoldingCost = data[\"HoldingCost\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of containers that can be held",
+            "symbol": "MaxContainer",
+            "value": 0,
+            "shape": [],
+            "code": "MaxContainer = data[\"MaxContainer\"] # scalar parameter"
+        },
+        {
+            "definition": "Initial number of containers at the start",
+            "symbol": "InitContainer",
+            "value": 0,
+            "shape": [],
+            "code": "InitContainer = data[\"InitContainer\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of cranes available for unloading",
+            "symbol": "NumCranes",
+            "value": 0,
+            "shape": [],
+            "code": "NumCranes = data[\"NumCranes\"] # scalar parameter"
+        },
+        {
+            "definition": "Capacity of each crane",
+            "symbol": "CraneCapacity",
+            "value": 0,
+            "shape": [],
+            "code": "CraneCapacity = data[\"CraneCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost for renting each crane",
+            "symbol": "CraneCost",
+            "value": 0,
+            "shape": [],
+            "code": "CraneCost = data[\"CraneCost\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The total demand at each time period must be met, either directly through unloading or using stored containers from inventory.",
+            "status": "coded",
+            "formulation": "\\textup{Inventory}_{t-1} + \\textup{UnloadedQuantity}_{t} = \\textup{Demands}_{t} + \\textup{Inventory}_{t} \\quad \\forall t \\in \\{1, 2, \\dots, \\textup{T}\\}",
+            "related_variables": [
+                "UnloadedQuantity",
+                "Inventory"
+            ],
+            "related_parameters": [
+                "Demands",
+                "T"
+            ],
+            "code": "for t in range(T):\n    if t == 0:\n        model.addConstr(\n            UnloadedQuantity[t] == Demands[t] + Inventory[t],\n            name=f'demand_balance_{t}'\n        )\n    else:\n        model.addConstr(\n            Inventory[t] + UnloadedQuantity[t] == Demands[t] + Inventory[t - 1],\n            name=f'demand_balance_{t}'\n        )"
+        },
+        {
+            "description": "The quantity of goods unloaded in period t cannot exceed the unloading capacity for that period.",
+            "status": "coded",
+            "formulation": "\\textup{UnloadedQuantity}_{t} \\leq \\textup{UnloadCapacity}_{t}, \\quad \\forall t \\in \\{1, \\dots, T\\}",
+            "related_variables": [
+                "UnloadedQuantity"
+            ],
+            "related_parameters": [
+                "UnloadCapacity"
+            ],
+            "code": "# Add unloading capacity constraints\nfor t in range(T):\n    model.addConstr(UnloadedQuantity[t] <= UnloadCapacity[t], name=f\"unloading_capacity_{t}\")"
+        },
+        {
+            "description": "The maximum container inventory at any time period must not exceed the maximum capacity.",
+            "status": "coded",
+            "formulation": "\\textup{Inventory}_t \\leq \\textup{MaxContainer}, \\quad \\forall t \\in \\{1, \\dots, T\\}",
+            "related_variables": [
+                "Inventory"
+            ],
+            "related_parameters": [
+                "MaxContainer",
+                "T"
+            ],
+            "code": "# Add maximum container inventory constraints\nfor t in range(T):\n    model.addConstr(Inventory[t] <= MaxContainer, name=f\"max_inventory_{t}\")"
+        },
+        {
+            "description": "The quantity unloaded in each time period cannot exceed the unloading capacity.",
+            "status": "coded",
+            "formulation": "\\textup{UnloadedQuantity}_{t} \\leq \\textup{UnloadCapacity}_{t} \\quad \\forall t \\in \\{1, 2, \\dots, \\textup{T}\\}",
+            "related_variables": [
+                "UnloadedQuantity"
+            ],
+            "related_parameters": [
+                "UnloadCapacity",
+                "T"
+            ],
+            "code": "# Add unloading capacity constraints\nfor t in range(T):\n    model.addConstr(UnloadedQuantity[t] <= UnloadCapacity[t], name=f\"unloading_capacity_{t}\")"
+        },
+        {
+            "description": "The total number of stored containers must not exceed the maximum storage capacity in any time period.",
+            "status": "coded",
+            "formulation": "\\textup{Inventory}_{t} \\leq \\textup{MaxContainer} \\quad \\forall t \\in \\{1, 2, \\dots, \\textup{T}\\}",
+            "related_variables": [
+                "Inventory"
+            ],
+            "related_parameters": [
+                "MaxContainer",
+                "T"
+            ],
+            "code": "# Add constraint to ensure inventory does not exceed maximum storage capacity\nfor t in range(T):\n    model.addConstr(Inventory[t] <= MaxContainer, name=f\"storage_capacity_t{t}\")"
+        },
+        {
+            "description": "Starting inventory at the beginning of the timeline is equal to the provided initial inventory.",
+            "status": "coded",
+            "formulation": "\\textup{Inventory}_{0} = \\textup{InitContainer}",
+            "related_variables": [
+                "Inventory"
+            ],
+            "related_parameters": [
+                "InitContainer"
+            ],
+            "code": "# Set the initial inventory constraint\nmodel.addConstr(Inventory[0] == InitContainer, name=\"initial_inventory\")"
+        },
+        {
+            "description": "The inventory balance equation links current inventory, goods unloaded, demand, and previous inventory.",
+            "status": "coded",
+            "formulation": "\\textup{Inventory}_t = \\textup{Inventory}_{t-1} + \\textup{UnloadedQuantity}_t - \\textup{Demands}_t, \\quad \\forall t \\in \\{1, \\dots, T\\}, \\quad \\textup{Inventory}_0 = \\textup{InitContainer}",
+            "related_variables": [
+                "Inventory",
+                "UnloadedQuantity"
+            ],
+            "related_parameters": [
+                "Demands",
+                "InitContainer",
+                "T"
+            ],
+            "code": "# Add inventory balance constraints\nmodel.addConstr(Inventory[0] == InitContainer, name=\"initial_inventory\")\n\nfor t in range(1, T):\n    model.addConstr(\n        Inventory[t] == Inventory[t - 1] + UnloadedQuantity[t] - Demands[t],\n        name=f\"inventory_balance_{t}\"\n    )"
+        },
+        {
+            "description": "Ensure that the demand is met while tracking inventory levels.",
+            "status": "coded",
+            "formulation": "\\textup{Inventory}_{t-1} + \\textup{UnloadedQuantity}_{t} - \\textup{Demands}_{t} = \\textup{Inventory}_{t}, \\quad \\forall t \\in \\{1, \\dots, T\\}",
+            "related_variables": [
+                "UnloadedQuantity",
+                "Inventory"
+            ],
+            "related_parameters": [
+                "Demands",
+                "T"
+            ],
+            "code": "# Add inventory balance constraints\nfor t in range(T):\n    if t == 0:\n        # Initial condition for time period 1\n        model.addConstr(UnloadedQuantity[t] - Demands[t] == Inventory[t], name=f\"inventory_balance_{t}\")\n    else:\n        # Balance constraint for all other time periods\n        model.addConstr(\n            Inventory[t - 1] + UnloadedQuantity[t] - Demands[t] == Inventory[t],\n            name=f\"inventory_balance_{t}\"\n        )"
+        },
+        {
+            "description": "Ensure that the unloading operation does not exceed the capacity of cranes available.",
+            "status": "coded",
+            "formulation": "\\textup{UnloadedQuantity}_{t} \\leq (\\textup{NumCranes} + \\textup{ExtraCranes}_{t}) \\cdot \\textup{CraneCapacity}, \\quad \\forall t \\in \\{1, \\dots, T\\}",
+            "related_variables": [
+                "UnloadedQuantity",
+                "ExtraCranes"
+            ],
+            "related_parameters": [
+                "NumCranes",
+                "CraneCapacity",
+                "T"
+            ],
+            "code": "# Add unloading capacity constraints\nfor t in range(T):\n    model.addConstr(\n        UnloadedQuantity[t] <= (NumCranes + ExtraCranes[t]) * CraneCapacity,\n        name=f\"unloading_capacity_t{t}\"\n    )"
+        },
+        {
+            "description": "Ensure that the inventory does not exceed its maximum capacity.",
+            "status": "coded",
+            "formulation": "\\textup{Inventory}_{t} \\leq \\textup{MaxContainer}, \\quad \\forall t \\in \\{1, \\dots, T\\}",
+            "related_variables": [
+                "Inventory"
+            ],
+            "related_parameters": [
+                "MaxContainer",
+                "T"
+            ],
+            "code": "# Add inventory capacity constraints\nfor t in range(T):\n    model.addConstr(Inventory[t] <= MaxContainer, name=f\"inventory_capacity_{t}\")"
+        },
+        {
+            "description": "Ensure non-negativity for the number of extra cranes rented.",
+            "status": "coded",
+            "formulation": "\\textup{ExtraCranes}_{t} \\geq 0, \\quad \\forall t \\in \\{1, \\dots, T\\}",
+            "related_variables": [
+                "ExtraCranes"
+            ],
+            "related_parameters": [
+                "T"
+            ],
+            "code": "# Add non-negativity constraints for ExtraCranes\nfor t in range(T):\n    model.addConstr(ExtraCranes[t] >= 0, name=f\"non_negativity_ExtraCranes_{t}\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The quantity of goods unloaded in time period t",
+            "symbol": "UnloadedQuantity",
+            "shape": [
+                "T"
+            ],
+            "status": "coded",
+            "code": "UnloadedQuantity = model.addVars(T, vtype=gp.GRB.CONTINUOUS, name=\"UnloadedQuantity\")"
+        },
+        {
+            "definition": "The number of containers remaining in inventory at the end of time period t",
+            "symbol": "Inventory",
+            "shape": [
+                "T"
+            ],
+            "status": "coded",
+            "code": "Inventory = model.addVars(T, vtype=gp.GRB.CONTINUOUS, name=\"Inventory\")"
+        },
+        {
+            "definition": "The number of additional cranes rented at time t to handle unloading requirements.",
+            "symbol": "ExtraCranes",
+            "shape": [
+                "T"
+            ],
+            "status": "coded",
+            "code": "ExtraCranes = model.addVars(T, vtype=gp.GRB.CONTINUOUS, name=\"ExtraCranes\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total costs of unloading, inventory holding, and crane rental costs across all time periods.",
+            "status": "coded",
+            "formulation": "\\sum_{t=1}^{T} \\textup{UnloadCosts}_{t} \\cdot \\textup{UnloadedQuantity}_{t} + \\sum_{t=1}^{T} \\textup{HoldingCost} \\cdot \\textup{Inventory}_{t} + \\sum_{t=1}^{T} \\textup{CraneCost} \\cdot \\textup{ExtraCranes}_{t}",
+            "related_variables": [
+                "UnloadedQuantity",
+                "Inventory",
+                "ExtraCranes"
+            ],
+            "related_parameters": [
+                "UnloadCosts",
+                "HoldingCost",
+                "CraneCost",
+                "T"
+            ],
+            "code": "# Set objective\nmodel.setObjective(\n    gp.quicksum(UnloadCosts[t] * UnloadedQuantity[t] for t in range(T)) +\n    gp.quicksum(HoldingCost * Inventory[t] for t in range(T)) +\n    gp.quicksum(CraneCost * ExtraCranes[t] for t in range(T)), \n    gp.GRB.MINIMIZE\n)"
+        }
+    ],
+    "solution_status": "runtime_error",
+    "solver_output_status": "runtime_error",
+    "error_message": "Traceback (most recent call last):\n  File \"/Users/simonsici/Desktop/MyOptiMUS/evaluator.py\", line 45, in run\n    exec(last_line, local_env, local_env)\n  File \"<string>\", line 4, in <module>\nKeyError: -1\n",
+    "obj_val": null,
+    "log_path": "logs/log_20250413152201_nlp4lp_61/",
+    "problem_path": "data/nlp4lp/61/",
+    "prep_code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nlp4lp/61/data.json\", \"r\") as f:\n    data = json.load(f)\n"
+}

@@ -1,0 +1,144 @@
+{
+    "background": "A linear programming task aimed at finding bounds on the fourth moment of a random variable Z, given its first and second moments.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of terms in the sequence",
+            "symbol": "K",
+            "value": "",
+            "shape": [],
+            "code": "K = data[\"K\"] # scalar parameter"
+        },
+        {
+            "definition": "Coefficients of the linear combination",
+            "symbol": "P",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "P = np.array(data[\"P\"]) # ['K']"
+        },
+        {
+            "definition": "Expected value of Z",
+            "symbol": "ExpectedZ",
+            "value": "",
+            "shape": [],
+            "code": "ExpectedZ = data[\"ExpectedZ\"] # scalar parameter"
+        },
+        {
+            "definition": "Expected value of Z squared",
+            "symbol": "ExpectedZSquared",
+            "value": "",
+            "shape": [],
+            "code": "ExpectedZSquared = data[\"ExpectedZSquared\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The constraint enforces that the parameter K (number of terms in the sequence) must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{K} \\geq 0",
+            "related_variables": [],
+            "related_parameters": [
+                "K"
+            ],
+            "code": "# No constraint code needed as K is a scalar parameter and its value is assumed to be non-negative by definition."
+        },
+        {
+            "description": "Each element of the array p[i] must be non-negative for i in the range from 1 to K.",
+            "status": "runtime_error",
+            "formulation": "p[i] \\\\geq 0 \\\\quad \\\\textup{for all } \\\\quad i \\\\in \\\\{1, 2, \\\\dots, K\\\\}",
+            "related_variables": [
+                "p"
+            ],
+            "related_parameters": [
+                "K"
+            ],
+            "code": "# Add non-negativity constraints for variables p[i]\nfor i in range(1, K + 1):\n    model.addConstr(p[i] >= 0, name=f\"non_negativity_p_{i}\")"
+        },
+        {
+            "description": "Ensure that the lower and upper bounds for \\mathbb{E}[Z^4] are non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{LowerBoundZ4} \\geq 0, \\quad \\textup{UpperBoundZ4} \\geq 0",
+            "related_variables": [
+                "LowerBoundZ4",
+                "UpperBoundZ4"
+            ],
+            "related_parameters": [],
+            "code": "# Add non-negativity constraints for LowerBoundZ4 and UpperBoundZ4\nmodel.addConstr(LowerBoundZ4 >= 0, name=\"nonnegativity_LowerBoundZ4\")\nmodel.addConstr(UpperBoundZ4 >= 0, name=\"nonnegativity_UpperBoundZ4\")"
+        },
+        {
+            "description": "Constraint ensuring the consistency of \\mathbb{E}[Z^4] with \\mathbb{E}[Z^2] and \\mathbb{E}[Z^3].",
+            "status": "coded",
+            "formulation": "\\textup{LowerBoundZ4} \\leq \\textup{MomentZ3}^2 + \\textup{ExpectedZSquared}^2 \\leq \\textup{UpperBoundZ4}",
+            "related_variables": [
+                "LowerBoundZ4",
+                "UpperBoundZ4",
+                "MomentZ3"
+            ],
+            "related_parameters": [
+                "ExpectedZSquared"
+            ],
+            "code": "# Add consistency constraint for fourth moment\nmodel.addConstr(LowerBoundZ4 <= MomentZ3 * MomentZ3 + ExpectedZSquared * ExpectedZSquared, name=\"Z4_consistency_lower\")\nmodel.addConstr(MomentZ3 * MomentZ3 + ExpectedZSquared * ExpectedZSquared <= UpperBoundZ4, name=\"Z4_consistency_upper\")"
+        },
+        {
+            "description": "Define the third moment \\mathbb{E}[Z^3] (auxiliary variable \\textup{MomentZ3}) in terms of other parameters and consistency.",
+            "status": "coded",
+            "formulation": "\\textup{MomentZ3} \\geq \\textup{ExpectedZ}^3 \\textup{ and } \\textup{MomentZ3} \\leq \\textup{ExpectedZSquared} \\cdot \\textup{ExpectedZ}",
+            "related_variables": [
+                "MomentZ3"
+            ],
+            "related_parameters": [
+                "ExpectedZ",
+                "ExpectedZSquared"
+            ],
+            "code": "# Add constraints for the third moment (MomentZ3)\nmodel.addConstr(MomentZ3 >= ExpectedZ**3, name=\"MomentZ3_lower_bound\")\nmodel.addConstr(MomentZ3 <= ExpectedZSquared * ExpectedZ, name=\"MomentZ3_upper_bound\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Lower bound on the fourth moment \\mathbb{E}[Z^4]",
+            "symbol": "LowerBoundZ4",
+            "shape": [],
+            "status": "coded",
+            "code": "LowerBoundZ4 = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"LowerBoundZ4\")"
+        },
+        {
+            "definition": "Upper bound on the fourth moment \\mathbb{E}[Z^4]",
+            "symbol": "UpperBoundZ4",
+            "shape": [],
+            "status": "coded",
+            "code": "UpperBoundZ4 = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"UpperBoundZ4\")"
+        },
+        {
+            "definition": "The third moment \\mathbb{E}[Z^3] of the random variable Z.",
+            "symbol": "MomentZ3",
+            "shape": [],
+            "status": "coded",
+            "code": "MomentZ3 = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"MomentZ3\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Determine both the lower and upper bounds on the fourth moment of random variable Z (\\mathbb{E}[Z^4]) subject to constraints derived from the first and second moments.",
+            "status": "coded",
+            "formulation": "\\min \\textup{LowerBoundZ4}, \\quad \\max \\textup{UpperBoundZ4}",
+            "related_variables": [
+                "LowerBoundZ4",
+                "UpperBoundZ4"
+            ],
+            "related_parameters": [
+                "ExpectedZ",
+                "ExpectedZSquared"
+            ],
+            "code": "# Set objectives for determining the lower and upper bounds\nmodel.setObjective(LowerBoundZ4, gp.GRB.MINIMIZE)\nmodel.setObjective(UpperBoundZ4, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "runtime_error",
+    "solver_output_status": "runtime_error",
+    "error_message": "Traceback (most recent call last):\n  File \"/Users/simonsici/Desktop/MyOptiMUS/evaluator.py\", line 45, in run\n    exec(last_line, local_env, local_env)\n  File \"<string>\", line 3, in <module>\nNameError: name 'p' is not defined\n",
+    "obj_val": null,
+    "log_path": "logs/log_20250413153623_nlp4lp_9/",
+    "problem_path": "data/nlp4lp/9/",
+    "prep_code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nlp4lp/9/data.json\", \"r\") as f:\n    data = json.load(f)\n"
+}

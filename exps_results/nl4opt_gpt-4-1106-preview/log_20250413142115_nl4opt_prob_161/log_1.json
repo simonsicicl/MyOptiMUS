@@ -1,0 +1,195 @@
+{
+    "background": "A toy store needs to deliver gifts using two different shipping companies, the store aims to minimize the diesel consumption while meeting gift delivery and company usage requirements.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of gifts delivered by the new company per trip",
+            "symbol": "GiftsNew",
+            "value": 50,
+            "shape": [],
+            "code": "GiftsNew = data[\"GiftsNew\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of gifts delivered by the old company per trip",
+            "symbol": "GiftsOld",
+            "value": 70,
+            "shape": [],
+            "code": "GiftsOld = data[\"GiftsOld\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of diesel used by the new company per trip",
+            "symbol": "DieselNew",
+            "value": 30,
+            "shape": [],
+            "code": "DieselNew = data[\"DieselNew\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of diesel used by the old company per trip",
+            "symbol": "DieselOld",
+            "value": 40,
+            "shape": [],
+            "code": "DieselOld = data[\"DieselOld\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum total number of gifts that need to be delivered",
+            "symbol": "MinGifts",
+            "value": 1000,
+            "shape": [],
+            "code": "MinGifts = data[\"MinGifts\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of trips the new company can make",
+            "symbol": "MaxTripsNew",
+            "value": 15,
+            "shape": [],
+            "code": "MaxTripsNew = data[\"MaxTripsNew\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum percentage of all trips that must be made by the old company",
+            "symbol": "MinPercentOld",
+            "value": 0.4,
+            "shape": [],
+            "code": "MinPercentOld = data[\"MinPercentOld\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Number of trips by the new company must be non-negative",
+            "status": "coded",
+            "formulation": "TripsNew \\geq 0",
+            "related_variables": [
+                "TripsNew"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint to ensure the number of trips by the new company is non-negative\nmodel.addConstr(TripsNew >= 0, name=\"non_negative_trips_new\")"
+        },
+        {
+            "description": "The number of trips by the old company must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{TripsOld} \\geq 0",
+            "related_variables": [
+                "TripsOld"
+            ],
+            "related_parameters": [],
+            "code": "# Constraint: The number of trips by the old company must be non-negative\nmodel.addConstr(TripsOld >= 0, name=\"non_negativity_TripsOld\")"
+        },
+        {
+            "description": "The total number of gifts delivered by both the new and the old company must be at least MinGifts",
+            "status": "coded",
+            "formulation": "\\textup{GiftsNew} \\times \\textup{TripsNew} + \\textup{GiftsOld} \\times \\textup{TripsOld} \\geq \\textup{MinGifts}",
+            "related_variables": [
+                "TripsNew",
+                "TripsOld"
+            ],
+            "related_parameters": [
+                "GiftsNew",
+                "GiftsOld",
+                "MinGifts"
+            ],
+            "code": "# Add a constraint for the minimum number of gifts to be delivered\nmodel.addConstr(GiftsNew * TripsNew + GiftsOld * TripsOld >= MinGifts, name=\"min_gifts_delivery\")"
+        },
+        {
+            "description": "At most MaxTripsNew trips can be made by the new company",
+            "status": "coded",
+            "formulation": "\\textup{TripsNew} \\leq \\textup{MaxTripsNew}",
+            "related_variables": [
+                "TripsNew"
+            ],
+            "related_parameters": [
+                "MaxTripsNew"
+            ],
+            "code": "# Constraint for the maximum number of trips by the new company\nmodel.addConstr(TripsNew <= MaxTripsNew, \"max_trips_new\")"
+        },
+        {
+            "description": "At least MinPercentOld percent of all trips must be made by the old company",
+            "status": "coded",
+            "formulation": "\\textup{TripsOld} \\geq \\textup{MinPercentOld} \\times (\\textup{TripsOld} + \\textup{TripsNew})",
+            "related_variables": [
+                "TripsOld",
+                "TripsNew"
+            ],
+            "related_parameters": [
+                "MinPercentOld"
+            ],
+            "code": "# Add constraint to ensure that at least MinPercentOld percent of all trips are made by the old company\nmodel.addConstr(TripsOld >= MinPercentOld * (TripsOld + TripsNew), name=\"min_percent_old_trips\")"
+        },
+        {
+            "description": "Ensure minimum total number of gifts is delivered",
+            "status": "coded",
+            "formulation": "\\textup{GiftsNew} \\times \\textup{TripsNew} + \\textup{GiftsOld} \\times \\textup{TripsOld} \\geq \\textup{MinGifts}",
+            "related_variables": [
+                "TripsNew",
+                "TripsOld"
+            ],
+            "related_parameters": [
+                "GiftsNew",
+                "GiftsOld",
+                "MinGifts"
+            ],
+            "code": "# Ensure minimum total number of gifts constraint\nmodel.addConstr(GiftsNew * TripsNew + GiftsOld * TripsOld >= MinGifts, name=\"MinGiftsDelivered\")"
+        },
+        {
+            "description": "Comply with maximum number of trips by the new company",
+            "status": "coded",
+            "formulation": "\\textup{TripsNew} \\leq \\textup{MaxTripsNew}",
+            "related_variables": [
+                "TripsNew"
+            ],
+            "related_parameters": [
+                "MaxTripsNew"
+            ],
+            "code": "model.addConstr(TripsNew <= MaxTripsNew, name=\"max_trips_new_constraint\")"
+        },
+        {
+            "description": "Ensure at least a minimum percentage of trips are made by the old company",
+            "status": "coded",
+            "formulation": "\\textup{TripsOld} \\geq \\textup{MinPercentOld} \\times (\\textup{TripsOld} + \\textup{TripsNew})",
+            "related_variables": [
+                "TripsNew",
+                "TripsOld"
+            ],
+            "related_parameters": [
+                "MinPercentOld"
+            ],
+            "code": "# Ensure at least a minimum percentage of trips are made by the old company\nmodel.addConstr(TripsOld >= MinPercentOld * (TripsOld + TripsNew), name=\"min_percentage_old_company\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of trips made by the new company",
+            "symbol": "TripsNew",
+            "shape": [],
+            "status": "coded",
+            "code": "TripsNew = model.addVar(vtype=gp.GRB.INTEGER, name=\"TripsNew\")"
+        },
+        {
+            "definition": "Number of trips made by the old company",
+            "symbol": "TripsOld",
+            "shape": [],
+            "status": "coded",
+            "code": "TripsOld = model.addVar(vtype=gp.GRB.INTEGER, name=\"TripsOld\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total amount of diesel used for delivering the gifts",
+            "status": "coded",
+            "formulation": "\\textup{TotalDiesel} = \\textup{DieselNew} \\times \\textup{TripsNew} + \\textup{DieselOld} \\times \\textup{TripsOld}",
+            "related_variables": [
+                "TripsNew",
+                "TripsOld"
+            ],
+            "related_parameters": [
+                "DieselNew",
+                "DieselOld"
+            ],
+            "code": "# Define objective function\nobjective = DieselNew * TripsNew + DieselOld * TripsOld\n\n# Set the objective in the model\nmodel.setObjective(objective, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413142115_nl4opt_prob_161/",
+    "problem_path": "data/nl4opt/prob_161/"
+}

@@ -1,0 +1,215 @@
+{
+    "background": "A taxi company is planning to purchase vehicles to rent to their drivers, with the option to purchase motorcycles or sedans. Each type has a specified capacity, pollution output, and potential earnings per shift.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of people a motorcycle can transport per shift",
+            "symbol": "MotorcycleCapacity",
+            "value": 30,
+            "shape": [],
+            "code": "MotorcycleCapacity = data[\"MotorcycleCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Pollution units produced by one motorcycle per shift",
+            "symbol": "MotorcyclePollution",
+            "value": 4,
+            "shape": [],
+            "code": "MotorcyclePollution = data[\"MotorcyclePollution\"] # scalar parameter"
+        },
+        {
+            "definition": "Earnings from one motorcycle per shift",
+            "symbol": "MotorcycleEarnings",
+            "value": 100,
+            "shape": [],
+            "code": "MotorcycleEarnings = data[\"MotorcycleEarnings\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of people a sedan can transport per shift",
+            "symbol": "SedanCapacity",
+            "value": 70,
+            "shape": [],
+            "code": "SedanCapacity = data[\"SedanCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Pollution units produced by one sedan per shift",
+            "symbol": "SedanPollution",
+            "value": 15,
+            "shape": [],
+            "code": "SedanPollution = data[\"SedanPollution\"] # scalar parameter"
+        },
+        {
+            "definition": "Earnings from one sedan per shift",
+            "symbol": "SedanEarnings",
+            "value": 225,
+            "shape": [],
+            "code": "SedanEarnings = data[\"SedanEarnings\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum proportion of motorcycles in the vehicle fleet",
+            "symbol": "MaxMotorcycleProportion",
+            "value": 0.25,
+            "shape": [],
+            "code": "MaxMotorcycleProportion = data[\"MaxMotorcycleProportion\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum pollution units the company can produce per shift",
+            "symbol": "MaxPollution",
+            "value": 200,
+            "shape": [],
+            "code": "MaxPollution = data[\"MaxPollution\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of people the company needs to transport per shift",
+            "symbol": "MinPeopleTransported",
+            "value": 1200,
+            "shape": [],
+            "code": "MinPeopleTransported = data[\"MinPeopleTransported\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Number of motorcycles must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfMotorcycles} \\geq 0",
+            "related_variables": [
+                "NumberOfMotorcycles"
+            ],
+            "related_parameters": [],
+            "code": "# NumberOfMotorcycles is already defined as a continuous variable which ensures it is non-negative."
+        },
+        {
+            "description": "The number of sedans purchased must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfSedans} \\geq 0",
+            "related_variables": [
+                "NumberOfSedans"
+            ],
+            "related_parameters": [],
+            "code": "# No code is needed because the non-negativity constraint is automatically enforced due to the default non-negative domain of continuous variables in Gurobi."
+        },
+        {
+            "description": "At most MaxMotorcycleProportion of the total number of vehicles can be motorcycles.",
+            "status": "coded",
+            "formulation": "(1 - \\textup{MaxMotorcycleProportion}) \\cdot \\textup{NumberOfMotorcycles} \\leq \\textup{MaxMotorcycleProportion} \\cdot \\textup{NumberOfSedans}",
+            "related_variables": [
+                "NumberOfMotorcycles",
+                "NumberOfSedans"
+            ],
+            "related_parameters": [
+                "MaxMotorcycleProportion"
+            ],
+            "code": "# Add constraint to ensure at most MaxMotorcycleProportion of the total number of vehicles are motorcycles\nmodel.addConstr((1 - MaxMotorcycleProportion) * NumberOfMotorcycles <= MaxMotorcycleProportion * NumberOfSedans, name=\"motorcycle_proportion\")"
+        },
+        {
+            "description": "The total pollution produced by all vehicles (motorcycles and sedans) per shift must be less than or equal to the MaxPollution parameter.",
+            "status": "coded",
+            "formulation": "\\\\textup{MotorcyclePollution} \\\\times \\\\textup{NumberOfMotorcycles} + \\\\textup{SedanPollution} \\\\times \\\\textup{NumberOfSedans} \\\\leq \\\\textup{MaxPollution}",
+            "related_variables": [
+                "NumberOfMotorcycles",
+                "NumberOfSedans"
+            ],
+            "related_parameters": [
+                "MotorcyclePollution",
+                "SedanPollution",
+                "MaxPollution"
+            ],
+            "code": "# Add pollution constraint: The total pollution from motorcycles and sedans must not exceed MaxPollution.\nmodel.addConstr(MotorcyclePollution * NumberOfMotorcycles + SedanPollution * NumberOfSedans <= MaxPollution, \n                name=\"pollution_limit\")"
+        },
+        {
+            "description": "Ensure the company can transport at least MinPeopleTransported people every shift.",
+            "status": "coded",
+            "formulation": "\\textup{MotorcycleCapacity} \\times \\textup{NumberOfMotorcycles} + \\textup{SedanCapacity} \\times \\textup{NumberOfSedans} \\geq \\textup{MinPeopleTransported}",
+            "related_variables": [
+                "NumberOfMotorcycles",
+                "NumberOfSedans"
+            ],
+            "related_parameters": [
+                "MotorcycleCapacity",
+                "SedanCapacity",
+                "MinPeopleTransported"
+            ],
+            "code": "# Add constraint to ensure transportation of at least MinPeopleTransported people\nmodel.addConstr(\n    MotorcycleCapacity * NumberOfMotorcycles + SedanCapacity * NumberOfSedans >= MinPeopleTransported,\n    name=\"min_people_transport_constraint\"\n)"
+        },
+        {
+            "description": "Pollution produced by all vehicles cannot exceed the maximum allowed pollution (&MaxPollution)",
+            "status": "coded",
+            "formulation": "\\textup{MotorcyclePollution} \\cdot \\textup{NumberOfMotorcycles} + \\textup{SedanPollution} \\cdot \\textup{NumberOfSedans} \\leq \\textup{MaxPollution}",
+            "related_variables": [
+                "NumberOfMotorcycles",
+                "NumberOfSedans"
+            ],
+            "related_parameters": [
+                "MotorcyclePollution",
+                "SedanPollution",
+                "MaxPollution"
+            ],
+            "code": "# Add pollution constraint\nmodel.addConstr(MotorcyclePollution * NumberOfMotorcycles + SedanPollution * NumberOfSedans <= MaxPollution, name=\"pollution_limit\")"
+        },
+        {
+            "description": "The total capacity of all vehicles must be sufficient to transport the minimum number of people required",
+            "status": "coded",
+            "formulation": "\\textup{MotorcycleCapacity} \\cdot \\textup{NumberOfMotorcycles} + \\textup{SedanCapacity} \\cdot \\textup{NumberOfSedans} \\geq \\textup{MinPeopleTransported}",
+            "related_variables": [
+                "NumberOfMotorcycles",
+                "NumberOfSedans"
+            ],
+            "related_parameters": [
+                "MotorcycleCapacity",
+                "SedanCapacity",
+                "MinPeopleTransported"
+            ],
+            "code": "# Add total capacity constraint\nmodel.addConstr(\n    MotorcycleCapacity * NumberOfMotorcycles + SedanCapacity * NumberOfSedans >= MinPeopleTransported,\n    name=\"total_capacity_constraint\"\n)"
+        },
+        {
+            "description": "The number of motorcycles cannot exceed the maximum allowed proportion of the fleet",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfMotorcycles} \\leq \\frac{\\textup{MaxMotorcycleProportion}}{1 - \\textup{MaxMotorcycleProportion}} \\cdot \\textup{NumberOfSedans}",
+            "related_variables": [
+                "NumberOfMotorcycles",
+                "NumberOfSedans"
+            ],
+            "related_parameters": [
+                "MaxMotorcycleProportion"
+            ],
+            "code": "# Add a constraint to ensure the number of motorcycles does not exceed the maximum allowed proportion of the fleet\nmodel.addConstr(\n    NumberOfMotorcycles <= (MaxMotorcycleProportion / (1 - MaxMotorcycleProportion)) * NumberOfSedans,\n    name=\"motorcycle_proportion_constraint\"\n)"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of motorcycles purchased by the taxi company.",
+            "symbol": "NumberOfMotorcycles",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfMotorcycles = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfMotorcycles\")"
+        },
+        {
+            "definition": "The number of sedans purchased by the taxi company.",
+            "symbol": "NumberOfSedans",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfSedans = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfSedans\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total earnings for the taxi company per shift",
+            "status": "coded",
+            "formulation": "\\textup{Maximize:} \\quad \\textup{MotorcycleEarnings} \\cdot \\textup{NumberOfMotorcycles} + \\textup{SedanEarnings} \\cdot \\textup{NumberOfSedans}",
+            "related_variables": [
+                "NumberOfMotorcycles",
+                "NumberOfSedans"
+            ],
+            "related_parameters": [
+                "MotorcycleEarnings",
+                "SedanEarnings"
+            ],
+            "code": "# Set objective\nmodel.setObjective(MotorcycleEarnings * NumberOfMotorcycles + SedanEarnings * NumberOfSedans, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250414053829_nl4opt_prob_261/",
+    "problem_path": "data/nl4opt/prob_261/"
+}

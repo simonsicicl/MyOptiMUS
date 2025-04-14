@@ -14,11 +14,11 @@ from manager import Manager
 
 template_path = "./template/"
 model = "gpt-4-1106-preview"
-dataset = "nlp4lp"
+dataset = "nl4opt"
 max_rounds = 10
 
 if __name__ == "__main__":
-    load_dotenv()
+    load_dotenv(verbose=True, override=True)
     gp.Model()
 
     templates = TemplateLoader(template_path=template_path)
@@ -27,17 +27,25 @@ if __name__ == "__main__":
     formulator = Formulator(client=client, model=model, templates=templates)
     programmer = Programmer(client=client, model=model, templates=templates)
     evaluator = Evaluator(client=client, model=model, templates=templates)
-    exp_record = {
-        "problems": [], 
-        "calls_count": {}, 
-        "agent_calls": {"Formulator": 0, "Programmer": 0, "Evaluator": 0}, 
-        "total_solved": 0, 
-        "total_problems": len(os.listdir(f"data/{dataset}/"))
-    }
-    for i in range(3, max_rounds+1):
-         exp_record["calls_count"][f'{i}'] = 0
+    if os.path.exists(f'logs/{dataset}_{model}.json'):
+        with open(f'logs/{dataset}_{model}.json', 'r') as f:
+            exp_record = json.load(f)
+    else:
+        exp_record = {
+            "problems": [], 
+            "calls_count": {}, 
+            "agent_calls": {"Formulator": 0, "Programmer": 0, "Evaluator": 0}, 
+            "total_solved": 0, 
+            "total_problems": len(os.listdir(f"data/{dataset}/"))
+        }
+        for i in range(3, max_rounds+1):
+            exp_record["calls_count"][f'{i}'] = 0
+    exist = [each['problem'] for each in exp_record['problems']]
 
     for problem in os.listdir(f"data/{dataset}/"):
+        if problem in exist:
+            continue
+        exist.append(problem)
         print(f'***Solving problem {problem}...')
         manager = Manager(client=client, model=model, templates=templates, agents=[formulator, programmer, evaluator], max_rounds=max_rounds)
         problem_path = f"data/{dataset}/{problem}/"

@@ -1,0 +1,139 @@
+{
+    "background": "A soda company sells soda in cans and glass bottles with different volumes, looking to maximize the total number of units produced while satisfying daily volume and ratio constraints.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Volume of soda a can holds",
+            "symbol": "CanVolume",
+            "value": 250,
+            "shape": [],
+            "code": "CanVolume = data[\"CanVolume\"] # scalar parameter"
+        },
+        {
+            "definition": "Volume of soda a glass bottle holds",
+            "symbol": "BottleVolume",
+            "value": 1000,
+            "shape": [],
+            "code": "BottleVolume = data[\"BottleVolume\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum total volume of soda to bottle every day",
+            "symbol": "MinTotalVolume",
+            "value": 1000000,
+            "shape": [],
+            "code": "MinTotalVolume = data[\"MinTotalVolume\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum ratio of the number of cans to the number of glass bottles",
+            "symbol": "CanBottleRatio",
+            "value": 3,
+            "shape": [],
+            "code": "CanBottleRatio = data[\"CanBottleRatio\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of glass bottles to produce",
+            "symbol": "MinBottles",
+            "value": 100,
+            "shape": [],
+            "code": "MinBottles = data[\"MinBottles\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Number of cans produced must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfCans} \\geq 0",
+            "related_variables": [
+                "NumberOfCans"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint to ensure the number of cans produced is non-negative\nmodel.addConstr(NumberOfCans >= 0, name=\"cans_non_negative\")"
+        },
+        {
+            "description": "Number of glass bottles must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfBottles} \\geq 0",
+            "related_variables": [
+                "NumberOfBottles"
+            ],
+            "related_parameters": [],
+            "code": "# Constraint to ensure the number of glass bottles is non-negative\nmodel.addConstr(NumberOfBottles >= 0, name=\"non_negative_bottles\")"
+        },
+        {
+            "description": "The total volume of soda from cans and bottles must be at least the minimum required total volume",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfCans} \\times \\textup{CanVolume} + \\textup{NumberOfBottles} \\times \\textup{BottleVolume} \\geq \\textup{MinTotalVolume}",
+            "related_variables": [
+                "NumberOfCans",
+                "NumberOfBottles"
+            ],
+            "related_parameters": [
+                "CanVolume",
+                "BottleVolume",
+                "MinTotalVolume"
+            ],
+            "code": "# Total volume from cans and bottles must be at least the minimum required total volume\nmodel.addConstr(NumberOfCans * CanVolume + NumberOfBottles * BottleVolume >= MinTotalVolume, name=\"min_total_volume\")"
+        },
+        {
+            "description": "The number of cans must be at least CanBottleRatio times greater than the number of glass bottles",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfCans} \\geq \\textup{CanBottleRatio} \\times \\textup{NumberOfBottles}",
+            "related_variables": [
+                "NumberOfCans",
+                "NumberOfBottles"
+            ],
+            "related_parameters": [
+                "CanBottleRatio"
+            ],
+            "code": "# Add constraint: The number of cans must be at least CanBottleRatio times greater than the number of glass bottles\nmodel.addConstr(NumberOfCans >= CanBottleRatio * NumberOfBottles, name=\"cans_to_bottles_ratio\")"
+        },
+        {
+            "description": "At least MinBottles of glass bottles are produced",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfBottles} \\geq \\textup{MinBottles}",
+            "related_variables": [
+                "NumberOfBottles"
+            ],
+            "related_parameters": [
+                "MinBottles"
+            ],
+            "code": "# Add constraint to ensure the minimum number of bottles produced\nmodel.addConstr(NumberOfBottles >= MinBottles, \"min_bottles_produced\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of cans to be produced",
+            "symbol": "NumberOfCans",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfCans = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfCans\")"
+        },
+        {
+            "definition": "The number of glass bottles to be produced",
+            "symbol": "NumberOfBottles",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfBottles = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfBottles\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total number of units (cans and bottles) produced",
+            "status": "coded",
+            "formulation": "\\textup{Maximize} \\quad \\textup{NumberOfCans} + \\textup{NumberOfBottles}",
+            "related_variables": [
+                "NumberOfCans",
+                "NumberOfBottles"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(NumberOfCans + NumberOfBottles, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 4,
+    "error_message": null,
+    "obj_val": "infeasible or unbounded",
+    "log_path": "logs/log_20250413171126_nl4opt_prob_250/",
+    "problem_path": "data/nl4opt/prob_250/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_250/data.json\", \"r\") as f:\n    data = json.load(f)\n\nCanVolume = data[\"CanVolume\"] # scalar parameter\nBottleVolume = data[\"BottleVolume\"] # scalar parameter\nMinTotalVolume = data[\"MinTotalVolume\"] # scalar parameter\nCanBottleRatio = data[\"CanBottleRatio\"] # scalar parameter\nMinBottles = data[\"MinBottles\"] # scalar parameter\nNumberOfCans = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfCans\")\nNumberOfBottles = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfBottles\")\n\n# Add constraint to ensure the number of cans produced is non-negative\nmodel.addConstr(NumberOfCans >= 0, name=\"cans_non_negative\")\n\n# Constraint to ensure the number of glass bottles is non-negative\nmodel.addConstr(NumberOfBottles >= 0, name=\"non_negative_bottles\")\n\n# Total volume from cans and bottles must be at least the minimum required total volume\nmodel.addConstr(NumberOfCans * CanVolume + NumberOfBottles * BottleVolume >= MinTotalVolume, name=\"min_total_volume\")\n\n# Add constraint: The number of cans must be at least CanBottleRatio times greater than the number of glass bottles\nmodel.addConstr(NumberOfCans >= CanBottleRatio * NumberOfBottles, name=\"cans_to_bottles_ratio\")\n\n# Add constraint to ensure the minimum number of bottles produced\nmodel.addConstr(NumberOfBottles >= MinBottles, \"min_bottles_produced\")\n\n# Set objective\nmodel.setObjective(NumberOfCans + NumberOfBottles, gp.GRB.MAXIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

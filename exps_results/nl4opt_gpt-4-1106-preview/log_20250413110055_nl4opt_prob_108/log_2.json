@@ -1,0 +1,221 @@
+{
+    "background": "A pharmaceutical company produces two types of skin cream batches, regular and premium, which are sold to hospitals. These batches require different units of medicinal ingredients and rehydration product.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Units of medicinal ingredients required for a regular batch",
+            "symbol": "MedicinalIngredientsRegular",
+            "value": 50,
+            "shape": [],
+            "code": "MedicinalIngredientsRegular = data[\"MedicinalIngredientsRegular\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of rehydration product required for a regular batch",
+            "symbol": "RehydrationProductRegular",
+            "value": 40,
+            "shape": [],
+            "code": "RehydrationProductRegular = data[\"RehydrationProductRegular\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of medicinal ingredients required for a premium batch",
+            "symbol": "MedicinalIngredientsPremium",
+            "value": 40,
+            "shape": [],
+            "code": "MedicinalIngredientsPremium = data[\"MedicinalIngredientsPremium\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of rehydration product required for a premium batch",
+            "symbol": "RehydrationProductPremium",
+            "value": 60,
+            "shape": [],
+            "code": "RehydrationProductPremium = data[\"RehydrationProductPremium\"] # scalar parameter"
+        },
+        {
+            "definition": "Total units of medicinal ingredients available",
+            "symbol": "TotalMedicinalIngredients",
+            "value": 3000,
+            "shape": [],
+            "code": "TotalMedicinalIngredients = data[\"TotalMedicinalIngredients\"] # scalar parameter"
+        },
+        {
+            "definition": "Total units of rehydration product available",
+            "symbol": "TotalRehydrationProduct",
+            "value": 3500,
+            "shape": [],
+            "code": "TotalRehydrationProduct = data[\"TotalRehydrationProduct\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of regular batches to be produced",
+            "symbol": "MinRegularBatches",
+            "value": 10,
+            "shape": [],
+            "code": "MinRegularBatches = data[\"MinRegularBatches\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of people treated by a regular batch",
+            "symbol": "PeopleTreatedRegular",
+            "value": 50,
+            "shape": [],
+            "code": "PeopleTreatedRegular = data[\"PeopleTreatedRegular\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of people treated by a premium batch",
+            "symbol": "PeopleTreatedPremium",
+            "value": 30,
+            "shape": [],
+            "code": "PeopleTreatedPremium = data[\"PeopleTreatedPremium\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of regular batches produced must be non-negative",
+            "status": "coded",
+            "formulation": "RegularBatches \\geq 0",
+            "related_variables": [
+                "RegularBatches"
+            ],
+            "related_parameters": [],
+            "code": "# The number of regular batches produced must be non-negative\nmodel.addConstr(RegularBatches >= 0, name=\"non_negative_regular_batches\")"
+        },
+        {
+            "description": "The number of premium batches produced must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{PremiumBatches} \\geq 0",
+            "related_variables": [
+                "PremiumBatches"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint to ensure the number of premium batches produced is non-negative\nmodel.addConstr(PremiumBatches >= 0, name=\"non_negativity_premium_batches\")"
+        },
+        {
+            "description": "Used medicinal ingredients for regular batches is at most TotalMedicinalIngredients",
+            "status": "coded",
+            "formulation": "\\textup{MedicinalIngredientsRegular} \\times \\textup{RegularBatches} \\leq \\textup{TotalMedicinalIngredients}",
+            "related_variables": [
+                "RegularBatches"
+            ],
+            "related_parameters": [
+                "MedicinalIngredientsRegular",
+                "TotalMedicinalIngredients"
+            ],
+            "code": "# Medicinal Ingredients constraints for regular batches\nmodel.addConstr(MedicinalIngredientsRegular * RegularBatches <= TotalMedicinalIngredients, \"medicinal_ingredients_regular\")"
+        },
+        {
+            "description": "Used rehydration product for regular batches should not exceed the total available rehydration product",
+            "status": "runtime_error",
+            "formulation": "\\textup{RegularBatches} \\times \\textup{RehydrationProductRegular} \\leq \\textup{TotalRehydrationProduct}",
+            "related_variables": [
+                "RegularBatches"
+            ],
+            "related_parameters": [
+                "RehydrationProductRegular",
+                "TotalRehydrationProduct"
+            ],
+            "code": "```"
+        },
+        {
+            "description": "The number of regular batches must be less than the number of premium batches",
+            "status": "coded",
+            "formulation": "\\textup{RegularBatches} \\leq \\textup{PremiumBatches} - 1",
+            "related_variables": [
+                "RegularBatches",
+                "PremiumBatches"
+            ],
+            "related_parameters": [],
+            "code": "# Constraint: The number of regular batches must be less than the number of premium batches\nmodel.addConstr(RegularBatches <= PremiumBatches - 1, name=\"regular_less_than_premium\")"
+        },
+        {
+            "description": "The number of regular batches must meet the minimum required production quantity",
+            "status": "coded",
+            "formulation": "\\textup{RegularBatches} \\geq \\textup{MinRegularBatches}",
+            "related_variables": [
+                "RegularBatches"
+            ],
+            "related_parameters": [
+                "MinRegularBatches"
+            ],
+            "code": "# Constraint for minimum required regular batches production\nmodel.addConstr(RegularBatches >= MinRegularBatches, name=\"min_regular_batches\")"
+        },
+        {
+            "description": "Ensure that the total amount of medicinal ingredients used does not exceed the available amount",
+            "status": "coded",
+            "formulation": "\\textup{MedicinalIngredientsRegular} \\times \\textup{RegularBatches} + \\textup{MedicinalIngredientsPremium} \\times \\textup{PremiumBatches} \\leq \\textup{TotalMedicinalIngredients}",
+            "related_variables": [
+                "RegularBatches",
+                "PremiumBatches"
+            ],
+            "related_parameters": [
+                "MedicinalIngredientsRegular",
+                "MedicinalIngredientsPremium",
+                "TotalMedicinalIngredients"
+            ],
+            "code": "# Ensure that the total amount of medicinal ingredients used does not exceed the available amount\nmodel.addConstr(\n    MedicinalIngredientsRegular * RegularBatches + MedicinalIngredientsPremium * PremiumBatches <= TotalMedicinalIngredients,\n    name=\"medicinal_ingredients_constraint\"\n)"
+        },
+        {
+            "description": "Ensure that the total amount of rehydration product used does not exceed the available amount",
+            "status": "coded",
+            "formulation": "\\textup{RehydrationProductRegular} \\times \\textup{RegularBatches} + \\textup{RehydrationProductPremium} \\times \\textup{PremiumBatches} \\leq \\textup{TotalRehydrationProduct}",
+            "related_variables": [
+                "RegularBatches",
+                "PremiumBatches"
+            ],
+            "related_parameters": [
+                "RehydrationProductRegular",
+                "RehydrationProductPremium",
+                "TotalRehydrationProduct"
+            ],
+            "code": "# Ensure that the total amount of rehydration product used does not exceed the available amount\nmodel.addConstr(RehydrationProductRegular * RegularBatches + RehydrationProductPremium * PremiumBatches <= TotalRehydrationProduct, \"rehydration_product_constraint\")"
+        },
+        {
+            "description": "Ensure that at least the minimum number of regular batches are produced",
+            "status": "coded",
+            "formulation": "\\textup{RegularBatches} \\geq \\textup{MinRegularBatches}",
+            "related_variables": [
+                "RegularBatches"
+            ],
+            "related_parameters": [
+                "MinRegularBatches"
+            ],
+            "code": "# Ensure that at least the minimum number of regular batches are produced\nmodel.addConstr(RegularBatches >= MinRegularBatches, name=\"min_regular_batches\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of regular batches produced",
+            "symbol": "RegularBatches",
+            "shape": [],
+            "status": "coded",
+            "code": "RegularBatches = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"RegularBatches\")"
+        },
+        {
+            "definition": "Number of premium batches produced",
+            "symbol": "PremiumBatches",
+            "shape": [],
+            "status": "coded",
+            "code": "PremiumBatches = model.addVar(vtype=gp.GRB.INTEGER, name=\"PremiumBatches\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total number of people treated by producing optimal numbers of regular and premium batches",
+            "status": "coded",
+            "formulation": "\\max (\\textup{PeopleTreatedRegular} \\times \\textup{RegularBatches} + \\textup{PeopleTreatedPremium} \\times \\textup{PremiumBatches})",
+            "related_variables": [
+                "RegularBatches",
+                "PremiumBatches"
+            ],
+            "related_parameters": [
+                "PeopleTreatedRegular",
+                "PeopleTreatedPremium"
+            ],
+            "code": "# Define objective function\nobjective = PeopleTreatedRegular * RegularBatches + PeopleTreatedPremium * PremiumBatches\n\n# Set objective\nmodel.setObjective(objective, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "runtime_error",
+    "solver_output_status": "runtime_error",
+    "error_message": "Traceback (most recent call last):\n  File \"c:\\Users\\Simon\\Desktop\\Courses\\ECE 570\\ECE570_Project\\MyOptiMUS\\evaluator.py\", line 45, in run\n    exec(last_line, local_env, local_env)\n  File \"<string>\", line 1\n    ```\n    ^\nSyntaxError: invalid syntax\n",
+    "obj_val": null,
+    "log_path": "logs/log_20250413110055_nl4opt_prob_108/",
+    "problem_path": "data/nl4opt/prob_108/",
+    "prep_code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_108/data.json\", \"r\") as f:\n    data = json.load(f)\n"
+}

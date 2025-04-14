@@ -1,0 +1,208 @@
+{
+    "background": "A park is deciding on the number and type of trails to construct, with a focus on managing visitor capacity and minimizing environmental impact in terms of garbage production.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Visitor capacity per day for the wide trail",
+            "symbol": "WideCapacity",
+            "value": 50,
+            "shape": [],
+            "code": "WideCapacity = data[\"WideCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Visitor capacity per day for the narrow trail",
+            "symbol": "NarrowCapacity",
+            "value": 20,
+            "shape": [],
+            "code": "NarrowCapacity = data[\"NarrowCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of garbage introduced by one wide trail",
+            "symbol": "WideGarbage",
+            "value": 6,
+            "shape": [],
+            "code": "WideGarbage = data[\"WideGarbage\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of garbage introduced by one narrow trail",
+            "symbol": "NarrowGarbage",
+            "value": 3,
+            "shape": [],
+            "code": "NarrowGarbage = data[\"NarrowGarbage\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of wide trails allowed",
+            "symbol": "MaxWideTrails",
+            "value": 3,
+            "shape": [],
+            "code": "MaxWideTrails = data[\"MaxWideTrails\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum total visitor capacity per day",
+            "symbol": "MaxCapacity",
+            "value": 225,
+            "shape": [],
+            "code": "MaxCapacity = data[\"MaxCapacity\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of wide trails must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfWideTrails} \\geq 0",
+            "related_variables": [
+                "NumberOfWideTrails"
+            ],
+            "related_parameters": [],
+            "code": "model.addConstr(NumberOfWideTrails >= 0, \"NumberOfWideTrails_non_negative\")"
+        },
+        {
+            "description": "The number of narrow trails is non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfNarrowTrails} \\geq 0",
+            "related_variables": [
+                "NumberOfNarrowTrails"
+            ],
+            "related_parameters": [],
+            "code": "# Since NumberOfNarrowTrails is already guaranteed to be non-negative by its variable type,\n# no additional constraint is necessary."
+        },
+        {
+            "description": "Total visitors from wide trails does not exceed WideCapacity multiplied by the number of wide trails",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfWideTrails} \\cdot \\textup{WideCapacity} \\leq \\textup{MaxCapacity}",
+            "related_variables": [
+                "NumberOfWideTrails"
+            ],
+            "related_parameters": [
+                "WideCapacity",
+                "MaxCapacity"
+            ],
+            "code": "# Add constraint: Total visitors from wide trails does not exceed WideCapacity multiplied by the number of wide trails\nmodel.addConstr(NumberOfWideTrails * WideCapacity <= MaxCapacity, \"wide_trail_visitor_capacity\")"
+        },
+        {
+            "description": "Total visitors from narrow trails does not exceed NarrowCapacity multiplied by the number of narrow trails",
+            "status": "coded",
+            "formulation": "\\textup{TotalVisitorsNarrowTrails} \\leq \\textup{NarrowCapacity} \\times \\textup{NumberOfNarrowTrails}",
+            "related_variables": [
+                "TotalVisitorsNarrowTrails",
+                "NumberOfNarrowTrails"
+            ],
+            "related_parameters": [
+                "NarrowCapacity"
+            ],
+            "code": "# Add constraint for total visitors from narrow trails not exceeding the capacity\nTotalVisitorsNarrowTrails = model.addVar(vtype=gp.GRB.INTEGER, name=\"TotalVisitorsNarrowTrails\")\nmodel.addConstr(TotalVisitorsNarrowTrails <= NarrowCapacity * NumberOfNarrowTrails, \"TotalVisitorsNarrowTrails_limit\")"
+        },
+        {
+            "description": "Total number of wide trails does not exceed MaxWideTrails",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfWideTrails} \\leq \\textup{MaxWideTrails}",
+            "related_variables": [
+                "NumberOfWideTrails"
+            ],
+            "related_parameters": [
+                "MaxWideTrails"
+            ],
+            "code": "# Add constraint to ensure the total number of wide trails does not exceed MaxWideTrails\nmodel.addConstr(NumberOfWideTrails <= MaxWideTrails, \"max_wide_trails_constraint\")"
+        },
+        {
+            "description": "Total daily visitors across all trails should not exceed the park's maximum visitor capacity",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfWideTrails} \\times \\textup{WideCapacity} + \\textup{NumberOfNarrowTrails} \\times \\textup{NarrowCapacity} \\leq \\textup{MaxCapacity}",
+            "related_variables": [
+                "NumberOfWideTrails",
+                "NumberOfNarrowTrails"
+            ],
+            "related_parameters": [
+                "WideCapacity",
+                "NarrowCapacity",
+                "MaxCapacity"
+            ],
+            "code": "# Park's total visitor capacity constraint\nmodel.addConstr(NumberOfWideTrails * WideCapacity + NumberOfNarrowTrails * NarrowCapacity <= MaxCapacity, \"ParkVisitorCapacity\")"
+        },
+        {
+            "description": "The total number of wide trails is an integer.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfWideTrails} \\in \\mathbb{Z}^{+}",
+            "related_variables": [
+                "NumberOfWideTrails"
+            ],
+            "related_parameters": [],
+            "code": "# No extra code required since variable NumberOfWideTrails is already defined as an integer"
+        },
+        {
+            "description": "The total number of narrow trails is an integer",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfNarrowTrails} \\in \\mathbb{Z}",
+            "related_variables": [
+                "NumberOfNarrowTrails"
+            ],
+            "related_parameters": [],
+            "code": "# No extra code required since variable NumberOfNarrowTrails is already declared as integer"
+        },
+        {
+            "description": "The total visitor capacity for trails must not exceed the maximum total visitor capacity per day",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfWideTrails} \\times \\textup{WideCapacity} + \\textup{NumberOfNarrowTrails} \\times \\textup{NarrowCapacity} \\leq \\textup{MaxCapacity}",
+            "related_variables": [
+                "NumberOfWideTrails",
+                "NumberOfNarrowTrails"
+            ],
+            "related_parameters": [
+                "WideCapacity",
+                "NarrowCapacity",
+                "MaxCapacity"
+            ],
+            "code": "# Total visitor capacity constraint for trails\nmodel.addConstr((NumberOfWideTrails * WideCapacity) + (NumberOfNarrowTrails * NarrowCapacity) <= MaxCapacity, \"total_visitor_capacity\")"
+        },
+        {
+            "description": "The number of wide trails must not exceed the maximum number of wide trails allowed",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfWideTrails} \\leq \\textup{MaxWideTrails}",
+            "related_variables": [
+                "NumberOfWideTrails"
+            ],
+            "related_parameters": [
+                "MaxWideTrails"
+            ],
+            "code": "# Constraint: The number of wide trails must not exceed the maximum number of wide trails allowed\nmodel.addConstr(NumberOfWideTrails <= MaxWideTrails, name=\"max_wide_trails_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of wide trails in the park",
+            "symbol": "NumberOfWideTrails",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfWideTrails = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfWideTrails\")"
+        },
+        {
+            "definition": "The number of narrow trails in the park",
+            "symbol": "NumberOfNarrowTrails",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfNarrowTrails = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfNarrowTrails\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total amount of garbage produced by the trails",
+            "status": "coded",
+            "formulation": "\\textup{Minimize} \\quad \\textup{TotalGarbage} = \\textup{NumberOfWideTrails} \\times \\textup{WideGarbage} + \\textup{NumberOfNarrowTrails} \\times \\textup{NarrowGarbage}",
+            "related_variables": [
+                "NumberOfWideTrails",
+                "NumberOfNarrowTrails"
+            ],
+            "related_parameters": [
+                "WideGarbage",
+                "NarrowGarbage"
+            ],
+            "code": "# Set objective\nmodel.setObjective(NumberOfWideTrails * WideGarbage + NumberOfNarrowTrails * NarrowGarbage, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413180533_nl4opt_prob_285/",
+    "problem_path": "data/nl4opt/prob_285/"
+}

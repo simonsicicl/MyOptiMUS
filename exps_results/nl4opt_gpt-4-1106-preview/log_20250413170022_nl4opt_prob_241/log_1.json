@@ -1,0 +1,195 @@
+{
+    "background": "A dim sum restaurant utilizes two methods for food delivery: cart and hand. The goal is to schedule servers between these two methods to achieve a target number of customer interactions per hour while minimizing food refills.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of customer interactions per hour by cart",
+            "symbol": "InteractionsCart",
+            "value": 70,
+            "shape": [],
+            "code": "InteractionsCart = data[\"InteractionsCart\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of food refills per hour by cart",
+            "symbol": "RefillsCart",
+            "value": 5,
+            "shape": [],
+            "code": "RefillsCart = data[\"RefillsCart\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of customer interactions per hour by hand",
+            "symbol": "InteractionsHand",
+            "value": 85,
+            "shape": [],
+            "code": "InteractionsHand = data[\"InteractionsHand\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of food refills per hour by hand",
+            "symbol": "RefillsHand",
+            "value": 20,
+            "shape": [],
+            "code": "RefillsHand = data[\"RefillsHand\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum percentage of delivery shifts that must be by cart",
+            "symbol": "MinCartShiftsPercentage",
+            "value": 0.7,
+            "shape": [],
+            "code": "MinCartShiftsPercentage = data[\"MinCartShiftsPercentage\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of servers delivering by hand",
+            "symbol": "MinServersHand",
+            "value": 3,
+            "shape": [],
+            "code": "MinServersHand = data[\"MinServersHand\"] # scalar parameter"
+        },
+        {
+            "definition": "Target total number of customer interactions per hour",
+            "symbol": "TargetInteractions",
+            "value": 4000,
+            "shape": [],
+            "code": "TargetInteractions = data[\"TargetInteractions\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Number of servers delivering by cart must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{ServersDeliveringByCart} \\geq 0",
+            "related_variables": [
+                "ServersDeliveringByCart"
+            ],
+            "related_parameters": [],
+            "code": "# Since ServersDeliveringByCart is already guaranteed to be non-negative by its variable type,\n# no additional constraint is necessary.\n# However, if we needed to explicitly add a constraint, we would do the following:\n# model.addConstr(ServersDeliveringByCart >= 0, name=\"non_negative_servers\")"
+        },
+        {
+            "description": "Number of servers delivering by hand must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{ServersDeliveringByHand} \\geq 0",
+            "related_variables": [
+                "ServersDeliveringByHand"
+            ],
+            "related_parameters": [],
+            "code": "# Since ServersDeliveringByHand is already defined as an integer variable, \n# we just need to add a constraint to ensure it is non-negative.\nmodel.addConstr(ServersDeliveringByHand >= 0, \"non_negativity_constraint\")"
+        },
+        {
+            "description": "At least a minimum percentage of delivery shifts must be by cart",
+            "status": "coded",
+            "formulation": "\\textup{ServersDeliveringByCart} \\geq \\textup{MinCartShiftsPercentage} \\times (\\textup{ServersDeliveringByCart} + \\textup{ServersDeliveringByHand})",
+            "related_variables": [
+                "ServersDeliveringByCart",
+                "ServersDeliveringByHand"
+            ],
+            "related_parameters": [
+                "MinCartShiftsPercentage"
+            ],
+            "code": "```"
+        },
+        {
+            "description": "At least MinServersHand servers must be delivering by hand.",
+            "status": "coded",
+            "formulation": "\\textup{ServersDeliveringByHand} \\geq \\textup{MinServersHand}",
+            "related_variables": [
+                "ServersDeliveringByHand"
+            ],
+            "related_parameters": [
+                "MinServersHand"
+            ],
+            "code": "# Ensure that the number of servers delivering by hand meets the minimum requirement\nmodel.addConstr(ServersDeliveringByHand >= MinServersHand, name=\"min_servers_by_hand\")"
+        },
+        {
+            "description": "The total number of customer interactions must meet or exceed TargetInteractions per hour",
+            "status": "coded",
+            "formulation": "\\textup{ServersDeliveringByCart} \\cdot \\textup{InteractionsCart} + \\textup{ServersDeliveringByHand} \\cdot \\textup{InteractionsHand} \\geq \\textup{TargetInteractions}",
+            "related_variables": [
+                "ServersDeliveringByCart",
+                "ServersDeliveringByHand"
+            ],
+            "related_parameters": [
+                "InteractionsCart",
+                "InteractionsHand",
+                "TargetInteractions"
+            ],
+            "code": "# Constraint: The total number of customer interactions must meet or exceed TargetInteractions per hour\nmodel.addConstr(ServersDeliveringByCart * InteractionsCart + ServersDeliveringByHand * InteractionsHand >= TargetInteractions, \"TotalInteractionsTarget\")"
+        },
+        {
+            "description": "Ensure that the target number of customer interactions is met or exceeded",
+            "status": "coded",
+            "formulation": "\\textup{ServersDeliveringByCart} \\times \\textup{InteractionsCart} + \\textup{ServersDeliveringByHand} \\times \\textup{InteractionsHand} \\geq \\textup{TargetInteractions}",
+            "related_variables": [
+                "ServersDeliveringByCart",
+                "ServersDeliveringByHand"
+            ],
+            "related_parameters": [
+                "TargetInteractions",
+                "InteractionsCart",
+                "InteractionsHand"
+            ],
+            "code": "# Ensure that the target number of customer interactions is met or exceeded\nmodel.addConstr(ServersDeliveringByCart * InteractionsCart + ServersDeliveringByHand * InteractionsHand >= TargetInteractions, name=\"target_interactions\")"
+        },
+        {
+            "description": "Ensure the minimum percentage of delivery shifts that must be by cart is respected",
+            "status": "coded",
+            "formulation": " \\textup{ServersDeliveringByCart} \\geq \\textup{MinCartShiftsPercentage} \\times (\\textup{ServersDeliveringByCart} + \\textup{ServersDeliveringByHand})",
+            "related_variables": [
+                "ServersDeliveringByCart",
+                "ServersDeliveringByHand"
+            ],
+            "related_parameters": [
+                "MinCartShiftsPercentage"
+            ],
+            "code": "# Ensure the minimum percentage of delivery shifts that must be by cart is respected\nmodel.addConstr(ServersDeliveringByCart >= MinCartShiftsPercentage * (ServersDeliveringByCart + ServersDeliveringByHand), name=\"min_cart_shifts_constraint\")"
+        },
+        {
+            "description": "Ensure the minimum number of servers delivering by hand is respected",
+            "status": "coded",
+            "formulation": "\\textup{ServersDeliveringByHand} \\geq \\textup{MinServersHand}",
+            "related_variables": [
+                "ServersDeliveringByHand"
+            ],
+            "related_parameters": [
+                "MinServersHand"
+            ],
+            "code": "# Ensure the minimum number of servers delivering by hand is respected\nmodel.addConstr(ServersDeliveringByHand >= MinServersHand, name=\"min_servers_hand\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of servers delivering by cart",
+            "symbol": "ServersDeliveringByCart",
+            "shape": [],
+            "status": "coded",
+            "code": "ServersDeliveringByCart = model.addVar(vtype=gp.GRB.INTEGER, name=\"ServersDeliveringByCart\")"
+        },
+        {
+            "definition": "Number of servers delivering by hand",
+            "symbol": "ServersDeliveringByHand",
+            "shape": [],
+            "status": "coded",
+            "code": "ServersDeliveringByHand = model.addVar(vtype=gp.GRB.INTEGER, name=\"ServersDeliveringByHand\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of refills per hour",
+            "status": "coded",
+            "formulation": "\\textup{TotalRefills} = \\textup{ServersDeliveringByCart} \\times \\textup{RefillsCart} + \\textup{ServersDeliveringByHand} \\times \\textup{RefillsHand}",
+            "related_variables": [
+                "ServersDeliveringByCart",
+                "ServersDeliveringByHand"
+            ],
+            "related_parameters": [
+                "RefillsCart",
+                "RefillsHand"
+            ],
+            "code": "# Define the objective function\nmodel.setObjective(ServersDeliveringByCart * RefillsCart + ServersDeliveringByHand * RefillsHand, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413170022_nl4opt_prob_241/",
+    "problem_path": "data/nl4opt/prob_241/"
+}

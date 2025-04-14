@@ -1,0 +1,203 @@
+{
+    "background": "A biotechnology company uses a limited supply of antibiotics to produce first-dose and second-dose vaccines, both of which also require gelatine. The production must result in more first-dose vaccines than second-dose vaccines while meeting a minimum production requirement for the second-dose.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Total units of antibiotics available",
+            "symbol": "AntibioticsAvailable",
+            "value": 35000,
+            "shape": [],
+            "code": "AntibioticsAvailable = data[\"AntibioticsAvailable\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of antibiotics required for first-dose vaccine",
+            "symbol": "AntibioticsFirstDose",
+            "value": 30,
+            "shape": [],
+            "code": "AntibioticsFirstDose = data[\"AntibioticsFirstDose\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of antibiotics required for second-dose vaccine",
+            "symbol": "AntibioticsSecondDose",
+            "value": 65,
+            "shape": [],
+            "code": "AntibioticsSecondDose = data[\"AntibioticsSecondDose\"] # scalar parameter"
+        },
+        {
+            "definition": "Milligrams of gelatine required for first-dose vaccine",
+            "symbol": "GelatineFirstDose",
+            "value": 20,
+            "shape": [],
+            "code": "GelatineFirstDose = data[\"GelatineFirstDose\"] # scalar parameter"
+        },
+        {
+            "definition": "Milligrams of gelatine required for second-dose vaccine",
+            "symbol": "GelatineSecondDose",
+            "value": 60,
+            "shape": [],
+            "code": "GelatineSecondDose = data[\"GelatineSecondDose\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of second-dose vaccines to be produced",
+            "symbol": "MinimumSecondDose",
+            "value": 40,
+            "shape": [],
+            "code": "MinimumSecondDose = data[\"MinimumSecondDose\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of first-dose vaccines is non-negative",
+            "status": "coded",
+            "formulation": "FirstDoseVaccines \\\\geq 0",
+            "related_variables": [
+                "FirstDoseVaccines"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint for non-negativity of the number of first-dose vaccines\nmodel.addConstr(FirstDoseVaccines >= 0, name=\"first_dose_non_negative\")"
+        },
+        {
+            "description": "The number of second-dose vaccines produced must be non-negative and must meet a minimum production requirement",
+            "status": "coded",
+            "formulation": "\\textup{SecondDoseVaccines} \\geq 0 \\quad \\textup{and} \\quad \\textup{SecondDoseVaccines} \\geq \\textup{MinimumSecondDose}",
+            "related_variables": [
+                "SecondDoseVaccines"
+            ],
+            "related_parameters": [
+                "MinimumSecondDose"
+            ],
+            "code": "model.addConstr(SecondDoseVaccines >= 0, name=\"second_dose_vaccine_nonnegativity\")\nmodel.addConstr(SecondDoseVaccines >= MinimumSecondDose, name=\"minimum_second_dose_requirement\")"
+        },
+        {
+            "description": "The total antibiotics used in the production of first-dose and second-dose vaccines must not exceed the available amount of antibiotics.",
+            "status": "coded",
+            "formulation": "AntibioticsFirstDose \\times \\textup{FirstDoseVaccines} + AntibioticsSecondDose \\times \\textup{SecondDoseVaccines} \\leq AntibioticsAvailable",
+            "related_variables": [
+                "FirstDoseVaccines",
+                "SecondDoseVaccines"
+            ],
+            "related_parameters": [
+                "AntibioticsAvailable",
+                "AntibioticsFirstDose",
+                "AntibioticsSecondDose"
+            ],
+            "code": "# Add constraint for total antibiotics usage for vaccine production\nmodel.addConstr(AntibioticsFirstDose * FirstDoseVaccines + AntibioticsSecondDose * SecondDoseVaccines <= AntibioticsAvailable, \"Total_antibiotics_usage\")"
+        },
+        {
+            "description": "The number of first-dose vaccines must be greater than the number of second-dose vaccines, while meeting a minimum production requirement for the second-dose",
+            "status": "coded",
+            "formulation": "\\textup{FirstDoseVaccines} > \\textup{SecondDoseVaccines} \\quad \\text{and} \\quad \\textup{SecondDoseVaccines} \\geq \\textup{MinimumSecondDose}",
+            "related_variables": [
+                "FirstDoseVaccines",
+                "SecondDoseVaccines"
+            ],
+            "related_parameters": [
+                "MinimumSecondDose"
+            ],
+            "code": "# Constrain second-dose vaccines to be at least the minimum production requirement\nmodel.addConstr(SecondDoseVaccines >= MinimumSecondDose, \"min_second_dose_production\")\n\n# Ensure the number of first-dose vaccines is greater than second-dose vaccines\nmodel.addConstr(FirstDoseVaccines > SecondDoseVaccines, \"first_greater_than_second\")"
+        },
+        {
+            "description": "At least MinimumSecondDose second-dose vaccines must be produced",
+            "status": "coded",
+            "formulation": "\\textup{SecondDoseVaccines} \\geq \\textup{MinimumSecondDose}",
+            "related_variables": [
+                "SecondDoseVaccines"
+            ],
+            "related_parameters": [
+                "MinimumSecondDose"
+            ],
+            "code": "# Add constraint to ensure that at least the minimum number of second-dose vaccines are produced\nmodel.addConstr(SecondDoseVaccines >= MinimumSecondDose, name=\"min_second_dose_vaccines\")"
+        },
+        {
+            "description": "The production of vaccines must not exceed the available antibiotics",
+            "status": "coded",
+            "formulation": "\\textup{AntibioticsFirstDose} \\times \\textup{FirstDoseVaccines} + \\textup{AntibioticsSecondDose} \\times \\textup{SecondDoseVaccines} \\leq \\textup{AntibioticsAvailable}",
+            "related_variables": [
+                "FirstDoseVaccines",
+                "SecondDoseVaccines"
+            ],
+            "related_parameters": [
+                "AntibioticsFirstDose",
+                "AntibioticsSecondDose",
+                "AntibioticsAvailable"
+            ],
+            "code": "# Add constraint to ensure production of vaccines does not exceed available antibiotics\nmodel.addConstr(AntibioticsFirstDose * FirstDoseVaccines + AntibioticsSecondDose * SecondDoseVaccines <= AntibioticsAvailable, \"vaccine_antibiotics_constraint\")"
+        },
+        {
+            "description": "Ensure that more first-dose vaccines are produced than second-dose vaccines",
+            "status": "coded",
+            "formulation": "\\textup{FirstDoseVaccines} > \\textup{SecondDoseVaccines}",
+            "related_variables": [
+                "FirstDoseVaccines",
+                "SecondDoseVaccines"
+            ],
+            "related_parameters": [],
+            "code": "# Ensure that more first-dose vaccines are produced than second-dose vaccines\nmodel.addConstr(FirstDoseVaccines > SecondDoseVaccines, name=\"more_first_dose_vaccines\")"
+        },
+        {
+            "description": "Ensure that the production meets the minimum production requirement for second-dose vaccines",
+            "status": "coded",
+            "formulation": "\\textup{SecondDoseVaccines} \\geq \\textup{MinimumSecondDose}",
+            "related_variables": [
+                "SecondDoseVaccines"
+            ],
+            "related_parameters": [
+                "MinimumSecondDose"
+            ],
+            "code": "# Ensure that the production meets the minimum production requirement for second-dose vaccines\nmodel.addConstr(SecondDoseVaccines >= MinimumSecondDose, name=\"min_second_dose_requirement\")"
+        },
+        {
+            "description": "Ensure the limited supply of antibiotics is not exceeded",
+            "status": "coded",
+            "formulation": "\\textup{AntibioticsFirstDose} \\times \\textup{FirstDoseVaccines} + \\textup{AntibioticsSecondDose} \\times \\textup{SecondDoseVaccines} \\leq \\textup{AntibioticsAvailable}",
+            "related_variables": [
+                "FirstDoseVaccines",
+                "SecondDoseVaccines"
+            ],
+            "related_parameters": [
+                "AntibioticsAvailable",
+                "AntibioticsFirstDose",
+                "AntibioticsSecondDose"
+            ],
+            "code": "# Add constraint to ensure the limited supply of antibiotics is not exceeded\nmodel.addConstr(AntibioticsFirstDose * FirstDoseVaccines + AntibioticsSecondDose * SecondDoseVaccines <= AntibioticsAvailable, \"Antibiotics_Supply_Limit\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of first-dose vaccines produced",
+            "symbol": "FirstDoseVaccines",
+            "shape": [],
+            "status": "coded",
+            "code": "FirstDoseVaccines = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"FirstDoseVaccines\")"
+        },
+        {
+            "definition": "The number of second-dose vaccines produced",
+            "symbol": "SecondDoseVaccines",
+            "shape": [],
+            "status": "coded",
+            "code": "SecondDoseVaccines = model.addVar(vtype=gp.GRB.INTEGER, name=\"SecondDoseVaccines\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total amount of gelatine used in both first-dose and second-dose vaccines production",
+            "status": "coded",
+            "formulation": "\\min \\left(\\textup{GelatineFirstDose} \\times \\textup{FirstDoseVaccines} + \\textup{GelatineSecondDose} \\times \\textup{SecondDoseVaccines} \\right)",
+            "related_variables": [
+                "FirstDoseVaccines",
+                "SecondDoseVaccines"
+            ],
+            "related_parameters": [
+                "GelatineFirstDose",
+                "GelatineSecondDose"
+            ],
+            "code": "# Define objective function to minimize the total amount of gelatine used\nmodel.setObjective(GelatineFirstDose * FirstDoseVaccines + GelatineSecondDose * SecondDoseVaccines, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413175356_nl4opt_prob_274/",
+    "problem_path": "data/nl4opt/prob_274/"
+}

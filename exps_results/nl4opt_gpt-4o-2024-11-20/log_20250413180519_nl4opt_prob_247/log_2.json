@@ -1,0 +1,164 @@
+{
+    "background": "A market owner is starting a jam business and needs to decide on the allocation of jam into small packets and jugs to maximize the units sold.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Volume for a set of small packets",
+            "symbol": "VolumeSmallPackets",
+            "value": 1000,
+            "shape": [],
+            "code": "VolumeSmallPackets = data[\"VolumeSmallPackets\"] # scalar parameter"
+        },
+        {
+            "definition": "Volume for a jug",
+            "symbol": "VolumeJug",
+            "value": 1250,
+            "shape": [],
+            "code": "VolumeJug = data[\"VolumeJug\"] # scalar parameter"
+        },
+        {
+            "definition": "Ratio of the number of jugs to sets of small packets",
+            "symbol": "JugPacketRatio",
+            "value": 0.33,
+            "shape": [],
+            "code": "JugPacketRatio = data[\"JugPacketRatio\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of sets of small packets",
+            "symbol": "MinSmallPackets",
+            "value": 35,
+            "shape": [],
+            "code": "MinSmallPackets = data[\"MinSmallPackets\"] # scalar parameter"
+        },
+        {
+            "definition": "Total volume of jam",
+            "symbol": "TotalJam",
+            "value": 65000,
+            "shape": [],
+            "code": "TotalJam = data[\"TotalJam\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of sets of small packets must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumSmallPackets} \\geq 0",
+            "related_variables": [
+                "NumSmallPackets"
+            ],
+            "related_parameters": [],
+            "code": "# No additional code needed since NumSmallPackets is already defined as a non-negative integer variable"
+        },
+        {
+            "description": "Ensure the number of jugs is non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumJugs} \\geq 0",
+            "related_variables": [
+                "NumJugs"
+            ],
+            "related_parameters": [],
+            "code": "# Non-negativity constraint for NumJugs\nmodel.addConstr(NumJugs >= 0, name=\"non_negative_NumJugs\")"
+        },
+        {
+            "description": "Ensure total jam volume used in small packets and jugs does not exceed the total available volume.",
+            "status": "coded",
+            "formulation": "\\textup{NumSmallPackets} \\\\cdot \\\\textup{VolumeSmallPackets} + \\textup{NumJugs} \\\\cdot \\\\textup{VolumeJug} \\\\leq \\\\textup{TotalJam}",
+            "related_variables": [
+                "NumSmallPackets",
+                "NumJugs"
+            ],
+            "related_parameters": [
+                "VolumeSmallPackets",
+                "VolumeJug",
+                "TotalJam"
+            ],
+            "code": "# Add constraint for total jam volume usage\nmodel.addConstr(NumSmallPackets * VolumeSmallPackets + NumJugs * VolumeJug <= TotalJam, name=\"jam_volume_limit\")"
+        },
+        {
+            "description": "At least JugPacketRatio times as many jugs as sets of small packets must be used, ensuring the proportion of jugs to sets of small packets meets the defined threshold.",
+            "status": "coded",
+            "formulation": "\\textup{NumJugs} \\geq \\textup{JugPacketRatio} \\cdot \\textup{NumSmallPackets}",
+            "related_variables": [
+                "NumJugs",
+                "NumSmallPackets"
+            ],
+            "related_parameters": [
+                "JugPacketRatio"
+            ],
+            "code": "# Add constraint to ensure NumJugs is at least JugPacketRatio times NumSmallPackets\nmodel.addConstr(NumJugs >= JugPacketRatio * NumSmallPackets, name=\"jugs_to_packets_ratio\")"
+        },
+        {
+            "description": "Ensure that at least the minimum number of small packets (MinSmallPackets) is allocated for jam filling.",
+            "status": "coded",
+            "formulation": "\\\\textup{NumSmallPackets} \\\\geq \\\\textup{MinSmallPackets}",
+            "related_variables": [
+                "NumSmallPackets"
+            ],
+            "related_parameters": [
+                "MinSmallPackets"
+            ],
+            "code": "# Add constraint to ensure the minimum number of small packets allocated for jam filling\nmodel.addConstr(NumSmallPackets >= MinSmallPackets, name=\"min_small_packets_constraint\")"
+        },
+        {
+            "description": "Ensure the number of jugs does not exceed the ratio (JugPacketRatio) of the number of small packet sets.",
+            "status": "coded",
+            "formulation": "\\textup{NumJugs} \\\\leq \\\\textup{JugPacketRatio} \\\\cdot \\\\textup{NumSmallPackets}",
+            "related_variables": [
+                "NumSmallPackets",
+                "NumJugs"
+            ],
+            "related_parameters": [
+                "JugPacketRatio"
+            ],
+            "code": "# Add constraint to ensure the number of jugs does not exceed the ratio of the number of small packet sets\nmodel.addConstr(NumJugs <= JugPacketRatio * NumSmallPackets, name=\"limit_num_jugs_by_packet_ratio\")"
+        },
+        {
+            "description": "Ensure the minimum number of small packet sets is at least MinSmallPackets.",
+            "status": "coded",
+            "formulation": "\\textup{NumSmallPackets} \\\\geq \\\\textup{MinSmallPackets}",
+            "related_variables": [
+                "NumSmallPackets"
+            ],
+            "related_parameters": [
+                "MinSmallPackets"
+            ],
+            "code": "# Add constraint to ensure the minimum number of small packet sets\nmodel.addConstr(NumSmallPackets >= MinSmallPackets, name=\"min_small_packets\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of sets of small packets allocated for jam.",
+            "symbol": "NumSmallPackets",
+            "shape": [],
+            "status": "coded",
+            "code": "NumSmallPackets = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumSmallPackets\")"
+        },
+        {
+            "definition": "The number of jugs allocated for jam.",
+            "symbol": "NumJugs",
+            "shape": [],
+            "status": "coded",
+            "code": "NumJugs = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumJugs\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total number of units (sets of small packets and jugs) sold by the market owner.",
+            "status": "coded",
+            "formulation": "\\textup{NumSmallPackets} + \\textup{NumJugs}",
+            "related_variables": [
+                "NumSmallPackets",
+                "NumJugs"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(NumSmallPackets + NumJugs, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 61.18,
+    "log_path": "logs/log_20250413180519_nl4opt_prob_247/",
+    "problem_path": "data/nl4opt/prob_247/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_247/data.json\", \"r\") as f:\n    data = json.load(f)\n\nVolumeSmallPackets = data[\"VolumeSmallPackets\"] # scalar parameter\nVolumeJug = data[\"VolumeJug\"] # scalar parameter\nJugPacketRatio = data[\"JugPacketRatio\"] # scalar parameter\nMinSmallPackets = data[\"MinSmallPackets\"] # scalar parameter\nTotalJam = data[\"TotalJam\"] # scalar parameter\nNumSmallPackets = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumSmallPackets\")\nNumJugs = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumJugs\")\n\n# No additional code needed since NumSmallPackets is already defined as a non-negative integer variable\n\n# Non-negativity constraint for NumJugs\nmodel.addConstr(NumJugs >= 0, name=\"non_negative_NumJugs\")\n\n# Add constraint for total jam volume usage\nmodel.addConstr(NumSmallPackets * VolumeSmallPackets + NumJugs * VolumeJug <= TotalJam, name=\"jam_volume_limit\")\n\n# Add constraint to ensure NumJugs is at least JugPacketRatio times NumSmallPackets\nmodel.addConstr(NumJugs >= JugPacketRatio * NumSmallPackets, name=\"jugs_to_packets_ratio\")\n\n# Add constraint to ensure the minimum number of small packets allocated for jam filling\nmodel.addConstr(NumSmallPackets >= MinSmallPackets, name=\"min_small_packets_constraint\")\n\n# Add constraint to ensure the number of jugs does not exceed the ratio of the number of small packet sets\nmodel.addConstr(NumJugs <= JugPacketRatio * NumSmallPackets, name=\"limit_num_jugs_by_packet_ratio\")\n\n# Add constraint to ensure the minimum number of small packet sets\nmodel.addConstr(NumSmallPackets >= MinSmallPackets, name=\"min_small_packets\")\n\n# Set objective\nmodel.setObjective(NumSmallPackets + NumJugs, gp.GRB.MAXIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

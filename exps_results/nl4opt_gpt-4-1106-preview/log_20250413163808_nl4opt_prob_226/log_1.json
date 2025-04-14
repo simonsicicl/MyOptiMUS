@@ -1,0 +1,201 @@
+{
+    "background": "A concert organizer needs to transport equipment with a certain delivery rate using two types of transport methods: carts and trolleys, each requiring different numbers of workers.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Rate of equipment transportation by a cart",
+            "symbol": "CartRate",
+            "value": 5,
+            "shape": [],
+            "code": "CartRate = data[\"CartRate\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of workers required by a cart",
+            "symbol": "CartWorkers",
+            "value": 2,
+            "shape": [],
+            "code": "CartWorkers = data[\"CartWorkers\"] # scalar parameter"
+        },
+        {
+            "definition": "Rate of equipment transportation by a trolley",
+            "symbol": "TrolleyRate",
+            "value": 7,
+            "shape": [],
+            "code": "TrolleyRate = data[\"TrolleyRate\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of workers required by a trolley",
+            "symbol": "TrolleyWorkers",
+            "value": 4,
+            "shape": [],
+            "code": "TrolleyWorkers = data[\"TrolleyWorkers\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of trolleys to be used",
+            "symbol": "MinTrolleys",
+            "value": 12,
+            "shape": [],
+            "code": "MinTrolleys = data[\"MinTrolleys\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum percentage of the transportation that can be using trolleys",
+            "symbol": "MaxTrolleyPercentage",
+            "value": 0.4,
+            "shape": [],
+            "code": "MaxTrolleyPercentage = data[\"MaxTrolleyPercentage\"] # scalar parameter"
+        },
+        {
+            "definition": "Required rate of equipment delivery",
+            "symbol": "DeliveryRate",
+            "value": 100,
+            "shape": [],
+            "code": "DeliveryRate = data[\"DeliveryRate\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Number of carts must be non-negative",
+            "status": "coded",
+            "formulation": "NumberOfCarts \\geq 0",
+            "related_variables": [
+                "NumberOfCarts"
+            ],
+            "related_parameters": [],
+            "code": "model.addConstr(NumberOfCarts >= 0, name=\"non_negativity_carts\")"
+        },
+        {
+            "description": "Number of trolleys is non-negative and satisfies the minimum number required",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfTrolleys} \\geq \\max(0, \\textup{MinTrolleys})",
+            "related_variables": [
+                "NumberOfTrolleys"
+            ],
+            "related_parameters": [
+                "MinTrolleys"
+            ],
+            "code": "# Ensure the number of trolleys is non-negative and meets the minimum required\nmodel.addConstr(NumberOfTrolleys >= max(0, MinTrolleys), name=\"minimum_number_of_trolleys\")"
+        },
+        {
+            "description": "At least MinTrolleys trolleys must be used",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfTrolleys} \\geq \\textup{MinTrolleys}",
+            "related_variables": [
+                "NumberOfTrolleys"
+            ],
+            "related_parameters": [
+                "MinTrolleys"
+            ],
+            "code": "# Ensure at least MinTrolleys trolleys are used\nmodel.addConstr(NumberOfTrolleys >= MinTrolleys, name=\"min_trolleys_constraint\")"
+        },
+        {
+            "description": "The total rate of transportation performed by trolleys must not exceed MaxTrolleyPercentage of the overall transportation rate.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfTrolleys} \\cdot \\textup{TrolleyRate} \\leq \\textup{MaxTrolleyPercentage} \\cdot (\\textup{NumberOfCarts} \\cdot \\textup{CartRate} + \\textup{NumberOfTrolleys} \\cdot \\textup{TrolleyRate})",
+            "related_variables": [
+                "NumberOfCarts",
+                "NumberOfTrolleys"
+            ],
+            "related_parameters": [
+                "MaxTrolleyPercentage",
+                "CartRate",
+                "TrolleyRate"
+            ],
+            "code": "# Add the constraint for the total rate of transportation performed by trolleys not to exceed MaxTrolleyPercentage of the overall transportation rate.\nmodel.addConstr(NumberOfTrolleys * TrolleyRate <= MaxTrolleyPercentage * (NumberOfCarts * CartRate + NumberOfTrolleys * TrolleyRate), name=\"max_trolley_transportation_rate\")"
+        },
+        {
+            "description": "The total transportation rate from carts and trolleys must meet or exceed the required delivery rate.",
+            "status": "coded",
+            "formulation": "\\textup{CartRate} \\cdot \\textup{NumberOfCarts} + \\textup{TrolleyRate} \\cdot \\textup{NumberOfTrolleys} \\geq \\textup{DeliveryRate}",
+            "related_variables": [
+                "NumberOfCarts",
+                "NumberOfTrolleys"
+            ],
+            "related_parameters": [
+                "CartRate",
+                "TrolleyRate",
+                "DeliveryRate"
+            ],
+            "code": "# Add constraint to ensure transportation rate meets or exceeds delivery rate\nmodel.addConstr((CartRate * NumberOfCarts) + (TrolleyRate * NumberOfTrolleys) >= DeliveryRate, \"transportation_rate_requirement\")"
+        },
+        {
+            "description": "Ensure the use of at least the minimum number of trolleys",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfTrolleys} \\geq \\textup{MinTrolleys}",
+            "related_variables": [
+                "NumberOfTrolleys"
+            ],
+            "related_parameters": [
+                "MinTrolleys"
+            ],
+            "code": "# Ensure the use of at least the minimum number of trolleys\nmodel.addConstr(NumberOfTrolleys >= MinTrolleys, name=\"min_trolleys\")"
+        },
+        {
+            "description": "Ensure the total delivery rate meets or exceeds the required delivery rate",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfCarts} \\times \\textup{CartRate} + \\textup{NumberOfTrolleys} \\times \\textup{TrolleyRate} \\geq \\textup{DeliveryRate}",
+            "related_variables": [
+                "NumberOfCarts",
+                "NumberOfTrolleys"
+            ],
+            "related_parameters": [
+                "CartRate",
+                "TrolleyRate",
+                "DeliveryRate"
+            ],
+            "code": "# Ensure the total delivery rate meets or exceeds the required delivery rate\nmodel.addConstr(NumberOfCarts * CartRate + NumberOfTrolleys * TrolleyRate >= DeliveryRate, name=\"delivery_rate_requirement\")"
+        },
+        {
+            "description": "Ensure the maximum percentage of transportation using trolleys is not exceeded",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfTrolleys} \\times \\textup{TrolleyRate} \\leq \\textup{MaxTrolleyPercentage} \\times (\\textup{NumberOfCarts} \\times \\textup{CartRate} + \\textup{NumberOfTrolleys} \\times \\textup{TrolleyRate})",
+            "related_variables": [
+                "NumberOfCarts",
+                "NumberOfTrolleys"
+            ],
+            "related_parameters": [
+                "CartRate",
+                "TrolleyRate",
+                "MaxTrolleyPercentage"
+            ],
+            "code": "# Ensure the maximum percentage of transportation using trolleys is not exceeded\nmodel.addConstr(NumberOfTrolleys * TrolleyRate <= MaxTrolleyPercentage * (NumberOfCarts * CartRate + NumberOfTrolleys * TrolleyRate), name=\"MaxTrolleyPercentageConstraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of carts to be used for transportation",
+            "symbol": "NumberOfCarts",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfCarts = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfCarts\")"
+        },
+        {
+            "definition": "The number of trolleys to be used for transportation",
+            "symbol": "NumberOfTrolleys",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfTrolleys = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfTrolleys\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of workers required for transportation",
+            "status": "coded",
+            "formulation": "\\textup{Minimize} \\quad \\textup{TotalWorkers} = \\textup{NumberOfCarts} \\times \\textup{CartWorkers} + \\textup{NumberOfTrolleys} \\times \\textup{TrolleyWorkers}",
+            "related_variables": [
+                "NumberOfCarts",
+                "NumberOfTrolleys"
+            ],
+            "related_parameters": [
+                "CartWorkers",
+                "TrolleyWorkers"
+            ],
+            "code": "# Set objective\nmodel.setObjective(NumberOfCarts * CartWorkers + NumberOfTrolleys * TrolleyWorkers, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413163808_nl4opt_prob_226/",
+    "problem_path": "data/nl4opt/prob_226/"
+}

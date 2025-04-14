@@ -1,0 +1,183 @@
+{
+    "background": "There are two metal extraction processes, J and P, each with different requirements and pollution outputs.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Units of metal extracted using process J",
+            "symbol": "MetalJ",
+            "value": 5,
+            "shape": [],
+            "code": "MetalJ = data[\"MetalJ\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of water used by process J",
+            "symbol": "WaterJ",
+            "value": 8,
+            "shape": [],
+            "code": "WaterJ = data[\"WaterJ\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of pollution produced by process J",
+            "symbol": "PollutionJ",
+            "value": 3,
+            "shape": [],
+            "code": "PollutionJ = data[\"PollutionJ\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of metal extracted using process P",
+            "symbol": "MetalP",
+            "value": 9,
+            "shape": [],
+            "code": "MetalP = data[\"MetalP\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of water used by process P",
+            "symbol": "WaterP",
+            "value": 6,
+            "shape": [],
+            "code": "WaterP = data[\"WaterP\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of pollution produced by process P",
+            "symbol": "PollutionP",
+            "value": 5,
+            "shape": [],
+            "code": "PollutionP = data[\"PollutionP\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum units of water available",
+            "symbol": "MaxWater",
+            "value": 1500,
+            "shape": [],
+            "code": "MaxWater = data[\"MaxWater\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum units of pollution allowable",
+            "symbol": "MaxPollution",
+            "value": 1350,
+            "shape": [],
+            "code": "MaxPollution = data[\"MaxPollution\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of process J operations is non-negative",
+            "status": "coded",
+            "formulation": "\\textup{ProcessJOperations} \\geq 0",
+            "related_variables": [
+                "ProcessJOperations"
+            ],
+            "related_parameters": [],
+            "code": "# Since ProcessJOperations is already defined as a non-negative integer variable, no additional constraint is needed\n# ProcessJOperations >= 0 is inherently satisfied by the variable definition"
+        },
+        {
+            "description": "The number of operations using process P is non-negative",
+            "status": "coded",
+            "formulation": "\\textup{ProcessPOperations} \\geq 0",
+            "related_variables": [
+                "ProcessPOperations"
+            ],
+            "related_parameters": [],
+            "code": "model.addConstr(ProcessPOperations >= 0, name=\"ProcessPOperations_nonnegativity\")"
+        },
+        {
+            "description": "Total water used in both processes cannot exceed MaxWater",
+            "status": "coded",
+            "formulation": "\\textup{WaterJ} \\times \\textup{ProcessJOperations} + \\textup{WaterP} \\times \\textup{ProcessPOperations} \\leq \\textup{MaxWater}",
+            "related_variables": [
+                "ProcessJOperations",
+                "ProcessPOperations"
+            ],
+            "related_parameters": [
+                "WaterJ",
+                "WaterP",
+                "MaxWater"
+            ],
+            "code": "# Total water usage constraint for both processes J and P\nmodel.addConstr(WaterJ * ProcessJOperations + WaterP * ProcessPOperations <= MaxWater, name=\"Total_Water_Usage\")"
+        },
+        {
+            "description": "Total pollution from both processes cannot exceed MaxPollution",
+            "status": "coded",
+            "formulation": "\\textup{PollutionJ} \\cdot \\textup{ProcessJOperations} + \\textup{PollutionP} \\cdot \\textup{ProcessPOperations} \\leq \\textup{MaxPollution}",
+            "related_variables": [
+                "ProcessJOperations",
+                "ProcessPOperations"
+            ],
+            "related_parameters": [
+                "PollutionJ",
+                "PollutionP",
+                "MaxPollution"
+            ],
+            "code": "# Define the total pollution constraint\nmodel.addConstr((PollutionJ * ProcessJOperations) + (PollutionP * ProcessPOperations) <= MaxPollution, name=\"total_pollution_limit\")"
+        },
+        {
+            "description": "Total water usage by process J and P should not exceed the maximum units of water available",
+            "status": "coded",
+            "formulation": "\\textup{WaterJ} \\cdot \\textup{ProcessJOperations} + \\textup{WaterP} \\cdot \\textup{ProcessPOperations} \\leq \\textup{MaxWater}",
+            "related_variables": [
+                "ProcessJOperations",
+                "ProcessPOperations"
+            ],
+            "related_parameters": [
+                "WaterJ",
+                "WaterP",
+                "MaxWater"
+            ],
+            "code": "# Total water usage by process J and P should not exceed the maximum units of water available\nmodel.addConstr(WaterJ * ProcessJOperations + WaterP * ProcessPOperations <= MaxWater, name=\"total_water_usage\")"
+        },
+        {
+            "description": "Total pollution produced by process J and P should not exceed the maximum allowable units of pollution",
+            "status": "coded",
+            "formulation": "\\textup{PollutionJ} \\cdot \\textup{ProcessJOperations} + \\textup{PollutionP} \\cdot \\textup{ProcessPOperations} \\leq \\textup{MaxPollution}",
+            "related_variables": [
+                "ProcessJOperations",
+                "ProcessPOperations"
+            ],
+            "related_parameters": [
+                "PollutionJ",
+                "PollutionP",
+                "MaxPollution"
+            ],
+            "code": "# Add pollution constraint\nmodel.addConstr(PollutionJ * ProcessJOperations + PollutionP * ProcessPOperations <= MaxPollution, name=\"pollution_limit\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of operations using process J",
+            "symbol": "ProcessJOperations",
+            "shape": [],
+            "status": "coded",
+            "code": "ProcessJOperations = model.addVar(vtype=gp.GRB.INTEGER, name=\"ProcessJOperations\")"
+        },
+        {
+            "definition": "The number of operations using process P",
+            "symbol": "ProcessPOperations",
+            "shape": [],
+            "status": "coded",
+            "code": "ProcessPOperations = model.addVar(vtype=gp.GRB.INTEGER, name=\"ProcessPOperations\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total amount of metal extracted from mined ores using processes J and P",
+            "status": "coded",
+            "formulation": "\\max (\\textup{MetalJ} \\cdot \\textup{ProcessJOperations} + \\textup{MetalP} \\cdot \\textup{ProcessPOperations})",
+            "related_variables": [
+                "ProcessJOperations",
+                "ProcessPOperations"
+            ],
+            "related_parameters": [
+                "MetalJ",
+                "MetalP"
+            ],
+            "code": "# Define objective function\nmodel.setObjective(MetalJ * ProcessJOperations + MetalP * ProcessPOperations, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 2250.0,
+    "log_path": "logs/log_20250413172024_nl4opt_prob_258/",
+    "problem_path": "data/nl4opt/prob_258/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_258/data.json\", \"r\") as f:\n    data = json.load(f)\n\nMetalJ = data[\"MetalJ\"] # scalar parameter\nWaterJ = data[\"WaterJ\"] # scalar parameter\nPollutionJ = data[\"PollutionJ\"] # scalar parameter\nMetalP = data[\"MetalP\"] # scalar parameter\nWaterP = data[\"WaterP\"] # scalar parameter\nPollutionP = data[\"PollutionP\"] # scalar parameter\nMaxWater = data[\"MaxWater\"] # scalar parameter\nMaxPollution = data[\"MaxPollution\"] # scalar parameter\nProcessJOperations = model.addVar(vtype=gp.GRB.INTEGER, name=\"ProcessJOperations\")\nProcessPOperations = model.addVar(vtype=gp.GRB.INTEGER, name=\"ProcessPOperations\")\n\n# Since ProcessJOperations is already defined as a non-negative integer variable, no additional constraint is needed\n# ProcessJOperations >= 0 is inherently satisfied by the variable definition\n\nmodel.addConstr(ProcessPOperations >= 0, name=\"ProcessPOperations_nonnegativity\")\n\n# Total water usage constraint for both processes J and P\nmodel.addConstr(WaterJ * ProcessJOperations + WaterP * ProcessPOperations <= MaxWater, name=\"Total_Water_Usage\")\n\n# Define the total pollution constraint\nmodel.addConstr((PollutionJ * ProcessJOperations) + (PollutionP * ProcessPOperations) <= MaxPollution, name=\"total_pollution_limit\")\n\n# Total water usage by process J and P should not exceed the maximum units of water available\nmodel.addConstr(WaterJ * ProcessJOperations + WaterP * ProcessPOperations <= MaxWater, name=\"total_water_usage\")\n\n# Add pollution constraint\nmodel.addConstr(PollutionJ * ProcessJOperations + PollutionP * ProcessPOperations <= MaxPollution, name=\"pollution_limit\")\n\n# Define objective function\nmodel.setObjective(MetalJ * ProcessJOperations + MetalP * ProcessPOperations, gp.GRB.MAXIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

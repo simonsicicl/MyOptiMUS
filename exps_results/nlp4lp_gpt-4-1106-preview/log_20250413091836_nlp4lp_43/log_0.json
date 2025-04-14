@@ -1,0 +1,172 @@
+{
+    "background": "The manufacturer has to manage steel production to meet specific manganese and silicon content percentages in order to maximize profits. This involves deciding the optimal quantity of steel to produce, while taking material costs, selling prices, and melting costs into account.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Amount of steel to produce in tons",
+            "symbol": "SteelQuantity",
+            "value": "",
+            "shape": [],
+            "code": "SteelQuantity = data[\"SteelQuantity\"] # scalar parameter"
+        },
+        {
+            "definition": "Percentage of manganese in the steel required",
+            "symbol": "ManganesePercent",
+            "value": "",
+            "shape": [],
+            "code": "ManganesePercent = data[\"ManganesePercent\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum percentage of silicon in the steel required",
+            "symbol": "SiliconMinPercent",
+            "value": "",
+            "shape": [],
+            "code": "SiliconMinPercent = data[\"SiliconMinPercent\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum percentage of silicon in the steel allowed",
+            "symbol": "SiliconMaxPercent",
+            "value": "",
+            "shape": [],
+            "code": "SiliconMaxPercent = data[\"SiliconMaxPercent\"] # scalar parameter"
+        },
+        {
+            "definition": "Silicon content in the k-th stock",
+            "symbol": "SiliconContent",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "SiliconContent = np.array(data[\"SiliconContent\"]) # ['K']"
+        },
+        {
+            "definition": "Manganese content in the k-th stock",
+            "symbol": "ManganeseContent",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "ManganeseContent = np.array(data[\"ManganeseContent\"]) # ['K']"
+        },
+        {
+            "definition": "Price of manganese per ton",
+            "symbol": "ManganesePrice",
+            "value": "",
+            "shape": [],
+            "code": "ManganesePrice = data[\"ManganesePrice\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost of the k-th stock material per ton",
+            "symbol": "MaterialCost",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "MaterialCost = np.array(data[\"MaterialCost\"]) # ['K']"
+        },
+        {
+            "definition": "Selling price of steel per ton",
+            "symbol": "SellingPrice",
+            "value": "",
+            "shape": [],
+            "code": "SellingPrice = data[\"SellingPrice\"] # scalar parameter"
+        },
+        {
+            "definition": "Price to melt one ton of steel",
+            "symbol": "MeltingPrice",
+            "value": "",
+            "shape": [],
+            "code": "MeltingPrice = data[\"MeltingPrice\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The constraint specifying the total quantity of steel to be produced",
+            "status": "formulated",
+            "formulation": "\\sum_{k=1}^{K} \\textup{SteelProduced}_{k} = \\textup{SteelQuantity}",
+            "related_variables": [
+                "SteelProduced"
+            ],
+            "related_parameters": [
+                "SteelQuantity"
+            ]
+        },
+        {
+            "description": "The manganese content in the produced steel must match the required ManganesePercent",
+            "status": "formulated",
+            "formulation": "\\frac{\\sum_{k=1}^{K} (\\textup{SteelProduced}_{k} \\cdot \\textup{ManganeseContent}_{k})}{\\textup{SteelQuantity}} = \\textup{ManganesePercent}",
+            "related_variables": [
+                "SteelProduced"
+            ],
+            "related_parameters": [
+                "ManganeseContent",
+                "SteelQuantity",
+                "ManganesePercent"
+            ]
+        },
+        {
+            "description": "The total silicon content in the steel produced must be at least the minimum required percentage",
+            "status": "formulated",
+            "formulation": "\\sum_{k=1}^{K} (\\textup{SiliconContent}_k \\times \\textup{SteelProduced}_k) \\geq \\textup{SiliconMinPercent} \\times \\textup{SteelQuantity}",
+            "related_variables": [
+                "SteelProduced"
+            ],
+            "related_parameters": [
+                "SiliconContent",
+                "SiliconMinPercent",
+                "SteelQuantity"
+            ]
+        },
+        {
+            "description": "Silicon content in the produced steel must be at most SiliconMaxPercent percent",
+            "status": "formulated",
+            "formulation": "\\sum_{k=1}^{K} (\\textup{SiliconContent}_k \\cdot \\textup{SteelProduced}_k) \\leq \\textup{SiliconMaxPercent} \\cdot \\textup{SteelQuantity}",
+            "related_variables": [
+                "SiliconContent",
+                "SteelProduced"
+            ],
+            "related_parameters": [
+                "SiliconMaxPercent",
+                "SteelQuantity"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Quantity of steel produced from the k-th stock material",
+            "symbol": "SteelProduced",
+            "shape": [
+                "K"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "The total profit from producing steel",
+            "symbol": "TotalProfit",
+            "shape": [],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total profit from producing steel",
+            "status": "formulated",
+            "formulation": "\\max \\textup{TotalProfit}",
+            "related_variables": [
+                "SteelProduced"
+            ],
+            "related_parameters": [
+                "SellingPrice",
+                "MaterialCost",
+                "MeltingPrice",
+                "SteelQuantity"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413091836_nlp4lp_43/",
+    "problem_path": "data/nlp4lp/43/"
+}

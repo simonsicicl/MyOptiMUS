@@ -1,0 +1,395 @@
+{
+    "background": "An art store produces large and small art pieces, each requiring a certain amount of paint, glitter, and glue. The store has limited resources and minimum production requirements for each type of art piece.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Total units of paint available",
+            "symbol": "PaintAvailable",
+            "value": 100,
+            "shape": [],
+            "code": "PaintAvailable = data[\"PaintAvailable\"] # scalar parameter"
+        },
+        {
+            "definition": "Total units of glitter available",
+            "symbol": "GlitterAvailable",
+            "value": 50,
+            "shape": [],
+            "code": "GlitterAvailable = data[\"GlitterAvailable\"] # scalar parameter"
+        },
+        {
+            "definition": "Total units of glue available",
+            "symbol": "GlueAvailable",
+            "value": 70,
+            "shape": [],
+            "code": "GlueAvailable = data[\"GlueAvailable\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of paint required to make a large art piece",
+            "symbol": "PaintLarge",
+            "value": 4,
+            "shape": [],
+            "code": "PaintLarge = data[\"PaintLarge\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of glitter required to make a large art piece",
+            "symbol": "GlitterLarge",
+            "value": 3,
+            "shape": [],
+            "code": "GlitterLarge = data[\"GlitterLarge\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of glue required to make a large art piece",
+            "symbol": "GlueLarge",
+            "value": 5,
+            "shape": [],
+            "code": "GlueLarge = data[\"GlueLarge\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of paint required to make a small art piece",
+            "symbol": "PaintSmall",
+            "value": 2,
+            "shape": [],
+            "code": "PaintSmall = data[\"PaintSmall\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of glitter required to make a small art piece",
+            "symbol": "GlitterSmall",
+            "value": 1,
+            "shape": [],
+            "code": "GlitterSmall = data[\"GlitterSmall\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of glue required to make a small art piece",
+            "symbol": "GlueSmall",
+            "value": 2,
+            "shape": [],
+            "code": "GlueSmall = data[\"GlueSmall\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of large art pieces to be made",
+            "symbol": "MinLarge",
+            "value": 5,
+            "shape": [],
+            "code": "MinLarge = data[\"MinLarge\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of small art pieces to be made",
+            "symbol": "MinSmall",
+            "value": 5,
+            "shape": [],
+            "code": "MinSmall = data[\"MinSmall\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit per large art piece",
+            "symbol": "ProfitLarge",
+            "value": 30,
+            "shape": [],
+            "code": "ProfitLarge = data[\"ProfitLarge\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit per small art piece",
+            "symbol": "ProfitSmall",
+            "value": 15,
+            "shape": [],
+            "code": "ProfitSmall = data[\"ProfitSmall\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Number of large art pieces must be an integer",
+            "status": "coded",
+            "formulation": "\\textup{LargeArtPieces} \\in \\mathbb{Z}",
+            "related_variables": [
+                "LargeArtPieces"
+            ],
+            "related_parameters": [],
+            "code": "LargeArtPieces.vtype = gp.GRB.INTEGER"
+        },
+        {
+            "description": "The number of small art pieces produced must be an integer",
+            "status": "coded",
+            "formulation": "\\textup{SmallArtPieces} \\in \\mathbb{Z}_{+}",
+            "related_variables": [
+                "SmallArtPieces"
+            ],
+            "related_parameters": [],
+            "code": "# The number of small art pieces produced must be an integer - this is already ensured by the variable definition\n# No additional code is needed."
+        },
+        {
+            "description": "The number of large art pieces produced should be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{LargeArtPieces} \\geq 0",
+            "related_variables": [
+                "LargeArtPieces"
+            ],
+            "related_parameters": [],
+            "code": "# Constraint: The number of large art pieces produced should be non-negative\nmodel.addConstr(LargeArtPieces >= 0, name=\"non_negativity_LargeArtPieces\")"
+        },
+        {
+            "description": "The number of small art pieces produced should be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{SmallArtPieces} \\geq 0",
+            "related_variables": [
+                "SmallArtPieces"
+            ],
+            "related_parameters": [],
+            "code": "# Since the non-negativity constraint for an integer variable is set by default in Gurobi when defining a variable,\n# no additional constraint needs to be added here."
+        },
+        {
+            "description": "The total paint used for producing large and small art pieces must not exceed the available paint",
+            "status": "coded",
+            "formulation": "\\textup{PaintLarge} \\cdot \\textup{LargeArtPieces} + \\textup{PaintSmall} \\cdot \\textup{SmallArtPieces} \\leq \\textup{PaintAvailable}",
+            "related_variables": [
+                "LargeArtPieces",
+                "SmallArtPieces"
+            ],
+            "related_parameters": [
+                "PaintLarge",
+                "PaintSmall",
+                "PaintAvailable"
+            ],
+            "code": "# Paint usage constraint for large and small art pieces\nmodel.addConstr(PaintLarge * LargeArtPieces + PaintSmall * SmallArtPieces <= PaintAvailable, name=\"paint_usage\")"
+        },
+        {
+            "description": "The store uses at most the available units of glitter for producing large and small art pieces",
+            "status": "coded",
+            "formulation": "GlitterLarge \\times \\textup{LargeArtPieces} + GlitterSmall \\times \\textup{SmallArtPieces} \\leq \\textup{GlitterAvailable}",
+            "related_variables": [
+                "LargeArtPieces",
+                "SmallArtPieces"
+            ],
+            "related_parameters": [
+                "GlitterAvailable",
+                "GlitterLarge",
+                "GlitterSmall"
+            ],
+            "code": "# Constraint: The store uses at most the available units of glitter for producing large and small art pieces\nmodel.addConstr(GlitterLarge * LargeArtPieces + GlitterSmall * SmallArtPieces <= GlitterAvailable, name=\"glitter_usage\")"
+        },
+        {
+            "description": "The store must use at most the available units of glue to produce art pieces",
+            "status": "coded",
+            "formulation": "\\textup{GlueLarge} \\times \\textup{LargeArtPieces} + \\textup{GlueSmall} \\times \\textup{SmallArtPieces} \\leq \\textup{GlueAvailable}",
+            "related_variables": [
+                "LargeArtPieces",
+                "SmallArtPieces"
+            ],
+            "related_parameters": [
+                "GlueLarge",
+                "GlueSmall",
+                "GlueAvailable"
+            ],
+            "code": "# Add constraint to ensure glue usage does not exceed available units\nmodel.addConstr(GlueLarge * LargeArtPieces + GlueSmall * SmallArtPieces <= GlueAvailable, name=\"glue_usage\")"
+        },
+        {
+            "description": "Total consumption of paint for large art pieces must not exceed the available units of paint",
+            "status": "coded",
+            "formulation": "\\textup{PaintLarge} \\cdot \\textup{LargeArtPieces} \\leq \\textup{PaintAvailable}",
+            "related_variables": [
+                "LargeArtPieces"
+            ],
+            "related_parameters": [
+                "PaintLarge",
+                "PaintAvailable"
+            ],
+            "code": "# Constraint for total consumption of paint for large art pieces must not exceed the available units of paint\nmodel.addConstr(PaintLarge * LargeArtPieces <= PaintAvailable, name=\"paint_consumption_large_art\")"
+        },
+        {
+            "description": "Constraint on the glitter resources for producing large art pieces",
+            "status": "coded",
+            "formulation": "\\textup{GlitterLarge} \\times \\textup{LargeArtPieces} \\leq \\textup{GlitterAvailable}",
+            "related_variables": [
+                "LargeArtPieces"
+            ],
+            "related_parameters": [
+                "GlitterLarge",
+                "GlitterAvailable"
+            ],
+            "code": "# Add glitter resource constraint for large art pieces\nmodel.addConstr(GlitterLarge * LargeArtPieces <= GlitterAvailable, name=\"glitter_resource_large_art\")"
+        },
+        {
+            "description": "Each large art piece requires a certain amount of glue to be produced",
+            "status": "coded",
+            "formulation": "\\textup{GlueLarge} \\times \\textup{LargeArtPieces} \\leq \\textup{GlueAvailable}",
+            "related_variables": [
+                "LargeArtPieces"
+            ],
+            "related_parameters": [
+                "GlueLarge",
+                "GlueAvailable"
+            ],
+            "code": "# Each large art piece requires a certain amount of glue to be produced\nmodel.addConstr(GlueLarge * LargeArtPieces <= GlueAvailable, name=\"glue_large_art_pieces\")"
+        },
+        {
+            "description": "Total paint used should not exceed the total units of paint available",
+            "status": "coded",
+            "formulation": "\\textup{PaintSmall} \\times \\textup{SmallArtPieces} + \\textup{PaintLarge} \\times \\textup{LargeArtPieces} \\leq \\textup{PaintAvailable}",
+            "related_variables": [
+                "SmallArtPieces",
+                "LargeArtPieces"
+            ],
+            "related_parameters": [
+                "PaintSmall",
+                "PaintLarge",
+                "PaintAvailable"
+            ],
+            "code": "# Total paint used should not exceed the total units of paint available constraint\nmodel.addConstr(SmallArtPieces * PaintSmall + LargeArtPieces * PaintLarge <= PaintAvailable, name=\"paint_usage\")"
+        },
+        {
+            "description": "Constraint on the glitter resources for producing small art pieces",
+            "status": "coded",
+            "formulation": "\\textup{GlitterSmall} \\times \\textup{SmallArtPieces} \\leq \\textup{GlitterAvailable}",
+            "related_variables": [
+                "SmallArtPieces"
+            ],
+            "related_parameters": [
+                "GlitterSmall",
+                "GlitterAvailable"
+            ],
+            "code": "# Add constraint on the glitter resources for producing small art pieces\nmodel.addConstr(GlitterSmall * SmallArtPieces <= GlitterAvailable, name=\"glitter_resource_limit\")"
+        },
+        {
+            "description": "Constraint on the amount of glue used based on the production of small art pieces",
+            "status": "coded",
+            "formulation": "\\textup{GlueSmall} \\cdot \\textup{SmallArtPieces} \\leq \\textup{GlueAvailable}",
+            "related_variables": [
+                "SmallArtPieces"
+            ],
+            "related_parameters": [
+                "GlueSmall",
+                "GlueAvailable"
+            ],
+            "code": "# Add constraint on the amount of glue used based on the production of small art pieces\nmodel.addConstr(GlueSmall * SmallArtPieces <= GlueAvailable, name=\"glue_usage_small_art_pieces\")"
+        },
+        {
+            "description": "Store produces at least the minimum number of large art pieces required",
+            "status": "coded",
+            "formulation": "\\textup{LargeArtPieces} \\geq \\textup{MinLarge}",
+            "related_variables": [
+                "LargeArtPieces"
+            ],
+            "related_parameters": [
+                "MinLarge"
+            ],
+            "code": "# Add constraint to ensure at least the minimum number of large art pieces are produced\nmodel.addConstr(LargeArtPieces >= MinLarge, name=\"min_large_art_pieces\")"
+        },
+        {
+            "description": "Store produces at least the minimum number of small art pieces required",
+            "status": "coded",
+            "formulation": "\\textup{SmallArtPieces} \\geq \\textup{MinSmall}",
+            "related_variables": [
+                "SmallArtPieces"
+            ],
+            "related_parameters": [
+                "MinSmall"
+            ],
+            "code": "# Ensure production meets the minimum number of small art pieces required\nmodel.addConstr(SmallArtPieces >= MinSmall, name=\"min_small_art_pieces\")"
+        },
+        {
+            "description": "The total paint used cannot exceed the paint available",
+            "status": "coded",
+            "formulation": "\\textup{PaintLarge} \\cdot \\textup{LargeArtPieces} + \\textup{PaintSmall} \\cdot \\textup{SmallArtPieces} \\leq \\textup{PaintAvailable}",
+            "related_variables": [
+                "LargeArtPieces",
+                "SmallArtPieces"
+            ],
+            "related_parameters": [
+                "PaintLarge",
+                "PaintSmall",
+                "PaintAvailable"
+            ],
+            "code": "# Total paint used cannot exceed the paint available\nmodel.addConstr(PaintLarge * LargeArtPieces + PaintSmall * SmallArtPieces <= PaintAvailable, name=\"paint_capacity\")"
+        },
+        {
+            "description": "The total glitter used cannot exceed the glitter available",
+            "status": "coded",
+            "formulation": "\\textup{GlitterLarge} \\cdot \\textup{LargeArtPieces} + \\textup{GlitterSmall} \\cdot \\textup{SmallArtPieces} \\leq \\textup{GlitterAvailable}",
+            "related_variables": [
+                "LargeArtPieces",
+                "SmallArtPieces"
+            ],
+            "related_parameters": [
+                "GlitterLarge",
+                "GlitterSmall",
+                "GlitterAvailable"
+            ],
+            "code": "# Add constraint to ensure the total glitter used does not exceed the glitter available\nmodel.addConstr((GlitterLarge * LargeArtPieces) + (GlitterSmall * SmallArtPieces) <= GlitterAvailable, name=\"glitter_usage\")"
+        },
+        {
+            "description": "The total glue used cannot exceed the glue available",
+            "status": "coded",
+            "formulation": "\\textup{GlueLarge} \\cdot \\textup{LargeArtPieces} + \\textup{GlueSmall} \\cdot \\textup{SmallArtPieces} \\leq \\textup{GlueAvailable}",
+            "related_variables": [
+                "LargeArtPieces",
+                "SmallArtPieces"
+            ],
+            "related_parameters": [
+                "GlueLarge",
+                "GlueSmall",
+                "GlueAvailable"
+            ],
+            "code": "# Total glue usage constraint\nmodel.addConstr(GlueLarge * LargeArtPieces + GlueSmall * SmallArtPieces <= GlueAvailable, \"glue_usage\")"
+        },
+        {
+            "description": "The number of large art pieces must be at least the minimum required",
+            "status": "coded",
+            "formulation": "\\textup{LargeArtPieces} \\geq \\textup{MinLarge}",
+            "related_variables": [
+                "LargeArtPieces"
+            ],
+            "related_parameters": [
+                "MinLarge"
+            ],
+            "code": "# Add constraint for minimum number of large art pieces\nmodel.addConstr(LargeArtPieces >= MinLarge, name=\"min_large_art_pieces\")"
+        },
+        {
+            "description": "The number of small art pieces must be at least the minimum required",
+            "status": "coded",
+            "formulation": "\\textup{SmallArtPieces} \\geq \\textup{MinSmall}",
+            "related_variables": [
+                "SmallArtPieces"
+            ],
+            "related_parameters": [
+                "MinSmall"
+            ],
+            "code": "# Constraint for the minimum number of small art pieces\nmodel.addConstr(SmallArtPieces >= MinSmall, name=\"min_small_art_pieces_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of large art pieces produced",
+            "symbol": "LargeArtPieces",
+            "shape": [],
+            "status": "coded",
+            "code": "LargeArtPieces = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"LargeArtPieces\")"
+        },
+        {
+            "definition": "The number of small art pieces produced",
+            "symbol": "SmallArtPieces",
+            "shape": [],
+            "status": "coded",
+            "code": "SmallArtPieces = model.addVar(vtype=gp.GRB.INTEGER, name=\"SmallArtPieces\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total profit from the sale of large and small art pieces",
+            "status": "coded",
+            "formulation": "\\max (\\textup{ProfitLarge} \\cdot \\textup{LargeArtPieces} + \\textup{ProfitSmall} \\cdot \\textup{SmallArtPieces})",
+            "related_variables": [
+                "LargeArtPieces",
+                "SmallArtPieces"
+            ],
+            "related_parameters": [
+                "ProfitLarge",
+                "ProfitSmall"
+            ],
+            "code": "# Define the objective function\nmodel.setObjective(ProfitLarge * LargeArtPieces + ProfitSmall * SmallArtPieces, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413165735_nl4opt_prob_24/",
+    "problem_path": "data/nl4opt/prob_24/"
+}

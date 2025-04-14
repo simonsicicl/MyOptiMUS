@@ -1,0 +1,177 @@
+{
+    "background": "A water salesman should decide how many small and large kegs to use for transporting water from a glacier, abiding by the constraints on keg capacities, keg counts, and transportation limits.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Amount of water a small keg can hold",
+            "symbol": "SmallKegCapacity",
+            "value": 40,
+            "shape": [],
+            "code": "SmallKegCapacity = data[\"SmallKegCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of water a large keg can hold",
+            "symbol": "LargeKegCapacity",
+            "value": 100,
+            "shape": [],
+            "code": "LargeKegCapacity = data[\"LargeKegCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of small kegs available",
+            "symbol": "MaxSmallKegs",
+            "value": 30,
+            "shape": [],
+            "code": "MaxSmallKegs = data[\"MaxSmallKegs\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of large kegs available",
+            "symbol": "MaxLargeKegs",
+            "value": 10,
+            "shape": [],
+            "code": "MaxLargeKegs = data[\"MaxLargeKegs\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of kegs that can be transported",
+            "symbol": "MaxKegsTransport",
+            "value": 25,
+            "shape": [],
+            "code": "MaxKegsTransport = data[\"MaxKegsTransport\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of large kegs required",
+            "symbol": "MinLargeKegs",
+            "value": 5,
+            "shape": [],
+            "code": "MinLargeKegs = data[\"MinLargeKegs\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum ratio of the number of small kegs to the number of large kegs",
+            "symbol": "MinSmallLargeRatio",
+            "value": 2,
+            "shape": [],
+            "code": "MinSmallLargeRatio = data[\"MinSmallLargeRatio\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Number of small kegs used must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfSmallKegs} \\geq 0",
+            "related_variables": [
+                "NumberOfSmallKegs"
+            ],
+            "related_parameters": [],
+            "code": "# Constraint: Number of small kegs used must be non-negative\nmodel.addConstr(NumberOfSmallKegs >= 0, name=\"non_negativity_small_kegs\")"
+        },
+        {
+            "description": "The number of large kegs used must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfLargeKegs} \\geq 0",
+            "related_variables": [
+                "NumberOfLargeKegs"
+            ],
+            "related_parameters": [],
+            "code": "# Constraint: Number of large kegs used must be non-negative\nmodel.addConstr(NumberOfLargeKegs >= 0, name=\"non_negative_large_kegs\")"
+        },
+        {
+            "description": "The number of small kegs used should not exceed the maximum number of small kegs available",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfSmallKegs} \\leq \\textup{MaxSmallKegs}",
+            "related_variables": [
+                "NumberOfSmallKegs"
+            ],
+            "related_parameters": [
+                "MaxSmallKegs"
+            ],
+            "code": "# Add constraint to ensure the number of small kegs used does not exceed the maximum available\nmodel.addConstr(NumberOfSmallKegs <= MaxSmallKegs, name=\"max_small_kegs_constraint\")"
+        },
+        {
+            "description": "The number of large kegs used should not exceed the maximum number of large kegs available",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfLargeKegs} \\leq \\textup{MaxLargeKegs}",
+            "related_variables": [
+                "NumberOfLargeKegs"
+            ],
+            "related_parameters": [
+                "MaxLargeKegs"
+            ],
+            "code": "# Add constraint to ensure the number of large kegs used does not exceed availability\nmodel.addConstr(NumberOfLargeKegs <= MaxLargeKegs, name=\"large_kegs_availability\")"
+        },
+        {
+            "description": "The number of small kegs should be at least MinSmallLargeRatio times as many as the number of large kegs",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfSmallKegs} \\geq \\textup{MinSmallLargeRatio} \\times \\textup{NumberOfLargeKegs}",
+            "related_variables": [
+                "NumberOfSmallKegs",
+                "NumberOfLargeKegs"
+            ],
+            "related_parameters": [
+                "MinSmallLargeRatio"
+            ],
+            "code": "# Constraint: Number of small kegs should be at least MinSmallLargeRatio times as many as the number of large kegs\nmodel.addConstr(NumberOfSmallKegs >= MinSmallLargeRatio * NumberOfLargeKegs, name=\"min_small_large_ratio_constraint\")"
+        },
+        {
+            "description": "Total number of kegs transported should not exceed MaxKegsTransport",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfSmallKegs} + \\textup{NumberOfLargeKegs} \\leq \\textup{MaxKegsTransport}",
+            "related_variables": [
+                "NumberOfSmallKegs",
+                "NumberOfLargeKegs"
+            ],
+            "related_parameters": [
+                "MaxKegsTransport"
+            ],
+            "code": "# Add constraint for the maximum number of kegs that can be transported\nmodel.addConstr(NumberOfSmallKegs + NumberOfLargeKegs <= MaxKegsTransport, name=\"MaxKegsTransport_Constraint\")"
+        },
+        {
+            "description": "At least the minimum number of large kegs should be used",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfLargeKegs} \\geq \\textup{MinLargeKegs}",
+            "related_variables": [
+                "NumberOfLargeKegs"
+            ],
+            "related_parameters": [
+                "MinLargeKegs"
+            ],
+            "code": "# Add constraint for minimum number of large kegs used\nmodel.addConstr(NumberOfLargeKegs >= MinLargeKegs, name=\"min_large_kegs\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of small kegs used",
+            "symbol": "NumberOfSmallKegs",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfSmallKegs = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfSmallKegs\")"
+        },
+        {
+            "definition": "Number of large kegs used",
+            "symbol": "NumberOfLargeKegs",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfLargeKegs = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfLargeKegs\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total volume of glacial water transported",
+            "status": "coded",
+            "formulation": "\\max \\quad (\\textup{NumberOfSmallKegs} \\times \\textup{SmallKegCapacity} + \\textup{NumberOfLargeKegs} \\times \\textup{LargeKegCapacity})",
+            "related_variables": [
+                "NumberOfSmallKegs",
+                "NumberOfLargeKegs"
+            ],
+            "related_parameters": [
+                "SmallKegCapacity",
+                "LargeKegCapacity"
+            ],
+            "code": "# Define the objective function\nmodel.setObjective(NumberOfSmallKegs * SmallKegCapacity + NumberOfLargeKegs * LargeKegCapacity, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413144745_nl4opt_prob_180/",
+    "problem_path": "data/nl4opt/prob_180/"
+}

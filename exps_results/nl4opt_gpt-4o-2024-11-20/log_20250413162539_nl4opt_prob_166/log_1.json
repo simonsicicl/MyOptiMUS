@@ -1,0 +1,147 @@
+{
+    "background": "A car manufacturer needs to ship cars using a mix of large and small planes, considering capacity and pollution constraints.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Capacity of a large plane",
+            "symbol": "LargePlaneCapacity",
+            "value": 30,
+            "shape": [],
+            "code": "LargePlaneCapacity = data[\"LargePlaneCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Capacity of a small plane",
+            "symbol": "SmallPlaneCapacity",
+            "value": 10,
+            "shape": [],
+            "code": "SmallPlaneCapacity = data[\"SmallPlaneCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of cars to be delivered",
+            "symbol": "MinimumCarsDelivered",
+            "value": 300,
+            "shape": [],
+            "code": "MinimumCarsDelivered = data[\"MinimumCarsDelivered\"] # scalar parameter"
+        },
+        {
+            "definition": "Pollution factor constraint for large planes",
+            "symbol": "PollutionRatio",
+            "value": 0.33,
+            "shape": [],
+            "code": "PollutionRatio = data[\"PollutionRatio\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of large planes must be less than or equal to PollutionRatio times the number of small planes.",
+            "status": "coded",
+            "formulation": "\\textup{NumLargePlanes} \\leq \\textup{PollutionRatio} \\cdot \\textup{NumSmallPlanes}",
+            "related_variables": [
+                "NumLargePlanes",
+                "NumSmallPlanes"
+            ],
+            "related_parameters": [
+                "PollutionRatio"
+            ],
+            "code": "# Add constraint to ensure the number of large planes is less than or equal to PollutionRatio times the number of small planes\nmodel.addConstr(NumLargePlanes <= PollutionRatio * NumSmallPlanes, name=\"large_small_planes_ratio\")"
+        },
+        {
+            "description": "At least MinimumCarsDelivered cars must be delivered, using a combination of large and small planes.",
+            "status": "coded",
+            "formulation": "\\textup{NumLargePlanes} \\times \\textup{LargePlaneCapacity} + \\textup{NumSmallPlanes} \\times \\textup{SmallPlaneCapacity} \\geq \\textup{MinimumCarsDelivered}",
+            "related_variables": [
+                "NumLargePlanes",
+                "NumSmallPlanes"
+            ],
+            "related_parameters": [
+                "LargePlaneCapacity",
+                "SmallPlaneCapacity",
+                "MinimumCarsDelivered"
+            ],
+            "code": "# Add constraint to ensure at least MinimumCarsDelivered cars are delivered\nmodel.addConstr(NumLargePlanes * LargePlaneCapacity + NumSmallPlanes * SmallPlaneCapacity >= MinimumCarsDelivered, name=\"minimum_cars_delivered\")"
+        },
+        {
+            "description": "The number of large planes used must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumLargePlanes} \\geq 0",
+            "related_variables": [
+                "NumLargePlanes"
+            ],
+            "related_parameters": [],
+            "code": "# The variable NumLargePlanes is already defined as non-negative due to its default properties (continuous variables in Gurobi are non-negative by default), so no additional constraint is needed."
+        },
+        {
+            "description": "The number of small planes used is non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{NumSmallPlanes} \\geq 0",
+            "related_variables": [
+                "NumSmallPlanes"
+            ],
+            "related_parameters": [],
+            "code": "# The variable NumSmallPlanes is already defined as non-negative due to its default properties (continuous variables in Gurobi are non-negative unless stated otherwise); no additional constraint is needed."
+        },
+        {
+            "description": "The total capacity of planes should meet or exceed the minimum number of cars to be delivered",
+            "status": "coded",
+            "formulation": "\\\\textup{LargePlaneCapacity} \\\\cdot \\\\textup{NumLargePlanes} + \\\\textup{SmallPlaneCapacity} \\\\cdot \\\\textup{NumSmallPlanes} \\\\geq \\\\textup{MinimumCarsDelivered}",
+            "related_variables": [
+                "NumLargePlanes",
+                "NumSmallPlanes"
+            ],
+            "related_parameters": [
+                "LargePlaneCapacity",
+                "SmallPlaneCapacity",
+                "MinimumCarsDelivered"
+            ],
+            "code": "# Add constraint to ensure the total capacity of planes meets or exceeds the minimum number of cars to be delivered\nmodel.addConstr(\n    LargePlaneCapacity * NumLargePlanes + SmallPlaneCapacity * NumSmallPlanes >= MinimumCarsDelivered,\n    name=\"plane_capacity_constraint\"\n)"
+        },
+        {
+            "description": "The pollution factor constraint for large planes",
+            "status": "coded",
+            "formulation": "\\\\textup{NumLargePlanes} - \\\\textup{PollutionRatio} \\\\cdot ( \\\\textup{NumLargePlanes} + \\\\textup{NumSmallPlanes} ) \\\\leq 0",
+            "related_variables": [
+                "NumLargePlanes",
+                "NumSmallPlanes"
+            ],
+            "related_parameters": [
+                "PollutionRatio"
+            ],
+            "code": "# Add pollution factor constraint for large planes\nmodel.addConstr(NumLargePlanes - PollutionRatio * (NumLargePlanes + NumSmallPlanes) <= 0, name=\"pollution_factor_large_planes\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of large planes to be used.",
+            "symbol": "NumLargePlanes",
+            "shape": [],
+            "status": "coded",
+            "code": "NumLargePlanes = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumLargePlanes\")"
+        },
+        {
+            "definition": "The number of small planes to be used.",
+            "symbol": "NumSmallPlanes",
+            "shape": [],
+            "status": "coded",
+            "code": "NumSmallPlanes = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumSmallPlanes\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of planes used to deliver the cars",
+            "status": "coded",
+            "formulation": "\\\\textup{NumLargePlanes} + \\\\textup{NumSmallPlanes}",
+            "related_variables": [
+                "NumLargePlanes",
+                "NumSmallPlanes"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(NumLargePlanes + NumSmallPlanes, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413162539_nl4opt_prob_166/",
+    "problem_path": "data/nl4opt/prob_166/"
+}

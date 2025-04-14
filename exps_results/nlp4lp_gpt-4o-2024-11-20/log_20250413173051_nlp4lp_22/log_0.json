@@ -1,0 +1,209 @@
+{
+    "background": "The company aims to establish the best policy for maintaining equipment, manufacturing, storing, and selling products to maximize profits with limited machinery, work hours, and specific product constraints.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of machines",
+            "symbol": "M",
+            "value": "",
+            "shape": [],
+            "code": "M = data[\"M\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit for each product",
+            "symbol": "Profit",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "Profit = np.array(data[\"Profit\"]) # ['K']"
+        },
+        {
+            "definition": "Time required to produce each product on each machine",
+            "symbol": "Time",
+            "value": "",
+            "shape": [
+                "K",
+                "M"
+            ],
+            "code": "Time = np.array(data[\"Time\"]) # ['K', 'M']"
+        },
+        {
+            "definition": "Downtime for each machine",
+            "symbol": "Downtime",
+            "value": "",
+            "shape": [
+                "M"
+            ],
+            "code": "Downtime = np.array(data[\"Downtime\"]) # ['M']"
+        },
+        {
+            "definition": "Limit for each product on constraints",
+            "symbol": "Limit",
+            "value": "",
+            "shape": [
+                "K",
+                "I"
+            ],
+            "code": "Limit = np.array(data[\"Limit\"]) # ['K', 'I']"
+        },
+        {
+            "definition": "Price for storing products",
+            "symbol": "StorePrice",
+            "value": 0.33,
+            "shape": [],
+            "code": "StorePrice = data[\"StorePrice\"] # scalar parameter"
+        },
+        {
+            "definition": "Quantity of products to keep in store",
+            "symbol": "KeepQuantity",
+            "value": "",
+            "shape": [],
+            "code": "KeepQuantity = data[\"KeepQuantity\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of work hours available",
+            "symbol": "WorkHours",
+            "value": "",
+            "shape": [],
+            "code": "WorkHours = data[\"WorkHours\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Products must adhere to the production limits for each constraint",
+            "status": "formulated",
+            "formulation": "\\textup{ProductionAmount}[k] \\\\leq \\textup{Limit}[k, i] \\\\quad \\forall k \\\\in K, \\\\forall i \\\\in I",
+            "related_variables": [
+                "ProductionAmount"
+            ],
+            "related_parameters": [
+                "Limit"
+            ]
+        },
+        {
+            "description": "Ensure the total storage amount across all products meets or exceeds the minimum storage requirement (KeepQuantity).",
+            "status": "formulated",
+            "formulation": "\\sum_{k=1}^{\\textup{K}} \\textup{StoreAmount}_{k} \\geq \\textup{KeepQuantity}",
+            "related_variables": [
+                "StoreAmount"
+            ],
+            "related_parameters": [
+                "KeepQuantity",
+                "K"
+            ]
+        },
+        {
+            "description": "The total work hours used by all machines combined (including downtime) must not exceed the available WorkHours.",
+            "status": "formulated",
+            "formulation": "\\sum_{m=1}^{\\textup{M}} \\left( \\textup{Downtime}_m + \\sum_{k=1}^{\\textup{K}} \\textup{ProductionAmount}_k \\cdot \\textup{Time}_{k,m} \\right) \\leq \\textup{WorkHours}",
+            "related_variables": [
+                "ProductionAmount"
+            ],
+            "related_parameters": [
+                "WorkHours",
+                "Time",
+                "Downtime",
+                "M",
+                "K"
+            ]
+        },
+        {
+            "description": "The production quantities and stored quantities for all products must be non-negative.",
+            "status": "formulated",
+            "formulation": "\\textup{ProductionAmount}_k \\geq 0 \\quad \\forall k, \\quad \\textup{StoreAmount}_k \\geq 0 \\quad \\forall k",
+            "related_variables": [
+                "ProductionAmount",
+                "StoreAmount"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Relates storage amount to production amount (assuming all production is stored if not otherwise allocated).",
+            "status": "formulated",
+            "formulation": "\\textup{StoreAmount}_{k} \\leq \\textup{ProductionAmount}_{k} \\quad \\forall \\; k \\in \\{1, \\dots, \\textup{K}\\}",
+            "related_variables": [
+                "StoreAmount",
+                "ProductionAmount"
+            ],
+            "related_parameters": [
+                "K"
+            ]
+        },
+        {
+            "description": "Ensure total production time across all machines does not exceed the available work hours considering downtime.",
+            "status": "formulated",
+            "formulation": "\\sum_{k=1}^{K} \\sum_{m=1}^{M} \\textup{ProductionAmount}_{k} \\cdot \\textup{Time}_{k,m} \\leq \\textup{WorkHours} - \\sum_{m=1}^{M} \\textup{Downtime}_{m}",
+            "related_variables": [
+                "ProductionAmount"
+            ],
+            "related_parameters": [
+                "Time",
+                "WorkHours",
+                "Downtime"
+            ]
+        },
+        {
+            "description": "The storage quantity for each product must respect the desired KeepQuantity limit.",
+            "status": "formulated",
+            "formulation": "\\textup{StoreAmount}_{k} \\leq \\textup{KeepQuantity}, \\quad \\forall k \\in \\{1, \\dots, K\\}",
+            "related_variables": [
+                "StoreAmount"
+            ],
+            "related_parameters": [
+                "KeepQuantity"
+            ]
+        },
+        {
+            "description": "Production and storage quantities for each product must not exceed their respective product limits.",
+            "status": "formulated",
+            "formulation": "\\textup{ProductionAmount}_{k} + \\textup{StoreAmount}_{k} \\leq \\textup{Limit}_{k,i}, \\quad \\forall k \\in \\{1, \\dots, K\\}, \\; \\forall i \\in \\{1, \\dots, I\\}",
+            "related_variables": [
+                "ProductionAmount",
+                "StoreAmount"
+            ],
+            "related_parameters": [
+                "Limit"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The production quantity of product k",
+            "symbol": "ProductionAmount",
+            "shape": [
+                "K"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "The amount of product k kept in storage",
+            "symbol": "StoreAmount",
+            "shape": [
+                "K"
+            ],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the company's profit from manufacturing and sales while considering storage costs.",
+            "status": "formulated",
+            "formulation": "Max \\quad \\sum_{k=1}^{K} \\left( \\textup{Profit}_{k} \\cdot \\textup{ProductionAmount}_{k} - \\textup{StorePrice} \\cdot \\textup{StoreAmount}_{k} \\right)",
+            "related_variables": [
+                "ProductionAmount",
+                "StoreAmount"
+            ],
+            "related_parameters": [
+                "Profit",
+                "StorePrice"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413173051_nlp4lp_22/",
+    "problem_path": "data/nlp4lp/22/"
+}

@@ -1,0 +1,126 @@
+{
+    "background": "A shoe company needs to supply shoes to stores using vans and trucks. There are capacity limits for each type of vehicle and a minimum delivery requirement. Furthermore, the number of trucks must not exceed the number of vans used.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Capacity of a van",
+            "symbol": "VanCapacity",
+            "value": 50,
+            "shape": [],
+            "code": "VanCapacity = data[\"VanCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Capacity of a truck",
+            "symbol": "TruckCapacity",
+            "value": 100,
+            "shape": [],
+            "code": "TruckCapacity = data[\"TruckCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum total pairs of shoes to be supplied",
+            "symbol": "MinPairs",
+            "value": 2000,
+            "shape": [],
+            "code": "MinPairs = data[\"MinPairs\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "At least MinPairs pairs of shoes must be supplied",
+            "status": "coded",
+            "formulation": "\\textup{VanCapacity} \\times \\textup{VansUsed} + \\textup{TruckCapacity} \\times \\textup{TrucksUsed} \\geq \\textup{MinPairs}",
+            "related_variables": [
+                "VansUsed",
+                "TrucksUsed"
+            ],
+            "related_parameters": [
+                "VanCapacity",
+                "TruckCapacity",
+                "MinPairs"
+            ],
+            "code": "# Add constraint for minimum pairs of shoes to be supplied\nmodel.addConstr(VanCapacity * VansUsed + TruckCapacity * TrucksUsed >= MinPairs, name=\"min_pairs_supplied\")"
+        },
+        {
+            "description": "Number of trucks used must not exceed the number of vans used",
+            "status": "coded",
+            "formulation": "TrucksUsed \\\\leq VansUsed",
+            "related_variables": [
+                "TrucksUsed",
+                "VansUsed"
+            ],
+            "related_parameters": [],
+            "code": "model.addConstr(TrucksUsed <= VansUsed, name=\"trucks_leq_vans\")"
+        },
+        {
+            "description": "The number of vans must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{VansUsed} \\geq 0",
+            "related_variables": [
+                "VansUsed"
+            ],
+            "related_parameters": [],
+            "code": "# The number of vans must be non-negative. Since VansUsed is already an integer variable, no further action is needed.\nmodel.addConstr(VansUsed >= 0, \"non_negativity_vans\")"
+        },
+        {
+            "description": "Ensuring that the sum of the shoe supplies delivered by vans and trucks meets the minimum delivery requirement.",
+            "status": "coded",
+            "formulation": "\\textup{VanCapacity} \\times \\textup{VansUsed} + \\textup{TruckCapacity} \\times \\textup{TrucksUsed} \\geq \\textup{MinPairs}",
+            "related_variables": [
+                "VansUsed",
+                "TrucksUsed"
+            ],
+            "related_parameters": [
+                "VanCapacity",
+                "TruckCapacity",
+                "MinPairs"
+            ],
+            "code": "# Ensure the sum of shoe supplies delivered meets minimum delivery requirement\nmodel.addConstr(VanCapacity * VansUsed + TruckCapacity * TrucksUsed >= MinPairs, name=\"delivery_requirement\")"
+        },
+        {
+            "description": "The number of trucks must not exceed the number of vans used.",
+            "status": "coded",
+            "formulation": "\\textup{TrucksUsed} \\leq \\textup{VansUsed}",
+            "related_variables": [
+                "VansUsed",
+                "TrucksUsed"
+            ],
+            "related_parameters": [],
+            "code": "model.addConstr(TrucksUsed <= VansUsed, \"trucks_leq_vans\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of vans used for delivery",
+            "symbol": "VansUsed",
+            "shape": [],
+            "status": "coded",
+            "code": "VansUsed = model.addVar(vtype=gp.GRB.INTEGER, name=\"VansUsed\")"
+        },
+        {
+            "definition": "Number of trucks used for delivery",
+            "symbol": "TrucksUsed",
+            "shape": [],
+            "status": "coded",
+            "code": "TrucksUsed = model.addVar(vtype=gp.GRB.INTEGER, name=\"TrucksUsed\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the number of vans used to meet the shoe supply demands while adhering to capacity and delivery requirements.",
+            "status": "coded",
+            "formulation": "\\min \\textup{VansUsed}",
+            "related_variables": [
+                "VansUsed"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(VansUsed, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 14.0,
+    "log_path": "logs/log_20250413134703_nl4opt_prob_156/",
+    "problem_path": "data/nl4opt/prob_156/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_156/data.json\", \"r\") as f:\n    data = json.load(f)\n\nVanCapacity = data[\"VanCapacity\"] # scalar parameter\nTruckCapacity = data[\"TruckCapacity\"] # scalar parameter\nMinPairs = data[\"MinPairs\"] # scalar parameter\nVansUsed = model.addVar(vtype=gp.GRB.INTEGER, name=\"VansUsed\")\nTrucksUsed = model.addVar(vtype=gp.GRB.INTEGER, name=\"TrucksUsed\")\n\n# Add constraint for minimum pairs of shoes to be supplied\nmodel.addConstr(VanCapacity * VansUsed + TruckCapacity * TrucksUsed >= MinPairs, name=\"min_pairs_supplied\")\n\nmodel.addConstr(TrucksUsed <= VansUsed, name=\"trucks_leq_vans\")\n\n# The number of vans must be non-negative. Since VansUsed is already an integer variable, no further action is needed.\nmodel.addConstr(VansUsed >= 0, \"non_negativity_vans\")\n\n# Ensure the sum of shoe supplies delivered meets minimum delivery requirement\nmodel.addConstr(VanCapacity * VansUsed + TruckCapacity * TrucksUsed >= MinPairs, name=\"delivery_requirement\")\n\nmodel.addConstr(TrucksUsed <= VansUsed, \"trucks_leq_vans\")\n\n# Set objective\nmodel.setObjective(VansUsed, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

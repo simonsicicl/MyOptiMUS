@@ -1,0 +1,155 @@
+{
+    "background": "The problem is to find the largest possible ball by radius, which is entirely contained within a given set P, where the center of this ball is referred to as the Chebychev center of P.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "The number of inequalities defining the set P",
+            "symbol": "M",
+            "value": "",
+            "shape": [],
+            "code": "M = data[\"M\"] # scalar parameter"
+        },
+        {
+            "definition": "The ambient space dimension of the set P",
+            "symbol": "N",
+            "value": "",
+            "shape": [],
+            "code": "N = data[\"N\"] # scalar parameter"
+        },
+        {
+            "definition": "The coefficients of the linear inequalities defining the set P",
+            "symbol": "A",
+            "value": "",
+            "shape": [
+                "M",
+                "N"
+            ],
+            "code": "A = np.array(data[\"A\"]) # ['M', 'N']"
+        },
+        {
+            "definition": "The right-hand side of the inequalities defining the set P",
+            "symbol": "B",
+            "value": "",
+            "shape": [
+                "M"
+            ],
+            "code": "B = np.array(data[\"B\"]) # ['M']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The radii of balls are non-negative, and the entire ball is contained within the set P defined by A * c + r * ||a_i||_2 <= B for all i.",
+            "status": "coded",
+            "formulation": "A \\mathbf{c} + r \\|\\mathbf{a}_i\\|_2 \\leq B_i \\quad \\forall i = 1, 2, \\ldots, \\textup{M}",
+            "related_variables": [
+                "c",
+                "r"
+            ],
+            "related_parameters": [
+                "A",
+                "B",
+                "M",
+                "N"
+            ],
+            "code": "# Add constraints to ensure the ball is contained within the set P\nfor i in range(M):\n    norm_ai = math.sqrt(sum(A[i, j] * A[i, j] for j in range(N)))  # ||a_i||_2\n    model.addConstr(\n        gp.quicksum(c[j] * A[i, j] for j in range(N)) + r * norm_ai <= B[i],\n        name=f\"containment_constraint_{i}\"\n    )"
+        },
+        {
+            "description": "The ball must be entirely contained within the set P defined by the constraints A\\textup{x} \\leq \\textup{b}, minimizing the maximum violation.",
+            "status": "runtime_error",
+            "formulation": "A \\textup{c} + \\textup{r} \\cdot \\textup{NormA} \\leq \\textup{b}",
+            "related_variables": [
+                "c",
+                "r",
+                "NormA"
+            ],
+            "related_parameters": [
+                "A",
+                "b"
+            ],
+            "code": "# Add constraints to ensure the ball is contained within the set P\nfor i in range(M):\n    model.addConstr(gp.quicksum(A[i, j] * c[j] for j in range(N)) + r * NormA[i] <= b[i], name=f\"containment_{i}\")"
+        },
+        {
+            "description": "Define \\textup{NormA} as the vector of individual norms of the rows of matrix A",
+            "status": "coded",
+            "formulation": "\\textup{NormA}_i = \\sqrt{\\sum_{j=1}^{N} A_{i,j}^2} \\quad \\forall i \\in \\{1, ..., M\\}",
+            "related_variables": [
+                "NormA"
+            ],
+            "related_parameters": [
+                "A"
+            ],
+            "code": "# Add constraints to define NormA as the Euclidean norm of the rows of matrix A\nfor i in range(M):\n    model.addConstr(NormA[i] == gp.quicksum(A[i, j] * A[i, j] for j in range(N)) ** 0.5, name=f\"row_norm_{i}\")"
+        },
+        {
+            "description": "Ensure that the ball of radius r centered at c lies within the polyhedron defined by Ax <= B.",
+            "status": "coded",
+            "formulation": "A \\mathbf{c} + r \\cdot \\textup{NormA} \\leq B",
+            "related_variables": [
+                "c",
+                "r"
+            ],
+            "related_parameters": [
+                "A",
+                "B",
+                "NormA"
+            ],
+            "code": "# Add constraints to ensure the ball of radius r, centered at c, lies within the polyhedron defined by Ax <= B\nfor i in range(M):\n    model.addConstr(\n        gp.quicksum(A[i, j] * c[j] for j in range(N)) + r * np.linalg.norm(A[i, :]) <= B[i],\n        name=f\"ball_within_polyhedron_{i}\"\n    )"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The center of the ball. It is a vector in the ambient space of dimension N.",
+            "symbol": "c",
+            "shape": [
+                "N"
+            ],
+            "status": "coded",
+            "code": "c = model.addVars(N, vtype=gp.GRB.CONTINUOUS, name=\"c\")"
+        },
+        {
+            "definition": "The radius of the ball, which must be non-negative.",
+            "symbol": "r",
+            "shape": [],
+            "status": "coded",
+            "code": "r = model.addVar(vtype=gp.GRB.CONTINUOUS, lb=0, name=\"r\")"
+        },
+        {
+            "definition": "The vector of norms of the rows of matrix A",
+            "symbol": "NormA",
+            "shape": [
+                "M"
+            ],
+            "status": "coded",
+            "code": "NormA = model.addVars(M, vtype=gp.GRB.CONTINUOUS, name=\"NormA\")"
+        },
+        {
+            "definition": "The vector of the Euclidean norms of the rows of matrix A, where each element is \\textup{NormA}_i = \\Vert A_{i,:} \\Vert_2.",
+            "symbol": "NormA",
+            "shape": [
+                "M"
+            ],
+            "status": "coded",
+            "code": "NormA = model.addVars(M, vtype=gp.GRB.CONTINUOUS, name=\"NormA\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the radius r of the largest ball that can be inscribed in the polyhedron P.",
+            "status": "coded",
+            "formulation": "\\max \\; \\textup{r}",
+            "related_variables": [
+                "c",
+                "r"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(r, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "runtime_error",
+    "solver_output_status": "runtime_error",
+    "error_message": "Traceback (most recent call last):\n  File \"/Users/simonsici/Desktop/MyOptiMUS/evaluator.py\", line 45, in run\n    exec(last_line, local_env, local_env)\n  File \"<string>\", line 3, in <module>\nNameError: name 'b' is not defined\n",
+    "obj_val": null,
+    "log_path": "logs/log_20250413172958_nlp4lp_14/",
+    "problem_path": "data/nlp4lp/14/",
+    "prep_code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nlp4lp/14/data.json\", \"r\") as f:\n    data = json.load(f)\n"
+}

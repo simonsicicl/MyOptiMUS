@@ -1,0 +1,158 @@
+{
+    "background": "A logistics problem dealing with the transportation of soybeans from multiple supply terminals to various destinations, with routes connecting terminals and destinations. Each route has associated transportation costs and each destination has a specific demand to be met, while each terminal has a limited supply.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of terminals",
+            "symbol": "NumTerminals",
+            "value": "",
+            "shape": [],
+            "code": "NumTerminals = data[\"NumTerminals\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of destinations",
+            "symbol": "NumDestinations",
+            "value": "",
+            "shape": [],
+            "code": "NumDestinations = data[\"NumDestinations\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost of transportation for route from terminal i to destination j",
+            "symbol": "Cost",
+            "value": "",
+            "shape": [
+                "NumTerminals",
+                "NumDestinations"
+            ],
+            "code": "Cost = np.array(data[\"Cost\"]) # ['NumTerminals', 'NumDestinations']"
+        },
+        {
+            "definition": "Demand at each destination",
+            "symbol": "Demand",
+            "value": "",
+            "shape": [
+                "NumDestinations"
+            ],
+            "code": "Demand = np.array(data[\"Demand\"]) # ['NumDestinations']"
+        },
+        {
+            "definition": "Supply at each terminal",
+            "symbol": "Supply",
+            "value": "",
+            "shape": [
+                "NumTerminals"
+            ],
+            "code": "Supply = np.array(data[\"Supply\"]) # ['NumTerminals']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The transported quantity from any terminal to any destination is non-negative.",
+            "status": "formulated",
+            "formulation": "\\textup{QuantityTransported}_{i,j} \\geq 0 \\quad \\forall i = 1, \\dots, \\textup{NumTerminals}, \\quad j = 1, \\dots, \\textup{NumDestinations}",
+            "related_variables": [
+                "QuantityTransported"
+            ],
+            "related_parameters": [
+                "NumTerminals",
+                "NumDestinations"
+            ]
+        },
+        {
+            "description": "The transported quantity from each terminal cannot exceed its supply.",
+            "status": "formulated",
+            "formulation": "\\sum_{j=1}^{\\textup{NumDestinations}} \\textup{QuantityTransported}_{i,j} \\leq \\textup{Supply}_i, \\quad \\forall i \\in \\{1, 2, \\dots, \\textup{NumTerminals}\\}",
+            "related_variables": [
+                "QuantityTransported"
+            ],
+            "related_parameters": [
+                "Supply",
+                "NumDestinations",
+                "NumTerminals"
+            ]
+        },
+        {
+            "description": "The transported quantity from all terminals to a destination must meet its demand.",
+            "status": "formulated",
+            "formulation": "\\sum_{i=1}^{\\textup{NumTerminals}} \\textup{QuantityTransported}_{ij} = \\textup{Demand}_{j}, \\quad \\forall j \\in \\{1, \\dots, \\textup{NumDestinations}\\}",
+            "related_variables": [
+                "QuantityTransported"
+            ],
+            "related_parameters": [
+                "NumTerminals",
+                "NumDestinations",
+                "Demand"
+            ]
+        },
+        {
+            "description": "Ensure that the total quantity transported to each destination meets the demand for that destination",
+            "status": "formulated",
+            "formulation": "\\sum_{i=1}^{\\textup{NumTerminals}} \\textup{QuantityTransported}[i,j] \\geq \\textup{Demand}[j], \\quad \\forall j \\in \\{1, \\dots, \\textup{NumDestinations}\\}",
+            "related_variables": [
+                "QuantityTransported"
+            ],
+            "related_parameters": [
+                "Demand",
+                "NumTerminals",
+                "NumDestinations"
+            ]
+        },
+        {
+            "description": "Ensure that the total quantity transported from each terminal does not exceed the supply at that terminal",
+            "status": "formulated",
+            "formulation": "\\sum_{j=1}^{\\textup{NumDestinations}} \\textup{QuantityTransported}[i,j] \\leq \\textup{Supply}[i], \\quad \\forall i \\in \\{1, \\dots, \\textup{NumTerminals}\\}",
+            "related_variables": [
+                "QuantityTransported"
+            ],
+            "related_parameters": [
+                "Supply",
+                "NumDestinations",
+                "NumTerminals"
+            ]
+        },
+        {
+            "description": "Ensure that the quantity transported on each route is non-negative",
+            "status": "formulated",
+            "formulation": "\\textup{QuantityTransported}[i,j] \\geq 0, \\quad \\forall i \\in \\{1, \\dots, \\textup{NumTerminals}\\}, \\forall j \\in \\{1, \\dots, \\textup{NumDestinations}\\}",
+            "related_variables": [
+                "QuantityTransported"
+            ],
+            "related_parameters": [
+                "NumTerminals",
+                "NumDestinations"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The quantity transported from terminal i to destination j.",
+            "symbol": "QuantityTransported",
+            "shape": [
+                "NumTerminals",
+                "NumDestinations"
+            ],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total transportation costs of delivering soybeans from terminals to destinations",
+            "status": "formulated",
+            "formulation": "\\min \\quad \\sum_{i=1}^{\\textup{NumTerminals}} \\sum_{j=1}^{\\textup{NumDestinations}} \\textup{Cost}[i,j] \\cdot \\textup{QuantityTransported}[i,j]",
+            "related_variables": [
+                "QuantityTransported"
+            ],
+            "related_parameters": [
+                "Cost",
+                "NumTerminals",
+                "NumDestinations"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413152644_nlp4lp_56/",
+    "problem_path": "data/nlp4lp/56/"
+}

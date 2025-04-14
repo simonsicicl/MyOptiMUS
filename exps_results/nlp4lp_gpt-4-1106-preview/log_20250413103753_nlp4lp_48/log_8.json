@@ -1,0 +1,253 @@
+{
+    "background": "Custom Tees aims to achieve specific click targets from young and old age groups through a selection of different ad types, each with its own characteristics and limitations.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Total goal for clicks by young individuals",
+            "symbol": "GoalYoung",
+            "value": "",
+            "shape": [],
+            "code": "GoalYoung = data[\"GoalYoung\"] # scalar parameter"
+        },
+        {
+            "definition": "Total goal for clicks by old individuals",
+            "symbol": "GoalOld",
+            "value": "",
+            "shape": [],
+            "code": "GoalOld = data[\"GoalOld\"] # scalar parameter"
+        },
+        {
+            "definition": "Total goal for unique clicks by young individuals",
+            "symbol": "GoalUniqueYoung",
+            "value": "",
+            "shape": [],
+            "code": "GoalUniqueYoung = data[\"GoalUniqueYoung\"] # scalar parameter"
+        },
+        {
+            "definition": "Total goal for unique clicks by old individuals",
+            "symbol": "GoalUniqueOld",
+            "value": "",
+            "shape": [],
+            "code": "GoalUniqueOld = data[\"GoalUniqueOld\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of clicks by young individuals for each ad type",
+            "symbol": "YoungClicks",
+            "value": "",
+            "shape": [
+                "A"
+            ],
+            "code": "YoungClicks = np.array(data[\"YoungClicks\"]) # ['A']"
+        },
+        {
+            "definition": "Number of clicks by old individuals for each ad type",
+            "symbol": "OldClicks",
+            "value": "",
+            "shape": [
+                "A"
+            ],
+            "code": "OldClicks = np.array(data[\"OldClicks\"]) # ['A']"
+        },
+        {
+            "definition": "Cost associated with each ad type",
+            "symbol": "Costs",
+            "value": "",
+            "shape": [
+                "A"
+            ],
+            "code": "Costs = np.array(data[\"Costs\"]) # ['A']"
+        },
+        {
+            "definition": "Maximum number of clicks possible for each ad type",
+            "symbol": "MaxClicks",
+            "value": "",
+            "shape": [
+                "A"
+            ],
+            "code": "MaxClicks = np.array(data[\"MaxClicks\"]) # ['A']"
+        },
+        {
+            "definition": "Number of unique clicks for each ad type",
+            "symbol": "UniqueClicks",
+            "value": "",
+            "shape": [
+                "A"
+            ],
+            "code": "UniqueClicks = np.array(data[\"UniqueClicks\"]) # ['A']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Total clicks from young individuals must meet or exceed GoalYoung.",
+            "status": "runtime_error",
+            "formulation": "\\sum_{a} (\\textup{YoungClicks}_a \\cdot x_a) \\geq \\textup{GoalYoung}",
+            "related_variables": [
+                "AdTypeSelection"
+            ],
+            "related_parameters": [
+                "YoungClicks",
+                "GoalYoung"
+            ],
+            "code": "A = list(data['YoungClicks'].keys())  # Assuming 'YoungClicks' contains keys for ad types\n\nAdTypeSelection = model.addVars(A, vtype=gp.GRB.INTEGER, name='AdTypeSelection')"
+        },
+        {
+            "description": "Total clicks from old individuals must meet or exceed GoalOld",
+            "status": "coded",
+            "formulation": "\\sum_{a} (\\textup{AdTypeSelection}_{a} \\times \\textup{OldClicks}_{a}) \\geq \\textup{GoalOld}",
+            "related_variables": [
+                "AdTypeSelection"
+            ],
+            "related_parameters": [
+                "GoalOld",
+                "OldClicks"
+            ],
+            "code": "# Constraint: Total clicks from old individuals must meet or exceed GoalOld\nmodel.addConstr(gp.quicksum(AdTypeSelection[a] * OldClicks[a] for a in range(A)) >= GoalOld, name=\"old_individuals_click_goal\")"
+        },
+        {
+            "description": "Total unique clicks from young individuals must meet or exceed GoalUniqueYoung",
+            "status": "coded",
+            "formulation": "\\sum_{a=1}^{A} (\\textup{AdTypeSelection}_{a} \\times \\textup{UniqueClicks}_{a}) \\geq \\textup{GoalUniqueYoung}",
+            "related_variables": [
+                "AdTypeSelection"
+            ],
+            "related_parameters": [
+                "UniqueClicks",
+                "GoalUniqueYoung"
+            ],
+            "code": "# Ensure total unique clicks from young individuals meet or exceed GoalUniqueYoung\nunique_clicks_expr = gp.quicksum(AdTypeSelection[a] * UniqueClicks[a] for a in range(A))\nmodel.addConstr(unique_clicks_expr >= GoalUniqueYoung, name=\"unique_clicks_goal\")"
+        },
+        {
+            "description": "Total unique clicks from old individuals must meet or exceed GoalUniqueOld",
+            "status": "coded",
+            "formulation": "\\sum_{a=1}^{A} (\\textup{AdTypeSelection}_{a} \\times \\textup{UniqueClicks}_{a}) \\geq \\textup{GoalUniqueOld}",
+            "related_variables": [
+                "AdTypeSelection",
+                "UniqueClicks"
+            ],
+            "related_parameters": [
+                "GoalUniqueOld"
+            ],
+            "code": "# Ensure total unique clicks from old individuals meet or exceed the GoalUniqueOld\nmodel.addConstr(gp.quicksum(AdTypeSelection[a] * UniqueClicks[a] for a in range(A)) >= GoalUniqueOld, name=\"unique_clicks_old_goal\")"
+        },
+        {
+            "description": "Number of clicks from each ad type must not exceed its MaxClicks",
+            "status": "coded",
+            "formulation": "\\sum_{a=1}^{A} \\textup{AdTypeSelection}_{a} \\cdot (\\textup{YoungClicks}_{a} + \\textup{OldClicks}_{a}) \\leq \\textup{MaxClicks}_{a} \\quad \\forall a \\in A",
+            "related_variables": [
+                "AdTypeSelection"
+            ],
+            "related_parameters": [
+                "YoungClicks",
+                "OldClicks",
+                "MaxClicks"
+            ],
+            "code": "# Ensure number of clicks from each ad type does not exceed its MaxClicks\nfor a in range(A):\n    model.addConstr((AdTypeSelection[a] * (YoungClicks[a] + OldClicks[a])) <= MaxClicks[a],\n                    name=f\"max_clicks_ad_type_{a}\")"
+        },
+        {
+            "description": "Number of clicks for each ad type must be non-negative",
+            "status": "coded",
+            "formulation": "\\forall i \\in A, \\quad \\textup{AdTypeSelection}_i \\geq 0",
+            "related_variables": [
+                "AdTypeSelection"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraints to ensure number of clicks for each ad type are non-negative\nfor i in A:\n    model.addConstr(AdTypeSelection[i] >= 0, name=f\"NonNegativity_{i}\")"
+        },
+        {
+            "description": "Ensure the total number of clicks for young individuals meets the goal",
+            "status": "coded",
+            "formulation": "\\sum_{a=1}^{A} \\textup{YoungClicks}_{a} \\cdot \\textup{AdTypeSelection}_{a} \\geq \\textup{GoalYoung}",
+            "related_variables": [
+                "AdTypeSelection"
+            ],
+            "related_parameters": [
+                "YoungClicks",
+                "GoalYoung"
+            ],
+            "code": "# Ensure the total number of clicks for young individuals meets the goal\nmodel.addConstr(gp.quicksum(YoungClicks[a] * AdTypeSelection[a] for a in range(A)) >= GoalYoung, \n                name=\"total_clicks_young_goal\")"
+        },
+        {
+            "description": "Ensure the total number of clicks for old individuals meets the goal",
+            "status": "coded",
+            "formulation": "\\sum_{a=1}^{A} \\textup{OldClicks}_{a} \\cdot \\textup{AdTypeSelection}_{a} \\geq \\textup{GoalOld}",
+            "related_variables": [
+                "AdTypeSelection"
+            ],
+            "related_parameters": [
+                "OldClicks",
+                "GoalOld"
+            ],
+            "code": "# Ensure the total number of clicks for old individuals meets the goal\nmodel.addConstr(gp.quicksum(OldClicks[a] * AdTypeSelection[a] for a in range(A)) >= GoalOld, name=\"old_clicks_goal\")"
+        },
+        {
+            "description": "Ensure the number of unique clicks for young individuals meets the goal",
+            "status": "coded",
+            "formulation": "\\sum_{a=1}^{A} \\textup{UniqueClicks}_{a} \\cdot \\textup{AdTypeSelection}_{a} \\geq \\textup{GoalUniqueYoung}",
+            "related_variables": [
+                "AdTypeSelection"
+            ],
+            "related_parameters": [
+                "UniqueClicks",
+                "GoalUniqueYoung"
+            ],
+            "code": "# Ensure the number of unique clicks for young individuals meets the goal\nunique_clicks_constraint = gp.quicksum(AdTypeSelection[a] * UniqueClicks[a] for a in range(A)) >= GoalUniqueYoung\nmodel.addConstr(unique_clicks_constraint, name=\"unique_clicks_for_young\")"
+        },
+        {
+            "description": "Ensure the number of unique clicks for old individuals meets the goal",
+            "status": "coded",
+            "formulation": "\\sum_{a=1}^{A} \\textup{UniqueClicks}_{a} \\cdot \\textup{AdTypeSelection}_{a} \\geq \\textup{GoalUniqueOld}",
+            "related_variables": [
+                "AdTypeSelection"
+            ],
+            "related_parameters": [
+                "UniqueClicks",
+                "GoalUniqueOld"
+            ],
+            "code": "# Ensure the number of unique clicks for old individuals meets the goal\nunique_clicks_constraint = gp.quicksum(AdTypeSelection[a] * UniqueClicks[a] for a in range(A)) >= GoalUniqueOld\nmodel.addConstr(unique_clicks_constraint, name=\"unique_clicks_old_individuals_goal\")"
+        },
+        {
+            "description": "Ensure that the selection of each ad type does not exceed the maximum possible clicks",
+            "status": "coded",
+            "formulation": "\\textup{AdTypeSelection}_{a} \\leq \\textup{MaxClicks}_{a} \\quad \\forall a \\in A",
+            "related_variables": [
+                "AdTypeSelection"
+            ],
+            "related_parameters": [
+                "MaxClicks"
+            ],
+            "code": "# Ensure that the selection of each ad type does not exceed the maximum possible clicks\nfor a in A:\n    model.addConstr(AdTypeSelection[a] <= MaxClicks[a], name=f\"max_clicks_{a}\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of times each ad type is selected",
+            "symbol": "AdTypeSelection",
+            "shape": [
+                "A"
+            ],
+            "status": "coded",
+            "code": "A = data.keys()  # Replace with correct definition of 'A'\n\nAdTypeSelection = model.addVars(A, vtype=gp.GRB.INTEGER, name=\"AdTypeSelection\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the overall cost of selecting different ad types while meeting the click goals for young and old age groups",
+            "status": "coded",
+            "formulation": "\\min \\sum_{a=1}^{A} \\textup{Costs}_{a} \\cdot \\textup{AdTypeSelection}_{a}",
+            "related_variables": [
+                "AdTypeSelection"
+            ],
+            "related_parameters": [
+                "Costs"
+            ],
+            "code": "# Set objective\nmodel.setObjective(gp.quicksum(Costs[a] * AdTypeSelection[a] for a in range(A)), gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "runtime_error",
+    "solver_output_status": "runtime_error",
+    "error_message": "Traceback (most recent call last):\n  File \"c:\\Users\\Simon\\Desktop\\Courses\\ECE 570\\ECE570_Project\\MyOptiMUS\\evaluator.py\", line 45, in run\n    exec(last_line, local_env, local_env)\n  File \"<string>\", line 1, in <module>\nAttributeError: 'list' object has no attribute 'keys'\n",
+    "obj_val": null,
+    "log_path": "logs/log_20250413103753_nlp4lp_48/",
+    "problem_path": "data/nlp4lp/48/",
+    "prep_code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nlp4lp/48/data.json\", \"r\") as f:\n    data = json.load(f)\n"
+}

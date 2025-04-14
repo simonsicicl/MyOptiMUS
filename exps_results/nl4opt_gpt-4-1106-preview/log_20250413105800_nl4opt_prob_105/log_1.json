@@ -1,0 +1,177 @@
+{
+    "background": "A cleaning company requires an optimal mix of cleansing and odor-removing chemicals to clean houses efficiently.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Time effectiveness of cleansing chemical per unit",
+            "symbol": "Tc",
+            "value": 4,
+            "shape": [],
+            "code": "Tc = data[\"Tc\"] # scalar parameter"
+        },
+        {
+            "definition": "Time effectiveness of odor-removing chemical per unit",
+            "symbol": "To",
+            "value": 6,
+            "shape": [],
+            "code": "To = data[\"To\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum units of cleansing chemical required",
+            "symbol": "MinCleansing",
+            "value": 100,
+            "shape": [],
+            "code": "MinCleansing = data[\"MinCleansing\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum total units of chemicals used per house",
+            "symbol": "MaxTotal",
+            "value": 300,
+            "shape": [],
+            "code": "MaxTotal = data[\"MaxTotal\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum ratio of cleansing to odor-removing chemical",
+            "symbol": "MaxRatio",
+            "value": 2,
+            "shape": [],
+            "code": "MaxRatio = data[\"MaxRatio\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The amount of cleansing chemical used must be at least the minimum required",
+            "status": "coded",
+            "formulation": "\\textup{CleansingChemicalUsed} \\geq \\textup{MinCleansing}",
+            "related_variables": [
+                "CleansingChemicalUsed"
+            ],
+            "related_parameters": [
+                "MinCleansing"
+            ],
+            "code": "# Ensure the amount of cleansing chemical used is at least the minimum required\nmodel.addConstr(CleansingChemicalUsed >= MinCleansing, name=\"min_cleansing_requirement\")"
+        },
+        {
+            "description": "The total amount of chemicals used (both cleansing and odor-removing) should not exceed the maximum allowed units per house",
+            "status": "coded",
+            "formulation": "\\textup{CleansingChemicalUsed} + \\textup{OdorRemovingChemicalUsed} \\leq \\textup{MaxTotal}",
+            "related_variables": [
+                "CleansingChemicalUsed",
+                "OdorRemovingChemicalUsed"
+            ],
+            "related_parameters": [
+                "MaxTotal"
+            ],
+            "code": "# Add constraint for the maximum amount of chemicals used per house\nmodel.addConstr(CleansingChemicalUsed + OdorRemovingChemicalUsed <= MaxTotal, \"chemical_usage_limit\")"
+        },
+        {
+            "description": "The amount of cleansing chemical used cannot exceed the maximum ratio times the amount of odor-removing chemical used",
+            "status": "coded",
+            "formulation": "\\textup{CleansingChemicalUsed} \\leq \\textup{MaxRatio} \\times \\textup{OdorRemovingChemicalUsed}",
+            "related_variables": [
+                "CleansingChemicalUsed",
+                "OdorRemovingChemicalUsed"
+            ],
+            "related_parameters": [
+                "MaxRatio"
+            ],
+            "code": "# Add constraint: Cleansing chemical used cannot exceed the maximum ratio times the amount of odor-removing chemical used\nmodel.addConstr(CleansingChemicalUsed <= MaxRatio * OdorRemovingChemicalUsed, name=\"chemical_use_ratio\")"
+        },
+        {
+            "description": "The amount of cleansing chemical used must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{CleansingChemicalUsed} \\geq 0",
+            "related_variables": [
+                "CleansingChemicalUsed"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint for non-negativity of the amount of cleansing chemical used\nmodel.addConstr(CleansingChemicalUsed >= 0, name=\"cleansing_chemical_non_negative\")"
+        },
+        {
+            "description": "The amount of odor-removing chemical used is non-negative",
+            "status": "coded",
+            "formulation": "\\textup{OdorRemovingChemicalUsed} \\geq 0",
+            "related_variables": [
+                "OdorRemovingChemicalUsed"
+            ],
+            "related_parameters": [],
+            "code": "# The amount of odor-removing chemical used is non-negative\nmodel.addConstr(OdorRemovingChemicalUsed >= 0, \"nonnegativity_OdorRemovingChemicalUsed\")"
+        },
+        {
+            "description": "The amount of cleansing chemical used must be at least the minimum required",
+            "status": "coded",
+            "formulation": "\\textup{CleansingChemicalUsed} \\geq \\textup{MinCleansing}",
+            "related_variables": [
+                "CleansingChemicalUsed"
+            ],
+            "related_parameters": [
+                "MinCleansing"
+            ],
+            "code": "# Ensure the minimum amount of cleansing chemical is used\nmodel.addConstr(CleansingChemicalUsed >= MinCleansing, name=\"min_cleansing_requirement\")"
+        },
+        {
+            "description": "The total amount of chemicals used must not exceed the maximum allowed per house",
+            "status": "coded",
+            "formulation": "\\textup{CleansingChemicalUsed} + \\textup{OdorRemovingChemicalUsed} \\leq \\textup{MaxTotal}",
+            "related_variables": [
+                "CleansingChemicalUsed",
+                "OdorRemovingChemicalUsed"
+            ],
+            "related_parameters": [
+                "MaxTotal"
+            ],
+            "code": "# Add constraint for the maximum amount of chemicals used per house\nmodel.addConstr(CleansingChemicalUsed + OdorRemovingChemicalUsed <= MaxTotal, name=\"Max_Chemicals_Per_House\")"
+        },
+        {
+            "description": "The ratio of cleansing chemical to odor-removing chemical must not exceed the maximum ratio",
+            "status": "coded",
+            "formulation": "\\textup{CleansingChemicalUsed} \\leq \\textup{MaxRatio} \\cdot \\textup{OdorRemovingChemicalUsed}",
+            "related_variables": [
+                "CleansingChemicalUsed",
+                "OdorRemovingChemicalUsed"
+            ],
+            "related_parameters": [
+                "MaxRatio"
+            ],
+            "code": "# Add constraint for the maximum ratio of cleansing chemical to odor-removing chemical\nmodel.addConstr(CleansingChemicalUsed <= MaxRatio * OdorRemovingChemicalUsed, \"ratio_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Amount of cleansing chemical used",
+            "symbol": "CleansingChemicalUsed",
+            "shape": [],
+            "status": "coded",
+            "code": "CleansingChemicalUsed = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"CleansingChemicalUsed\")"
+        },
+        {
+            "definition": "Amount of odor-removing chemical used",
+            "symbol": "OdorRemovingChemicalUsed",
+            "shape": [],
+            "status": "coded",
+            "code": "OdorRemovingChemicalUsed = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"OdorRemovingChemicalUsed\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the negative total time saved by using cleansing and odor-removing chemicals",
+            "status": "coded",
+            "formulation": "-(\\textup{CleansingChemicalUsed} \\cdot \\textup{Tc} + \\textup{OdorRemovingChemicalUsed} \\cdot \\textup{To})",
+            "related_variables": [
+                "CleansingChemicalUsed",
+                "OdorRemovingChemicalUsed"
+            ],
+            "related_parameters": [
+                "Tc",
+                "To"
+            ],
+            "code": "# Set objective\nmodel.setObjective(-(CleansingChemicalUsed * Tc + OdorRemovingChemicalUsed * To), gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413105800_nl4opt_prob_105/",
+    "problem_path": "data/nl4opt/prob_105/"
+}

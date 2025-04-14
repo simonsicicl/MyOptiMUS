@@ -1,0 +1,103 @@
+{
+    "background": "The town needs to determine the number of officers to assign per shift to minimize the total cost of staffing.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of shifts for which officers are needed",
+            "symbol": "NumShifts",
+            "value": "",
+            "shape": [],
+            "code": "NumShifts = data[\"NumShifts\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of officers needed for shift s",
+            "symbol": "OfficersNeeded",
+            "value": "",
+            "shape": [
+                "NumShifts"
+            ],
+            "code": "OfficersNeeded = np.array(data[\"OfficersNeeded\"]) # ['NumShifts']"
+        },
+        {
+            "definition": "Cost of assigning an officer to shift s",
+            "symbol": "ShiftCosts",
+            "value": "",
+            "shape": [
+                "NumShifts"
+            ],
+            "code": "ShiftCosts = np.array(data[\"ShiftCosts\"]) # ['NumShifts']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of officers assigned to each shift must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{OfficersAssigned}_s \\geq 0 \\quad \\forall \\; s = 1, \\dots, \\textup{NumShifts}",
+            "related_variables": [
+                "OfficersAssigned"
+            ],
+            "related_parameters": [
+                "NumShifts"
+            ],
+            "code": "# Add non-negativity constraints for the number of officers assigned to each shift\nfor s in range(NumShifts):\n    model.addConstr(OfficersAssigned[s] >= 0, name=f\"non_negativity_officers_shift_{s}\")"
+        },
+        {
+            "description": "Ensure the number of officers assigned matches the OfficersNeeded for each shift",
+            "status": "coded",
+            "formulation": "\\textup{OfficersAssigned}_{s} = \\textup{OfficersNeeded}_{s}, \\quad \\forall s \\in \\{1, 2, ..., \\textup{NumShifts}\\}",
+            "related_variables": [
+                "OfficersAssigned"
+            ],
+            "related_parameters": [
+                "OfficersNeeded",
+                "NumShifts"
+            ],
+            "code": "# Add constraints to ensure the number of officers assigned equals the officers needed for each shift\nfor s in range(NumShifts):\n    model.addConstr(OfficersAssigned[s] == OfficersNeeded[s], name=f\"officers_assignment_{s}\")"
+        },
+        {
+            "description": "Ensure at least the required number of officers are assigned to each shift",
+            "status": "coded",
+            "formulation": "\\textup{OfficersAssigned}_{s} \\geq \\textup{OfficersNeeded}_{s}, \\quad \\forall s \\in \\{1, 2, \\dots, \\textup{NumShifts}\\}",
+            "related_variables": [
+                "OfficersAssigned"
+            ],
+            "related_parameters": [
+                "OfficersNeeded",
+                "NumShifts"
+            ],
+            "code": "# Add constraints to ensure the required number of officers are assigned to each shift\nfor s in range(NumShifts):\n    model.addConstr(OfficersAssigned[s] >= OfficersNeeded[s], name=f\"MinOfficersShift{s}\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of officers assigned to shift s",
+            "symbol": "OfficersAssigned",
+            "shape": [
+                "NumShifts"
+            ],
+            "status": "coded",
+            "code": "OfficersAssigned = model.addVars(NumShifts, vtype=gp.GRB.CONTINUOUS, name=\"OfficersAssigned\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total cost of assigning officers to each of the shifts",
+            "status": "coded",
+            "formulation": "Minimize \\quad \\sum_{s=1}^{\\textup{NumShifts}} (\\textup{ShiftCosts}_{s} \\cdot \\textup{OfficersAssigned}_{s})",
+            "related_variables": [
+                "OfficersAssigned"
+            ],
+            "related_parameters": [
+                "ShiftCosts",
+                "NumShifts"
+            ],
+            "code": "# Set objective\nmodel.setObjective(gp.quicksum(ShiftCosts[s] * OfficersAssigned[s] for s in range(NumShifts)), gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413152345_nlp4lp_50/",
+    "problem_path": "data/nlp4lp/50/"
+}

@@ -1,0 +1,216 @@
+{
+    "background": "A keyboard manufacturer makes mechanical and standard keyboards and aims to have a specific ratio between them, while each type requires certain amounts of plastic and solder for production.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Ratio of mechanical keyboards to standard keyboards",
+            "symbol": "RatioMechanicalStandard",
+            "value": 5,
+            "shape": [],
+            "code": "RatioMechanicalStandard = data[\"RatioMechanicalStandard\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of plastic required for one mechanical keyboard",
+            "symbol": "PlasticPerMechanical",
+            "value": 5,
+            "shape": [],
+            "code": "PlasticPerMechanical = data[\"PlasticPerMechanical\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of solder required for one mechanical keyboard",
+            "symbol": "SolderPerMechanical",
+            "value": 2,
+            "shape": [],
+            "code": "SolderPerMechanical = data[\"SolderPerMechanical\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of plastic required for one standard keyboard",
+            "symbol": "PlasticPerStandard",
+            "value": 2,
+            "shape": [],
+            "code": "PlasticPerStandard = data[\"PlasticPerStandard\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of solder required for one standard keyboard",
+            "symbol": "SolderPerStandard",
+            "value": 1,
+            "shape": [],
+            "code": "SolderPerStandard = data[\"SolderPerStandard\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of standard keyboards to be produced",
+            "symbol": "MinStandard",
+            "value": 30,
+            "shape": [],
+            "code": "MinStandard = data[\"MinStandard\"] # scalar parameter"
+        },
+        {
+            "definition": "Total available units of plastic",
+            "symbol": "TotalPlastic",
+            "value": 1000,
+            "shape": [],
+            "code": "TotalPlastic = data[\"TotalPlastic\"] # scalar parameter"
+        },
+        {
+            "definition": "Total available units of solder",
+            "symbol": "TotalSolder",
+            "value": 250,
+            "shape": [],
+            "code": "TotalSolder = data[\"TotalSolder\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of mechanical keyboards must be non-negative, ensuring no negative production quantities.",
+            "status": "coded",
+            "formulation": "\\textup{MechanicalKeyboards} \\geq 0",
+            "related_variables": [
+                "MechanicalKeyboards"
+            ],
+            "related_parameters": [],
+            "code": "# Non-negativity constraint for the number of mechanical keyboards\nmodel.addConstr(MechanicalKeyboards >= 0, name=\"non_negative_mechanical_keyboards\")"
+        },
+        {
+            "description": "The number of standard keyboards must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{StandardKeyboards} \\geq 0",
+            "related_variables": [
+                "StandardKeyboards"
+            ],
+            "related_parameters": [],
+            "code": "# No code is needed: Gurobi variables by default have non-negativity constraints unless otherwise specified."
+        },
+        {
+            "description": "At least the minimum number of standard keyboards (MinStandard) is produced.",
+            "status": "coded",
+            "formulation": "\\textup{StandardKeyboards} \\geq \\textup{MinStandard}",
+            "related_variables": [
+                "StandardKeyboards"
+            ],
+            "related_parameters": [
+                "MinStandard"
+            ],
+            "code": "# Add minimum production constraint for standard keyboards\nmodel.addConstr(StandardKeyboards >= MinStandard, name=\"min_standard_keyboards\")"
+        },
+        {
+            "description": "The total plastic used by the manufacturing process must not exceed the available total plastic.",
+            "status": "coded",
+            "formulation": "(\\textup{PlasticPerMechanical} \\times \\textup{MechanicalKeyboards}) + (\\textup{PlasticPerStandard} \\times \\textup{StandardKeyboards}) \\leq \\textup{TotalPlastic}",
+            "related_variables": [
+                "MechanicalKeyboards",
+                "StandardKeyboards"
+            ],
+            "related_parameters": [
+                "PlasticPerMechanical",
+                "PlasticPerStandard",
+                "TotalPlastic"
+            ],
+            "code": "# Add constraint to ensure total plastic usage does not exceed available total plastic\nmodel.addConstr(\n    (PlasticPerMechanical * MechanicalKeyboards) + \n    (PlasticPerStandard * StandardKeyboards) \n    <= TotalPlastic, \n    name=\"plastic_usage_constraint\"\n)"
+        },
+        {
+            "description": "The total solder use from mechanical and standard keyboards must not exceed the total available solder.",
+            "status": "coded",
+            "formulation": "\\\\textup{MechanicalKeyboards} \\\\times \\\\textup{SolderPerMechanical} + \\\\textup{StandardKeyboards} \\\\times \\\\textup{SolderPerStandard} \\\\leq \\\\textup{TotalSolder}",
+            "related_variables": [
+                "MechanicalKeyboards",
+                "StandardKeyboards"
+            ],
+            "related_parameters": [
+                "SolderPerMechanical",
+                "SolderPerStandard",
+                "TotalSolder"
+            ],
+            "code": "# Add solder usage constraint\nmodel.addConstr(\n    MechanicalKeyboards * SolderPerMechanical + StandardKeyboards * SolderPerStandard <= TotalSolder,\n    name=\"solder_usage_constraint\"\n)"
+        },
+        {
+            "description": "Mechanical keyboards must follow the ratio with standard keyboards.",
+            "status": "coded",
+            "formulation": "\\textup{MechanicalKeyboards} = \\textup{RatioMechanicalStandard} \\cdot \\textup{StandardKeyboards}",
+            "related_variables": [
+                "MechanicalKeyboards",
+                "StandardKeyboards"
+            ],
+            "related_parameters": [
+                "RatioMechanicalStandard"
+            ],
+            "code": "# Add constraint to enforce ratio between mechanical and standard keyboards\nmodel.addConstr(MechanicalKeyboards == RatioMechanicalStandard * StandardKeyboards, name=\"mechanical_standard_ratio\")"
+        },
+        {
+            "description": "Plastic usage cannot exceed the total available plastic.",
+            "status": "coded",
+            "formulation": "\\textup{PlasticPerMechanical} \\cdot \\textup{MechanicalKeyboards} + \\textup{PlasticPerStandard} \\cdot \\textup{StandardKeyboards} \\leq \\textup{TotalPlastic}",
+            "related_variables": [
+                "MechanicalKeyboards",
+                "StandardKeyboards"
+            ],
+            "related_parameters": [
+                "PlasticPerMechanical",
+                "PlasticPerStandard",
+                "TotalPlastic"
+            ],
+            "code": "# Add constraint to limit plastic usage\nmodel.addConstr(PlasticPerMechanical * MechanicalKeyboards + PlasticPerStandard * StandardKeyboards <= TotalPlastic, \n                name=\"plastic_usage_limit\")"
+        },
+        {
+            "description": "Solder usage cannot exceed the total available solder.",
+            "status": "coded",
+            "formulation": "\\textup{SolderPerMechanical} \\cdot \\textup{MechanicalKeyboards} + \\textup{SolderPerStandard} \\cdot \\textup{StandardKeyboards} \\leq \\textup{TotalSolder}",
+            "related_variables": [
+                "MechanicalKeyboards",
+                "StandardKeyboards"
+            ],
+            "related_parameters": [
+                "SolderPerMechanical",
+                "SolderPerStandard",
+                "TotalSolder"
+            ],
+            "code": "# Add solder usage constraint\nmodel.addConstr(SolderPerMechanical * MechanicalKeyboards + SolderPerStandard * StandardKeyboards <= TotalSolder, name=\"solder_usage\")"
+        },
+        {
+            "description": "The number of standard keyboards should be at least the minimum required.",
+            "status": "coded",
+            "formulation": "\\textup{StandardKeyboards} \\geq \\textup{MinStandard}",
+            "related_variables": [
+                "StandardKeyboards"
+            ],
+            "related_parameters": [
+                "MinStandard"
+            ],
+            "code": "# Ensure the number of standard keyboards meets the minimum requirement\nmodel.addConstr(StandardKeyboards >= MinStandard, name=\"min_standard_keyboards\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of mechanical keyboards produced.",
+            "symbol": "MechanicalKeyboards",
+            "shape": [],
+            "status": "coded",
+            "code": "MechanicalKeyboards = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"MechanicalKeyboards\")"
+        },
+        {
+            "definition": "The number of standard keyboards produced.",
+            "symbol": "StandardKeyboards",
+            "shape": [],
+            "status": "coded",
+            "code": "StandardKeyboards = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"StandardKeyboards\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total number of keyboards manufactured.",
+            "status": "coded",
+            "formulation": "\\textup{MechanicalKeyboards} + \\textup{StandardKeyboards}",
+            "related_variables": [
+                "MechanicalKeyboards",
+                "StandardKeyboards"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(MechanicalKeyboards + StandardKeyboards, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250414055345_nl4opt_prob_277/",
+    "problem_path": "data/nl4opt/prob_277/"
+}

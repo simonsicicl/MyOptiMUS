@@ -1,0 +1,188 @@
+{
+    "background": "The science fair has two types of tables, circular and rectangular, for displaying children's science experiments. These tables accommodate poster boards, participants, and guests differently and occupy distinct amounts of space.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of poster boards that fit around a circular table",
+            "symbol": "PosterBoardsCircular",
+            "value": 4,
+            "shape": [],
+            "code": "PosterBoardsCircular = data[\"PosterBoardsCircular\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of participants that fit around a circular table",
+            "symbol": "ParticipantsCircular",
+            "value": 5,
+            "shape": [],
+            "code": "ParticipantsCircular = data[\"ParticipantsCircular\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of guests catered to by a circular table",
+            "symbol": "GuestsCircular",
+            "value": 8,
+            "shape": [],
+            "code": "GuestsCircular = data[\"GuestsCircular\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of poster boards that fit around a rectangular table",
+            "symbol": "PosterBoardsRectangular",
+            "value": 4,
+            "shape": [],
+            "code": "PosterBoardsRectangular = data[\"PosterBoardsRectangular\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of participants that fit around a rectangular table",
+            "symbol": "ParticipantsRectangular",
+            "value": 4,
+            "shape": [],
+            "code": "ParticipantsRectangular = data[\"ParticipantsRectangular\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of guests catered to by a rectangular table",
+            "symbol": "GuestsRectangular",
+            "value": 12,
+            "shape": [],
+            "code": "GuestsRectangular = data[\"GuestsRectangular\"] # scalar parameter"
+        },
+        {
+            "definition": "Space taken up by a circular table",
+            "symbol": "SpaceCircular",
+            "value": 15,
+            "shape": [],
+            "code": "SpaceCircular = data[\"SpaceCircular\"] # scalar parameter"
+        },
+        {
+            "definition": "Space taken up by a rectangular table",
+            "symbol": "SpaceRectangular",
+            "value": 20,
+            "shape": [],
+            "code": "SpaceRectangular = data[\"SpaceRectangular\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of participants to accommodate",
+            "symbol": "MinParticipants",
+            "value": 500,
+            "shape": [],
+            "code": "MinParticipants = data[\"MinParticipants\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of poster boards to accommodate",
+            "symbol": "MinPosterBoards",
+            "value": 300,
+            "shape": [],
+            "code": "MinPosterBoards = data[\"MinPosterBoards\"] # scalar parameter"
+        },
+        {
+            "definition": "Total available space for the science fair",
+            "symbol": "TotalSpace",
+            "value": 1900,
+            "shape": [],
+            "code": "TotalSpace = data[\"TotalSpace\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Number of circular tables must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumCircularTables} \\geq 0",
+            "related_variables": [
+                "NumCircularTables"
+            ],
+            "related_parameters": [],
+            "code": "# The number of circular tables must be non-negative\n# Hence, there is no need to add an explicit constraint in Gurobi,\n# as the variable is already defined with the correct domain being non-negative integers."
+        },
+        {
+            "description": "The number of rectangular tables at the science fair must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumRectangularTables} \\geq 0",
+            "related_variables": [
+                "NumRectangularTables"
+            ],
+            "related_parameters": [],
+            "code": "# The number of rectangular tables must be non-negative, so no constraint is needed as\n# Gurobi variables are non-negative by default when the lower bound is not specified.\n# Integers are assumed to be non-negative unless otherwise specified."
+        },
+        {
+            "description": "The total number of participants at both circular and rectangular tables should be at least the minimum number of participants required",
+            "status": "coded",
+            "formulation": "\\textup{NumCircularTables} \\times \\textup{ParticipantsCircular} + \\textup{NumRectangularTables} \\times \\textup{ParticipantsRectangular} \\geq \\textup{MinParticipants}",
+            "related_variables": [
+                "NumCircularTables",
+                "NumRectangularTables"
+            ],
+            "related_parameters": [
+                "ParticipantsCircular",
+                "ParticipantsRectangular",
+                "MinParticipants"
+            ],
+            "code": "# Add constraint for the minimum number of participants\nmodel.addConstr(NumCircularTables * ParticipantsCircular + NumRectangularTables * ParticipantsRectangular >= MinParticipants, name=\"min_participants\")"
+        },
+        {
+            "description": "The total number of poster boards at circular and rectangular tables should meet the minimum required poster boards",
+            "status": "coded",
+            "formulation": "\\textup{NumCircularTables} \\times \\textup{PosterBoardsCircular} + \\textup{NumRectangularTables} \\times \\textup{PosterBoardsRectangular} \\geq \\textup{MinPosterBoards}",
+            "related_variables": [
+                "NumCircularTables",
+                "NumRectangularTables"
+            ],
+            "related_parameters": [
+                "PosterBoardsCircular",
+                "PosterBoardsRectangular",
+                "MinPosterBoards"
+            ],
+            "code": "# Constraint: Number of poster boards at circular and rectangular tables should meet the minimum requirement\nmodel.addConstr(NumCircularTables * PosterBoardsCircular + NumRectangularTables * PosterBoardsRectangular >= MinPosterBoards, \"min_poster_boards\")"
+        },
+        {
+            "description": "Space used by all tables must not exceed the total available space for the science fair",
+            "status": "coded",
+            "formulation": "\\textup{NumCircularTables} \\times \\textup{SpaceCircular} + \\textup{NumRectangularTables} \\times \\textup{SpaceRectangular} \\leq \\textup{TotalSpace}",
+            "related_variables": [
+                "NumCircularTables",
+                "NumRectangularTables"
+            ],
+            "related_parameters": [
+                "SpaceCircular",
+                "SpaceRectangular",
+                "TotalSpace"
+            ],
+            "code": "# Space used by all tables must not exceed the total available space for the science fair\nmodel.addConstr(NumCircularTables * SpaceCircular + NumRectangularTables * SpaceRectangular <= TotalSpace, \"total_space_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of circular tables at the science fair",
+            "symbol": "NumCircularTables",
+            "shape": [],
+            "status": "coded",
+            "code": "NumCircularTables = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumCircularTables\")"
+        },
+        {
+            "definition": "Number of rectangular tables at the science fair",
+            "symbol": "NumRectangularTables",
+            "shape": [],
+            "status": "coded",
+            "code": "NumRectangularTables = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumRectangularTables\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total number of guests catered by circular and rectangular tables",
+            "status": "coded",
+            "formulation": "\\textup{Maximize} \\quad \\textup{NumCircularTables} \\times \\textup{GuestsCircular} + \\textup{NumRectangularTables} \\times \\textup{GuestsRectangular}",
+            "related_variables": [
+                "NumCircularTables",
+                "NumRectangularTables"
+            ],
+            "related_parameters": [
+                "GuestsCircular",
+                "GuestsRectangular"
+            ],
+            "code": "# Define Objective Function\nmodel.setObjective(NumCircularTables * GuestsCircular + NumRectangularTables * GuestsRectangular, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413164826_nl4opt_prob_232/",
+    "problem_path": "data/nl4opt/prob_232/"
+}

@@ -1,0 +1,178 @@
+{
+    "background": "An oil and gas company needs to transport oil to the port using containers and trucks with certain capacities and restrictions.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Capacity of a container",
+            "symbol": "ContainerCapacity",
+            "value": 30,
+            "shape": [],
+            "code": "ContainerCapacity = data[\"ContainerCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Capacity of a truck",
+            "symbol": "TruckCapacity",
+            "value": 40,
+            "shape": [],
+            "code": "TruckCapacity = data[\"TruckCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum ratio of number of trucks to number of containers",
+            "symbol": "TruckContainerRatio",
+            "value": 0.5,
+            "shape": [],
+            "code": "TruckContainerRatio = data[\"TruckContainerRatio\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum total units of oil to send to the port",
+            "symbol": "MinimumUnits",
+            "value": 2000,
+            "shape": [],
+            "code": "MinimumUnits = data[\"MinimumUnits\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of containers to use",
+            "symbol": "MinimumContainers",
+            "value": 15,
+            "shape": [],
+            "code": "MinimumContainers = data[\"MinimumContainers\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Number of containers used is non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfContainers} \\geq 0",
+            "related_variables": [
+                "NumberOfContainers"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint to ensure number of containers used is non-negative\nmodel.addConstr(NumberOfContainers >= 0, \"NumberOfContainers_nonnegativity\")"
+        },
+        {
+            "description": "The number of trucks used must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfTrucks} \\geq 0",
+            "related_variables": [
+                "NumberOfTrucks"
+            ],
+            "related_parameters": [],
+            "code": "# Since NumberOfTrucks is already defined as a non-negative integer, no additional constraint is needed\n# The non-negativity constraint is inherently applied through the variable type definition"
+        },
+        {
+            "description": "Number of trucks used is at most TruckContainerRatio times the number of containers used",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfTrucks} \\leq \\textup{TruckContainerRatio} \\times \\textup{NumberOfContainers}",
+            "related_variables": [
+                "NumberOfTrucks",
+                "NumberOfContainers"
+            ],
+            "related_parameters": [
+                "TruckContainerRatio"
+            ],
+            "code": "# Constraint: Number of trucks used is at most TruckContainerRatio times the number of containers used\nmodel.addConstr(NumberOfTrucks <= TruckContainerRatio * NumberOfContainers, name=\"truck_to_container_ratio\")"
+        },
+        {
+            "description": "At least \\textup{MinimumUnits} units of oil need to be sent to the port",
+            "status": "coded",
+            "formulation": "\\textup{ContainerCapacity} \\times \\textup{NumberOfContainers} + \\textup{TruckCapacity} \\times \\textup{NumberOfTrucks} \\geq \\textup{MinimumUnits}",
+            "related_variables": [
+                "NumberOfContainers",
+                "NumberOfTrucks"
+            ],
+            "related_parameters": [
+                "ContainerCapacity",
+                "TruckCapacity",
+                "MinimumUnits"
+            ],
+            "code": "ContainerCapacity = data[\"ContainerCapacity\"] # scalar parameter\nTruckCapacity = data[\"TruckCapacity\"] # scalar parameter\nMinimumUnits = data[\"MinimumUnits\"] # scalar parameter\n\n# Constraint for minimum units of oil to be sent to the port\nmodel.addConstr(ContainerCapacity * NumberOfContainers + TruckCapacity * NumberOfTrucks >= MinimumUnits, name=\"minimum_oil_units_to_port\")"
+        },
+        {
+            "description": "At least a minimum number of containers need to be used",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfContainers} \\geq \\textup{MinimumContainers}",
+            "related_variables": [
+                "NumberOfContainers"
+            ],
+            "related_parameters": [
+                "MinimumContainers"
+            ],
+            "code": "# At least a minimum number of containers need to be used\nmodel.addConstr(NumberOfContainers >= MinimumContainers, name=\"min_containers\")"
+        },
+        {
+            "description": "Ensure that at least the minimum total units of oil is transported to the port",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfContainers} \\cdot \\textup{ContainerCapacity} + \\textup{NumberOfTrucks} \\cdot \\textup{TruckCapacity} \\geq \\textup{MinimumUnits}",
+            "related_variables": [
+                "NumberOfContainers",
+                "NumberOfTrucks"
+            ],
+            "related_parameters": [
+                "ContainerCapacity",
+                "TruckCapacity",
+                "MinimumUnits"
+            ],
+            "code": "# Ensure that at least the minimum total units of oil is transported to the port\nmodel.addConstr(NumberOfContainers * ContainerCapacity + NumberOfTrucks * TruckCapacity >= MinimumUnits, \"min_oil_transportation\")"
+        },
+        {
+            "description": "Ensure that at least the minimum number of containers is used",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfContainers} \\geq \\textup{MinimumContainers}",
+            "related_variables": [
+                "NumberOfContainers"
+            ],
+            "related_parameters": [
+                "MinimumContainers"
+            ],
+            "code": "model.addConstr(NumberOfContainers >= MinimumContainers, name=\"min_containers_constraint\")"
+        },
+        {
+            "description": "Maintain the maximum ratio of number of trucks to number of containers",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfTrucks} \\leq \\textup{NumberOfContainers} \\cdot \\textup{TruckContainerRatio}",
+            "related_variables": [
+                "NumberOfTrucks",
+                "NumberOfContainers"
+            ],
+            "related_parameters": [
+                "TruckContainerRatio"
+            ],
+            "code": "# Maintain the maximum ratio of number of trucks to number of containers constraint\nmodel.addConstr(NumberOfTrucks <= NumberOfContainers * TruckContainerRatio, name=\"max_truck_container_ratio\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of containers used for oil transportation",
+            "symbol": "NumberOfContainers",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfContainers = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfContainers\")"
+        },
+        {
+            "definition": "The number of trucks used for oil transportation",
+            "symbol": "NumberOfTrucks",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfTrucks = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfTrucks\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of containers and trucks used for oil transportation",
+            "status": "coded",
+            "formulation": "\\textup{Minimize}\\quad \\textup{NumberOfContainers} + \\textup{NumberOfTrucks}",
+            "related_variables": [
+                "NumberOfContainers",
+                "NumberOfTrucks"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(NumberOfContainers + NumberOfTrucks, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413134750_nl4opt_prob_157/",
+    "problem_path": "data/nl4opt/prob_157/"
+}

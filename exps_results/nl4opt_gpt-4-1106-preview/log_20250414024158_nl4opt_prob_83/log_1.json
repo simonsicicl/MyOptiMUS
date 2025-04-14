@@ -1,0 +1,165 @@
+{
+    "background": "An airport requires vehicles to move luggage and wants to minimize the number of vehicles purchased while meeting luggage movement capacity and pollution constraints.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Luggage movement capacity of a 4-wheeler vehicle per day",
+            "symbol": "CapacityFourWheeler",
+            "value": 60,
+            "shape": [],
+            "code": "CapacityFourWheeler = data[\"CapacityFourWheeler\"] # scalar parameter"
+        },
+        {
+            "definition": "Pollution produced by a 4-wheeler vehicle per day",
+            "symbol": "PollutionFourWheeler",
+            "value": 30,
+            "shape": [],
+            "code": "PollutionFourWheeler = data[\"PollutionFourWheeler\"] # scalar parameter"
+        },
+        {
+            "definition": "Luggage movement capacity of a 3-wheeler vehicle per day",
+            "symbol": "CapacityThreeWheeler",
+            "value": 40,
+            "shape": [],
+            "code": "CapacityThreeWheeler = data[\"CapacityThreeWheeler\"] # scalar parameter"
+        },
+        {
+            "definition": "Pollution produced by a 3-wheeler vehicle per day",
+            "symbol": "PollutionThreeWheeler",
+            "value": 15,
+            "shape": [],
+            "code": "PollutionThreeWheeler = data[\"PollutionThreeWheeler\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum total luggage movement capacity required per day",
+            "symbol": "MinLuggageCapacity",
+            "value": 1000,
+            "shape": [],
+            "code": "MinLuggageCapacity = data[\"MinLuggageCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum allowable pollution output per day",
+            "symbol": "MaxPollution",
+            "value": 430,
+            "shape": [],
+            "code": "MaxPollution = data[\"MaxPollution\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of 4-wheeler vehicles must be non-negative.",
+            "status": "coded",
+            "formulation": "NumberOfFourWheelers \\geq 0",
+            "related_variables": [
+                "NumberOfFourWheelers"
+            ],
+            "related_parameters": [],
+            "code": "# Constraint for non-negative number of 4-wheeler vehicles\nmodel.addConstr(NumberOfFourWheelers >= 0, name=\"non_negative_four_wheelers\")"
+        },
+        {
+            "description": "The number of 3-wheeler vehicles should be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfThreeWheelers} \\geq 0",
+            "related_variables": [
+                "NumberOfThreeWheelers"
+            ],
+            "related_parameters": [],
+            "code": "# Since the variable NumberOfThreeWheelers is already defined as an integer variable, the non-negative constraint is implicitly satisfied.\n# No code needed for enforcing the variable to be non-negative as it is the default nature of GRB.INTEGER type in Gurobi."
+        },
+        {
+            "description": "Total daily luggage movement capacity provided by the 4-wheeler and 3-wheeler vehicles must be at least the minimum required capacity.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfFourWheelers} \\times \\textup{CapacityFourWheeler} + \\textup{NumberOfThreeWheelers} \\times \\textup{CapacityThreeWheeler} \\geq \\textup{MinLuggageCapacity}",
+            "related_variables": [
+                "NumberOfFourWheelers",
+                "NumberOfThreeWheelers"
+            ],
+            "related_parameters": [
+                "CapacityFourWheeler",
+                "CapacityThreeWheeler",
+                "MinLuggageCapacity"
+            ],
+            "code": "# Add constraint for minimum daily luggage capacity by vehicles\nmodel.addConstr(NumberOfFourWheelers * CapacityFourWheeler + NumberOfThreeWheelers * CapacityThreeWheeler >= MinLuggageCapacity, name=\"min_luggage_capacity\")"
+        },
+        {
+            "description": "Total pollutant production must be at most MaxPollution units per day",
+            "status": "coded",
+            "formulation": "\\textup{PollutionFourWheeler} \\cdot \\textup{NumberOfFourWheelers} + \\textup{PollutionThreeWheeler} \\cdot \\textup{NumberOfThreeWheelers} \\leq \\textup{MaxPollution}",
+            "related_variables": [
+                "NumberOfFourWheelers",
+                "NumberOfThreeWheelers"
+            ],
+            "related_parameters": [
+                "PollutionFourWheeler",
+                "PollutionThreeWheeler",
+                "MaxPollution"
+            ],
+            "code": "# Add pollution production constraint\nmodel.addConstr(\n    PollutionFourWheeler * NumberOfFourWheelers + \n    PollutionThreeWheeler * NumberOfThreeWheelers <= MaxPollution, \n    name=\"max_pollution\"\n)"
+        },
+        {
+            "description": "Ensure the total luggage movement capacity meets the minimum required per day",
+            "status": "coded",
+            "formulation": "\\textup{CapacityFourWheeler} \\cdot \\textup{NumberOfFourWheelers} + \\textup{CapacityThreeWheeler} \\cdot \\textup{NumberOfThreeWheelers} \\geq \\textup{MinLuggageCapacity}",
+            "related_variables": [
+                "NumberOfFourWheelers",
+                "NumberOfThreeWheelers"
+            ],
+            "related_parameters": [
+                "CapacityFourWheeler",
+                "CapacityThreeWheeler",
+                "MinLuggageCapacity"
+            ],
+            "code": "# Add luggage movement capacity constraint to ensure it meets the minimum required per day\nmodel.addConstr(\n    CapacityFourWheeler * NumberOfFourWheelers + \n    CapacityThreeWheeler * NumberOfThreeWheelers >= \n    MinLuggageCapacity, \n    name=\"min_luggage_capacity\"\n)"
+        },
+        {
+            "description": "Ensure the total pollution produced does not exceed the maximum allowable per day",
+            "status": "coded",
+            "formulation": "\\textup{PollutionFourWheeler} \\cdot \\textup{NumberOfFourWheelers} + \\textup{PollutionThreeWheeler} \\cdot \\textup{NumberOfThreeWheelers} \\leq \\textup{MaxPollution}",
+            "related_variables": [
+                "NumberOfFourWheelers",
+                "NumberOfThreeWheelers"
+            ],
+            "related_parameters": [
+                "PollutionFourWheeler",
+                "PollutionThreeWheeler",
+                "MaxPollution"
+            ],
+            "code": "# Add pollution constraint to ensure total pollution doesn't exceed maximum allowable per day\nmodel.addConstr(\n    PollutionFourWheeler * NumberOfFourWheelers + PollutionThreeWheeler * NumberOfThreeWheelers <= MaxPollution,\n    name=\"max_daily_pollution\"\n)"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of 4-wheeler vehicles required by the airport.",
+            "symbol": "NumberOfFourWheelers",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfFourWheelers = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfFourWheelers\")"
+        },
+        {
+            "definition": "The number of 3-wheeler vehicles required by the airport",
+            "symbol": "NumberOfThreeWheelers",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfThreeWheelers = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfThreeWheelers\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of vehicles purchased",
+            "status": "coded",
+            "formulation": "\\min \\textup{NumberOfFourWheelers} + \\textup{NumberOfThreeWheelers}",
+            "related_variables": [
+                "NumberOfFourWheelers",
+                "NumberOfThreeWheelers"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(NumberOfFourWheelers + NumberOfThreeWheelers, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250414024158_nl4opt_prob_83/",
+    "problem_path": "data/nl4opt/prob_83/"
+}

@@ -1,0 +1,245 @@
+{
+    "background": "Gold is used to make long and short cables, with each type requiring a different amount of gold. A certain proportion of short cables to long cables is required, and there is a minimum production requirement for long cables.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Total amount of gold available",
+            "symbol": "TotalGold",
+            "value": 1000,
+            "shape": [],
+            "code": "TotalGold = data[\"TotalGold\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of gold required for one long cable",
+            "symbol": "GoldLong",
+            "value": 10,
+            "shape": [],
+            "code": "GoldLong = data[\"GoldLong\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of gold required for one short cable",
+            "symbol": "GoldShort",
+            "value": 7,
+            "shape": [],
+            "code": "GoldShort = data[\"GoldShort\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum ratio of short cables to long cables",
+            "symbol": "RatioShortLong",
+            "value": 5,
+            "shape": [],
+            "code": "RatioShortLong = data[\"RatioShortLong\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of long cables to be made",
+            "symbol": "MinLong",
+            "value": 10,
+            "shape": [],
+            "code": "MinLong = data[\"MinLong\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit per long cable",
+            "symbol": "ProfitLong",
+            "value": 12,
+            "shape": [],
+            "code": "ProfitLong = data[\"ProfitLong\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit per short cable",
+            "symbol": "ProfitShort",
+            "value": 5,
+            "shape": [],
+            "code": "ProfitShort = data[\"ProfitShort\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of long cables is an integer and at least the minimum number of long cables required",
+            "status": "coded",
+            "formulation": "LongCables \\geq \\textup{MinLong} \\\\ LongCables \\in \\mathbb{Z}",
+            "related_variables": [
+                "LongCables"
+            ],
+            "related_parameters": [
+                "MinLong"
+            ],
+            "code": "# Constraint for the minimum number of long cables\nmodel.addConstr(LongCables >= MinLong, name=\"min_long_cables\")"
+        },
+        {
+            "description": "The number of short cables must be an integer",
+            "status": "coded",
+            "formulation": "\\textup{ShortCables} \\in \\mathbb{Z}",
+            "related_variables": [
+                "ShortCables"
+            ],
+            "related_parameters": [],
+            "code": "# The variable ShortCables is already defined as an integer, no additional constraint is needed"
+        },
+        {
+            "description": "Number of long cables must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{LongCables} \\geq 0",
+            "related_variables": [
+                "LongCables"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint to ensure the number of long cables is non-negative\nmodel.addConstr(LongCables >= 0, name=\"non_negative_long_cables\")"
+        },
+        {
+            "description": "Number of short cables must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{ShortCables} \\geq 0",
+            "related_variables": [
+                "ShortCables"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint to ensure the number of short cables is non-negative\nmodel.addConstr(ShortCables >= 0, name=\"short_cables_non_negative\")"
+        },
+        {
+            "description": "Total gold used for both long and short cables should not exceed the available gold",
+            "status": "coded",
+            "formulation": "GoldLong \\cdot LongCables + GoldShort \\cdot ShortCables \\leq TotalGold",
+            "related_variables": [
+                "LongCables",
+                "ShortCables"
+            ],
+            "related_parameters": [
+                "GoldLong",
+                "GoldShort",
+                "TotalGold"
+            ],
+            "code": "# Ensure total gold used does not exceed the available gold\nmodel.addConstr(GoldLong * LongCables + GoldShort * ShortCables <= TotalGold, name=\"gold_usage\")"
+        },
+        {
+            "description": "The number of short cables must be at least RatioShortLong times the number of long cables",
+            "status": "coded",
+            "formulation": "\\textup{ShortCables} \\geq \\textup{RatioShortLong} \\times \\textup{LongCables}",
+            "related_variables": [
+                "ShortCables",
+                "LongCables"
+            ],
+            "related_parameters": [
+                "RatioShortLong"
+            ],
+            "code": "# Add constraint to ensure the number of short cables is at least RatioShortLong times the number of long cables\nmodel.addConstr(ShortCables >= RatioShortLong * LongCables, name=\"Short_to_Long_Ratio\")"
+        },
+        {
+            "description": "Ensure the number of long cables is at least the minimum required",
+            "status": "coded",
+            "formulation": "\\textup{LongCables} \\geq \\textup{MinLong}",
+            "related_variables": [
+                "LongCables"
+            ],
+            "related_parameters": [
+                "MinLong"
+            ],
+            "code": "# Ensure the number of long cables is at least the minimum required\nmodel.addConstr(LongCables >= MinLong, name=\"min_long_cables_constraint\")"
+        },
+        {
+            "description": "Total gold must be enough for the long and short cables produced respecting the ratio and minimum long cables",
+            "status": "coded",
+            "formulation": "\\textup{GoldLong} \\cdot LongCables + \\textup{GoldShort} \\cdot ShortCables \\leq \\textup{TotalGold}",
+            "related_variables": [
+                "LongCables",
+                "ShortCables"
+            ],
+            "related_parameters": [
+                "GoldLong",
+                "GoldShort",
+                "TotalGold"
+            ],
+            "code": "# Add gold availability constraint for long and short cables\nmodel.addConstr(GoldLong * LongCables + GoldShort * ShortCables <= TotalGold, name=\"gold_availability\")"
+        },
+        {
+            "description": "The number of short cables must be at least five times the number of long cables",
+            "status": "coded",
+            "formulation": "ShortCables \\geq \\textup{RatioShortLong} \\cdot LongCables",
+            "related_variables": [
+                "ShortCables",
+                "LongCables"
+            ],
+            "related_parameters": [
+                "RatioShortLong"
+            ],
+            "code": "# Add constraint for the number of short cables to be at least five times the number of long cables\nmodel.addConstr(ShortCables >= RatioShortLong * LongCables, name=\"Short_to_Long_Cable_Ratio\")"
+        },
+        {
+            "description": "The total use of gold does not exceed the available amount",
+            "status": "coded",
+            "formulation": "\\textup{GoldLong} \\cdot \\textup{LongCables} + \\textup{GoldShort} \\cdot \\textup{ShortCables} \\leq \\textup{TotalGold}",
+            "related_variables": [
+                "LongCables",
+                "ShortCables"
+            ],
+            "related_parameters": [
+                "TotalGold",
+                "GoldLong",
+                "GoldShort"
+            ],
+            "code": "# Total use of gold does not exceed the available amount constraint\nmodel.addConstr(GoldLong * LongCables + GoldShort * ShortCables <= TotalGold, \"gold_usage\")"
+        },
+        {
+            "description": "The ratio of short cables to long cables is maintained",
+            "status": "coded",
+            "formulation": "\\textup{ShortCables} \\geq \\textup{RatioShortLong} \\cdot \\textup{LongCables}",
+            "related_variables": [
+                "LongCables",
+                "ShortCables"
+            ],
+            "related_parameters": [
+                "RatioShortLong"
+            ],
+            "code": "# Ensure the ratio of short cables to long cables is maintained\nmodel.addConstr(ShortCables >= RatioShortLong * LongCables, name=\"short_long_ratio\")"
+        },
+        {
+            "description": "The minimum number of long cables is produced",
+            "status": "coded",
+            "formulation": "\\textup{LongCables} \\geq \\textup{MinLong}",
+            "related_variables": [
+                "LongCables"
+            ],
+            "related_parameters": [
+                "MinLong"
+            ],
+            "code": "# Add constraint to ensure the minimum number of long cables is produced\nmodel.addConstr(LongCables >= MinLong, name=\"min_long_cables\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of long cables to be made",
+            "symbol": "LongCables",
+            "shape": [],
+            "status": "coded",
+            "code": "LongCables = model.addVar(vtype=gp.GRB.INTEGER, name=\"LongCables\")"
+        },
+        {
+            "definition": "Number of short cables to be made",
+            "symbol": "ShortCables",
+            "shape": [],
+            "status": "coded",
+            "code": "ShortCables = model.addVar(vtype=gp.GRB.INTEGER, name=\"ShortCables\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total profit from selling long and short cables",
+            "status": "coded",
+            "formulation": "\\textup{ProfitLong} \\cdot \\textup{LongCables} + \\textup{ProfitShort} \\cdot \\textup{ShortCables}",
+            "related_variables": [
+                "LongCables",
+                "ShortCables"
+            ],
+            "related_parameters": [
+                "ProfitLong",
+                "ProfitShort"
+            ],
+            "code": "# Set the objective function\nmodel.setObjective(ProfitLong * LongCables + ProfitShort * ShortCables, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413132104_nl4opt_prob_14/",
+    "problem_path": "data/nl4opt/prob_14/"
+}

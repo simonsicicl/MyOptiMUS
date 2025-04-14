@@ -1,0 +1,203 @@
+{
+    "background": "A young boy aims to meet his daily nutritional goals by consuming a mix of milk and vegetables, each providing different amounts of calcium and iron at associated costs.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Minimum units of calcium required per day",
+            "symbol": "C",
+            "value": 100,
+            "shape": [],
+            "code": "C = data[\"C\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum units of iron required per day",
+            "symbol": "I",
+            "value": 50,
+            "shape": [],
+            "code": "I = data[\"I\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost of one glass of milk",
+            "symbol": "CostMilk",
+            "value": 1.0,
+            "shape": [],
+            "code": "CostMilk = data[\"CostMilk\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of calcium in one glass of milk",
+            "symbol": "CalciumMilk",
+            "value": 40,
+            "shape": [],
+            "code": "CalciumMilk = data[\"CalciumMilk\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of iron in one glass of milk",
+            "symbol": "IronMilk",
+            "value": 25,
+            "shape": [],
+            "code": "IronMilk = data[\"IronMilk\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost of one plate of vegetables",
+            "symbol": "CostVeg",
+            "value": 2.0,
+            "shape": [],
+            "code": "CostVeg = data[\"CostVeg\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of calcium in one plate of vegetables",
+            "symbol": "CalciumVeg",
+            "value": 15,
+            "shape": [],
+            "code": "CalciumVeg = data[\"CalciumVeg\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of iron in one plate of vegetables",
+            "symbol": "IronVeg",
+            "value": 30,
+            "shape": [],
+            "code": "IronVeg = data[\"IronVeg\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The total calcium consumed from milk and vegetables must be at least \\textup{C} units per day.",
+            "status": "coded",
+            "formulation": "\\textup{CalciumMilk} \\cdot \\textup{MilkConsumed} + \\textup{CalciumVeg} \\cdot \\textup{VegetablesConsumed} \\geq \\textup{C}",
+            "related_variables": [
+                "MilkConsumed",
+                "VegetablesConsumed"
+            ],
+            "related_parameters": [
+                "CalciumMilk",
+                "CalciumVeg",
+                "C"
+            ],
+            "code": "# Add calcium intake constraint\nmodel.addConstr(CalciumMilk * MilkConsumed + CalciumVeg * VegetablesConsumed >= C, name=\"calcium_intake_constraint\")"
+        },
+        {
+            "description": "The total iron from milk and vegetables must not be less than the daily minimum requirement \\textup{I}.",
+            "status": "coded",
+            "formulation": "\\textup{IronMilk} \\cdot \\textup{MilkConsumed} + \\textup{IronVeg} \\cdot \\textup{VegetablesConsumed} \\geq \\textup{I}",
+            "related_variables": [
+                "MilkConsumed",
+                "VegetablesConsumed"
+            ],
+            "related_parameters": [
+                "IronMilk",
+                "IronVeg",
+                "I"
+            ],
+            "code": "# Add constraint for total iron requirement\nmodel.addConstr(IronMilk * MilkConsumed + IronVeg * VegetablesConsumed >= I, name=\"iron_requirement\")"
+        },
+        {
+            "description": "The number of glasses of milk is non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{MilkConsumed} \\\\geq 0",
+            "related_variables": [
+                "MilkConsumed"
+            ],
+            "related_parameters": [],
+            "code": "# The non-negativity constraint for MilkConsumed is inherently satisfied as it is defined as a continuous variable in Gurobi, which is non-negative by default."
+        },
+        {
+            "description": "The number of plates of vegetables consumed must be non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{VegetablesConsumed} \\\\geq 0",
+            "related_variables": [
+                "VegetablesConsumed"
+            ],
+            "related_parameters": [],
+            "code": "# No additional code is necessary as the non-negativity constraint is automatically handled by Gurobi for non-negative domain variables such as the continuous variable \"VegetablesConsumed\"."
+        },
+        {
+            "description": "Ensure that the total calcium intake from milk and vegetables meets the daily requirement.",
+            "status": "coded",
+            "formulation": "\\textup{CalciumMilk} \\cdot \\textup{MilkConsumed} + \\textup{CalciumVeg} \\cdot \\textup{VegetablesConsumed} \\geq \\textup{C}",
+            "related_variables": [
+                "MilkConsumed",
+                "VegetablesConsumed"
+            ],
+            "related_parameters": [
+                "CalciumMilk",
+                "CalciumVeg",
+                "C"
+            ],
+            "code": "# Add calcium intake constraint\nmodel.addConstr(\n    MilkConsumed * CalciumMilk + VegetablesConsumed * CalciumVeg >= C,\n    name=\"calcium_intake\"\n)"
+        },
+        {
+            "description": "Ensure that the total iron intake from milk and vegetables meets the daily requirement.",
+            "status": "coded",
+            "formulation": "\\textup{IronMilk} \\cdot \\textup{MilkConsumed} + \\textup{IronVeg} \\cdot \\textup{VegetablesConsumed} \\geq \\textup{I}",
+            "related_variables": [
+                "MilkConsumed",
+                "VegetablesConsumed"
+            ],
+            "related_parameters": [
+                "IronMilk",
+                "IronVeg",
+                "I"
+            ],
+            "code": "# Add constraint to ensure total iron intake meets the daily requirement\nmodel.addConstr(IronMilk * MilkConsumed + IronVeg * VegetablesConsumed >= I, name=\"iron_intake_requirement\")"
+        },
+        {
+            "description": "Non-negativity constraint for MilkConsumed.",
+            "status": "coded",
+            "formulation": "\\textup{MilkConsumed} \\geq 0",
+            "related_variables": [
+                "MilkConsumed"
+            ],
+            "related_parameters": [],
+            "code": "# Add non-negativity constraint for MilkConsumed\nmodel.addConstr(MilkConsumed >= 0, name=\"non_negativity_MilkConsumed\")"
+        },
+        {
+            "description": "Non-negativity constraint for VegetablesConsumed.",
+            "status": "coded",
+            "formulation": "\\textup{VegetablesConsumed} \\geq 0",
+            "related_variables": [
+                "VegetablesConsumed"
+            ],
+            "related_parameters": [],
+            "code": "# Adding non-negativity constraint for VegetablesConsumed\nmodel.addConstr(VegetablesConsumed >= 0, name=\"non_negativity_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of glasses of milk consumed per day",
+            "symbol": "MilkConsumed",
+            "shape": [],
+            "status": "coded",
+            "code": "MilkConsumed = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"MilkConsumed\")"
+        },
+        {
+            "definition": "Number of plates of vegetables consumed per day",
+            "symbol": "VegetablesConsumed",
+            "shape": [],
+            "status": "coded",
+            "code": "VegetablesConsumed = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"VegetablesConsumed\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total cost of milk and vegetables consumed per day.",
+            "status": "coded",
+            "formulation": "\\textup{Minimize:} \\quad \\textup{CostMilk} \\cdot \\textup{MilkConsumed} + \\textup{CostVeg} \\cdot \\textup{VegetablesConsumed}",
+            "related_variables": [
+                "MilkConsumed",
+                "VegetablesConsumed"
+            ],
+            "related_parameters": [
+                "CostMilk",
+                "CostVeg"
+            ],
+            "code": "# Set objective\nmodel.setObjective(CostMilk * MilkConsumed + CostVeg * VegetablesConsumed, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 2.5,
+    "log_path": "logs/log_20250413172229_nl4opt_prob_204/",
+    "problem_path": "data/nl4opt/prob_204/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_204/data.json\", \"r\") as f:\n    data = json.load(f)\n\nC = data[\"C\"] # scalar parameter\nI = data[\"I\"] # scalar parameter\nCostMilk = data[\"CostMilk\"] # scalar parameter\nCalciumMilk = data[\"CalciumMilk\"] # scalar parameter\nIronMilk = data[\"IronMilk\"] # scalar parameter\nCostVeg = data[\"CostVeg\"] # scalar parameter\nCalciumVeg = data[\"CalciumVeg\"] # scalar parameter\nIronVeg = data[\"IronVeg\"] # scalar parameter\nMilkConsumed = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"MilkConsumed\")\nVegetablesConsumed = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"VegetablesConsumed\")\n\n# Add calcium intake constraint\nmodel.addConstr(CalciumMilk * MilkConsumed + CalciumVeg * VegetablesConsumed >= C, name=\"calcium_intake_constraint\")\n\n# Add constraint for total iron requirement\nmodel.addConstr(IronMilk * MilkConsumed + IronVeg * VegetablesConsumed >= I, name=\"iron_requirement\")\n\n# The non-negativity constraint for MilkConsumed is inherently satisfied as it is defined as a continuous variable in Gurobi, which is non-negative by default.\n\n# No additional code is necessary as the non-negativity constraint is automatically handled by Gurobi for non-negative domain variables such as the continuous variable \"VegetablesConsumed\".\n\n# Add calcium intake constraint\nmodel.addConstr(\n    MilkConsumed * CalciumMilk + VegetablesConsumed * CalciumVeg >= C,\n    name=\"calcium_intake\"\n)\n\n# Add constraint to ensure total iron intake meets the daily requirement\nmodel.addConstr(IronMilk * MilkConsumed + IronVeg * VegetablesConsumed >= I, name=\"iron_intake_requirement\")\n\n# Add non-negativity constraint for MilkConsumed\nmodel.addConstr(MilkConsumed >= 0, name=\"non_negativity_MilkConsumed\")\n\n# Adding non-negativity constraint for VegetablesConsumed\nmodel.addConstr(VegetablesConsumed >= 0, name=\"non_negativity_constraint\")\n\n# Set objective\nmodel.setObjective(CostMilk * MilkConsumed + CostVeg * VegetablesConsumed, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

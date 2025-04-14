@@ -1,0 +1,277 @@
+{
+    "background": "A village needs to optimize its mail delivery system to adjacent villages using runners and canoers with certain constraints on capacity, time, and delivery methods.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of bags of mail a runner can carry",
+            "symbol": "BagsPerRunner",
+            "value": 3,
+            "shape": [],
+            "code": "BagsPerRunner = data[\"BagsPerRunner\"] # scalar parameter"
+        },
+        {
+            "definition": "Time taken for a runner to deliver mail",
+            "symbol": "TimePerRunner",
+            "value": 4,
+            "shape": [],
+            "code": "TimePerRunner = data[\"TimePerRunner\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of bags of mail a canoer can carry",
+            "symbol": "BagsPerCanoer",
+            "value": 10,
+            "shape": [],
+            "code": "BagsPerCanoer = data[\"BagsPerCanoer\"] # scalar parameter"
+        },
+        {
+            "definition": "Time taken for a canoer to deliver mail",
+            "symbol": "TimePerCanoer",
+            "value": 2,
+            "shape": [],
+            "code": "TimePerCanoer = data[\"TimePerCanoer\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum proportion of deliveries that can be done by canoe",
+            "symbol": "MaxCanoeProportion",
+            "value": 0.33,
+            "shape": [],
+            "code": "MaxCanoeProportion = data[\"MaxCanoeProportion\"] # scalar parameter"
+        },
+        {
+            "definition": "Total available hours for delivery",
+            "symbol": "TotalHours",
+            "value": 200,
+            "shape": [],
+            "code": "TotalHours = data[\"TotalHours\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of runners to be used",
+            "symbol": "MinRunners",
+            "value": 4,
+            "shape": [],
+            "code": "MinRunners = data[\"MinRunners\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "At most MaxCanoeProportion of deliveries can be by canoe",
+            "status": "coded",
+            "formulation": "\\textup{DeliveriesByCanoe} \\leq \\textup{MaxCanoeProportion} \\cdot \\textup{TotalDeliveries}",
+            "related_variables": [
+                "DeliveriesByCanoe",
+                "TotalDeliveries"
+            ],
+            "related_parameters": [
+                "MaxCanoeProportion"
+            ],
+            "code": "# Add constraint: At most MaxCanoeProportion of deliveries can be by canoe\nmodel.addConstr(DeliveriesByCanoe <= MaxCanoeProportion * TotalDeliveries, name=\"canoe_delivery_proportion\")"
+        },
+        {
+            "description": "The total delivery time cannot exceed the total available hours (TotalHours).",
+            "status": "coded",
+            "formulation": "\\textup{TotalTime} \\leq \\textup{TotalHours}",
+            "related_variables": [
+                "TotalTime"
+            ],
+            "related_parameters": [
+                "TotalHours"
+            ],
+            "code": "# Add constraint ensuring the total delivery time doesn't exceed the total available hours\nmodel.addConstr(TotalTime <= TotalHours, name=\"total_time_constraint\")"
+        },
+        {
+            "description": "The total number of deliveries completed by runners must be at least equal to the minimum required number of runners.",
+            "status": "coded",
+            "formulation": "\\textup{DeliveriesByRunner} \\geq \\textup{MinRunners}",
+            "related_variables": [
+                "DeliveriesByRunner"
+            ],
+            "related_parameters": [
+                "MinRunners"
+            ],
+            "code": "# Add constraint for minimum number of deliveries by runners\nmodel.addConstr(DeliveriesByRunner >= MinRunners, name=\"min_runners_constraint\")"
+        },
+        {
+            "description": "The number of runners used is non-negative",
+            "status": "coded",
+            "formulation": "\\textup{RunnersUsed} \\geq 0",
+            "related_variables": [
+                "RunnersUsed"
+            ],
+            "related_parameters": [],
+            "code": "# No additional code is required because the variable \"RunnersUsed\" is already non-negative due to its default lower bound (0) in Gurobi."
+        },
+        {
+            "description": "The number of canoers used must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{CanoersUsed} \\geq 0",
+            "related_variables": [
+                "CanoersUsed"
+            ],
+            "related_parameters": [],
+            "code": "# The non-negativity of CanoersUsed is automatically ensured due to its default non-negative domain as a continuous variable,\n# so no constraint code is required."
+        },
+        {
+            "description": "TotalDeliveries is the sum of deliveries by canoers and runners",
+            "status": "coded",
+            "formulation": "\\textup{TotalDeliveries} = \\textup{DeliveriesByCanoe} + \\textup{DeliveriesByRunner}",
+            "related_variables": [
+                "TotalDeliveries",
+                "DeliveriesByCanoe",
+                "DeliveriesByRunner"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint ensuring TotalDeliveries is the sum of deliveries by canoers and runners\nmodel.addConstr(TotalDeliveries == DeliveriesByCanoe + DeliveriesByRunner, name=\"total_deliveries_constraint\")"
+        },
+        {
+            "description": "An auxiliary constraint defining TotalTime as the sum of the time contributions from runners and canoers.",
+            "status": "coded",
+            "formulation": "\\textup{TotalTime} = \\textup{DeliveriesByRunner} \\times \\textup{TimePerRunner} + \\textup{DeliveriesByCanoe} \\times \\textup{TimePerCanoer}",
+            "related_variables": [
+                "TotalTime",
+                "DeliveriesByRunner",
+                "DeliveriesByCanoe"
+            ],
+            "related_parameters": [
+                "TimePerRunner",
+                "TimePerCanoer"
+            ],
+            "code": "# Add constraint defining TotalTime as the sum of time contributions by runners and canoers\nmodel.addConstr(TotalTime == DeliveriesByRunner * TimePerRunner + DeliveriesByCanoe * TimePerCanoer, name=\"TotalTime_constraint\")"
+        },
+        {
+            "description": "Total deliveries is the sum of deliveries by runners and canoers.",
+            "status": "coded",
+            "formulation": "\\textup{TotalDeliveries} = \\textup{DeliveriesByRunner} + \\textup{DeliveriesByCanoe}",
+            "related_variables": [
+                "TotalDeliveries",
+                "DeliveriesByRunner",
+                "DeliveriesByCanoe"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint to ensure total deliveries equals the sum of deliveries by runners and canoers\nmodel.addConstr(TotalDeliveries == DeliveriesByRunner + DeliveriesByCanoe, name=\"total_deliveries_constraint\")"
+        },
+        {
+            "description": "Total time spent on all deliveries must not exceed total available hours.",
+            "status": "coded",
+            "formulation": "(\\textup{DeliveriesByRunner} \\times \\textup{TimePerRunner}) + (\\textup{DeliveriesByCanoe} \\times \\textup{TimePerCanoer}) \\leq \\textup{TotalHours}",
+            "related_variables": [
+                "DeliveriesByRunner",
+                "DeliveriesByCanoe"
+            ],
+            "related_parameters": [
+                "TimePerRunner",
+                "TimePerCanoer",
+                "TotalHours"
+            ],
+            "code": "# Add constraint to ensure total delivery times do not exceed available hours\nmodel.addConstr(\n    (DeliveriesByRunner * TimePerRunner) + (DeliveriesByCanoe * TimePerCanoer) <= TotalHours,\n    name=\"total_time_constraint\"\n)"
+        },
+        {
+            "description": "Proportion of deliveries done by canoers must be less than or equal to maximum canoe proportion.",
+            "status": "coded",
+            "formulation": "\\textup{CanoeProportion} \\leq \\textup{MaxCanoeProportion}",
+            "related_variables": [
+                "CanoeProportion"
+            ],
+            "related_parameters": [
+                "MaxCanoeProportion"
+            ],
+            "code": "# Add constraint to ensure CanoeProportion is less than or equal to MaxCanoeProportion\nmodel.addConstr(CanoeProportion <= MaxCanoeProportion, name=\"canoe_proportion_limit\")"
+        },
+        {
+            "description": "Proportion of deliveries by canoers is defined as deliveries by canoers divided by total deliveries.",
+            "status": "coded",
+            "formulation": "\\textup{CanoeProportion} \\times \\textup{TotalDeliveries} = \\textup{DeliveriesByCanoe}",
+            "related_variables": [
+                "CanoeProportion",
+                "TotalDeliveries",
+                "DeliveriesByCanoe"
+            ],
+            "related_parameters": [],
+            "code": "# Add proportion constraint for deliveries by canoers\nmodel.addConstr(CanoeProportion * TotalDeliveries == DeliveriesByCanoe, name=\"canoe_proportion_constraint\")"
+        },
+        {
+            "description": "Minimum number of runners must be used for mail delivery.",
+            "status": "coded",
+            "formulation": "\\textup{RunnersUsed} \\geq \\textup{MinRunners}",
+            "related_variables": [
+                "RunnersUsed"
+            ],
+            "related_parameters": [
+                "MinRunners"
+            ],
+            "code": "# Add constraint ensuring the minimum number of runners is used\nmodel.addConstr(RunnersUsed >= MinRunners, name=\"min_runners_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Total number of delivery trips completed by canoers",
+            "symbol": "DeliveriesByCanoe",
+            "shape": [],
+            "status": "coded",
+            "code": "DeliveriesByCanoe = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"DeliveriesByCanoe\")"
+        },
+        {
+            "definition": "Total number of delivery trips",
+            "symbol": "TotalDeliveries",
+            "shape": [],
+            "status": "coded",
+            "code": "TotalDeliveries = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TotalDeliveries\")"
+        },
+        {
+            "definition": "Total number of delivery trips completed by runners",
+            "symbol": "DeliveriesByRunner",
+            "shape": [],
+            "status": "coded",
+            "code": "DeliveriesByRunner = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"DeliveriesByRunner\")"
+        },
+        {
+            "definition": "The total time spent on all deliveries, including both runners and canoers.",
+            "symbol": "TotalTime",
+            "shape": [],
+            "status": "coded",
+            "code": "TotalTime = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TotalTime\")"
+        },
+        {
+            "definition": "The number of runners physically used for mail delivery",
+            "symbol": "RunnersUsed",
+            "shape": [],
+            "status": "coded",
+            "code": "RunnersUsed = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"RunnersUsed\")"
+        },
+        {
+            "definition": "The number of canoers physically used for mail delivery",
+            "symbol": "CanoersUsed",
+            "shape": [],
+            "status": "coded",
+            "code": "CanoersUsed = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"CanoersUsed\")"
+        },
+        {
+            "definition": "Proportion of deliveries completed by canoers.",
+            "symbol": "CanoeProportion",
+            "shape": [],
+            "status": "coded",
+            "code": "CanoeProportion = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"CanoeProportion\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total amount of mail delivered using runners and canoers.",
+            "status": "coded",
+            "formulation": "(\\textup{DeliveriesByRunner} \\times \\textup{BagsPerRunner}) + (\\textup{DeliveriesByCanoe} \\times \\textup{BagsPerCanoer})",
+            "related_variables": [
+                "DeliveriesByRunner",
+                "DeliveriesByCanoe"
+            ],
+            "related_parameters": [
+                "BagsPerRunner",
+                "BagsPerCanoer"
+            ],
+            "code": "# Set objective\nmodel.setObjective((DeliveriesByRunner * BagsPerRunner) + (DeliveriesByCanoe * BagsPerCanoer), gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250414054602_nl4opt_prob_269/",
+    "problem_path": "data/nl4opt/prob_269/"
+}

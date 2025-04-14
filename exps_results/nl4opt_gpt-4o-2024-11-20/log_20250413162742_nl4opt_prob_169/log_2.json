@@ -1,0 +1,188 @@
+{
+    "background": "A company in the middle east uses camels and horses for package delivery. Each animal has a specific carrying capacity and requires a certain amount of food. There are limitations on the total number of packages to be delivered and the available food. Furthermore, the company prefers to use fewer horses than camels due to climate considerations.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of packages a camel can carry",
+            "symbol": "CamelCapacity",
+            "value": 50,
+            "shape": [],
+            "code": "CamelCapacity = data[\"CamelCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of packages a horse can carry",
+            "symbol": "HorseCapacity",
+            "value": 60,
+            "shape": [],
+            "code": "HorseCapacity = data[\"HorseCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of food required by a camel",
+            "symbol": "CamelFood",
+            "value": 20,
+            "shape": [],
+            "code": "CamelFood = data[\"CamelFood\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of food required by a horse",
+            "symbol": "HorseFood",
+            "value": 30,
+            "shape": [],
+            "code": "HorseFood = data[\"HorseFood\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of packages to be delivered",
+            "symbol": "MinPackages",
+            "value": 1000,
+            "shape": [],
+            "code": "MinPackages = data[\"MinPackages\"] # scalar parameter"
+        },
+        {
+            "definition": "Total units of food available",
+            "symbol": "TotalFood",
+            "value": 450,
+            "shape": [],
+            "code": "TotalFood = data[\"TotalFood\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of camels used must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfCamels} \\geq 0",
+            "related_variables": [
+                "NumberOfCamels"
+            ],
+            "related_parameters": [],
+            "code": "# The variable \"NumberOfCamels\" is non-negative due to its default lower bound (0) in Gurobi's variable definition."
+        },
+        {
+            "description": "The number of horses used in package delivery must be non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{NumberOfHorses} \\\\geq 0",
+            "related_variables": [
+                "NumberOfHorses"
+            ],
+            "related_parameters": [],
+            "code": "# The non-negativity constraint is inherently satisfied as the variable \"NumberOfHorses\" is defined as continuous (non-negative by default), no extra constraint needs to be added."
+        },
+        {
+            "description": "The total number of packages delivered by camels and horses must be at least MinPackages.",
+            "status": "coded",
+            "formulation": "\\\\textup{NumberOfCamels} \\\\times \\\\textup{CamelCapacity} + \\\\textup{NumberOfHorses} \\\\times \\\\textup{HorseCapacity} \\\\geq \\\\textup{MinPackages}",
+            "related_variables": [
+                "NumberOfCamels",
+                "NumberOfHorses"
+            ],
+            "related_parameters": [
+                "CamelCapacity",
+                "HorseCapacity",
+                "MinPackages"
+            ],
+            "code": "# Add a constraint ensuring the total delivered packages meet or exceed MinPackages\nmodel.addConstr(NumberOfCamels * CamelCapacity + NumberOfHorses * HorseCapacity >= MinPackages, name=\"min_packages_constraint\")"
+        },
+        {
+            "description": "The total food consumed by all camels and horses must not exceed the total available units of food (TotalFood).",
+            "status": "coded",
+            "formulation": "\\textup{CamelFood} \\cdot \\textup{NumberOfCamels} + \\textup{HorseFood} \\cdot \\textup{NumberOfHorses} \\leq \\textup{TotalFood}",
+            "related_variables": [
+                "NumberOfCamels",
+                "NumberOfHorses"
+            ],
+            "related_parameters": [
+                "CamelFood",
+                "HorseFood",
+                "TotalFood"
+            ],
+            "code": "# Add constraint to ensure total food consumed does not exceed available food\nmodel.addConstr(\n    CamelFood * NumberOfCamels + HorseFood * NumberOfHorses <= TotalFood,\n    name=\"food_constraint\"\n)"
+        },
+        {
+            "description": "The number of horses used cannot exceed the number of camels used.",
+            "status": "coded",
+            "formulation": "\\\\textup{NumberOfHorses} \\\\leq \\\\textup{NumberOfCamels}",
+            "related_variables": [
+                "NumberOfHorses",
+                "NumberOfCamels"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint to ensure the number of horses does not exceed the number of camels\nmodel.addConstr(NumberOfHorses <= NumberOfCamels, name=\"horses_cannot_exceed_camels\")"
+        },
+        {
+            "description": "Total packages delivered by camels and horses must meet or exceed the minimum delivery requirement",
+            "status": "coded",
+            "formulation": "\\textup{CamelCapacity} \\cdot \\textup{NumberOfCamels} + \\textup{HorseCapacity} \\cdot \\textup{NumberOfHorses} \\geq \\textup{MinPackages}",
+            "related_variables": [
+                "NumberOfCamels",
+                "NumberOfHorses"
+            ],
+            "related_parameters": [
+                "CamelCapacity",
+                "HorseCapacity",
+                "MinPackages"
+            ],
+            "code": "# Add total delivery constraint for camels and horses\nmodel.addConstr(CamelCapacity * NumberOfCamels + HorseCapacity * NumberOfHorses >= MinPackages, name=\"delivery_requirement\")"
+        },
+        {
+            "description": "Total food consumed by camels and horses must not exceed the available food",
+            "status": "coded",
+            "formulation": "\\textup{CamelFood} \\cdot \\textup{NumberOfCamels} + \\textup{HorseFood} \\cdot \\textup{NumberOfHorses} \\leq \\textup{TotalFood}",
+            "related_variables": [
+                "NumberOfCamels",
+                "NumberOfHorses"
+            ],
+            "related_parameters": [
+                "CamelFood",
+                "HorseFood",
+                "TotalFood"
+            ],
+            "code": "# Add food consumption constraint for camels and horses\nmodel.addConstr(\n    NumberOfCamels * CamelFood + NumberOfHorses * HorseFood <= TotalFood,\n    name=\"food_consumption\"\n)"
+        },
+        {
+            "description": "The company prefers to use fewer horses than camels for environmental considerations",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfHorses} \\leq \\textup{NumberOfCamels}",
+            "related_variables": [
+                "NumberOfCamels",
+                "NumberOfHorses"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint to ensure the number of horses used is not greater than the number of camels\nmodel.addConstr(NumberOfHorses <= NumberOfCamels, name=\"fewer_horses_than_camels\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of camels used in package delivery.",
+            "symbol": "NumberOfCamels",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfCamels = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfCamels\")"
+        },
+        {
+            "definition": "The number of horses used in package delivery.",
+            "symbol": "NumberOfHorses",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfHorses = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfHorses\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of camels and horses used for package delivery",
+            "status": "coded",
+            "formulation": "\\textup{minimize} \\quad \\textup{NumberOfCamels} + \\textup{NumberOfHorses}",
+            "related_variables": [
+                "NumberOfCamels",
+                "NumberOfHorses"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(NumberOfCamels + NumberOfHorses, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 18.333333333333336,
+    "log_path": "logs/log_20250413162742_nl4opt_prob_169/",
+    "problem_path": "data/nl4opt/prob_169/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_169/data.json\", \"r\") as f:\n    data = json.load(f)\n\nCamelCapacity = data[\"CamelCapacity\"] # scalar parameter\nHorseCapacity = data[\"HorseCapacity\"] # scalar parameter\nCamelFood = data[\"CamelFood\"] # scalar parameter\nHorseFood = data[\"HorseFood\"] # scalar parameter\nMinPackages = data[\"MinPackages\"] # scalar parameter\nTotalFood = data[\"TotalFood\"] # scalar parameter\nNumberOfCamels = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfCamels\")\nNumberOfHorses = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfHorses\")\n\n# The variable \"NumberOfCamels\" is non-negative due to its default lower bound (0) in Gurobi's variable definition.\n\n# The non-negativity constraint is inherently satisfied as the variable \"NumberOfHorses\" is defined as continuous (non-negative by default), no extra constraint needs to be added.\n\n# Add a constraint ensuring the total delivered packages meet or exceed MinPackages\nmodel.addConstr(NumberOfCamels * CamelCapacity + NumberOfHorses * HorseCapacity >= MinPackages, name=\"min_packages_constraint\")\n\n# Add constraint to ensure total food consumed does not exceed available food\nmodel.addConstr(\n    CamelFood * NumberOfCamels + HorseFood * NumberOfHorses <= TotalFood,\n    name=\"food_constraint\"\n)\n\n# Add constraint to ensure the number of horses does not exceed the number of camels\nmodel.addConstr(NumberOfHorses <= NumberOfCamels, name=\"horses_cannot_exceed_camels\")\n\n# Add total delivery constraint for camels and horses\nmodel.addConstr(CamelCapacity * NumberOfCamels + HorseCapacity * NumberOfHorses >= MinPackages, name=\"delivery_requirement\")\n\n# Add food consumption constraint for camels and horses\nmodel.addConstr(\n    NumberOfCamels * CamelFood + NumberOfHorses * HorseFood <= TotalFood,\n    name=\"food_consumption\"\n)\n\n# Add constraint to ensure the number of horses used is not greater than the number of camels\nmodel.addConstr(NumberOfHorses <= NumberOfCamels, name=\"fewer_horses_than_camels\")\n\n# Set objective\nmodel.setObjective(NumberOfCamels + NumberOfHorses, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

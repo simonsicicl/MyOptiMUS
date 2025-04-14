@@ -1,0 +1,188 @@
+{
+    "background": "Jacob is investing in two companies: a clothing company and a tech company.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Total amount of money available for investment",
+            "symbol": "TotalInvestment",
+            "value": 3000,
+            "shape": [],
+            "code": "TotalInvestment = data[\"TotalInvestment\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum investment ratio in the favorite clothing company over the tech company",
+            "symbol": "InvestmentRatio",
+            "value": 4,
+            "shape": [],
+            "code": "InvestmentRatio = data[\"InvestmentRatio\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum investment in the favorite tech company",
+            "symbol": "MaxTechInvestment",
+            "value": 500,
+            "shape": [],
+            "code": "MaxTechInvestment = data[\"MaxTechInvestment\"] # scalar parameter"
+        },
+        {
+            "definition": "Annual return rate of the favorite clothing company",
+            "symbol": "ReturnRateClothing",
+            "value": 0.07,
+            "shape": [],
+            "code": "ReturnRateClothing = data[\"ReturnRateClothing\"] # scalar parameter"
+        },
+        {
+            "definition": "Annual return rate of the favorite tech company",
+            "symbol": "ReturnRateTech",
+            "value": 0.1,
+            "shape": [],
+            "code": "ReturnRateTech = data[\"ReturnRateTech\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Clothing investment must be at least InvestmentRatio times the Tech investment.",
+            "status": "coded",
+            "formulation": "\\textup{InvestmentClothing} \\geq \\textup{InvestmentRatio} \\cdot \\textup{InvestmentTech}",
+            "related_variables": [
+                "InvestmentClothing",
+                "InvestmentTech"
+            ],
+            "related_parameters": [
+                "InvestmentRatio"
+            ],
+            "code": "# Add constraint ensuring clothing investment is at least InvestmentRatio times the tech investment\nmodel.addConstr(InvestmentClothing >= InvestmentRatio * InvestmentTech, name=\"clothing_investment_ratio\")"
+        },
+        {
+            "description": "The tech investment must be a non-negative value.",
+            "status": "coded",
+            "formulation": "\\textup{InvestmentTech} \\geq 0",
+            "related_variables": [
+                "InvestmentTech"
+            ],
+            "related_parameters": [],
+            "code": "# The variable InvestmentTech is already coded as a non-negative continuous variable, which inherently satisfies the non-negativity constraint defined in Gurobi."
+        },
+        {
+            "description": "Clothing investment must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{InvestmentClothing} \\geq 0",
+            "related_variables": [
+                "InvestmentClothing"
+            ],
+            "related_parameters": [],
+            "code": "# The non-negativity of InvestmentClothing is enforced by Gurobi's default non-negative domain for continuous variables. No additional constraint code is needed."
+        },
+        {
+            "description": "The amount of money Jacob invests in the tech company must not exceed the maximum tech investment limit.",
+            "status": "coded",
+            "formulation": "\\textup{InvestmentTech} \\leq \\textup{MaxTechInvestment}",
+            "related_variables": [
+                "InvestmentTech"
+            ],
+            "related_parameters": [
+                "MaxTechInvestment"
+            ],
+            "code": "# Add the constraint that Jacob's investment in tech company must not exceed the maximum limit\nmodel.addConstr(InvestmentTech <= MaxTechInvestment, name=\"tech_investment_limit\")"
+        },
+        {
+            "description": "The total investment in the clothing and tech companies must be equal to the total available investment.",
+            "status": "coded",
+            "formulation": "\\\\textup{InvestmentClothing} + \\\\textup{InvestmentTech} = \\\\textup{TotalInvestment}",
+            "related_variables": [
+                "InvestmentClothing",
+                "InvestmentTech"
+            ],
+            "related_parameters": [
+                "TotalInvestment"
+            ],
+            "code": "# Add constraint to ensure the total investment equals the available investment\nmodel.addConstr(InvestmentClothing + InvestmentTech == TotalInvestment, \n                name=\"investment_balance\")"
+        },
+        {
+            "description": "Total investment cannot exceed the available budget",
+            "status": "coded",
+            "formulation": "\\textup{InvestmentClothing} + \\textup{InvestmentTech} \\leq \\textup{TotalInvestment}",
+            "related_variables": [
+                "InvestmentClothing",
+                "InvestmentTech"
+            ],
+            "related_parameters": [
+                "TotalInvestment"
+            ],
+            "code": "# Add budget constraint\nmodel.addConstr(InvestmentClothing + InvestmentTech <= TotalInvestment, name=\"budget_constraint\")"
+        },
+        {
+            "description": "The investment in clothing must be at least InvestmentRatio times the investment in tech",
+            "status": "coded",
+            "formulation": "\\textup{InvestmentClothing} \\geq \\textup{InvestmentRatio} \\times \\textup{InvestmentTech}",
+            "related_variables": [
+                "InvestmentClothing",
+                "InvestmentTech"
+            ],
+            "related_parameters": [
+                "InvestmentRatio"
+            ],
+            "code": "# Add constraint ensuring investment in clothing is at least InvestmentRatio times the investment in tech\nmodel.addConstr(InvestmentClothing >= InvestmentRatio * InvestmentTech, name=\"clothing_investment_minimum\")"
+        },
+        {
+            "description": "The investment in tech cannot exceed the maximum allowable investment",
+            "status": "coded",
+            "formulation": "\\textup{InvestmentTech} \\leq \\textup{MaxTechInvestment}",
+            "related_variables": [
+                "InvestmentTech"
+            ],
+            "related_parameters": [
+                "MaxTechInvestment"
+            ],
+            "code": "# Add constraint to ensure tech investment does not exceed the maximum allowable investment\nmodel.addConstr(InvestmentTech <= MaxTechInvestment, name=\"tech_investment_limit\")"
+        },
+        {
+            "description": "All investments must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{InvestmentClothing} \\geq 0 \\quad \\wedge \\quad \\textup{InvestmentTech} \\geq 0",
+            "related_variables": [
+                "InvestmentClothing",
+                "InvestmentTech"
+            ],
+            "related_parameters": [],
+            "code": "# Add non-negativity constraints for investments\nmodel.addConstr(InvestmentClothing >= 0, name=\"non_negativity_InvestmentClothing\")\nmodel.addConstr(InvestmentTech >= 0, name=\"non_negativity_InvestmentTech\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The amount of money invested in the clothing company.",
+            "symbol": "InvestmentClothing",
+            "shape": [],
+            "status": "coded",
+            "code": "InvestmentClothing = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"InvestmentClothing\")"
+        },
+        {
+            "definition": "The amount of money invested in the tech company.",
+            "symbol": "InvestmentTech",
+            "shape": [],
+            "status": "coded",
+            "code": "InvestmentTech = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"InvestmentTech\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize Jacob's total profit from investments in clothing and tech companies",
+            "status": "coded",
+            "formulation": "\\textup{Maximize:} \\quad \\textup{InvestmentClothing} \\times \\textup{ReturnRateClothing} + \\textup{InvestmentTech} \\times \\textup{ReturnRateTech}",
+            "related_variables": [
+                "InvestmentClothing",
+                "InvestmentTech"
+            ],
+            "related_parameters": [
+                "ReturnRateClothing",
+                "ReturnRateTech"
+            ],
+            "code": "# Set objective\nmodel.setObjective(\n    InvestmentClothing * ReturnRateClothing + InvestmentTech * ReturnRateTech, \n    gp.GRB.MAXIMIZE\n)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250414060822_nl4opt_prob_8/",
+    "problem_path": "data/nl4opt/prob_8/"
+}

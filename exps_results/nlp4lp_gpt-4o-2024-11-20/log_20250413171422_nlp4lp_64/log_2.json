@@ -1,0 +1,135 @@
+{
+    "background": "Assign consultants to projects in a way that minimizes the total cost, considering fixed costs per project, additional costs for assigning specific consultants to specific projects, and the maximum number of projects a consultant can handle.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Fixed cost for project j",
+            "symbol": "FixedCosts",
+            "value": "",
+            "shape": [
+                "J"
+            ],
+            "code": "FixedCosts = np.array(data[\"FixedCosts\"]) # ['J']"
+        },
+        {
+            "definition": "Additional cost for assigning consultant i to project j",
+            "symbol": "AdditionalCosts",
+            "value": "",
+            "shape": [
+                "I",
+                "J"
+            ],
+            "code": "AdditionalCosts = np.array(data[\"AdditionalCosts\"]) # ['I', 'J']"
+        },
+        {
+            "definition": "Maximum number of projects that can be assigned to a consultant",
+            "symbol": "MaxProjectsPerConsultant",
+            "value": 0,
+            "shape": [],
+            "code": "MaxProjectsPerConsultant = data[\"MaxProjectsPerConsultant\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Each consultant can handle up to MaxProjectsPerConsultant projects.",
+            "status": "coded",
+            "formulation": "\\sum_{j=1}^{J} \\textup{Assignment}_{i,j} \\leq \\textup{MaxProjectsPerConsultant} \\quad \\forall \\, i \\in \\{1, \\dots, I\\}",
+            "related_variables": [
+                "Assignment"
+            ],
+            "related_parameters": [
+                "MaxProjectsPerConsultant"
+            ],
+            "code": "# Add constraints to ensure each consultant is assigned to no more than MaxProjectsPerConsultant projects\nfor i in range(I):\n    model.addConstr(gp.quicksum(Assignment[i, j] for j in range(J)) <= MaxProjectsPerConsultant, name=f\"max_projects_constr_{i}\")"
+        },
+        {
+            "description": "Ensure that each project is assigned at least one consultant.",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{I} \\textup{Assignment}_{i,j} \\geq 1 \\quad \\forall \\, j \\in \\{1, \\dots, J\\}",
+            "related_variables": [
+                "Assignment"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint to ensure each project is assigned at least one consultant\nfor j in range(J):\n    model.addConstr(gp.quicksum(Assignment[i, j] for i in range(I)) >= 1, name=f\"project_assignment_{j}\")"
+        },
+        {
+            "description": "Consultants must not be assigned to more than MaxProjectsPerConsultant projects.",
+            "status": "coded",
+            "formulation": "\\sum_{j=1}^{J} \\textup{Assignment}_{i,j} \\\\leq \\textup{MaxProjectsPerConsultant} \\quad \\forall i \\in \\{1, \\dots, I\\}",
+            "related_variables": [
+                "Assignment"
+            ],
+            "related_parameters": [
+                "MaxProjectsPerConsultant"
+            ],
+            "code": "# Add constraints to ensure consultants are not assigned to more than MaxProjectsPerConsultant projects\nfor i in range(I):\n    model.addConstr(gp.quicksum(Assignment[i, j] for j in range(J)) <= MaxProjectsPerConsultant, name=f\"max_projects_per_consultant_{i}\")"
+        },
+        {
+            "description": "Ensure that the binary variable \\textup{ProjectAssigned}_{j} is activated if at least one consultant is assigned to project j.",
+            "status": "coded",
+            "formulation": "\\textup{ProjectAssigned}_{j} \\geq \\frac{\\sum_{i=1}^{I} \\textup{Assignment}_{i,j}}{I}, \\quad \\forall j \\in \\{1, \\dots, J\\}",
+            "related_variables": [
+                "Assignment",
+                "ProjectAssigned"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraints to ensure a project is marked as assigned if at least one consultant is assigned to it\nfor j in range(J):\n    model.addConstr(ProjectAssigned[j] >= gp.quicksum(Assignment[i, j] for i in range(I)) / I, name=f\"project_assignment_{j}\")"
+        },
+        {
+            "description": "Ensure that each consultant is assigned to at most \\textup{MaxProjectsPerConsultant} projects.",
+            "status": "coded",
+            "formulation": "\\sum_{j=1}^{J} \\textup{Assignment}_{i,j} \\leq \\textup{MaxProjectsPerConsultant}, \\quad \\forall i \\in \\{1, \\dots, I\\}",
+            "related_variables": [
+                "Assignment"
+            ],
+            "related_parameters": [
+                "MaxProjectsPerConsultant"
+            ],
+            "code": "# Add constraints to ensure each consultant is assigned to at most MaxProjectsPerConsultant projects\nfor i in range(I):\n    model.addConstr(gp.quicksum(Assignment[i, j] for j in range(J)) <= MaxProjectsPerConsultant, \n                    name=f\"consultant_project_limit_{i}\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Binary variable indicating whether consultant i is assigned to project j (1 if assigned, 0 otherwise).",
+            "symbol": "Assignment",
+            "shape": [
+                "I",
+                "J"
+            ],
+            "status": "runtime_error",
+            "code": "Assignment = model.addVars(I, J, vtype=gp.GRB.BINARY, name=\"Assignment\")"
+        },
+        {
+            "definition": "Binary variable indicating whether project j is assigned at least one consultant (1 if assigned, 0 otherwise).",
+            "symbol": "ProjectAssigned",
+            "shape": [
+                "J"
+            ],
+            "status": "coded",
+            "code": "ProjectAssigned = model.addVars(J, vtype=gp.GRB.BINARY, name=\"ProjectAssigned\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total cost of assigning consultants to projects, accounting for both fixed costs per project and additional assignment costs.",
+            "status": "coded",
+            "formulation": "\\sum_{j=1}^{J} \\textup{FixedCosts}_{j} \\cdot \\textup{ProjectAssigned}_{j} + \\sum_{i=1}^{I} \\sum_{j=1}^{J} \\textup{AdditionalCosts}_{i,j} \\cdot \\textup{Assignment}_{i,j}",
+            "related_variables": [
+                "Assignment",
+                "ProjectAssigned"
+            ],
+            "related_parameters": [
+                "FixedCosts",
+                "AdditionalCosts"
+            ],
+            "code": "# Set objective\nmodel.setObjective(\n    gp.quicksum(FixedCosts[j] * ProjectAssigned[j] for j in range(J)) +\n    gp.quicksum(AdditionalCosts[i, j] * Assignment[i, j] for i in range(I) for j in range(J)),\n    gp.GRB.MINIMIZE\n)"
+        }
+    ],
+    "solution_status": "runtime_error",
+    "solver_output_status": "runtime_error",
+    "error_message": "Traceback (most recent call last):\n  File \"/Users/simonsici/Desktop/MyOptiMUS/evaluator.py\", line 39, in run\n    exec(last_line, local_env, local_env)\n  File \"<string>\", line 1, in <module>\nNameError: name 'I' is not defined\n",
+    "obj_val": null,
+    "log_path": "logs/log_20250413171422_nlp4lp_64/",
+    "problem_path": "data/nlp4lp/64/",
+    "prep_code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nlp4lp/64/data.json\", \"r\") as f:\n    data = json.load(f)\n"
+}

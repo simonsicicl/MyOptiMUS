@@ -1,0 +1,289 @@
+{
+    "background": "Fertilizer and seeds need to be applied to a lawn. Each has a different time to become effective. There is a maximum combined limit of fertilizer and seeds that can be applied, a minimum required amount of fertilizer, and a maximum allowed ratio of fertilizer to seeds.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Time for fertilizer to be effective per unit",
+            "symbol": "TimeFertilizer",
+            "value": 0.5,
+            "shape": [],
+            "code": "TimeFertilizer = data[\"TimeFertilizer\"] # scalar parameter"
+        },
+        {
+            "definition": "Time for seeds to be effective per unit",
+            "symbol": "TimeSeeds",
+            "value": 1.5,
+            "shape": [],
+            "code": "TimeSeeds = data[\"TimeSeeds\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum combined units of fertilizer and seeds",
+            "symbol": "MaxUnits",
+            "value": 300,
+            "shape": [],
+            "code": "MaxUnits = data[\"MaxUnits\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum units of fertilizer to be added",
+            "symbol": "MinFertilizer",
+            "value": 50,
+            "shape": [],
+            "code": "MinFertilizer = data[\"MinFertilizer\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum ratio of the amount of fertilizer to seeds",
+            "symbol": "MaxFertilizerSeedRatio",
+            "value": 2,
+            "shape": [],
+            "code": "MaxFertilizerSeedRatio = data[\"MaxFertilizerSeedRatio\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The combined units of fertilizer and seeds cannot exceed the maximum allowed.",
+            "status": "coded",
+            "formulation": "\\\\textup{UnitsFertilizer} + \\\\textup{UnitsSeeds} \\\\leq \\\\textup{MaxUnits}",
+            "related_variables": [
+                "UnitsFertilizer",
+                "UnitsSeeds"
+            ],
+            "related_parameters": [
+                "MaxUnits"
+            ],
+            "code": "# Add constraint for the combined units of fertilizer and seeds\nmodel.addConstr(UnitsFertilizer + UnitsSeeds <= MaxUnits, name=\"fertilizer_seeds_limit\")"
+        },
+        {
+            "description": "At least MinFertilizer units of fertilizer must be added.",
+            "status": "coded",
+            "formulation": "\\textup{UnitsFertilizer} \\geq \\textup{MinFertilizer}",
+            "related_variables": [
+                "UnitsFertilizer"
+            ],
+            "related_parameters": [
+                "MinFertilizer"
+            ],
+            "code": "# Add constraint ensuring at least MinFertilizer units of fertilizer are applied\nmodel.addConstr(UnitsFertilizer >= MinFertilizer, name=\"fertilizer_minimum\")"
+        },
+        {
+            "description": "The amount of fertilizer cannot exceed MaxFertilizerSeedRatio times the amount of seeds.",
+            "status": "coded",
+            "formulation": "\\\\textup{UnitsFertilizer} \\\\leq \\\\textup{MaxFertilizerSeedRatio} \\\\cdot \\\\textup{UnitsSeeds}",
+            "related_variables": [
+                "UnitsFertilizer",
+                "UnitsSeeds"
+            ],
+            "related_parameters": [
+                "MaxFertilizerSeedRatio"
+            ],
+            "code": "# Fertilizer to seed ratio constraint\nmodel.addConstr(UnitsFertilizer <= MaxFertilizerSeedRatio * UnitsSeeds, name=\"fertilizer_seed_ratio\")"
+        },
+        {
+            "description": "Set of constraints governing fertilizer and seed applications.",
+            "status": "coded",
+            "formulation": "\\textup{UnitsFertilizer} \\geq 0 \\quad \\quad \\textup{UnitsSeeds} \\geq 0 \\quad \\quad \\textup{UnitsFertilizer} + \\textup{UnitsSeeds} \\leq \\textup{MaxUnits} \\quad \\quad \\textup{UnitsFertilizer} \\geq \\textup{MinFertilizer} \\quad \\quad \\textup{UnitsFertilizer} \\leq \\textup{MaxFertilizerSeedRatio} \\times \\textup{UnitsSeeds} + \\textup{AuxSeedNonzero}",
+            "related_variables": [
+                "UnitsFertilizer",
+                "UnitsSeeds"
+            ],
+            "related_parameters": [
+                "MaxUnits",
+                "MinFertilizer",
+                "MaxFertilizerSeedRatio"
+            ],
+            "code": "# Add fertilizer and seed application constraints\nmodel.addConstr(UnitsFertilizer >= 0, name=\"nonnegative_fertilizer\")\nmodel.addConstr(UnitsSeeds >= 0, name=\"nonnegative_seeds\")\nmodel.addConstr(UnitsFertilizer + UnitsSeeds <= MaxUnits, name=\"combined_units_limit\")\nmodel.addConstr(UnitsFertilizer >= MinFertilizer, name=\"min_fertilizer_limit\")\nmodel.addConstr(UnitsFertilizer <= MaxFertilizerSeedRatio * UnitsSeeds + AuxSeedNonzero, name=\"fertilizer_seed_ratio_limit\")"
+        },
+        {
+            "description": "The number of units of seeds applied must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{UnitsSeeds} \\geq 0",
+            "related_variables": [
+                "UnitsSeeds"
+            ],
+            "related_parameters": [],
+            "code": "# The non-negativity constraint is implicitly satisfied as Gurobi variables are non-negative by default unless otherwise specified (e.g., with lower bounds of negative values)."
+        },
+        {
+            "description": "The amount of fertilizer must meet the minimum required amount.",
+            "status": "coded",
+            "formulation": "\\\\textup{UnitsFertilizer} \\\\geq \\\\textup{MinFertilizer}",
+            "related_variables": [
+                "UnitsFertilizer"
+            ],
+            "related_parameters": [
+                "MinFertilizer"
+            ],
+            "code": "# Add constraint to ensure fertilizer units meet the minimum required amount\nmodel.addConstr(UnitsFertilizer >= MinFertilizer, name=\"fertilizer_minimum_requirement\")"
+        },
+        {
+            "description": "The ratio of fertilizer to seeds must not exceed the maximum allowed.",
+            "status": "coded",
+            "formulation": "\\\\textup{UnitsFertilizer} \\\\leq \\\\textup{MaxFertilizerSeedRatio} \\\\cdot \\\\textup{UnitsSeeds}",
+            "related_variables": [
+                "UnitsFertilizer",
+                "UnitsSeeds"
+            ],
+            "related_parameters": [
+                "MaxFertilizerSeedRatio"
+            ],
+            "code": "# Add constraint for fertilizer-to-seeds ratio\nmodel.addConstr(UnitsFertilizer <= MaxFertilizerSeedRatio * UnitsSeeds, name=\"fertilizer_seed_ratio\")"
+        },
+        {
+            "description": "Auxiliary constraint to ensure \\textup{UnitsSeeds} is non-zero in cases involving division in the fertilizer-to-seeds ratio.",
+            "status": "coded",
+            "formulation": "\\textup{AuxSeedNonzero} \\geq 0 \\quad \\quad \\textup{AuxSeedNonzero} \\geq -\\textup{MaxFertilizerSeedRatio} \\times \\textup{UnitsSeeds}",
+            "related_variables": [
+                "AuxSeedNonzero",
+                "UnitsSeeds"
+            ],
+            "related_parameters": [
+                "MaxFertilizerSeedRatio"
+            ],
+            "code": "# Add auxiliary constraints to ensure UnitsSeeds is non-zero\nmodel.addConstr(AuxSeedNonzero >= 0, name=\"AuxSeedNonzero_geq_0\")\nmodel.addConstr(AuxSeedNonzero >= -MaxFertilizerSeedRatio * UnitsSeeds, name=\"AuxSeedNonzero_geq_-MaxFertilizerSeedRatio_times_UnitsSeeds\")"
+        },
+        {
+            "description": "Ensure the maximum effective time is greater than or equal to the effective time for fertilizer.",
+            "status": "coded",
+            "formulation": "\\textup{MaxEffectiveTime} \\geq \\textup{UnitsFertilizer} \\cdot \\textup{TimeFertilizer}",
+            "related_variables": [
+                "MaxEffectiveTime",
+                "UnitsFertilizer"
+            ],
+            "related_parameters": [
+                "TimeFertilizer"
+            ],
+            "code": "# Add constraint to ensure maximum effective time is greater than or equal to the effective time for fertilizer\nmodel.addConstr(MaxEffectiveTime >= UnitsFertilizer * TimeFertilizer, name=\"max_effective_time_constraint\")"
+        },
+        {
+            "description": "Ensure the maximum effective time is greater than or equal to the effective time for seeds.",
+            "status": "coded",
+            "formulation": "\\textup{MaxEffectiveTime} \\geq \\textup{UnitsSeeds} \\cdot \\textup{TimeSeeds}",
+            "related_variables": [
+                "MaxEffectiveTime",
+                "UnitsSeeds"
+            ],
+            "related_parameters": [
+                "TimeSeeds"
+            ],
+            "code": "# Add constraint to ensure maximum effective time is greater than or equal to effective time for seeds\nmodel.addConstr(MaxEffectiveTime >= UnitsSeeds * TimeSeeds, name=\"max_effective_time_constraint\")"
+        },
+        {
+            "description": "Total fertilizer and seed units cannot exceed the maximum allowed units.",
+            "status": "coded",
+            "formulation": "\\textup{UnitsFertilizer} + \\textup{UnitsSeeds} \\leq \\textup{MaxUnits}",
+            "related_variables": [
+                "UnitsFertilizer",
+                "UnitsSeeds"
+            ],
+            "related_parameters": [
+                "MaxUnits"
+            ],
+            "code": "# Add constraint: Total fertilizer and seed units cannot exceed maximum allowed units\nmodel.addConstr(UnitsFertilizer + UnitsSeeds <= MaxUnits, name=\"fertilizer_seed_limit\")"
+        },
+        {
+            "description": "The number of fertilizer units applied must be greater than or equal to the minimum required.",
+            "status": "coded",
+            "formulation": "\\textup{UnitsFertilizer} \\geq \\textup{MinFertilizer}",
+            "related_variables": [
+                "UnitsFertilizer"
+            ],
+            "related_parameters": [
+                "MinFertilizer"
+            ],
+            "code": "# Add constraint to ensure applied fertilizer is greater than or equal to the minimum required\nmodel.addConstr(UnitsFertilizer >= MinFertilizer, name=\"min_fertilizer_requirement\")"
+        },
+        {
+            "description": "Ensure the fertilizer-to-seeds ratio constraint is satisfied, using the auxiliary variable for non-zero seeds.",
+            "status": "coded",
+            "formulation": "\\textup{UnitsFertilizer} \\leq \\textup{MaxFertilizerSeedRatio} \\cdot \\textup{AuxSeedNonzero}",
+            "related_variables": [
+                "UnitsFertilizer",
+                "AuxSeedNonzero"
+            ],
+            "related_parameters": [
+                "MaxFertilizerSeedRatio"
+            ],
+            "code": "# Add fertilizer-to-seeds ratio constraint\nmodel.addConstr(UnitsFertilizer <= MaxFertilizerSeedRatio * AuxSeedNonzero, name=\"fertilizer_seed_ratio\")"
+        },
+        {
+            "description": "Ensure the auxiliary variable for seeds is at least 1 or equal to the number of seeds applied.",
+            "status": "coded",
+            "formulation": "\\textup{AuxSeedNonzero} \\geq \\textup{UnitsSeeds}",
+            "related_variables": [
+                "AuxSeedNonzero",
+                "UnitsSeeds"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint to ensure AuxSeedNonzero is at least 1 or equal to UnitsSeeds\nmodel.addConstr(AuxSeedNonzero >= UnitsSeeds, name=\"aux_seed_nonzero_constraint\")"
+        },
+        {
+            "description": "Ensure the auxiliary variable for seeds is at least 1.",
+            "status": "coded",
+            "formulation": "\\textup{AuxSeedNonzero} \\geq 1",
+            "related_variables": [
+                "AuxSeedNonzero"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint for ensuring AuxSeedNonzero is at least 1\nmodel.addConstr(AuxSeedNonzero >= 1, name=\"AuxSeedNonzero_minimum\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of fertilizer units applied.",
+            "symbol": "UnitsFertilizer",
+            "shape": [],
+            "status": "coded",
+            "code": "UnitsFertilizer = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"UnitsFertilizer\")"
+        },
+        {
+            "definition": "The number of seed units applied.",
+            "symbol": "UnitsSeeds",
+            "shape": [],
+            "status": "coded",
+            "code": "UnitsSeeds = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"UnitsSeeds\")"
+        },
+        {
+            "definition": "Auxiliary variable to manage cases where \\textup{UnitsSeeds} might be zero, avoiding division by zero in the fertilizer-to-seeds ratio constraint.",
+            "symbol": "AuxSeedNonzero",
+            "shape": [],
+            "status": "coded",
+            "code": "AuxSeedNonzero = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"AuxSeedNonzero\")"
+        },
+        {
+            "definition": "An auxiliary variable representing the maximum effective time to minimize.",
+            "symbol": "MaxEffectiveTime",
+            "shape": [],
+            "status": "coded",
+            "code": "MaxEffectiveTime = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"MaxEffectiveTime\")"
+        },
+        {
+            "definition": "An auxiliary variable ensuring that the seed-related constraint handles division by zero by being at least 1 or equal to UnitsSeeds.",
+            "symbol": "AuxSeedNonzero",
+            "shape": [],
+            "status": "coded",
+            "code": "AuxSeedNonzero = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"AuxSeedNonzero\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total effective time for the lawn to be ready after applying fertilizer and seeds.",
+            "status": "coded",
+            "formulation": "\\textup{Minimize} \\quad \\textup{MaxEffectiveTime}",
+            "related_variables": [
+                "MaxEffectiveTime",
+                "UnitsFertilizer",
+                "UnitsSeeds"
+            ],
+            "related_parameters": [
+                "TimeFertilizer",
+                "TimeSeeds"
+            ],
+            "code": "# Set objective to minimize MaxEffectiveTime\nmodel.setObjective(MaxEffectiveTime, gp.GRB.MINIMIZE)\n\n# Add constraints ensuring MaxEffectiveTime is greater than or equal to each individual effective time\nmodel.addConstr(MaxEffectiveTime >= TimeFertilizer * UnitsFertilizer, name=\"EffectiveTimeFertilizer\")\nmodel.addConstr(MaxEffectiveTime >= TimeSeeds * UnitsSeeds, name=\"EffectiveTimeSeeds\")"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413153615_nl4opt_prob_115/",
+    "problem_path": "data/nl4opt/prob_115/"
+}

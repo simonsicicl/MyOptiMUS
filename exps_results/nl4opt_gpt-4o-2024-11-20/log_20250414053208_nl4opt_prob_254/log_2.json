@@ -1,0 +1,261 @@
+{
+    "background": "Grain is transported from a farm to local grocery stores in either large or tiny bags, each requiring a certain amount of energy for transportation. There are limits to the energy available and a demand ratio that requires twice as many large bags as tiny bags.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Capacity of a large bag",
+            "symbol": "LargeBagCapacity",
+            "value": 25,
+            "shape": [],
+            "code": "LargeBagCapacity = data[\"LargeBagCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Energy required to transport a large bag",
+            "symbol": "LargeBagEnergy",
+            "value": 4,
+            "shape": [],
+            "code": "LargeBagEnergy = data[\"LargeBagEnergy\"] # scalar parameter"
+        },
+        {
+            "definition": "Capacity of a tiny bag",
+            "symbol": "TinyBagCapacity",
+            "value": 6,
+            "shape": [],
+            "code": "TinyBagCapacity = data[\"TinyBagCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Energy required to transport a tiny bag",
+            "symbol": "TinyBagEnergy",
+            "value": 1.5,
+            "shape": [],
+            "code": "TinyBagEnergy = data[\"TinyBagEnergy\"] # scalar parameter"
+        },
+        {
+            "definition": "Total energy available for transport",
+            "symbol": "TotalEnergy",
+            "value": 110,
+            "shape": [],
+            "code": "TotalEnergy = data[\"TotalEnergy\"] # scalar parameter"
+        },
+        {
+            "definition": "Ratio of number of large bags to tiny bags",
+            "symbol": "BagRatio",
+            "value": 2,
+            "shape": [],
+            "code": "BagRatio = data[\"BagRatio\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of tiny bags required",
+            "symbol": "MinTinyBags",
+            "value": 20,
+            "shape": [],
+            "code": "MinTinyBags = data[\"MinTinyBags\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of large bags is non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumberLargeBags} \\geq 0",
+            "related_variables": [
+                "NumberLargeBags"
+            ],
+            "related_parameters": [],
+            "code": "# The variable \"NumberLargeBags\" is already defined as non-negative due to its default lower bound (0) in Gurobi.\n# No additional code needed."
+        },
+        {
+            "description": "The number of tiny bags transported must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumberTinyBags} \\geq 0",
+            "related_variables": [
+                "NumberTinyBags"
+            ],
+            "related_parameters": [],
+            "code": "# The variable \"NumberTinyBags\" is already defined as non-negative (continuous and defaults to >= 0), so no additional constraints are needed."
+        },
+        {
+            "description": "The total energy used for transporting large and tiny bags cannot exceed the total energy available.",
+            "status": "coded",
+            "formulation": "\\textup{LargeBagEnergy} \\\\cdot \\textup{NumberLargeBags} + \\textup{TinyBagEnergy} \\\\cdot \\textup{NumberTinyBags} \\\\leq \\textup{TotalEnergy}",
+            "related_variables": [
+                "NumberLargeBags",
+                "NumberTinyBags"
+            ],
+            "related_parameters": [
+                "LargeBagEnergy",
+                "TinyBagEnergy",
+                "TotalEnergy"
+            ],
+            "code": "# Add energy usage constraint for transporting bags\nmodel.addConstr(\n    LargeBagEnergy * NumberLargeBags + TinyBagEnergy * NumberTinyBags <= TotalEnergy,\n    name=\"energy_constraint\"\n)"
+        },
+        {
+            "description": "Ensure there are twice as many large bags transported as tiny bags.",
+            "status": "coded",
+            "formulation": "\\textup{NumberLargeBags} = 2 \\cdot \\textup{NumberTinyBags}",
+            "related_variables": [
+                "NumberLargeBags",
+                "NumberTinyBags"
+            ],
+            "related_parameters": [
+                "BagRatio"
+            ],
+            "code": "# Add a constraint to ensure the number of large bags is twice the number of tiny bags\nmodel.addConstr(NumberLargeBags == 2 * NumberTinyBags, name=\"large_bags_twice_tiny\")"
+        },
+        {
+            "description": "The number of transported tiny bags must be at least MinTinyBags.",
+            "status": "coded",
+            "formulation": "\\textup{NumberTinyBags} \\geq \\textup{MinTinyBags}",
+            "related_variables": [
+                "NumberTinyBags"
+            ],
+            "related_parameters": [
+                "MinTinyBags"
+            ],
+            "code": "# Add constraint to ensure the number of transported tiny bags is at least MinTinyBags\nmodel.addConstr(NumberTinyBags >= MinTinyBags, name=\"min_tiny_bags_constraint\")"
+        },
+        {
+            "description": "The number of large bags must follow the ratio constraint relative to the number of tiny bags.",
+            "status": "coded",
+            "formulation": "\\textup{NumberLargeBags} = \\textup{BagRatio} \\cdot \\textup{NumberTinyBags}",
+            "related_variables": [
+                "NumberLargeBags",
+                "NumberTinyBags"
+            ],
+            "related_parameters": [
+                "BagRatio"
+            ],
+            "code": "# Add ratio constraint for large bags relative to tiny bags\nmodel.addConstr(NumberLargeBags == BagRatio * NumberTinyBags, name=\"large_to_tiny_bag_ratio\")"
+        },
+        {
+            "description": "The total energy used for transportation must not exceed the available energy.",
+            "status": "coded",
+            "formulation": "\\textup{LargeBagEnergy} \\cdot \\textup{NumberLargeBags} + \\textup{TinyBagEnergy} \\cdot \\textup{NumberTinyBags} \\leq \\textup{TotalEnergy}",
+            "related_variables": [
+                "NumberLargeBags",
+                "NumberTinyBags"
+            ],
+            "related_parameters": [
+                "LargeBagEnergy",
+                "TinyBagEnergy",
+                "TotalEnergy"
+            ],
+            "code": "# Add constraint to ensure total energy used for transportation does not exceed available energy\nmodel.addConstr(LargeBagEnergy * NumberLargeBags + TinyBagEnergy * NumberTinyBags <= TotalEnergy, name=\"energy_constraint\")"
+        },
+        {
+            "description": "The number of tiny bags must satisfy the minimum requirement.",
+            "status": "coded",
+            "formulation": "\\textup{NumberTinyBags} \\geq \\textup{MinTinyBags}",
+            "related_variables": [
+                "NumberTinyBags"
+            ],
+            "related_parameters": [
+                "MinTinyBags"
+            ],
+            "code": "# Add the constraint to ensure the number of tiny bags satisfies the minimum requirement\nmodel.addConstr(NumberTinyBags >= MinTinyBags, name=\"min_tiny_bags_req\")"
+        },
+        {
+            "description": "The number of large bags must be twice the number of tiny bags.",
+            "status": "coded",
+            "formulation": "\\textup{NumberLargeBags} = \\textup{BagRatio} \\\\cdot \\textup{NumberTinyBags}",
+            "related_variables": [
+                "NumberLargeBags",
+                "NumberTinyBags"
+            ],
+            "related_parameters": [
+                "BagRatio"
+            ],
+            "code": "# Add constraint for the relationship between large bags and tiny bags\nmodel.addConstr(NumberLargeBags == BagRatio * NumberTinyBags, name=\"large_to_tiny_bag_ratio\")"
+        },
+        {
+            "description": "The number of tiny bags must be at least the minimum required.",
+            "status": "coded",
+            "formulation": "\\textup{NumberTinyBags} \\\\geq \\textup{MinTinyBags}",
+            "related_variables": [
+                "NumberTinyBags"
+            ],
+            "related_parameters": [
+                "MinTinyBags"
+            ],
+            "code": "# Add constraint to ensure the number of tiny bags is at least the minimum required\nmodel.addConstr(NumberTinyBags >= MinTinyBags, name=\"min_tiny_bags_constraint\")"
+        },
+        {
+            "description": "Total energy used by all bags must not exceed the available energy.",
+            "status": "coded",
+            "formulation": "(\\textup{NumberLargeBags} \\cdot \\textup{LargeBagEnergy}) + (\\textup{NumberTinyBags} \\cdot \\textup{TinyBagEnergy}) \\leq \\textup{TotalEnergy}",
+            "related_variables": [
+                "NumberLargeBags",
+                "NumberTinyBags"
+            ],
+            "related_parameters": [
+                "LargeBagEnergy",
+                "TinyBagEnergy",
+                "TotalEnergy"
+            ],
+            "code": "# Add total energy usage constraint\nmodel.addConstr((NumberLargeBags * LargeBagEnergy) + (NumberTinyBags * TinyBagEnergy) <= TotalEnergy, \n                name=\"total_energy_constraint\")"
+        },
+        {
+            "description": "The ratio of large bags to tiny bags must be \\textup{BagRatio}.",
+            "status": "coded",
+            "formulation": "\\textup{NumberLargeBags} = \\textup{BagRatio} \\cdot \\textup{NumberTinyBags}",
+            "related_variables": [
+                "NumberLargeBags",
+                "NumberTinyBags"
+            ],
+            "related_parameters": [
+                "BagRatio"
+            ],
+            "code": "# Add ratio constraint for large bags and tiny bags\nmodel.addConstr(NumberLargeBags == BagRatio * NumberTinyBags, name=\"BagRatioConstraint\")"
+        },
+        {
+            "description": "The number of tiny bags transported must be at least the minimum required.",
+            "status": "coded",
+            "formulation": "\\textup{NumberTinyBags} \\geq \\textup{MinTinyBags}",
+            "related_variables": [
+                "NumberTinyBags"
+            ],
+            "related_parameters": [
+                "MinTinyBags"
+            ],
+            "code": "# Add constraint ensuring the number of tiny bags transported is at least the minimum required\nmodel.addConstr(NumberTinyBags >= MinTinyBags, name=\"min_tiny_bags_requirement\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of large bags transported.",
+            "symbol": "NumberLargeBags",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberLargeBags = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberLargeBags\")"
+        },
+        {
+            "definition": "The number of tiny bags transported.",
+            "symbol": "NumberTinyBags",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberTinyBags = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberTinyBags\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total weight of grain transported in large and tiny bags.",
+            "status": "coded",
+            "formulation": "\\textup{Maximize} \\quad \\textup{TotalWeight} = (\\textup{NumberLargeBags} \\cdot \\textup{LargeBagCapacity}) + (\\textup{NumberTinyBags} \\cdot \\textup{TinyBagCapacity})",
+            "related_variables": [
+                "NumberLargeBags",
+                "NumberTinyBags"
+            ],
+            "related_parameters": [
+                "LargeBagCapacity",
+                "TinyBagCapacity"
+            ],
+            "code": "# Set objective\nmodel.setObjective((NumberLargeBags * LargeBagCapacity) + (NumberTinyBags * TinyBagCapacity), gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 4,
+    "error_message": null,
+    "obj_val": "infeasible or unbounded",
+    "log_path": "logs/log_20250414053208_nl4opt_prob_254/",
+    "problem_path": "data/nl4opt/prob_254/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_254/data.json\", \"r\") as f:\n    data = json.load(f)\n\nLargeBagCapacity = data[\"LargeBagCapacity\"] # scalar parameter\nLargeBagEnergy = data[\"LargeBagEnergy\"] # scalar parameter\nTinyBagCapacity = data[\"TinyBagCapacity\"] # scalar parameter\nTinyBagEnergy = data[\"TinyBagEnergy\"] # scalar parameter\nTotalEnergy = data[\"TotalEnergy\"] # scalar parameter\nBagRatio = data[\"BagRatio\"] # scalar parameter\nMinTinyBags = data[\"MinTinyBags\"] # scalar parameter\nNumberLargeBags = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberLargeBags\")\nNumberTinyBags = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberTinyBags\")\n\n# The variable \"NumberLargeBags\" is already defined as non-negative due to its default lower bound (0) in Gurobi.\n# No additional code needed.\n\n# The variable \"NumberTinyBags\" is already defined as non-negative (continuous and defaults to >= 0), so no additional constraints are needed.\n\n# Add energy usage constraint for transporting bags\nmodel.addConstr(\n    LargeBagEnergy * NumberLargeBags + TinyBagEnergy * NumberTinyBags <= TotalEnergy,\n    name=\"energy_constraint\"\n)\n\n# Add a constraint to ensure the number of large bags is twice the number of tiny bags\nmodel.addConstr(NumberLargeBags == 2 * NumberTinyBags, name=\"large_bags_twice_tiny\")\n\n# Add constraint to ensure the number of transported tiny bags is at least MinTinyBags\nmodel.addConstr(NumberTinyBags >= MinTinyBags, name=\"min_tiny_bags_constraint\")\n\n# Add ratio constraint for large bags relative to tiny bags\nmodel.addConstr(NumberLargeBags == BagRatio * NumberTinyBags, name=\"large_to_tiny_bag_ratio\")\n\n# Add constraint to ensure total energy used for transportation does not exceed available energy\nmodel.addConstr(LargeBagEnergy * NumberLargeBags + TinyBagEnergy * NumberTinyBags <= TotalEnergy, name=\"energy_constraint\")\n\n# Add the constraint to ensure the number of tiny bags satisfies the minimum requirement\nmodel.addConstr(NumberTinyBags >= MinTinyBags, name=\"min_tiny_bags_req\")\n\n# Add constraint for the relationship between large bags and tiny bags\nmodel.addConstr(NumberLargeBags == BagRatio * NumberTinyBags, name=\"large_to_tiny_bag_ratio\")\n\n# Add constraint to ensure the number of tiny bags is at least the minimum required\nmodel.addConstr(NumberTinyBags >= MinTinyBags, name=\"min_tiny_bags_constraint\")\n\n# Add total energy usage constraint\nmodel.addConstr((NumberLargeBags * LargeBagEnergy) + (NumberTinyBags * TinyBagEnergy) <= TotalEnergy, \n                name=\"total_energy_constraint\")\n\n# Add ratio constraint for large bags and tiny bags\nmodel.addConstr(NumberLargeBags == BagRatio * NumberTinyBags, name=\"BagRatioConstraint\")\n\n# Add constraint ensuring the number of tiny bags transported is at least the minimum required\nmodel.addConstr(NumberTinyBags >= MinTinyBags, name=\"min_tiny_bags_requirement\")\n\n# Set objective\nmodel.setObjective((NumberLargeBags * LargeBagCapacity) + (NumberTinyBags * TinyBagCapacity), gp.GRB.MAXIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

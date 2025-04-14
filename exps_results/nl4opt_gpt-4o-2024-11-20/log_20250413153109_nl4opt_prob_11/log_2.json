@@ -1,0 +1,178 @@
+{
+    "background": "Mrs. Watson is looking to invest her budget in the real-estate market focusing on two types of properties: condos and detached houses, with specific profits and minimum investment requirements for each.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Total budget for investments",
+            "symbol": "TotalBudget",
+            "value": 760000,
+            "shape": [],
+            "code": "TotalBudget = data[\"TotalBudget\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit yield per dollar invested in condos",
+            "symbol": "ProfitCondo",
+            "value": 0.5,
+            "shape": [],
+            "code": "ProfitCondo = data[\"ProfitCondo\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit yield per dollar invested in detached houses",
+            "symbol": "ProfitHouse",
+            "value": 1,
+            "shape": [],
+            "code": "ProfitHouse = data[\"ProfitHouse\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum percentage of total investment that must be in condos",
+            "symbol": "MinPercentCondo",
+            "value": 0.2,
+            "shape": [],
+            "code": "MinPercentCondo = data[\"MinPercentCondo\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum investment in detached houses",
+            "symbol": "MinInvestHouse",
+            "value": 20000,
+            "shape": [],
+            "code": "MinInvestHouse = data[\"MinInvestHouse\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The total investment in both condos and detached houses must not exceed the total budget.",
+            "status": "coded",
+            "formulation": "\\textup{InvestCondo} + \\textup{InvestHouse} \\leq \\textup{TotalBudget}",
+            "related_variables": [
+                "InvestCondo",
+                "InvestHouse"
+            ],
+            "related_parameters": [
+                "TotalBudget"
+            ],
+            "code": "# Add total investment constraint\nmodel.addConstr(InvestCondo + InvestHouse <= TotalBudget, name=\"total_investment_constraint\")"
+        },
+        {
+            "description": "The investment in condos must be at least MinPercentCondo of the total investment.",
+            "status": "coded",
+            "formulation": "(1 - \\textup{MinPercentCondo}) \\cdot \\textup{InvestCondo} \\geq \\textup{MinPercentCondo} \\cdot \\textup{InvestHouse}",
+            "related_variables": [
+                "InvestCondo",
+                "InvestHouse"
+            ],
+            "related_parameters": [
+                "MinPercentCondo"
+            ],
+            "code": "# Add constraint ensuring investment in condos meets minimum percentage requirement\nmodel.addConstr((1 - MinPercentCondo) * InvestCondo >= MinPercentCondo * InvestHouse, name=\"min_condo_investment\")"
+        },
+        {
+            "description": "The investment in detached houses must be at least MinInvestHouse.",
+            "status": "coded",
+            "formulation": "\\\\textup{InvestHouse} \\\\geq \\\\textup{MinInvestHouse}",
+            "related_variables": [
+                "InvestHouse"
+            ],
+            "related_parameters": [
+                "MinInvestHouse"
+            ],
+            "code": "# Add minimum investment constraint for detached houses\nmodel.addConstr(InvestHouse >= MinInvestHouse, name=\"min_invest_house\")"
+        },
+        {
+            "description": "The investment in condos must be non-negative, meaning the amount invested cannot be less than zero.",
+            "status": "coded",
+            "formulation": "\\\\textup{InvestCondo} \\\\geq 0",
+            "related_variables": [
+                "InvestCondo"
+            ],
+            "related_parameters": [],
+            "code": "# The non-negativity of InvestCondo is already defined through its lower bound of zero in the variable definition."
+        },
+        {
+            "description": "The investment in detached houses must be non-negative",
+            "status": "coded",
+            "formulation": "\\\\textup{InvestHouse} \\\\geq 0",
+            "related_variables": [
+                "InvestHouse"
+            ],
+            "related_parameters": [],
+            "code": "# The investment in detached houses is already non-negative since it is defined as a continuous variable which is inherently non-negative in Gurobi."
+        },
+        {
+            "description": "The total amount of investments cannot exceed the total budget",
+            "status": "coded",
+            "formulation": "\\\\textup{InvestCondo} + \\\\textup{InvestHouse} \\\\leq \\\\textup{TotalBudget}",
+            "related_variables": [
+                "InvestCondo",
+                "InvestHouse"
+            ],
+            "related_parameters": [
+                "TotalBudget"
+            ],
+            "code": "# Add constraint to ensure total investments do not exceed the total budget\nmodel.addConstr(InvestCondo + InvestHouse <= TotalBudget, name=\"investment_budget_constraint\")"
+        },
+        {
+            "description": "At least the minimum percentage of the total budget must be invested in condos",
+            "status": "coded",
+            "formulation": "\\\\textup{InvestCondo} \\\\geq \\\\textup{MinPercentCondo} \\\\times \\\\textup{TotalBudget}",
+            "related_variables": [
+                "InvestCondo"
+            ],
+            "related_parameters": [
+                "MinPercentCondo",
+                "TotalBudget"
+            ],
+            "code": "# Add constraint ensuring at least the minimum percentage of the total budget is invested in condos\nmodel.addConstr(InvestCondo >= MinPercentCondo * TotalBudget, name=\"min_investment_condos\")"
+        },
+        {
+            "description": "The investment in detached houses must at least be the minimum required amount",
+            "status": "coded",
+            "formulation": "\\\\textup{InvestHouse} \\\\geq \\\\textup{MinInvestHouse}",
+            "related_variables": [
+                "InvestHouse"
+            ],
+            "related_parameters": [
+                "MinInvestHouse"
+            ],
+            "code": "# Add constraint ensuring investment in detached houses meets the minimum required amount\nmodel.addConstr(InvestHouse >= MinInvestHouse, name=\"min_invest_house\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The amount invested in condos.",
+            "symbol": "InvestCondo",
+            "shape": [],
+            "status": "coded",
+            "code": "InvestCondo = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"InvestCondo\")"
+        },
+        {
+            "definition": "The amount invested in detached houses.",
+            "symbol": "InvestHouse",
+            "shape": [],
+            "status": "coded",
+            "code": "InvestHouse = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"InvestHouse\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total profit earned from investments in condos and detached houses",
+            "status": "coded",
+            "formulation": "\\\\textup{Maximize} \\\\quad \\\\textup{ProfitCondo} \\\\times \\\\textup{InvestCondo} + \\\\textup{ProfitHouse} \\\\times \\\\textup{InvestHouse}",
+            "related_variables": [
+                "InvestCondo",
+                "InvestHouse"
+            ],
+            "related_parameters": [
+                "ProfitCondo",
+                "ProfitHouse"
+            ],
+            "code": "# Set objective\nmodel.setObjective(ProfitCondo * InvestCondo + ProfitHouse * InvestHouse, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 684000.0,
+    "log_path": "logs/log_20250413153109_nl4opt_prob_11/",
+    "problem_path": "data/nl4opt/prob_11/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_11/data.json\", \"r\") as f:\n    data = json.load(f)\n\nTotalBudget = data[\"TotalBudget\"] # scalar parameter\nProfitCondo = data[\"ProfitCondo\"] # scalar parameter\nProfitHouse = data[\"ProfitHouse\"] # scalar parameter\nMinPercentCondo = data[\"MinPercentCondo\"] # scalar parameter\nMinInvestHouse = data[\"MinInvestHouse\"] # scalar parameter\nInvestCondo = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"InvestCondo\")\nInvestHouse = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"InvestHouse\")\n\n# Add total investment constraint\nmodel.addConstr(InvestCondo + InvestHouse <= TotalBudget, name=\"total_investment_constraint\")\n\n# Add constraint ensuring investment in condos meets minimum percentage requirement\nmodel.addConstr((1 - MinPercentCondo) * InvestCondo >= MinPercentCondo * InvestHouse, name=\"min_condo_investment\")\n\n# Add minimum investment constraint for detached houses\nmodel.addConstr(InvestHouse >= MinInvestHouse, name=\"min_invest_house\")\n\n# The non-negativity of InvestCondo is already defined through its lower bound of zero in the variable definition.\n\n# The investment in detached houses is already non-negative since it is defined as a continuous variable which is inherently non-negative in Gurobi.\n\n# Add constraint to ensure total investments do not exceed the total budget\nmodel.addConstr(InvestCondo + InvestHouse <= TotalBudget, name=\"investment_budget_constraint\")\n\n# Add constraint ensuring at least the minimum percentage of the total budget is invested in condos\nmodel.addConstr(InvestCondo >= MinPercentCondo * TotalBudget, name=\"min_investment_condos\")\n\n# Add constraint ensuring investment in detached houses meets the minimum required amount\nmodel.addConstr(InvestHouse >= MinInvestHouse, name=\"min_invest_house\")\n\n# Set objective\nmodel.setObjective(ProfitCondo * InvestCondo + ProfitHouse * InvestHouse, gp.GRB.MAXIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

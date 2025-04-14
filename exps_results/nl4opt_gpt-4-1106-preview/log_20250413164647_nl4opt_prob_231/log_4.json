@@ -1,0 +1,201 @@
+{
+    "background": "An amusement park operates two types of games, throwing and climbing games. The games differ in customer attraction rates and operating costs, and there is a requirement to have more throwing games than climbing games.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of customers per hour for throwing games",
+            "symbol": "Ct",
+            "value": 15,
+            "shape": [],
+            "code": "Ct = data[\"Ct\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of customers per hour for climbing games",
+            "symbol": "Cc",
+            "value": 8,
+            "shape": [],
+            "code": "Cc = data[\"Cc\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost of prizes per hour for throwing games",
+            "symbol": "Pt",
+            "value": 2,
+            "shape": [],
+            "code": "Pt = data[\"Pt\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost of prizes per hour for climbing games",
+            "symbol": "Pc",
+            "value": 3,
+            "shape": [],
+            "code": "Pc = data[\"Pc\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum ratio of the number of throwing games to climbing games",
+            "symbol": "R",
+            "value": 2,
+            "shape": [],
+            "code": "R = data[\"R\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of climbing games",
+            "symbol": "MinClimbingGames",
+            "value": 5,
+            "shape": [],
+            "code": "MinClimbingGames = data[\"MinClimbingGames\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum total cost of prizes per hour",
+            "symbol": "MaxPrizeCost",
+            "value": 100,
+            "shape": [],
+            "code": "MaxPrizeCost = data[\"MaxPrizeCost\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of throwing games must be at least R times the number of climbing games",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfThrowingGames} \\geq R \\times \\textup{NumberOfClimbingGames}",
+            "related_variables": [
+                "NumberOfThrowingGames",
+                "NumberOfClimbingGames"
+            ],
+            "related_parameters": [
+                "R"
+            ],
+            "code": ""
+        },
+        {
+            "description": "There must be at least a minimum number of climbing games operated in the amusement park.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfClimbingGames} \\geq \\textup{MinClimbingGames}",
+            "related_variables": [
+                "NumberOfClimbingGames"
+            ],
+            "related_parameters": [
+                "MinClimbingGames"
+            ],
+            "code": "# Ensure there are at least a minimum number of climbing games operated in the amusement park\nmodel.addConstr(NumberOfClimbingGames >= MinClimbingGames, name=\"min_climbing_games_constraint\")"
+        },
+        {
+            "description": "Total cost of prizes for throwing and climbing games per hour does not exceed MaxPrizeCost",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfThrowingGames} \\times \\textup{Ct} \\times \\textup{Pt} + \\textup{NumberOfClimbingGames} \\times \\textup{Cc} \\times \\textup{Pc} \\leq \\textup{MaxPrizeCost}",
+            "related_variables": [
+                "NumberOfThrowingGames",
+                "NumberOfClimbingGames"
+            ],
+            "related_parameters": [
+                "Ct",
+                "Pt",
+                "Cc",
+                "Pc",
+                "MaxPrizeCost"
+            ],
+            "code": "# Total cost of prizes for throwing and climbing games per hour does not exceed MaxPrizeCost\nmodel.addConstr(NumberOfThrowingGames * Ct * Pt + NumberOfClimbingGames * Cc * Pc <= MaxPrizeCost, \"Max_Prize_Cost_Constraint\")"
+        },
+        {
+            "description": "The number of throwing games must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfThrowingGames} \\geq 0",
+            "related_variables": [
+                "NumberOfThrowingGames"
+            ],
+            "related_parameters": [],
+            "code": "model.addConstr(NumberOfThrowingGames >= 0, \"NumberOfThrowingGames_non_negative\")"
+        },
+        {
+            "description": "The number of climbing games must be non-negative and satisfy the minimum requirement",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfClimbingGames} \\geq \\textup{MinClimbingGames}",
+            "related_variables": [
+                "NumberOfClimbingGames"
+            ],
+            "related_parameters": [
+                "MinClimbingGames"
+            ],
+            "code": "# Ensure the number of climbing games is non-negative and satisfies the minimum requirement\nmodel.addConstr(NumberOfClimbingGames >= MinClimbingGames, name=\"min_climbing_games\")"
+        },
+        {
+            "description": "There should be more throwing games than climbing games as per the minimum ratio R.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfThrowingGames} \\geq \\textup{R} \\times \\textup{NumberOfClimbingGames}",
+            "related_variables": [
+                "NumberOfThrowingGames",
+                "NumberOfClimbingGames"
+            ],
+            "related_parameters": [
+                "R"
+            ],
+            "code": "# Ensure there are more throwing games than climbing games by a minimum ratio R\nmodel.addConstr(NumberOfThrowingGames >= R * NumberOfClimbingGames, name=\"MinRatioThrowingClimbingGames\")"
+        },
+        {
+            "description": "Ensure that the total cost of prizes per hour does not exceed the maximum allowed.",
+            "status": "coded",
+            "formulation": "\\textup{Pt} \\times \\textup{NumberOfThrowingGames} + \\textup{Pc} \\times \\textup{NumberOfClimbingGames} \\leq \\textup{MaxPrizeCost}",
+            "related_variables": [
+                "NumberOfThrowingGames",
+                "NumberOfClimbingGames"
+            ],
+            "related_parameters": [
+                "Pt",
+                "Pc",
+                "MaxPrizeCost"
+            ],
+            "code": "# Ensure that the total cost of prizes per hour does not exceed the maximum allowed.\nmodel.addConstr(Pt * NumberOfThrowingGames + Pc * NumberOfClimbingGames <= MaxPrizeCost, name=\"max_prize_cost_constraint\")"
+        },
+        {
+            "description": "Ensure at least the minimum number of climbing games is operated.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfClimbingGames} \\geq \\textup{MinClimbingGames}",
+            "related_variables": [
+                "NumberOfClimbingGames"
+            ],
+            "related_parameters": [
+                "MinClimbingGames"
+            ],
+            "code": "# Ensure at least the minimum number of climbing games is operated\nmodel.addConstr(NumberOfClimbingGames >= MinClimbingGames, name=\"min_climbing_games\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of throwing games the amusement park operates",
+            "symbol": "NumberOfThrowingGames",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfThrowingGames = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfThrowingGames\")"
+        },
+        {
+            "definition": "Number of climbing games the amusement park operates",
+            "symbol": "NumberOfClimbingGames",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfClimbingGames = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfClimbingGames\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total number of customers attracted every hour by operating throwing and climbing games.",
+            "status": "coded",
+            "formulation": "\\textup{Maximize } \\textup{TotalCustomers} = \\textup{Ct} \\times \\textup{NumberOfThrowingGames} + \\textup{Cc} \\times \\textup{NumberOfClimbingGames}",
+            "related_variables": [
+                "NumberOfThrowingGames",
+                "NumberOfClimbingGames"
+            ],
+            "related_parameters": [
+                "Ct",
+                "Cc"
+            ],
+            "code": "# Define the model\nmodel = gp.Model(\"AmusementParkOptimization\")\n\n# Variables\nNumberOfThrowingGames = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfThrowingGames\")\nNumberOfClimbingGames = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfClimbingGames\")\n\n# Parameters\nCt = 15 # Number of customers per hour for throwing games\nCc = 8  # Number of customers per hour for climbing games\n\n# Objective function\nmodel.setObjective(Ct * NumberOfThrowingGames + Cc * NumberOfClimbingGames, gp.GRB.MAXIMIZE)\n\n# Update the model\nmodel.update()"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 5,
+    "error_message": "Traceback (most recent call last):\n  File \"c:\\Users\\Simon\\Desktop\\Courses\\ECE 570\\ECE570_Project\\MyOptiMUS\\evaluator.py\", line 45, in run\n    exec(last_line, local_env, local_env)\n  File \"<string>\", line 1\n    ```\n    ^\nSyntaxError: invalid syntax\n",
+    "obj_val": "unbounded",
+    "log_path": "logs/log_20250413164647_nl4opt_prob_231/",
+    "problem_path": "data/nl4opt/prob_231/",
+    "prep_code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_231/data.json\", \"r\") as f:\n    data = json.load(f)\n",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_231/data.json\", \"r\") as f:\n    data = json.load(f)\n\nCt = data[\"Ct\"] # scalar parameter\nCc = data[\"Cc\"] # scalar parameter\nPt = data[\"Pt\"] # scalar parameter\nPc = data[\"Pc\"] # scalar parameter\nR = data[\"R\"] # scalar parameter\nMinClimbingGames = data[\"MinClimbingGames\"] # scalar parameter\nMaxPrizeCost = data[\"MaxPrizeCost\"] # scalar parameter\nNumberOfThrowingGames = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfThrowingGames\")\nNumberOfClimbingGames = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfClimbingGames\")\n\n\n\n# Ensure there are at least a minimum number of climbing games operated in the amusement park\nmodel.addConstr(NumberOfClimbingGames >= MinClimbingGames, name=\"min_climbing_games_constraint\")\n\n# Total cost of prizes for throwing and climbing games per hour does not exceed MaxPrizeCost\nmodel.addConstr(NumberOfThrowingGames * Ct * Pt + NumberOfClimbingGames * Cc * Pc <= MaxPrizeCost, \"Max_Prize_Cost_Constraint\")\n\nmodel.addConstr(NumberOfThrowingGames >= 0, \"NumberOfThrowingGames_non_negative\")\n\n# Ensure the number of climbing games is non-negative and satisfies the minimum requirement\nmodel.addConstr(NumberOfClimbingGames >= MinClimbingGames, name=\"min_climbing_games\")\n\n# Ensure there are more throwing games than climbing games by a minimum ratio R\nmodel.addConstr(NumberOfThrowingGames >= R * NumberOfClimbingGames, name=\"MinRatioThrowingClimbingGames\")\n\n# Ensure that the total cost of prizes per hour does not exceed the maximum allowed.\nmodel.addConstr(Pt * NumberOfThrowingGames + Pc * NumberOfClimbingGames <= MaxPrizeCost, name=\"max_prize_cost_constraint\")\n\n# Ensure at least the minimum number of climbing games is operated\nmodel.addConstr(NumberOfClimbingGames >= MinClimbingGames, name=\"min_climbing_games\")\n\n# Define the model\nmodel = gp.Model(\"AmusementParkOptimization\")\n\n# Variables\nNumberOfThrowingGames = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfThrowingGames\")\nNumberOfClimbingGames = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfClimbingGames\")\n\n# Parameters\nCt = 15 # Number of customers per hour for throwing games\nCc = 8  # Number of customers per hour for climbing games\n\n# Objective function\nmodel.setObjective(Ct * NumberOfThrowingGames + Cc * NumberOfClimbingGames, gp.GRB.MAXIMIZE)\n\n# Update the model\nmodel.update()\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

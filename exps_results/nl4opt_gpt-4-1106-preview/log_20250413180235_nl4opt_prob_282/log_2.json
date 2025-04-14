@@ -1,0 +1,178 @@
+{
+    "background": "A chemical company needs to perform salinity and pH tests, with a specific requirement for the minimum number of pH tests, the minimum total number of tests, and the maximum ratio of pH tests to salinity tests, all while minimizing the use of probes.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of probes required for each salinity test",
+            "symbol": "ProbesSalinity",
+            "value": 3,
+            "shape": [],
+            "code": "ProbesSalinity = data[\"ProbesSalinity\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of probes required for each pH test",
+            "symbol": "ProbesPH",
+            "value": 2,
+            "shape": [],
+            "code": "ProbesPH = data[\"ProbesPH\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of pH tests to be performed",
+            "symbol": "MinPHTests",
+            "value": 250,
+            "shape": [],
+            "code": "MinPHTests = data[\"MinPHTests\"] # scalar parameter"
+        },
+        {
+            "definition": "Total minimum number of tests (pH and salinity) to be performed",
+            "symbol": "MinTotalTests",
+            "value": 400,
+            "shape": [],
+            "code": "MinTotalTests = data[\"MinTotalTests\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum ratio of pH tests to salinity tests",
+            "symbol": "MaxPHSalinityRatio",
+            "value": 1.5,
+            "shape": [],
+            "code": "MaxPHSalinityRatio = data[\"MaxPHSalinityRatio\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Ensure that the number of pH tests performed is at least the minimum required",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfPHTests} \\geq \\textup{MinPHTests}",
+            "related_variables": [
+                "NumberOfPHTests"
+            ],
+            "related_parameters": [
+                "MinPHTests"
+            ],
+            "code": "# Ensure that the number of pH tests performed is at least the minimum required\nmodel.addConstr(NumberOfPHTests >= MinPHTests, name=\"min_pH_tests\")"
+        },
+        {
+            "description": "The total number of tests (pH and salinity) must be at least MinTotalTests",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfPHTests} + \\textup{NumberOfSalinityTests} \\geq \\textup{MinTotalTests}",
+            "related_variables": [
+                "NumberOfPHTests",
+                "NumberOfSalinityTests"
+            ],
+            "related_parameters": [
+                "MinTotalTests"
+            ],
+            "code": "# Add constraint to ensure the total number of tests meets the minimum required tests\nmodel.addConstr(NumberOfPHTests + NumberOfSalinityTests >= MinTotalTests, name=\"min_total_tests\")"
+        },
+        {
+            "description": "The number of pH tests must not exceed MaxPHSalinityRatio times the number of salinity tests",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfPHTests} \\leq \\textup{MaxPHSalinityRatio} \\cdot \\textup{NumberOfSalinityTests}",
+            "related_variables": [
+                "NumberOfPHTests",
+                "NumberOfSalinityTests"
+            ],
+            "related_parameters": [
+                "MaxPHSalinityRatio"
+            ],
+            "code": "# Add constraint for the maximum number of pH tests in relation to salinity tests\nmodel.addConstr(NumberOfPHTests <= MaxPHSalinityRatio * NumberOfSalinityTests, name=\"PH_to_Salinity_Ratio\")"
+        },
+        {
+            "description": "The number of salinity tests is non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfSalinityTests} \\geq 0",
+            "related_variables": [
+                "NumberOfSalinityTests"
+            ],
+            "related_parameters": [],
+            "code": "model.addConstr(NumberOfSalinityTests >= 0, name=\"non_negative_salinity_tests\")"
+        },
+        {
+            "description": "The number of pH tests is non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfPHTests} \\geq 0",
+            "related_variables": [
+                "NumberOfPHTests"
+            ],
+            "related_parameters": [],
+            "code": "# The number of pH tests is non-negative\nmodel.addConstr(NumberOfPHTests >= 0, name=\"non_negative_pH_tests\")"
+        },
+        {
+            "description": "Minimum number of pH tests to be performed constraint",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfPHTests} \\geq \\textup{MinPHTests}",
+            "related_variables": [
+                "NumberOfPHTests"
+            ],
+            "related_parameters": [
+                "MinPHTests"
+            ],
+            "code": "# Minimum number of pH tests performed constraint\nmodel.addConstr(NumberOfPHTests >= MinPHTests, name=\"min_pH_tests\")"
+        },
+        {
+            "description": "Total minimum number of tests (pH and salinity) to be performed constraint",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfPHTests} + \\textup{NumberOfSalinityTests} \\geq \\textup{MinTotalTests}",
+            "related_variables": [
+                "NumberOfPHTests",
+                "NumberOfSalinityTests"
+            ],
+            "related_parameters": [
+                "MinTotalTests"
+            ],
+            "code": "# Add the constraint for the total minimum number of tests\nmodel.addConstr(NumberOfPHTests + NumberOfSalinityTests >= MinTotalTests, name=\"min_total_tests_constraint\")"
+        },
+        {
+            "description": "Maximum ratio of pH tests to salinity tests constraint",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfPHTests} \\leq \\textup{MaxPHSalinityRatio} \\times \\textup{NumberOfSalinityTests}",
+            "related_variables": [
+                "NumberOfPHTests",
+                "NumberOfSalinityTests"
+            ],
+            "related_parameters": [
+                "MaxPHSalinityRatio"
+            ],
+            "code": "# Maximum ratio of pH tests to salinity tests constraint\nmodel.addConstr(NumberOfPHTests <= MaxPHSalinityRatio * NumberOfSalinityTests, \"Max_PH_Salinity_Ratio_Constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The total number of pH tests performed",
+            "symbol": "NumberOfPHTests",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfPHTests = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfPHTests\")"
+        },
+        {
+            "definition": "The total number of salinity tests performed",
+            "symbol": "NumberOfSalinityTests",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfSalinityTests = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfSalinityTests\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of probes used in both salinity and pH tests",
+            "status": "coded",
+            "formulation": "\\min \\quad (\\textup{NumberOfPHTests} \\times \\textup{ProbesPH} + \\textup{NumberOfSalinityTests} \\times \\textup{ProbesSalinity})",
+            "related_variables": [
+                "NumberOfPHTests",
+                "NumberOfSalinityTests"
+            ],
+            "related_parameters": [
+                "ProbesPH",
+                "ProbesSalinity"
+            ],
+            "code": "# Set objective function\nmodel.setObjective(NumberOfPHTests * ProbesPH + NumberOfSalinityTests * ProbesSalinity, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 1001.0,
+    "log_path": "logs/log_20250413180235_nl4opt_prob_282/",
+    "problem_path": "data/nl4opt/prob_282/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_282/data.json\", \"r\") as f:\n    data = json.load(f)\n\nProbesSalinity = data[\"ProbesSalinity\"] # scalar parameter\nProbesPH = data[\"ProbesPH\"] # scalar parameter\nMinPHTests = data[\"MinPHTests\"] # scalar parameter\nMinTotalTests = data[\"MinTotalTests\"] # scalar parameter\nMaxPHSalinityRatio = data[\"MaxPHSalinityRatio\"] # scalar parameter\nNumberOfPHTests = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfPHTests\")\nNumberOfSalinityTests = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfSalinityTests\")\n\n# Ensure that the number of pH tests performed is at least the minimum required\nmodel.addConstr(NumberOfPHTests >= MinPHTests, name=\"min_pH_tests\")\n\n# Add constraint to ensure the total number of tests meets the minimum required tests\nmodel.addConstr(NumberOfPHTests + NumberOfSalinityTests >= MinTotalTests, name=\"min_total_tests\")\n\n# Add constraint for the maximum number of pH tests in relation to salinity tests\nmodel.addConstr(NumberOfPHTests <= MaxPHSalinityRatio * NumberOfSalinityTests, name=\"PH_to_Salinity_Ratio\")\n\nmodel.addConstr(NumberOfSalinityTests >= 0, name=\"non_negative_salinity_tests\")\n\n# The number of pH tests is non-negative\nmodel.addConstr(NumberOfPHTests >= 0, name=\"non_negative_pH_tests\")\n\n# Minimum number of pH tests performed constraint\nmodel.addConstr(NumberOfPHTests >= MinPHTests, name=\"min_pH_tests\")\n\n# Add the constraint for the total minimum number of tests\nmodel.addConstr(NumberOfPHTests + NumberOfSalinityTests >= MinTotalTests, name=\"min_total_tests_constraint\")\n\n# Maximum ratio of pH tests to salinity tests constraint\nmodel.addConstr(NumberOfPHTests <= MaxPHSalinityRatio * NumberOfSalinityTests, \"Max_PH_Salinity_Ratio_Constraint\")\n\n# Set objective function\nmodel.setObjective(NumberOfPHTests * ProbesPH + NumberOfSalinityTests * ProbesSalinity, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

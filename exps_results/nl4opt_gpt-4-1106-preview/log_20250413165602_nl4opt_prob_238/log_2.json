@@ -1,0 +1,190 @@
+{
+    "background": "A neighbourhood pizza restaurant sells large and medium pizzas, each requiring different amounts of dough, toppings, and baking time.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Units of dough required for a large pizza",
+            "symbol": "DoughLarge",
+            "value": 12,
+            "shape": [],
+            "code": "DoughLarge = data[\"DoughLarge\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of toppings required for a large pizza",
+            "symbol": "ToppingsLarge",
+            "value": 5,
+            "shape": [],
+            "code": "ToppingsLarge = data[\"ToppingsLarge\"] # scalar parameter"
+        },
+        {
+            "definition": "Baking time for a large pizza",
+            "symbol": "TimeLarge",
+            "value": 12,
+            "shape": [],
+            "code": "TimeLarge = data[\"TimeLarge\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of dough required for a medium pizza",
+            "symbol": "DoughMedium",
+            "value": 8,
+            "shape": [],
+            "code": "DoughMedium = data[\"DoughMedium\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of toppings required for a medium pizza",
+            "symbol": "ToppingsMedium",
+            "value": 4,
+            "shape": [],
+            "code": "ToppingsMedium = data[\"ToppingsMedium\"] # scalar parameter"
+        },
+        {
+            "definition": "Baking time for a medium pizza",
+            "symbol": "TimeMedium",
+            "value": 8,
+            "shape": [],
+            "code": "TimeMedium = data[\"TimeMedium\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum units of dough the restaurant must use",
+            "symbol": "MinDough",
+            "value": 10000,
+            "shape": [],
+            "code": "MinDough = data[\"MinDough\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum units of toppings the restaurant must use",
+            "symbol": "MinToppings",
+            "value": 4400,
+            "shape": [],
+            "code": "MinToppings = data[\"MinToppings\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of medium pizzas that must be made",
+            "symbol": "MinMedium",
+            "value": 200,
+            "shape": [],
+            "code": "MinMedium = data[\"MinMedium\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of large pizzas made should be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{LargePizzas} \\geq 0",
+            "related_variables": [
+                "LargePizzas"
+            ],
+            "related_parameters": [],
+            "code": "# Since LargePizzas is already a non-negative integer variable, there is no need to add an additional constraint.\n# The definition of LargePizzas as a non-negative integer inherently ensures that it cannot be negative."
+        },
+        {
+            "description": "The number of medium pizzas must be non-negative",
+            "status": "coded",
+            "formulation": "MediumPizzas \\geq 0",
+            "related_variables": [
+                "MediumPizzas"
+            ],
+            "related_parameters": [],
+            "code": "model.addConstr(MediumPizzas >= 0, name=\"non_negativity_medium_pizzas\")"
+        },
+        {
+            "description": "At least MinDough units of dough must be used",
+            "status": "coded",
+            "formulation": "\\textup{DoughLarge} \\times \\textup{LargePizzas} + \\textup{DoughMedium} \\times \\textup{MediumPizzas} \\geq \\textup{MinDough}",
+            "related_variables": [
+                "LargePizzas",
+                "MediumPizzas"
+            ],
+            "related_parameters": [
+                "DoughLarge",
+                "DoughMedium",
+                "MinDough"
+            ],
+            "code": "# At least MinDough units of dough must be used constraint\nmodel.addConstr(DoughLarge * LargePizzas + DoughMedium * MediumPizzas >= MinDough, name=\"MinDoughConstraint\")"
+        },
+        {
+            "description": "At least MinToppings units of toppings must be used",
+            "status": "coded",
+            "formulation": "\\textup{ToppingsLarge} \\cdot \\textup{LargePizzas} + \\textup{ToppingsMedium} \\cdot \\textup{MediumPizzas} \\geq \\textup{MinToppings}",
+            "related_variables": [
+                "LargePizzas",
+                "MediumPizzas"
+            ],
+            "related_parameters": [
+                "ToppingsLarge",
+                "ToppingsMedium",
+                "MinToppings"
+            ],
+            "code": "# At least MinToppings units of toppings must be used constraint\nmodel.addConstr(ToppingsLarge * LargePizzas + ToppingsMedium * MediumPizzas >= MinToppings, \"MinToppingsConstraint\")"
+        },
+        {
+            "description": "At least MinMedium medium pizzas must be made",
+            "status": "coded",
+            "formulation": "\\textup{MediumPizzas} \\geq \\textup{MinMedium}",
+            "related_variables": [
+                "MediumPizzas"
+            ],
+            "related_parameters": [
+                "MinMedium"
+            ],
+            "code": "# At least MinMedium medium pizzas must be made\nmodel.addConstr(MediumPizzas >= MinMedium, name=\"min_medium_pizzas\")"
+        },
+        {
+            "description": "The number of large pizzas made must be at least twice the number of medium pizzas",
+            "status": "coded",
+            "formulation": "\\textup{LargePizzas} \\geq 2 \\times \\textup{MediumPizzas}",
+            "related_variables": [
+                "LargePizzas",
+                "MediumPizzas"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint for large pizzas to be at least twice the number of medium pizzas\nmodel.addConstr(LargePizzas >= 2 * MediumPizzas, name=\"large_pizzas_at_least_twice_medium\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of large pizzas to be made",
+            "symbol": "LargePizzas",
+            "shape": [],
+            "status": "coded",
+            "code": "LargePizzas = model.addVar(vtype=gp.GRB.INTEGER, name=\"LargePizzas\")"
+        },
+        {
+            "definition": "Number of medium pizzas to be made",
+            "symbol": "MediumPizzas",
+            "shape": [],
+            "status": "coded",
+            "code": "MediumPizzas = model.addVar(vtype=gp.GRB.INTEGER, name=\"MediumPizzas\")"
+        },
+        {
+            "definition": "Total baking time for all pizzas",
+            "symbol": "TotalBakingTime",
+            "shape": [],
+            "status": "coded",
+            "code": "TotalBakingTime = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TotalBakingTime\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total baking time for all pizzas",
+            "status": "coded",
+            "formulation": "\\textup{Minimize} \\quad \\textup{TotalBakingTime}",
+            "related_variables": [
+                "LargePizzas",
+                "MediumPizzas"
+            ],
+            "related_parameters": [
+                "TimeLarge",
+                "TimeMedium"
+            ],
+            "code": "# Set objective\nmodel.setObjective(LargePizzas * TimeLarge + MediumPizzas * TimeMedium, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 10060.0,
+    "log_path": "logs/log_20250413165602_nl4opt_prob_238/",
+    "problem_path": "data/nl4opt/prob_238/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_238/data.json\", \"r\") as f:\n    data = json.load(f)\n\nDoughLarge = data[\"DoughLarge\"] # scalar parameter\nToppingsLarge = data[\"ToppingsLarge\"] # scalar parameter\nTimeLarge = data[\"TimeLarge\"] # scalar parameter\nDoughMedium = data[\"DoughMedium\"] # scalar parameter\nToppingsMedium = data[\"ToppingsMedium\"] # scalar parameter\nTimeMedium = data[\"TimeMedium\"] # scalar parameter\nMinDough = data[\"MinDough\"] # scalar parameter\nMinToppings = data[\"MinToppings\"] # scalar parameter\nMinMedium = data[\"MinMedium\"] # scalar parameter\nLargePizzas = model.addVar(vtype=gp.GRB.INTEGER, name=\"LargePizzas\")\nMediumPizzas = model.addVar(vtype=gp.GRB.INTEGER, name=\"MediumPizzas\")\nTotalBakingTime = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TotalBakingTime\")\n\n# Since LargePizzas is already a non-negative integer variable, there is no need to add an additional constraint.\n# The definition of LargePizzas as a non-negative integer inherently ensures that it cannot be negative.\n\nmodel.addConstr(MediumPizzas >= 0, name=\"non_negativity_medium_pizzas\")\n\n# At least MinDough units of dough must be used constraint\nmodel.addConstr(DoughLarge * LargePizzas + DoughMedium * MediumPizzas >= MinDough, name=\"MinDoughConstraint\")\n\n# At least MinToppings units of toppings must be used constraint\nmodel.addConstr(ToppingsLarge * LargePizzas + ToppingsMedium * MediumPizzas >= MinToppings, \"MinToppingsConstraint\")\n\n# At least MinMedium medium pizzas must be made\nmodel.addConstr(MediumPizzas >= MinMedium, name=\"min_medium_pizzas\")\n\n# Add constraint for large pizzas to be at least twice the number of medium pizzas\nmodel.addConstr(LargePizzas >= 2 * MediumPizzas, name=\"large_pizzas_at_least_twice_medium\")\n\n# Set objective\nmodel.setObjective(LargePizzas * TimeLarge + MediumPizzas * TimeMedium, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

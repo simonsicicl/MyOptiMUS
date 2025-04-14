@@ -1,0 +1,239 @@
+{
+    "background": "A florist needs to determine the optimal number of small and large bouquets to maximize the number of flowers delivered to stores given the constraints on transportation and bouquet sizes.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of flowers in a small bouquet",
+            "symbol": "SmallBouquetSize",
+            "value": 5,
+            "shape": [],
+            "code": "SmallBouquetSize = data[\"SmallBouquetSize\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of flowers in a large bouquet",
+            "symbol": "LargeBouquetSize",
+            "value": 10,
+            "shape": [],
+            "code": "LargeBouquetSize = data[\"LargeBouquetSize\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of small bouquets that can be transported",
+            "symbol": "MaxSmallBouquets",
+            "value": 80,
+            "shape": [],
+            "code": "MaxSmallBouquets = data[\"MaxSmallBouquets\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of large bouquets that can be transported",
+            "symbol": "MaxLargeBouquets",
+            "value": 50,
+            "shape": [],
+            "code": "MaxLargeBouquets = data[\"MaxLargeBouquets\"] # scalar parameter"
+        },
+        {
+            "definition": "Total maximum number of bouquets that can be transported",
+            "symbol": "MaxTotalBouquets",
+            "value": 70,
+            "shape": [],
+            "code": "MaxTotalBouquets = data[\"MaxTotalBouquets\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of large bouquets that must be transported",
+            "symbol": "MinLargeBouquets",
+            "value": 20,
+            "shape": [],
+            "code": "MinLargeBouquets = data[\"MinLargeBouquets\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum ratio of small bouquets to large bouquets",
+            "symbol": "MinSmallLargeRatio",
+            "value": 2,
+            "shape": [],
+            "code": "MinSmallLargeRatio = data[\"MinSmallLargeRatio\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of small bouquets must be non-negative",
+            "status": "coded",
+            "formulation": "x_{\\textup{Small}} \\geq 0",
+            "related_variables": [
+                "x_Small"
+            ],
+            "related_parameters": [],
+            "code": "# Since x_{Small} is a variable, its non-negativity is usually ensured by its variable type setting.\n# If there is no need to add an explicit constraint, the non-negativity should be inherent to the variable definition.\n# Hence, no additional code is required for this constraint."
+        },
+        {
+            "description": "Number of large bouquets is non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumLargeBouquets} \\geq 0",
+            "related_variables": [
+                "NumLargeBouquets"
+            ],
+            "related_parameters": [],
+            "code": "model.addConstr(NumLargeBouquets >= 0, name=\"non_negativity_large_bouquets\")"
+        },
+        {
+            "description": "At most, the maximum number of small bouquets can be transported",
+            "status": "coded",
+            "formulation": "\\textup{NumSmallBouquets} \\leq \\textup{MaxSmallBouquets}",
+            "related_variables": [
+                "NumSmallBouquets"
+            ],
+            "related_parameters": [
+                "MaxSmallBouquets"
+            ],
+            "code": "# At most, the maximum number of small bouquets can be transported\nmodel.addConstr(NumSmallBouquets <= MaxSmallBouquets, name=\"Max_Small_Bouquets\")"
+        },
+        {
+            "description": "At most MaxLargeBouquets large bouquets can be transported",
+            "status": "coded",
+            "formulation": "\\textup{NumLargeBouquets} \\leq \\textup{MaxLargeBouquets}",
+            "related_variables": [
+                "NumLargeBouquets"
+            ],
+            "related_parameters": [
+                "MaxLargeBouquets"
+            ],
+            "code": "# At most MaxLargeBouquets large bouquets can be transported\nmodel.addConstr(NumLargeBouquets <= MaxLargeBouquets, name=\"MaxLargeBouquets_constraint\")"
+        },
+        {
+            "description": "A total of at most MaxTotalBouquets bouquets can be transported",
+            "status": "coded",
+            "formulation": "\\textup{NumSmallBouquets} + \\textup{NumLargeBouquets} \\leq \\textup{MaxTotalBouquets}",
+            "related_variables": [
+                "NumSmallBouquets",
+                "NumLargeBouquets"
+            ],
+            "related_parameters": [
+                "MaxTotalBouquets"
+            ],
+            "code": "# Add constraint for the maximum total number of bouquets that can be transported\nmodel.addConstr(NumSmallBouquets + NumLargeBouquets <= MaxTotalBouquets, name=\"max_total_bouquets\")"
+        },
+        {
+            "description": "At least MinLargeBouquets large bouquets must be transported",
+            "status": "coded",
+            "formulation": "\\textup{NumLargeBouquets} \\geq \\textup{MinLargeBouquets}",
+            "related_variables": [
+                "NumLargeBouquets"
+            ],
+            "related_parameters": [
+                "MinLargeBouquets"
+            ],
+            "code": "# At least MinLargeBouquets large bouquets must be transported\nmodel.addConstr(NumLargeBouquets >= MinLargeBouquets, name=\"min_large_bouquets\")"
+        },
+        {
+            "description": "The number of small bouquets must be at least MinSmallLargeRatio times the number of large bouquets",
+            "status": "coded",
+            "formulation": "\\textup{NumSmallBouquets} \\geq \\textup{MinSmallLargeRatio} \\times \\textup{NumLargeBouquets}",
+            "related_variables": [
+                "NumSmallBouquets",
+                "NumLargeBouquets"
+            ],
+            "related_parameters": [
+                "MinSmallLargeRatio"
+            ],
+            "code": "# The number of small bouquets must be at least MinSmallLargeRatio times the number of large bouquets\nmodel.addConstr(NumSmallBouquets >= MinSmallLargeRatio * NumLargeBouquets, name=\"small_to_large_bouquet_ratio\")"
+        },
+        {
+            "description": "The number of small bouquets to large bouquets must be at least twice",
+            "status": "coded",
+            "formulation": "\\textup{NumSmallBouquets} \\geq 2 \\cdot \\textup{NumLargeBouquets}",
+            "related_variables": [
+                "NumSmallBouquets",
+                "NumLargeBouquets"
+            ],
+            "related_parameters": [
+                "MinSmallLargeRatio"
+            ],
+            "code": "# Add constraint for the minimum ratio of small to large bouquets\nmodel.addConstr(NumSmallBouquets >= MinSmallLargeRatio * NumLargeBouquets, name=\"small_to_large_ratio\")"
+        },
+        {
+            "description": "Maximum transport capacity for small bouquets",
+            "status": "coded",
+            "formulation": "\\textup{NumSmallBouquets} \\leq \\textup{MaxSmallBouquets}",
+            "related_variables": [
+                "NumSmallBouquets"
+            ],
+            "related_parameters": [
+                "MaxSmallBouquets"
+            ],
+            "code": "# Maximum transport capacity constraint for small bouquets\nmodel.addConstr(NumSmallBouquets <= MaxSmallBouquets, name=\"max_small_bouquets\")"
+        },
+        {
+            "description": "Maximum transport capacity for large bouquets",
+            "status": "coded",
+            "formulation": "\\textup{NumLargeBouquets} \\leq \\textup{MaxLargeBouquets}",
+            "related_variables": [
+                "NumLargeBouquets"
+            ],
+            "related_parameters": [
+                "MaxLargeBouquets"
+            ],
+            "code": "model.addConstr(NumLargeBouquets <= MaxLargeBouquets, name=\"max_large_bouquets_capacity\")"
+        },
+        {
+            "description": "The total number of bouquets must not exceed the maximum transport capacity",
+            "status": "coded",
+            "formulation": "\\textup{NumSmallBouquets} + \\textup{NumLargeBouquets} \\leq \\textup{MaxTotalBouquets}",
+            "related_variables": [
+                "NumSmallBouquets",
+                "NumLargeBouquets"
+            ],
+            "related_parameters": [
+                "MaxTotalBouquets"
+            ],
+            "code": "# Add constraint for the total number of bouquets not exceeding maximum transport capacity\nmodel.addConstr(NumSmallBouquets + NumLargeBouquets <= MaxTotalBouquets, \"capacity_constraint\")"
+        },
+        {
+            "description": "Minimum number of large bouquets that must be transported",
+            "status": "coded",
+            "formulation": "\\textup{NumLargeBouquets} \\geq \\textup{MinLargeBouquets}",
+            "related_variables": [
+                "NumLargeBouquets"
+            ],
+            "related_parameters": [
+                "MinLargeBouquets"
+            ],
+            "code": "# Minimum large bouquets constraint\nmodel.addConstr(NumLargeBouquets >= MinLargeBouquets, name=\"min_large_bouquets\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of small bouquets",
+            "symbol": "NumSmallBouquets",
+            "shape": [],
+            "status": "coded",
+            "code": "NumSmallBouquets = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumSmallBouquets\")"
+        },
+        {
+            "definition": "Number of large bouquets",
+            "symbol": "NumLargeBouquets",
+            "shape": [],
+            "status": "coded",
+            "code": "NumLargeBouquets = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumLargeBouquets\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total number of flowers transported to the stores",
+            "status": "coded",
+            "formulation": "\\max\\left(\\textup{SmallBouquetSize} \\cdot \\textup{NumSmallBouquets} + \\textup{LargeBouquetSize} \\cdot \\textup{NumLargeBouquets}\\right)",
+            "related_variables": [
+                "NumSmallBouquets",
+                "NumLargeBouquets"
+            ],
+            "related_parameters": [
+                "SmallBouquetSize",
+                "LargeBouquetSize"
+            ],
+            "code": "# Set objective\nmodel.setObjective(SmallBouquetSize * NumSmallBouquets + LargeBouquetSize * NumLargeBouquets, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413135317_nl4opt_prob_160/",
+    "problem_path": "data/nl4opt/prob_160/"
+}

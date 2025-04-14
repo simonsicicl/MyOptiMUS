@@ -1,0 +1,113 @@
+{
+    "background": "Assign consultants to projects in a way that minimizes the total cost, considering fixed costs per project, additional costs for assigning specific consultants to specific projects, and the maximum number of projects a consultant can handle.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Fixed cost for project j",
+            "symbol": "FixedCosts",
+            "value": "",
+            "shape": [
+                "J"
+            ],
+            "code": "FixedCosts = np.array(data[\"FixedCosts\"]) # ['J']"
+        },
+        {
+            "definition": "Additional cost for assigning consultant i to project j",
+            "symbol": "AdditionalCosts",
+            "value": "",
+            "shape": [
+                "I",
+                "J"
+            ],
+            "code": "AdditionalCosts = np.array(data[\"AdditionalCosts\"]) # ['I', 'J']"
+        },
+        {
+            "definition": "Maximum number of projects that can be assigned to a consultant",
+            "symbol": "MaxProjectsPerConsultant",
+            "value": 0,
+            "shape": [],
+            "code": "MaxProjectsPerConsultant = data[\"MaxProjectsPerConsultant\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Each consultant can handle up to MaxProjectsPerConsultant projects",
+            "status": "coded",
+            "formulation": "\\sum_{j=1}^{J} \\textup{ConsultantProjectAssignment}_{ij} \\leq \\textup{MaxProjectsPerConsultant} \\quad \\forall i \\in \\textup{Consultants}",
+            "related_variables": [
+                "ConsultantProjectAssignment"
+            ],
+            "related_parameters": [
+                "MaxProjectsPerConsultant"
+            ],
+            "code": "# Add constraints to ensure each consultant can handle up to MaxProjectsPerConsultant projects\nfor i in ConsultantProjectAssignment.keys():\n    model.addConstr(gp.quicksum(ConsultantProjectAssignment[i,j] for j in range(J)) <= MaxProjectsPerConsultant, name=f\"MaxProjectsPerConsultant_{i}\")"
+        },
+        {
+            "description": "Each project must be assigned at least one consultant",
+            "status": "coded",
+            "formulation": "\\sum_{i \\in I} \\textup{ConsultantProjectAssignment}_{ij} \\geq 1 \\quad \\forall j \\in J",
+            "related_variables": [
+                "ConsultantProjectAssignment"
+            ],
+            "related_parameters": [],
+            "code": "# Ensure each project is assigned at least one consultant\nJ = range(len(ConsultantProjectAssignment[0]))  # Assuming the variable ConsultantProjectAssignment is indexed by I x J\nfor j in J:\n    model.addConstr(gp.quicksum(ConsultantProjectAssignment[i, j] for i in I) >= 1, name=f\"min_consultants_proj_{j}\")"
+        },
+        {
+            "description": "Each consultant must be assigned to a number of projects that does not exceed the maximum number of projects they can handle",
+            "status": "coded",
+            "formulation": "\\sum_{j=1}^{J} \\textup{ConsultantProjectAssignment}_{i,j} \\leq \\textup{MaxProjectsPerConsultant} \\quad \\forall i \\in I",
+            "related_variables": [
+                "ConsultantProjectAssignment"
+            ],
+            "related_parameters": [
+                "MaxProjectsPerConsultant"
+            ],
+            "code": "# Each consultant must be assigned to at most the maximum number of projects they can handle\nfor i in I:\n    model.addConstr(gp.quicksum(ConsultantProjectAssignment[i, j] for j in J) <= MaxProjectsPerConsultant, \n                    name=f\"max_projects_consultant_{i}\")"
+        },
+        {
+            "description": "A consultant can be assigned to at most a maximum number of projects.",
+            "status": "coded",
+            "formulation": "\\sum_{j=1}^{J} \\textup{ConsultantProjectAssignment}_{ij} \\leq \\textup{MaxProjectsPerConsultant} \\quad \\forall i \\in \\{1, \\dots, I\\}",
+            "related_variables": [
+                "ConsultantProjectAssignment"
+            ],
+            "related_parameters": [
+                "MaxProjectsPerConsultant"
+            ],
+            "code": "# Add constraints to ensure that a consultant can be assigned to at most the maximum number of projects\nfor i in range(I):\n    model.addConstr(gp.quicksum(ConsultantProjectAssignment[i, j] for j in range(J)) <= MaxProjectsPerConsultant, name=f\"MaxProjectsPerConsultant_{i}\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Binary variable indicating whether consultant i is assigned to project j",
+            "symbol": "ConsultantProjectAssignment",
+            "shape": [
+                "I",
+                "J"
+            ],
+            "status": "coded",
+            "code": "ConsultantProjectAssignment = model.addVars(I, J, vtype=gp.GRB.BINARY, name=\"ConsultantProjectAssignment\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total cost of assigning consultants to projects, including fixed costs for each project and additional costs for assigning specific consultants to projects.",
+            "status": "coded",
+            "formulation": "\\min \\left( \\sum_{j=1}^{J} \\left( \\textup{FixedCosts}_{j} \\sum_{i=1}^{I} \\textup{ConsultantProjectAssignment}_{ij} \\right) + \\sum_{i=1}^{I} \\sum_{j=1}^{J} \\textup{AdditionalCosts}_{ij} \\textup{ConsultantProjectAssignment}_{ij} \\right)",
+            "related_variables": [
+                "ConsultantProjectAssignment"
+            ],
+            "related_parameters": [
+                "FixedCosts",
+                "AdditionalCosts"
+            ],
+            "code": "# Set objective\nmodel.setObjective(\n    gp.quicksum(FixedCosts[j] * gp.quicksum(ConsultantProjectAssignment[i, j] for i in range(I)) for j in range(J)) +\n    gp.quicksum(AdditionalCosts[i, j] * ConsultantProjectAssignment[i, j] for i in range(I) for j in range(J)),\n    gp.GRB.MINIMIZE\n)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413094310_nlp4lp_64/",
+    "problem_path": "data/nlp4lp/64/"
+}

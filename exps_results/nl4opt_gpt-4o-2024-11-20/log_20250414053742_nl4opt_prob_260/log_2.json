@@ -1,0 +1,202 @@
+{
+    "background": "A research group has two methods, A and B, for producing fabric and plastic, both of which consume a special element. The goal is to meet minimum production requirements for fabric and plastic with limited availability of the special element.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Units of fabric produced by method A per hour",
+            "symbol": "FabricA",
+            "value": 25,
+            "shape": [],
+            "code": "FabricA = data[\"FabricA\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of fabric produced by method B per hour",
+            "symbol": "FabricB",
+            "value": 45,
+            "shape": [],
+            "code": "FabricB = data[\"FabricB\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of plastic produced by method A per hour",
+            "symbol": "PlasticA",
+            "value": 14,
+            "shape": [],
+            "code": "PlasticA = data[\"PlasticA\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of plastic produced by method B per hour",
+            "symbol": "PlasticB",
+            "value": 25,
+            "shape": [],
+            "code": "PlasticB = data[\"PlasticB\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of the special element required by method A",
+            "symbol": "ElementA",
+            "value": 60,
+            "shape": [],
+            "code": "ElementA = data[\"ElementA\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of the special element required by method B",
+            "symbol": "ElementB",
+            "value": 65,
+            "shape": [],
+            "code": "ElementB = data[\"ElementB\"] # scalar parameter"
+        },
+        {
+            "definition": "Total available units of the special element",
+            "symbol": "TotalElement",
+            "value": 3500,
+            "shape": [],
+            "code": "TotalElement = data[\"TotalElement\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum required units of fabric that must be produced",
+            "symbol": "MinFabric",
+            "value": 1400,
+            "shape": [],
+            "code": "MinFabric = data[\"MinFabric\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum required units of plastic that must be produced",
+            "symbol": "MinPlastic",
+            "value": 1000,
+            "shape": [],
+            "code": "MinPlastic = data[\"MinPlastic\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "At least MinFabric units of fabric must be produced using methods A and B.",
+            "status": "coded",
+            "formulation": "\\\\textup{FabricA} \\\\cdot \\\\textup{HoursA} + \\\\textup{FabricB} \\\\cdot \\\\textup{HoursB} \\\\geq \\\\textup{MinFabric}",
+            "related_variables": [
+                "HoursA",
+                "HoursB"
+            ],
+            "related_parameters": [
+                "FabricA",
+                "FabricB",
+                "MinFabric"
+            ],
+            "code": "# Add fabric production constraint\nmodel.addConstr(FabricA * HoursA + FabricB * HoursB >= MinFabric, name=\"fabric_production\")"
+        },
+        {
+            "description": "The total plastic production from both methods A and B must meet or exceed the minimum required units of plastic (MinPlastic).",
+            "status": "coded",
+            "formulation": "\\\\textup{PlasticA} \\\\cdot \\\\textup{HoursA} + \\\\textup{PlasticB} \\\\cdot \\\\textup{HoursB} \\\\geq \\\\textup{MinPlastic}",
+            "related_variables": [
+                "HoursA",
+                "HoursB"
+            ],
+            "related_parameters": [
+                "PlasticA",
+                "PlasticB",
+                "MinPlastic"
+            ],
+            "code": "# Add constraint to meet or exceed the minimum required plastic production\nmodel.addConstr(PlasticA * HoursA + PlasticB * HoursB >= MinPlastic, name=\"min_plastic_production\")"
+        },
+        {
+            "description": "The number of hours using method A must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{HoursA} \\geq 0",
+            "related_variables": [
+                "HoursA"
+            ],
+            "related_parameters": [],
+            "code": "# No additional code is required because the variable \"HoursA\" is already declared non-negative as its default lower bound in gurobipy is 0."
+        },
+        {
+            "description": "Non-negativity constraint on the number of hours allocated to method B.",
+            "status": "coded",
+            "formulation": "\\\\textup{HoursB} \\\\geq 0",
+            "related_variables": [
+                "HoursB"
+            ],
+            "related_parameters": [],
+            "code": "# No additional code needed since non-negativity is inherently ensured by the variable's default lower bound (0) in Gurobi."
+        },
+        {
+            "description": "Ensure that the total fabric produced meets or exceeds the minimum required fabric production.",
+            "status": "coded",
+            "formulation": "\\textup{HoursA} \\times \\textup{FabricA} + \\textup{HoursB} \\times \\textup{FabricB} \\geq \\textup{MinFabric}",
+            "related_variables": [
+                "HoursA",
+                "HoursB"
+            ],
+            "related_parameters": [
+                "FabricA",
+                "FabricB",
+                "MinFabric"
+            ],
+            "code": "# Add constraint to ensure total fabric production meets or exceeds the minimum required\nmodel.addConstr(HoursA * FabricA + HoursB * FabricB >= MinFabric, name=\"fabric_production_requirement\")"
+        },
+        {
+            "description": "Ensure that the total plastic produced meets or exceeds the minimum required plastic production.",
+            "status": "coded",
+            "formulation": "\\textup{HoursA} \\times \\textup{PlasticA} + \\textup{HoursB} \\times \\textup{PlasticB} \\geq \\textup{MinPlastic}",
+            "related_variables": [
+                "HoursA",
+                "HoursB"
+            ],
+            "related_parameters": [
+                "PlasticA",
+                "PlasticB",
+                "MinPlastic"
+            ],
+            "code": "# Add constraint to ensure total plastic production meets or exceeds the minimum required\nmodel.addConstr(HoursA * PlasticA + HoursB * PlasticB >= MinPlastic, name=\"min_plastic_production\")"
+        },
+        {
+            "description": "Ensure that the total consumption of the special element does not exceed availability.",
+            "status": "coded",
+            "formulation": "\\textup{HoursA} \\times \\textup{ElementA} + \\textup{HoursB} \\times \\textup{ElementB} \\leq \\textup{TotalElement}",
+            "related_variables": [
+                "HoursA",
+                "HoursB"
+            ],
+            "related_parameters": [
+                "ElementA",
+                "ElementB",
+                "TotalElement"
+            ],
+            "code": "# Add constraint to ensure total consumption of the special element does not exceed availability\nmodel.addConstr(HoursA * ElementA + HoursB * ElementB <= TotalElement, name=\"special_element_availability\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of hours allocated to method A for production",
+            "symbol": "HoursA",
+            "shape": [],
+            "status": "coded",
+            "code": "HoursA = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"HoursA\")"
+        },
+        {
+            "definition": "The number of hours allocated to method B for production",
+            "symbol": "HoursB",
+            "shape": [],
+            "status": "coded",
+            "code": "HoursB = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"HoursB\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total production time required to meet minimum fabric and plastic production requirements.",
+            "status": "coded",
+            "formulation": "\\min \\quad \\textup{HoursA} + \\textup{HoursB}",
+            "related_variables": [
+                "HoursA",
+                "HoursB"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(HoursA + HoursB, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 40.0,
+    "log_path": "logs/log_20250414053742_nl4opt_prob_260/",
+    "problem_path": "data/nl4opt/prob_260/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_260/data.json\", \"r\") as f:\n    data = json.load(f)\n\nFabricA = data[\"FabricA\"] # scalar parameter\nFabricB = data[\"FabricB\"] # scalar parameter\nPlasticA = data[\"PlasticA\"] # scalar parameter\nPlasticB = data[\"PlasticB\"] # scalar parameter\nElementA = data[\"ElementA\"] # scalar parameter\nElementB = data[\"ElementB\"] # scalar parameter\nTotalElement = data[\"TotalElement\"] # scalar parameter\nMinFabric = data[\"MinFabric\"] # scalar parameter\nMinPlastic = data[\"MinPlastic\"] # scalar parameter\nHoursA = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"HoursA\")\nHoursB = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"HoursB\")\n\n# Add fabric production constraint\nmodel.addConstr(FabricA * HoursA + FabricB * HoursB >= MinFabric, name=\"fabric_production\")\n\n# Add constraint to meet or exceed the minimum required plastic production\nmodel.addConstr(PlasticA * HoursA + PlasticB * HoursB >= MinPlastic, name=\"min_plastic_production\")\n\n# No additional code is required because the variable \"HoursA\" is already declared non-negative as its default lower bound in gurobipy is 0.\n\n# No additional code needed since non-negativity is inherently ensured by the variable's default lower bound (0) in Gurobi.\n\n# Add constraint to ensure total fabric production meets or exceeds the minimum required\nmodel.addConstr(HoursA * FabricA + HoursB * FabricB >= MinFabric, name=\"fabric_production_requirement\")\n\n# Add constraint to ensure total plastic production meets or exceeds the minimum required\nmodel.addConstr(HoursA * PlasticA + HoursB * PlasticB >= MinPlastic, name=\"min_plastic_production\")\n\n# Add constraint to ensure total consumption of the special element does not exceed availability\nmodel.addConstr(HoursA * ElementA + HoursB * ElementB <= TotalElement, name=\"special_element_availability\")\n\n# Set objective\nmodel.setObjective(HoursA + HoursB, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

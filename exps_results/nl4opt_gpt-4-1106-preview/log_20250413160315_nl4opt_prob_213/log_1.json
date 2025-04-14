@@ -1,0 +1,164 @@
+{
+    "background": "A fashion company sells regular and premium handbags, each yielding different profits while having different manufacturing costs within a budget and a maximum sales capacity.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Profit per regular handbag sold",
+            "symbol": "ProfitRegular",
+            "value": 30,
+            "shape": [],
+            "code": "ProfitRegular = data[\"ProfitRegular\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit per premium handbag sold",
+            "symbol": "ProfitPremium",
+            "value": 180,
+            "shape": [],
+            "code": "ProfitPremium = data[\"ProfitPremium\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost of manufacturing a regular handbag",
+            "symbol": "CostRegular",
+            "value": 200,
+            "shape": [],
+            "code": "CostRegular = data[\"CostRegular\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost of manufacturing a premium handbag",
+            "symbol": "CostPremium",
+            "value": 447,
+            "shape": [],
+            "code": "CostPremium = data[\"CostPremium\"] # scalar parameter"
+        },
+        {
+            "definition": "Total monthly budget for manufacturing",
+            "symbol": "Budget",
+            "value": 250000,
+            "shape": [],
+            "code": "Budget = data[\"Budget\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of handbags that can be sold per month",
+            "symbol": "MaxHandbags",
+            "value": 475,
+            "shape": [],
+            "code": "MaxHandbags = data[\"MaxHandbags\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Number of regular handbags sold must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{RegularHandbagsSold} \\geq 0",
+            "related_variables": [
+                "RegularHandbagsSold"
+            ],
+            "related_parameters": [],
+            "code": "# Since RegularHandbagsSold is already defined as an integer variable, no further code is needed to ensure its non-negativity.\n# The constraint \"RegularHandbagsSold >= 0\" is inherently satisfied by the variable type definition."
+        },
+        {
+            "description": "Number of premium handbags sold is non-negative",
+            "status": "coded",
+            "formulation": "\\textup{PremiumHandbagsSold} \\geq 0",
+            "related_variables": [
+                "PremiumHandbagsSold"
+            ],
+            "related_parameters": [],
+            "code": "# Since PremiumHandbagsSold is already an integer variable, no code is needed to enforce non-negativity\n# The Gurobi optimizer enforces the non-negative constraint by default for integer variables."
+        },
+        {
+            "description": "Total cost of manufacturing handbags does not exceed Budget",
+            "status": "coded",
+            "formulation": "\\textup{CostRegular} \\times \\textup{RegularHandbagsSold} + \\textup{CostPremium} \\times \\textup{PremiumHandbagsSold} \\leq \\textup{Budget}",
+            "related_variables": [
+                "RegularHandbagsSold",
+                "PremiumHandbagsSold"
+            ],
+            "related_parameters": [
+                "CostRegular",
+                "CostPremium",
+                "Budget"
+            ],
+            "code": "# Add constraint for the total cost of manufacturing handbags not to exceed the budget\nmodel.addConstr(CostRegular * RegularHandbagsSold + CostPremium * PremiumHandbagsSold <= Budget, name=\"budget_constraint\")"
+        },
+        {
+            "description": "The total number of handbags sold, which includes both regular and premium handbags, cannot exceed the maximum allowed handbags per month",
+            "status": "coded",
+            "formulation": "\\textup{RegularHandbagsSold} + \\textup{PremiumHandbagsSold} \\leq \\textup{MaxHandbags}",
+            "related_variables": [
+                "RegularHandbagsSold",
+                "PremiumHandbagsSold"
+            ],
+            "related_parameters": [
+                "MaxHandbags"
+            ],
+            "code": "model.addConstr(RegularHandbagsSold + PremiumHandbagsSold <= MaxHandbags, name=\"Max_Handbags_Sold_Constraint\")"
+        },
+        {
+            "description": "Total cost of manufacturing handbags must not exceed the budget",
+            "status": "coded",
+            "formulation": "\\textup{CostRegular} \\times \\textup{RegularHandbagsSold} + \\textup{CostPremium} \\times \\textup{PremiumHandbagsSold} \\leq \\textup{Budget}",
+            "related_variables": [
+                "RegularHandbagsSold",
+                "PremiumHandbagsSold"
+            ],
+            "related_parameters": [
+                "CostRegular",
+                "CostPremium",
+                "Budget"
+            ],
+            "code": "# Total cost of manufacturing handbags must not exceed the budget\nmodel.addConstr(CostRegular * RegularHandbagsSold + CostPremium * PremiumHandbagsSold <= Budget, name=\"budget_constraint\")"
+        },
+        {
+            "description": "Total number of handbags sold should not exceed the maximum sales capacity",
+            "status": "coded",
+            "formulation": "\\textup{RegularHandbagsSold} + \\textup{PremiumHandbagsSold} \\leq \\textup{MaxHandbags}",
+            "related_variables": [
+                "RegularHandbagsSold",
+                "PremiumHandbagsSold"
+            ],
+            "related_parameters": [
+                "MaxHandbags"
+            ],
+            "code": "# Constraint: Total number of handbags sold should not exceed the maximum sales capacity\nmodel.addConstr(RegularHandbagsSold + PremiumHandbagsSold <= MaxHandbags, name=\"max_sales_capacity\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of regular handbags sold",
+            "symbol": "RegularHandbagsSold",
+            "shape": [],
+            "status": "coded",
+            "code": "RegularHandbagsSold = model.addVar(vtype=gp.GRB.INTEGER, name=\"RegularHandbagsSold\")"
+        },
+        {
+            "definition": "Number of premium handbags sold",
+            "symbol": "PremiumHandbagsSold",
+            "shape": [],
+            "status": "coded",
+            "code": "PremiumHandbagsSold = model.addVar(vtype=gp.GRB.INTEGER, name=\"PremiumHandbagsSold\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the company's monthly profit from selling regular and premium handbags",
+            "status": "coded",
+            "formulation": "\\max (\\textup{ProfitRegular} \\times \\textup{RegularHandbagsSold} + \\textup{ProfitPremium} \\times \\textup{PremiumHandbagsSold})",
+            "related_variables": [
+                "RegularHandbagsSold",
+                "PremiumHandbagsSold"
+            ],
+            "related_parameters": [
+                "ProfitRegular",
+                "ProfitPremium"
+            ],
+            "code": "# Set objective\nmodel.setObjective(ProfitRegular * RegularHandbagsSold + ProfitPremium * PremiumHandbagsSold, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413160315_nl4opt_prob_213/",
+    "problem_path": "data/nl4opt/prob_213/"
+}

@@ -1,0 +1,163 @@
+{
+    "background": "A senior home is scheduling the intake of spinach and soybeans for elderly to meet certain nutritional fibre and iron requirements while maximizing caloric intake.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Units of fibre in a cup of spinach",
+            "symbol": "FibreSpinach",
+            "value": 100,
+            "shape": [],
+            "code": "FibreSpinach = data[\"FibreSpinach\"] # scalar parameter"
+        },
+        {
+            "definition": "Milligrams of iron in a cup of spinach",
+            "symbol": "IronSpinach",
+            "value": 5,
+            "shape": [],
+            "code": "IronSpinach = data[\"IronSpinach\"] # scalar parameter"
+        },
+        {
+            "definition": "Calories in a cup of spinach",
+            "symbol": "CaloriesSpinach",
+            "value": 30,
+            "shape": [],
+            "code": "CaloriesSpinach = data[\"CaloriesSpinach\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of fibre in a cup of soybeans",
+            "symbol": "FibreSoybeans",
+            "value": 80,
+            "shape": [],
+            "code": "FibreSoybeans = data[\"FibreSoybeans\"] # scalar parameter"
+        },
+        {
+            "definition": "Milligrams of iron in a cup of soybeans",
+            "symbol": "IronSoybeans",
+            "value": 12,
+            "shape": [],
+            "code": "IronSoybeans = data[\"IronSoybeans\"] # scalar parameter"
+        },
+        {
+            "definition": "Calories in a cup of soybeans",
+            "symbol": "CaloriesSoybeans",
+            "value": 100,
+            "shape": [],
+            "code": "CaloriesSoybeans = data[\"CaloriesSoybeans\"] # scalar parameter"
+        },
+        {
+            "definition": "Total minimum required units of fibre",
+            "symbol": "TotalFibre",
+            "value": 12000,
+            "shape": [],
+            "code": "TotalFibre = data[\"TotalFibre\"] # scalar parameter"
+        },
+        {
+            "definition": "Total minimum required milligrams of iron",
+            "symbol": "TotalIron",
+            "value": 300,
+            "shape": [],
+            "code": "TotalIron = data[\"TotalIron\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of cups of spinach must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{CupsOfSpinach} \\geq 0",
+            "related_variables": [
+                "CupsOfSpinach"
+            ],
+            "related_parameters": [],
+            "code": "# Constraint: Number of cups of spinach must be non-negative\nmodel.addConstr(CupsOfSpinach >= 0, \"non_negativity_spinach\")"
+        },
+        {
+            "description": "Number of cups of soybeans must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{CupsOfSoybeans} \\geq 0",
+            "related_variables": [
+                "CupsOfSoybeans"
+            ],
+            "related_parameters": [],
+            "code": "model.addConstr(CupsOfSoybeans >= 0, name=\"non_negativity_soybeans\")"
+        },
+        {
+            "description": "Number of cups of spinach must exceed the number of cups of soybeans",
+            "status": "coded",
+            "formulation": "\\textup{CupsOfSpinach} \\geq \\textup{CupsOfSoybeans} + 1",
+            "related_variables": [
+                "CupsOfSpinach",
+                "CupsOfSoybeans"
+            ],
+            "related_parameters": [],
+            "code": "model.addConstr(CupsOfSpinach >= CupsOfSoybeans + 1, name=\"spinach_vs_soybeans\")"
+        },
+        {
+            "description": "The total intake of fibre from cups of spinach and cups of soybeans must be at least the total required units of fibre",
+            "status": "coded",
+            "formulation": "\\textup{FibreSpinach} \\cdot \\textup{CupsOfSpinach} + \\textup{FibreSoybeans} \\cdot \\textup{CupsOfSoybeans} \\geq \\textup{TotalFibre}",
+            "related_variables": [
+                "CupsOfSpinach",
+                "CupsOfSoybeans"
+            ],
+            "related_parameters": [
+                "FibreSpinach",
+                "FibreSoybeans",
+                "TotalFibre"
+            ],
+            "code": "# Total fibre intake constraint\nmodel.addConstr(FibreSpinach * CupsOfSpinach + FibreSoybeans * CupsOfSoybeans >= TotalFibre, \"total_fibre_intake\")"
+        },
+        {
+            "description": "The total intake of iron from spinach and soybeans must meet the minimum required iron intake",
+            "status": "coded",
+            "formulation": "\\textup{IronSpinach} \\cdot \\textup{CupsOfSpinach} + \\textup{IronSoybeans} \\cdot \\textup{CupsOfSoybeans} \\geq \\textup{TotalIron}",
+            "related_variables": [
+                "CupsOfSpinach",
+                "CupsOfSoybeans"
+            ],
+            "related_parameters": [
+                "IronSpinach",
+                "IronSoybeans",
+                "TotalIron"
+            ],
+            "code": "# Ensure the total intake of iron from spinach and soybeans meets the minimum required iron intake\nmodel.addConstr(IronSpinach * CupsOfSpinach + IronSoybeans * CupsOfSoybeans >= TotalIron, name=\"iron_intake_requirement\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of cups of spinach",
+            "symbol": "CupsOfSpinach",
+            "shape": [],
+            "status": "coded",
+            "code": "CupsOfSpinach = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"CupsOfSpinach\")"
+        },
+        {
+            "definition": "Number of cups of soybeans",
+            "symbol": "CupsOfSoybeans",
+            "shape": [],
+            "status": "coded",
+            "code": "CupsOfSoybeans = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"CupsOfSoybeans\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the seniors' total caloric intake from cups of spinach and soybeans",
+            "status": "coded",
+            "formulation": "\\textup{Maximize} \\quad \\textup{CaloriesIntake} = \\textup{CupsOfSpinach} \\times \\textup{CaloriesSpinach} + \\textup{CupsOfSoybeans} \\times \\textup{CaloriesSoybeans}",
+            "related_variables": [
+                "CupsOfSpinach",
+                "CupsOfSoybeans"
+            ],
+            "related_parameters": [
+                "CaloriesSpinach",
+                "CaloriesSoybeans"
+            ],
+            "code": "# Set objective\nmodel.setObjective(CupsOfSpinach * CaloriesSpinach + CupsOfSoybeans * CaloriesSoybeans, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413175653_nl4opt_prob_276/",
+    "problem_path": "data/nl4opt/prob_276/"
+}

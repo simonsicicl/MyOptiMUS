@@ -1,0 +1,198 @@
+{
+    "background": "An aquarium hosts shows featuring otters and dolphins, each performing tricks for treats. There are constraints on the number of performers and treats available.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of tricks performed by an otter at a time",
+            "symbol": "OtterTricks",
+            "value": 3,
+            "shape": [],
+            "code": "OtterTricks = data[\"OtterTricks\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of treats required by an otter to perform its tricks",
+            "symbol": "OtterTreats",
+            "value": 3,
+            "shape": [],
+            "code": "OtterTreats = data[\"OtterTreats\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of tricks performed by a dolphin at a time",
+            "symbol": "DolphinTricks",
+            "value": 1,
+            "shape": [],
+            "code": "DolphinTricks = data[\"DolphinTricks\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of treats required by a dolphin to perform its trick",
+            "symbol": "DolphinTreats",
+            "value": 5,
+            "shape": [],
+            "code": "DolphinTreats = data[\"DolphinTreats\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of dolphins that must be used",
+            "symbol": "MinDolphins",
+            "value": 10,
+            "shape": [],
+            "code": "MinDolphins = data[\"MinDolphins\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum proportion of performers that can be otters",
+            "symbol": "MaxOtterProportion",
+            "value": 0.3,
+            "shape": [],
+            "code": "MaxOtterProportion = data[\"MaxOtterProportion\"] # scalar parameter"
+        },
+        {
+            "definition": "Total number of treats available",
+            "symbol": "TotalTreats",
+            "value": 200,
+            "shape": [],
+            "code": "TotalTreats = data[\"TotalTreats\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of otters used in the shows must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfOtters} \\geq 0",
+            "related_variables": [
+                "NumberOfOtters"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint for non-negative number of otters\nmodel.addConstr(NumberOfOtters >= 0, name=\"non_negative_otters\")"
+        },
+        {
+            "description": "Number of dolphins used should be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfDolphins} \\geq 0",
+            "related_variables": [
+                "NumberOfDolphins"
+            ],
+            "related_parameters": [],
+            "code": "# Constraint to ensure the number of dolphins used is non-negative\nmodel.addConstr(NumberOfDolphins >= 0, name=\"non_negative_dolphins\")"
+        },
+        {
+            "description": "At least MinDolphins dolphins must be used in the shows",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfDolphins} \\geq \\textup{MinDolphins}",
+            "related_variables": [
+                "NumberOfDolphins"
+            ],
+            "related_parameters": [
+                "MinDolphins"
+            ],
+            "code": "# Add constraint for the minimum number of dolphins used in the shows\nmodel.addConstr(NumberOfDolphins >= MinDolphins, name=\"min_dolphins_constraint\")"
+        },
+        {
+            "description": "At most MaxOtterProportion of the performers can be otters",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfOtters} \\leq \\textup{MaxOtterProportion} \\times (\\textup{NumberOfOtters} + \\textup{NumberOfDolphins})",
+            "related_variables": [
+                "NumberOfOtters",
+                "NumberOfDolphins"
+            ],
+            "related_parameters": [
+                "MaxOtterProportion"
+            ],
+            "code": "# At most MaxOtterProportion of the performers can be otters constraint\nmodel.addConstr(NumberOfOtters <= MaxOtterProportion * (NumberOfOtters + NumberOfDolphins), name=\"MaxOtterProportionConstraint\")"
+        },
+        {
+            "description": "The total treats used by otters and dolphins cannot exceed the total available treats",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfOtters} \\times \\textup{OtterTricks} \\times \\textup{OtterTreats} + \\textup{NumberOfDolphins} \\times \\textup{DolphinTricks} \\times \\textup{DolphinTreats} \\leq \\textup{TotalTreats}",
+            "related_variables": [
+                "NumberOfOtters",
+                "NumberOfDolphins"
+            ],
+            "related_parameters": [
+                "OtterTricks",
+                "OtterTreats",
+                "DolphinTricks",
+                "DolphinTreats",
+                "TotalTreats"
+            ],
+            "code": "# Total treats used by otters and dolphins cannot exceed the total available treats\nmodel.addConstr(NumberOfOtters * OtterTricks * OtterTreats + NumberOfDolphins * DolphinTricks * DolphinTreats <= TotalTreats, \"treats_limit\")"
+        },
+        {
+            "description": "The total number of treats used by otters and dolphins cannot exceed the total number of treats available",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfOtters} \\times \\textup{OtterTreats} + \\textup{NumberOfDolphins} \\times \\textup{DolphinTreats} \\leq \\textup{TotalTreats}",
+            "related_variables": [
+                "NumberOfOtters",
+                "NumberOfDolphins"
+            ],
+            "related_parameters": [
+                "OtterTreats",
+                "DolphinTreats",
+                "TotalTreats"
+            ],
+            "code": "# Treats constraint for otters and dolphins\nmodel.addConstr(NumberOfOtters * OtterTreats + NumberOfDolphins * DolphinTreats <= TotalTreats, \"treats_limit\")"
+        },
+        {
+            "description": "The number of dolphins used in the show must be at least the minimum required",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfDolphins} \\geq \\textup{MinDolphins}",
+            "related_variables": [
+                "NumberOfDolphins"
+            ],
+            "related_parameters": [
+                "MinDolphins"
+            ],
+            "code": "# Constraint for minimum number of dolphins used in the show\nmodel.addConstr(NumberOfDolphins >= MinDolphins, name=\"min_dolphins_constraint\")"
+        },
+        {
+            "description": "The maximum proportion of performers that can be otters is limited by MaxOtterProportion",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfOtters} \\leq \\textup{MaxOtterProportion} \\times (\\textup{NumberOfOtters} + \\textup{NumberOfDolphins})",
+            "related_variables": [
+                "NumberOfOtters",
+                "NumberOfDolphins"
+            ],
+            "related_parameters": [
+                "MaxOtterProportion"
+            ],
+            "code": "# Proportion of performers that can be otters constraint\nmodel.addConstr(NumberOfOtters <= MaxOtterProportion * (NumberOfOtters + NumberOfDolphins), name=\"OtterProportionConstraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of otters used in the shows",
+            "symbol": "NumberOfOtters",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfOtters = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfOtters\")"
+        },
+        {
+            "definition": "The number of dolphins used in the shows",
+            "symbol": "NumberOfDolphins",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfDolphins = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfDolphins\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total number of tricks performed by otters and dolphins",
+            "status": "coded",
+            "formulation": "\\textup{Maximize} \\quad \\textup{NumberOfOtters} \\times \\textup{OtterTricks} + \\textup{NumberOfDolphins} \\times \\textup{DolphinTricks}",
+            "related_variables": [
+                "NumberOfOtters",
+                "NumberOfDolphins"
+            ],
+            "related_parameters": [
+                "OtterTricks",
+                "DolphinTricks"
+            ],
+            "code": "# Set objective\nmodel.setObjective(NumberOfOtters * OtterTricks + NumberOfDolphins * DolphinTricks, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 50.0,
+    "log_path": "logs/log_20250413134558_nl4opt_prob_155/",
+    "problem_path": "data/nl4opt/prob_155/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_155/data.json\", \"r\") as f:\n    data = json.load(f)\n\nOtterTricks = data[\"OtterTricks\"] # scalar parameter\nOtterTreats = data[\"OtterTreats\"] # scalar parameter\nDolphinTricks = data[\"DolphinTricks\"] # scalar parameter\nDolphinTreats = data[\"DolphinTreats\"] # scalar parameter\nMinDolphins = data[\"MinDolphins\"] # scalar parameter\nMaxOtterProportion = data[\"MaxOtterProportion\"] # scalar parameter\nTotalTreats = data[\"TotalTreats\"] # scalar parameter\nNumberOfOtters = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfOtters\")\nNumberOfDolphins = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfDolphins\")\n\n# Add constraint for non-negative number of otters\nmodel.addConstr(NumberOfOtters >= 0, name=\"non_negative_otters\")\n\n# Constraint to ensure the number of dolphins used is non-negative\nmodel.addConstr(NumberOfDolphins >= 0, name=\"non_negative_dolphins\")\n\n# Add constraint for the minimum number of dolphins used in the shows\nmodel.addConstr(NumberOfDolphins >= MinDolphins, name=\"min_dolphins_constraint\")\n\n# At most MaxOtterProportion of the performers can be otters constraint\nmodel.addConstr(NumberOfOtters <= MaxOtterProportion * (NumberOfOtters + NumberOfDolphins), name=\"MaxOtterProportionConstraint\")\n\n# Total treats used by otters and dolphins cannot exceed the total available treats\nmodel.addConstr(NumberOfOtters * OtterTricks * OtterTreats + NumberOfDolphins * DolphinTricks * DolphinTreats <= TotalTreats, \"treats_limit\")\n\n# Treats constraint for otters and dolphins\nmodel.addConstr(NumberOfOtters * OtterTreats + NumberOfDolphins * DolphinTreats <= TotalTreats, \"treats_limit\")\n\n# Constraint for minimum number of dolphins used in the show\nmodel.addConstr(NumberOfDolphins >= MinDolphins, name=\"min_dolphins_constraint\")\n\n# Proportion of performers that can be otters constraint\nmodel.addConstr(NumberOfOtters <= MaxOtterProportion * (NumberOfOtters + NumberOfDolphins), name=\"OtterProportionConstraint\")\n\n# Set objective\nmodel.setObjective(NumberOfOtters * OtterTricks + NumberOfDolphins * DolphinTricks, gp.GRB.MAXIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

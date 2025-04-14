@@ -1,0 +1,236 @@
+{
+    "background": "A lighting company makes two types of lamps: desk-lamps and night-lamps.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Minimum demand of desk-lamps per day",
+            "symbol": "MinDesk",
+            "value": 30,
+            "shape": [],
+            "code": "MinDesk = data[\"MinDesk\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum demand of night-lamps per day",
+            "symbol": "MinNight",
+            "value": 50,
+            "shape": [],
+            "code": "MinNight = data[\"MinNight\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum production of desk-lamps per day",
+            "symbol": "MaxDesk",
+            "value": 150,
+            "shape": [],
+            "code": "MaxDesk = data[\"MaxDesk\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum production of night-lamps per day",
+            "symbol": "MaxNight",
+            "value": 180,
+            "shape": [],
+            "code": "MaxNight = data[\"MaxNight\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum total production of lamps per day to satisfy contract",
+            "symbol": "MinTotal",
+            "value": 100,
+            "shape": [],
+            "code": "MinTotal = data[\"MinTotal\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit per desk-lamp",
+            "symbol": "ProfitDesk",
+            "value": 5,
+            "shape": [],
+            "code": "ProfitDesk = data[\"ProfitDesk\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit per night-lamp",
+            "symbol": "ProfitNight",
+            "value": 8,
+            "shape": [],
+            "code": "ProfitNight = data[\"ProfitNight\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of desk-lamps produced per day must be an integer.",
+            "status": "coded",
+            "formulation": "\\textup{DeskLampsProducedPerDay} \\in \\mathbb{Z}_{\\geq 0}",
+            "related_variables": [
+                "DeskLampsProducedPerDay"
+            ],
+            "related_parameters": [],
+            "code": "# No code needed since the variable DeskLampsProducedPerDay is already defined as INTEGER"
+        },
+        {
+            "description": "The number of night-lamps produced per day must be an integer value",
+            "status": "coded",
+            "formulation": "\\textup{NightLampsProducedPerDay} \\in \\mathbb{Z}",
+            "related_variables": [
+                "NightLampsProducedPerDay"
+            ],
+            "related_parameters": [],
+            "code": "# The number of night-lamps produced per day must be an integer value\n# The constraint is already handled by the variable type definition.\n# Hence, no additional constraint code is required."
+        },
+        {
+            "description": "The number of desk-lamps produced per day must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{DeskLampsProducedPerDay} \\geq 0",
+            "related_variables": [
+                "DeskLampsProducedPerDay"
+            ],
+            "related_parameters": [],
+            "code": "# Since DeskLampsProducedPerDay is already an integer variable, we only need to add a constraint to ensure non-negativity.\nmodel.addConstr(DeskLampsProducedPerDay >= 0, name=\"non_negative_desklamps\")"
+        },
+        {
+            "description": "The number of night-lamps produced per day must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NightLampsProducedPerDay} \\geq 0",
+            "related_variables": [
+                "NightLampsProducedPerDay"
+            ],
+            "related_parameters": [],
+            "code": "# Constraint: The number of night-lamps produced per day must be non-negative\nmodel.addConstr(NightLampsProducedPerDay >= 0, name=\"non_negative_night_lamps\")"
+        },
+        {
+            "description": "The daily production of desk-lamps must meet the minimum demand",
+            "status": "coded",
+            "formulation": "\\textup{DeskLampsProducedPerDay} \\geq \\textup{MinDesk}",
+            "related_variables": [
+                "DeskLampsProducedPerDay"
+            ],
+            "related_parameters": [
+                "MinDesk"
+            ],
+            "code": "# Constraint for minimum daily production of desk-lamps\nmodel.addConstr(DeskLampsProducedPerDay >= MinDesk, name=\"min_daily_desk_lamps\")"
+        },
+        {
+            "description": "The minimum production constraint for night-lamps",
+            "status": "coded",
+            "formulation": "\\textup{NightLampsProducedPerDay} \\geq \\textup{MinNight}",
+            "related_variables": [
+                "NightLampsProducedPerDay"
+            ],
+            "related_parameters": [
+                "MinNight"
+            ],
+            "code": "# Add minimum production constraint for night-lamps\nmodel.addConstr(NightLampsProducedPerDay >= MinNight, name=\"min_night_lamp_production\")"
+        },
+        {
+            "description": "The maximum production constraint for desk-lamps per day",
+            "status": "coded",
+            "formulation": "\\textup{DeskLampsProducedPerDay} \\leq \\textup{MaxDesk}",
+            "related_variables": [
+                "DeskLampsProducedPerDay"
+            ],
+            "related_parameters": [
+                "MaxDesk"
+            ],
+            "code": "# Add the maximum production constraint for desk-lamps per day\nmodel.addConstr(DeskLampsProducedPerDay <= MaxDesk, name=\"max_desk_lamps_produced_per_day\")"
+        },
+        {
+            "description": "The maximum production constraint for night-lamps per day",
+            "status": "coded",
+            "formulation": "\\textup{NightLampsProducedPerDay} \\leq \\textup{MaxNight}",
+            "related_variables": [
+                "NightLampsProducedPerDay"
+            ],
+            "related_parameters": [
+                "MaxNight"
+            ],
+            "code": "# Add the maximum production constraint for night-lamps per day\nmodel.addConstr(NightLampsProducedPerDay <= MaxNight, name=\"max_night_lamps_produced_per_day\")"
+        },
+        {
+            "description": "A minimum of MinTotal lamps (desk-lamps and night-lamps combined) must be made each day",
+            "status": "coded",
+            "formulation": "\\textup{DeskLampsProducedPerDay} + \\textup{NightLampsProducedPerDay} \\geq \\textup{MinTotal}",
+            "related_variables": [
+                "DeskLampsProducedPerDay",
+                "NightLampsProducedPerDay"
+            ],
+            "related_parameters": [
+                "MinTotal"
+            ],
+            "code": "# Add constraint for minimum total production of lamps per day\nmodel.addConstr(DeskLampsProducedPerDay + NightLampsProducedPerDay >= MinTotal, \"min_total_production\")"
+        },
+        {
+            "description": "Desk-lamps produced per day must be at least the minimum demand and at most the maximum production",
+            "status": "coded",
+            "formulation": "\\textup{MinDesk} \\leq \\textup{DeskLampsProducedPerDay} \\leq \\textup{MaxDesk}",
+            "related_variables": [
+                "DeskLampsProducedPerDay"
+            ],
+            "related_parameters": [
+                "MinDesk",
+                "MaxDesk"
+            ],
+            "code": "# Add demand and production constraints for desk-lamps\nmodel.addConstr(DeskLampsProducedPerDay >= MinDesk, name=\"min_desk_lamps_demand\")\nmodel.addConstr(DeskLampsProducedPerDay <= MaxDesk, name=\"max_desk_lamps_production\")"
+        },
+        {
+            "description": "Night-lamps produced per day must be at least the minimum demand and at most the maximum production",
+            "status": "coded",
+            "formulation": "\\textup{MinNight} \\leq \\textup{NightLampsProducedPerDay} \\leq \\textup{MaxNight}",
+            "related_variables": [
+                "NightLampsProducedPerDay"
+            ],
+            "related_parameters": [
+                "MinNight",
+                "MaxNight"
+            ],
+            "code": "# Add constraint for the production of night-lamps to be within the minimum demand and maximum production limits per day\nmodel.addConstr(NightLampsProducedPerDay >= MinNight, name=\"min_night_lamps_demand\")\nmodel.addConstr(NightLampsProducedPerDay <= MaxNight, name=\"max_night_lamps_production\")"
+        },
+        {
+            "description": "The total production of lamps per day must meet the minimum total production to satisfy the contract",
+            "status": "coded",
+            "formulation": "\\textup{DeskLampsProducedPerDay} + \\textup{NightLampsProducedPerDay} \\geq \\textup{MinTotal}",
+            "related_variables": [
+                "DeskLampsProducedPerDay",
+                "NightLampsProducedPerDay"
+            ],
+            "related_parameters": [
+                "MinTotal"
+            ],
+            "code": "# Constraint for minimum total production of lamps per day\nmodel.addConstr(DeskLampsProducedPerDay + NightLampsProducedPerDay >= MinTotal, name=\"min_total_production\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of desk-lamps produced per day",
+            "symbol": "DeskLampsProducedPerDay",
+            "shape": [],
+            "status": "coded",
+            "code": "DeskLampsProducedPerDay = model.addVar(vtype=gp.GRB.INTEGER, name=\"DeskLampsProducedPerDay\")"
+        },
+        {
+            "definition": "The number of night-lamps produced per day",
+            "symbol": "NightLampsProducedPerDay",
+            "shape": [],
+            "status": "coded",
+            "code": "NightLampsProducedPerDay = model.addVar(vtype=gp.GRB.INTEGER, name=\"NightLampsProducedPerDay\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total daily profit from desk-lamps and night-lamps",
+            "status": "coded",
+            "formulation": "\\max (\\textup{ProfitDesk} \\times \\textup{DeskLampsProducedPerDay} + \\textup{ProfitNight} \\times \\textup{NightLampsProducedPerDay})",
+            "related_variables": [
+                "DeskLampsProducedPerDay",
+                "NightLampsProducedPerDay"
+            ],
+            "related_parameters": [
+                "ProfitDesk",
+                "ProfitNight"
+            ],
+            "code": "# Define variables\nDeskLampsProducedPerDay = model.addVar(vtype=gp.GRB.INTEGER, name=\"DeskLampsProducedPerDay\")\nNightLampsProducedPerDay = model.addVar(vtype=gp.GRB.INTEGER, name=\"NightLampsProducedPerDay\")\n\n# Define parameters\nProfitDesk = data[\"ProfitDesk\"] # scalar parameter\nProfitNight = data[\"ProfitNight\"] # scalar parameter\n\n# Set objective\nmodel.setObjective(ProfitDesk * DeskLampsProducedPerDay + ProfitNight * NightLampsProducedPerDay, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 4,
+    "error_message": null,
+    "obj_val": "infeasible or unbounded",
+    "log_path": "logs/log_20250414023140_nl4opt_prob_4/",
+    "problem_path": "data/nl4opt/prob_4/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_4/data.json\", \"r\") as f:\n    data = json.load(f)\n\nMinDesk = data[\"MinDesk\"] # scalar parameter\nMinNight = data[\"MinNight\"] # scalar parameter\nMaxDesk = data[\"MaxDesk\"] # scalar parameter\nMaxNight = data[\"MaxNight\"] # scalar parameter\nMinTotal = data[\"MinTotal\"] # scalar parameter\nProfitDesk = data[\"ProfitDesk\"] # scalar parameter\nProfitNight = data[\"ProfitNight\"] # scalar parameter\nDeskLampsProducedPerDay = model.addVar(vtype=gp.GRB.INTEGER, name=\"DeskLampsProducedPerDay\")\nNightLampsProducedPerDay = model.addVar(vtype=gp.GRB.INTEGER, name=\"NightLampsProducedPerDay\")\n\n# No code needed since the variable DeskLampsProducedPerDay is already defined as INTEGER\n\n# The number of night-lamps produced per day must be an integer value\n# The constraint is already handled by the variable type definition.\n# Hence, no additional constraint code is required.\n\n# Since DeskLampsProducedPerDay is already an integer variable, we only need to add a constraint to ensure non-negativity.\nmodel.addConstr(DeskLampsProducedPerDay >= 0, name=\"non_negative_desklamps\")\n\n# Constraint: The number of night-lamps produced per day must be non-negative\nmodel.addConstr(NightLampsProducedPerDay >= 0, name=\"non_negative_night_lamps\")\n\n# Constraint for minimum daily production of desk-lamps\nmodel.addConstr(DeskLampsProducedPerDay >= MinDesk, name=\"min_daily_desk_lamps\")\n\n# Add minimum production constraint for night-lamps\nmodel.addConstr(NightLampsProducedPerDay >= MinNight, name=\"min_night_lamp_production\")\n\n# Add the maximum production constraint for desk-lamps per day\nmodel.addConstr(DeskLampsProducedPerDay <= MaxDesk, name=\"max_desk_lamps_produced_per_day\")\n\n# Add the maximum production constraint for night-lamps per day\nmodel.addConstr(NightLampsProducedPerDay <= MaxNight, name=\"max_night_lamps_produced_per_day\")\n\n# Add constraint for minimum total production of lamps per day\nmodel.addConstr(DeskLampsProducedPerDay + NightLampsProducedPerDay >= MinTotal, \"min_total_production\")\n\n# Add demand and production constraints for desk-lamps\nmodel.addConstr(DeskLampsProducedPerDay >= MinDesk, name=\"min_desk_lamps_demand\")\nmodel.addConstr(DeskLampsProducedPerDay <= MaxDesk, name=\"max_desk_lamps_production\")\n\n# Add constraint for the production of night-lamps to be within the minimum demand and maximum production limits per day\nmodel.addConstr(NightLampsProducedPerDay >= MinNight, name=\"min_night_lamps_demand\")\nmodel.addConstr(NightLampsProducedPerDay <= MaxNight, name=\"max_night_lamps_production\")\n\n# Constraint for minimum total production of lamps per day\nmodel.addConstr(DeskLampsProducedPerDay + NightLampsProducedPerDay >= MinTotal, name=\"min_total_production\")\n\n# Define variables\nDeskLampsProducedPerDay = model.addVar(vtype=gp.GRB.INTEGER, name=\"DeskLampsProducedPerDay\")\nNightLampsProducedPerDay = model.addVar(vtype=gp.GRB.INTEGER, name=\"NightLampsProducedPerDay\")\n\n# Define parameters\nProfitDesk = data[\"ProfitDesk\"] # scalar parameter\nProfitNight = data[\"ProfitNight\"] # scalar parameter\n\n# Set objective\nmodel.setObjective(ProfitDesk * DeskLampsProducedPerDay + ProfitNight * NightLampsProducedPerDay, gp.GRB.MAXIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

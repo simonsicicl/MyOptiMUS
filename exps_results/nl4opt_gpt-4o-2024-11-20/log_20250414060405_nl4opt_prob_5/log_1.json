@@ -1,0 +1,177 @@
+{
+    "background": "Mr. Roberts wants to invest in two industries: telecom and healthcare.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Total amount of money Mr. Roberts has for investment",
+            "symbol": "TotalInvestment",
+            "value": 100000,
+            "shape": [],
+            "code": "TotalInvestment = data[\"TotalInvestment\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum amount that can be invested in telecom",
+            "symbol": "MaxTelecomInvestment",
+            "value": 70000,
+            "shape": [],
+            "code": "MaxTelecomInvestment = data[\"MaxTelecomInvestment\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum ratio of investment in telecom compared to healthcare",
+            "symbol": "MinTelecomRatio",
+            "value": 3,
+            "shape": [],
+            "code": "MinTelecomRatio = data[\"MinTelecomRatio\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit rate for the telecom investment",
+            "symbol": "ProfitTelecom",
+            "value": 0.03,
+            "shape": [],
+            "code": "ProfitTelecom = data[\"ProfitTelecom\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit rate for the healthcare investment",
+            "symbol": "ProfitHealthcare",
+            "value": 0.01,
+            "shape": [],
+            "code": "ProfitHealthcare = data[\"ProfitHealthcare\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The investment in telecom must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{InvestmentTelecom} \\geq 0",
+            "related_variables": [
+                "InvestmentTelecom"
+            ],
+            "related_parameters": [],
+            "code": "# No code is needed: Gurobi variables by default have non-negativity constraints unless explicitly set otherwise."
+        },
+        {
+            "description": "The investment in healthcare must be non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{InvestmentHealthcare} \\\\geq 0",
+            "related_variables": [
+                "InvestmentHealthcare"
+            ],
+            "related_parameters": [],
+            "code": "# The investment in healthcare must be non-negative\nmodel.addConstr(InvestmentHealthcare >= 0, name=\"non_negative_investment_healthcare\")"
+        },
+        {
+            "description": "The total investment in telecom and healthcare cannot exceed the total investment amount available.",
+            "status": "coded",
+            "formulation": "\\\\textup{InvestmentTelecom} + \\\\textup{InvestmentHealthcare} \\\\leq \\\\textup{TotalInvestment}",
+            "related_variables": [
+                "InvestmentTelecom",
+                "InvestmentHealthcare"
+            ],
+            "related_parameters": [
+                "TotalInvestment"
+            ],
+            "code": "# Add constraint to ensure the total investment in telecom and healthcare does not exceed the available total investment amount\nmodel.addConstr(InvestmentTelecom + InvestmentHealthcare <= TotalInvestment, name=\"investment_limit\")"
+        },
+        {
+            "description": "The investment in telecom must be at least MinTelecomRatio times the investment in healthcare.",
+            "status": "coded",
+            "formulation": "\\textup{InvestmentTelecom} \\geq \\textup{MinTelecomRatio} \\cdot \\textup{InvestmentHealthcare}",
+            "related_variables": [
+                "InvestmentTelecom",
+                "InvestmentHealthcare"
+            ],
+            "related_parameters": [
+                "MinTelecomRatio"
+            ],
+            "code": "# Investment in telecom must be at least MinTelecomRatio times the investment in healthcare\nmodel.addConstr(InvestmentTelecom >= MinTelecomRatio * InvestmentHealthcare, name=\"telecom_investment_minimum\")"
+        },
+        {
+            "description": "The investment in the telecom industry must not exceed the maximum allowable telecom investment.",
+            "status": "coded",
+            "formulation": "\\textup{InvestmentTelecom} \\leq \\textup{MaxTelecomInvestment}",
+            "related_variables": [
+                "InvestmentTelecom"
+            ],
+            "related_parameters": [
+                "MaxTelecomInvestment"
+            ],
+            "code": "# Add telecom investment constraint\nmodel.addConstr(InvestmentTelecom <= MaxTelecomInvestment, name=\"telecom_investment_limit\")"
+        },
+        {
+            "description": "The total investment in both industries cannot exceed the total available investment budget.",
+            "status": "coded",
+            "formulation": "\\textup{InvestmentTelecom} + \\textup{InvestmentHealthcare} \\leq \\textup{TotalInvestment}",
+            "related_variables": [
+                "InvestmentTelecom",
+                "InvestmentHealthcare"
+            ],
+            "related_parameters": [
+                "TotalInvestment"
+            ],
+            "code": "# Add constraint to ensure the total investment in both industries does not exceed the total investment budget\nmodel.addConstr(InvestmentTelecom + InvestmentHealthcare <= TotalInvestment, name=\"total_investment_constraint\")"
+        },
+        {
+            "description": "The investment in the telecom sector cannot exceed the maximum allowable investment for telecom.",
+            "status": "coded",
+            "formulation": "\\textup{InvestmentTelecom} \\leq \\textup{MaxTelecomInvestment}",
+            "related_variables": [
+                "InvestmentTelecom"
+            ],
+            "related_parameters": [
+                "MaxTelecomInvestment"
+            ],
+            "code": "# Add telecom investment constraint\nmodel.addConstr(InvestmentTelecom <= MaxTelecomInvestment, name=\"telecom_investment_limit\")"
+        },
+        {
+            "description": "The investment in the telecom industry must be at least the minimum ratio of investment relative to healthcare investment.",
+            "status": "coded",
+            "formulation": "\\textup{InvestmentTelecom} \\geq \\textup{MinTelecomRatio} \\times \\textup{InvestmentHealthcare}",
+            "related_variables": [
+                "InvestmentTelecom",
+                "InvestmentHealthcare"
+            ],
+            "related_parameters": [
+                "MinTelecomRatio"
+            ],
+            "code": "# Add minimum telecom investment ratio constraint\nmodel.addConstr(InvestmentTelecom >= MinTelecomRatio * InvestmentHealthcare, name=\"min_telecom_investment\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The investment amount in the telecom industry",
+            "symbol": "InvestmentTelecom",
+            "shape": [],
+            "status": "coded",
+            "code": "InvestmentTelecom = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"InvestmentTelecom\")"
+        },
+        {
+            "definition": "The investment amount in the healthcare industry",
+            "symbol": "InvestmentHealthcare",
+            "shape": [],
+            "status": "coded",
+            "code": "InvestmentHealthcare = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"InvestmentHealthcare\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize Mr. Roberts' profit from investments in telecom and healthcare.",
+            "status": "coded",
+            "formulation": "\\textup{Maximize:} \\quad \\textup{InvestmentTelecom} \\times \\textup{ProfitTelecom} + \\textup{InvestmentHealthcare} \\times \\textup{ProfitHealthcare}",
+            "related_variables": [
+                "InvestmentTelecom",
+                "InvestmentHealthcare"
+            ],
+            "related_parameters": [
+                "ProfitTelecom",
+                "ProfitHealthcare"
+            ],
+            "code": "# Set objective\nmodel.setObjective(InvestmentTelecom * ProfitTelecom + InvestmentHealthcare * ProfitHealthcare, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250414060405_nl4opt_prob_5/",
+    "problem_path": "data/nl4opt/prob_5/"
+}

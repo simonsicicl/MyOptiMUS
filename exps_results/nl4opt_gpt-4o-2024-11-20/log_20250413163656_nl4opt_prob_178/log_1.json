@@ -1,0 +1,320 @@
+{
+    "background": "A village is hosting a banquet where bike and car transportations are provided, and the objective is to minimize the number of bikes while meeting the transportation needs.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Seating capacity of a bike",
+            "symbol": "BikeCapacity",
+            "value": 3,
+            "shape": [],
+            "code": "BikeCapacity = data[\"BikeCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Seating capacity of a car",
+            "symbol": "CarCapacity",
+            "value": 5,
+            "shape": [],
+            "code": "CarCapacity = data[\"CarCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum proportion of transport vehicles that can be cars",
+            "symbol": "MaxCarProportion",
+            "value": 0.4,
+            "shape": [],
+            "code": "MaxCarProportion = data[\"MaxCarProportion\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of people that need transport",
+            "symbol": "MinPeople",
+            "value": 500,
+            "shape": [],
+            "code": "MinPeople = data[\"MinPeople\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of bikes must be non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{NumberOfBikes} \\\\geq 0",
+            "related_variables": [
+                "NumberOfBikes"
+            ],
+            "related_parameters": [],
+            "code": "# The variable \"NumberOfBikes\" is non-negative due to its default lower bound (0) in Gurobi."
+        },
+        {
+            "description": "The number of cars used for transportation must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfCars} \\geq 0",
+            "related_variables": [
+                "NumberOfCars"
+            ],
+            "related_parameters": [],
+            "code": "# No additional code needed since the variable \"NumberOfCars\" is non-negative by default (continuous variables in Gurobi are non-negative unless otherwise specified)."
+        },
+        {
+            "description": "The number of people transported by bikes cannot exceed the total capacity of the bikes used.",
+            "status": "coded",
+            "formulation": "\\textup{PeopleTransportedByBikes} \\leq \\textup{BikeCapacity} \\times \\textup{NumberOfBikes}",
+            "related_variables": [
+                "PeopleTransportedByBikes",
+                "NumberOfBikes"
+            ],
+            "related_parameters": [
+                "BikeCapacity"
+            ],
+            "code": "# Add constraint to ensure the number of people transported by bikes does not exceed bike capacity\nmodel.addConstr(PeopleTransportedByBikes <= BikeCapacity * NumberOfBikes, name=\"people_bike_capacity\")"
+        },
+        {
+            "description": "The total people transported by cars cannot exceed the seating capacity of all cars.",
+            "status": "coded",
+            "formulation": "\\textup{PeopleTransportedByCars} \\leq \\textup{NumberOfCars} \\cdot \\textup{CarCapacity}",
+            "related_variables": [
+                "PeopleTransportedByCars",
+                "NumberOfCars"
+            ],
+            "related_parameters": [
+                "CarCapacity"
+            ],
+            "code": "# Adding constraint to ensure total people transported by cars does not exceed total seating capacity\nmodel.addConstr(PeopleTransportedByCars <= NumberOfCars * CarCapacity, name=\"transport_capacity\")"
+        },
+        {
+            "description": "At most MaxCarProportion of the total number of vehicles can be cars.",
+            "status": "coded",
+            "formulation": "\\\\textup{NumberOfCars} \\\\leq \\\\textup{MaxCarProportion} \\\\cdot \\\\textup{TotalVehicles}",
+            "related_variables": [
+                "NumberOfCars",
+                "TotalVehicles"
+            ],
+            "related_parameters": [
+                "MaxCarProportion"
+            ],
+            "code": "# Add constraint to ensure the number of cars is at most MaxCarProportion of total vehicles\nmodel.addConstr(NumberOfCars <= MaxCarProportion * TotalVehicles, name=\"max_car_proportion\")"
+        },
+        {
+            "description": "The total number of people transported must be at least the minimum required number of people (MinPeople).",
+            "status": "coded",
+            "formulation": "\\\\textup{PeopleTransportedByBikes} + \\\\textup{PeopleTransportedByCars} \\\\geq \\\\textup{MinPeople}",
+            "related_variables": [
+                "PeopleTransportedByBikes",
+                "PeopleTransportedByCars"
+            ],
+            "related_parameters": [
+                "MinPeople"
+            ],
+            "code": "model.addConstr(PeopleTransportedByBikes + PeopleTransportedByCars >= MinPeople, name=\"min_people_transport\")"
+        },
+        {
+            "description": "The total capacity of bikes and cars must meet or exceed the minimum number of people requiring transportation.",
+            "status": "coded",
+            "formulation": "\\\\textup{BikeCapacity} \\\\cdot \\\\textup{NumberOfBikes} + \\\\textup{CarCapacity} \\\\cdot \\\\textup{NumberOfCars} \\\\geq \\\\textup{MinPeople}",
+            "related_variables": [
+                "NumberOfBikes",
+                "NumberOfCars"
+            ],
+            "related_parameters": [
+                "BikeCapacity",
+                "CarCapacity",
+                "MinPeople"
+            ],
+            "code": "# Add transportation capacity constraint\nmodel.addConstr(BikeCapacity * NumberOfBikes + CarCapacity * NumberOfCars >= MinPeople, name=\"transportation_capacity\")"
+        },
+        {
+            "description": "The number of cars used must be within the maximum proportion allowed relative to total vehicles (bikes and cars).",
+            "status": "coded",
+            "formulation": "\\\\textup{NumberOfCars} \\\\leq \\\\textup{MaxCarProportion} \\\\cdot (\\\\textup{NumberOfBikes} + \\\\textup{NumberOfCars})",
+            "related_variables": [
+                "NumberOfBikes",
+                "NumberOfCars"
+            ],
+            "related_parameters": [
+                "MaxCarProportion"
+            ],
+            "code": "# Add constraint to ensure the number of cars is within the allowed maximum proportion\nmodel.addConstr(NumberOfCars <= MaxCarProportion * (NumberOfBikes + NumberOfCars), name=\"max_car_proportion\")"
+        },
+        {
+            "description": "The total number of people transported must equal the sum of people transported by bikes and cars.",
+            "status": "coded",
+            "formulation": "\\textup{MinPeople} \\leq \\textup{PeopleTransportedByBikes} + \\textup{CarCapacity} \\times \\textup{NumberOfCars}",
+            "related_variables": [
+                "PeopleTransportedByBikes",
+                "NumberOfCars"
+            ],
+            "related_parameters": [
+                "MinPeople",
+                "CarCapacity"
+            ],
+            "code": "# Add constraint for minimum people transported\nmodel.addConstr(PeopleTransportedByBikes + CarCapacity * NumberOfCars >= MinPeople, name=\"min_people_transport\")"
+        },
+        {
+            "description": "The total number of people transported (by cars and bikes) must satisfy the minimum required transport demand.",
+            "status": "coded",
+            "formulation": "\\textup{PeopleTransportedByCars} + \\textup{PeopleTransportedByBikes} \\geq \\textup{MinPeople}",
+            "related_variables": [
+                "PeopleTransportedByCars",
+                "PeopleTransportedByBikes"
+            ],
+            "related_parameters": [
+                "MinPeople"
+            ],
+            "code": "# Add transport demand constraint\nmodel.addConstr(PeopleTransportedByCars + PeopleTransportedByBikes >= MinPeople, name=\"transport_demand_requirement\")"
+        },
+        {
+            "description": "The total number of vehicles is equal to the sum of bikes and cars.",
+            "status": "coded",
+            "formulation": "\\\\textup{TotalVehicles} = \\\\textup{NumberOfBikes} + \\\\textup{NumberOfCars}",
+            "related_variables": [
+                "TotalVehicles",
+                "NumberOfBikes",
+                "NumberOfCars"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint ensuring the total number of vehicles equals the sum of bikes and cars\nmodel.addConstr(TotalVehicles == NumberOfBikes + NumberOfCars, name=\"total_vehicles_constraint\")"
+        },
+        {
+            "description": "Ensure that the total number of people transported by bikes reflects the number of bikes times the capacity of each bike.",
+            "status": "coded",
+            "formulation": "\\\\textup{PeopleTransportedByBikes} = \\\\textup{BikeCapacity} \\\\cdot \\\\textup{NumberOfBikes}",
+            "related_variables": [
+                "PeopleTransportedByBikes",
+                "NumberOfBikes"
+            ],
+            "related_parameters": [
+                "BikeCapacity"
+            ],
+            "code": "# Add constraint to ensure total people transported by bikes equals number of bikes times bike capacity\nmodel.addConstr(PeopleTransportedByBikes == BikeCapacity * NumberOfBikes, name=\"bike_transportation_constraint\")"
+        },
+        {
+            "description": "Ensure that the total number of people transported by cars reflects the number of cars times the capacity of each car.",
+            "status": "coded",
+            "formulation": "\\\\textup{PeopleTransportedByCars} = \\\\textup{CarCapacity} \\\\cdot \\\\textup{NumberOfCars}",
+            "related_variables": [
+                "PeopleTransportedByCars",
+                "NumberOfCars"
+            ],
+            "related_parameters": [
+                "CarCapacity"
+            ],
+            "code": "# Add constraint to ensure the total number of people transported by cars matches the number of cars multiplied by the car capacity\nmodel.addConstr(PeopleTransportedByCars == CarCapacity * NumberOfCars, name=\"people_transportation\")"
+        },
+        {
+            "description": "The total number of people transported by bikes and cars must meet the minimum transportation requirement.",
+            "status": "coded",
+            "formulation": "\\textup{PeopleTransportedByBikes} + \\textup{PeopleTransportedByCars} \\\\geq \\textup{MinPeople}",
+            "related_variables": [
+                "PeopleTransportedByBikes",
+                "PeopleTransportedByCars"
+            ],
+            "related_parameters": [
+                "MinPeople"
+            ],
+            "code": "# Add constraint to ensure the total number of people transported by bikes and cars meets the minimum transportation requirement\nmodel.addConstr(PeopleTransportedByBikes + PeopleTransportedByCars >= MinPeople, name=\"min_transportation_requirement\")"
+        },
+        {
+            "description": "The number of people transported by bikes is equal to the total number of bikes multiplied by the seating capacity of a bike.",
+            "status": "coded",
+            "formulation": "\\textup{PeopleTransportedByBikes} = \\textup{NumberOfBikes} \\\\times \\textup{BikeCapacity}",
+            "related_variables": [
+                "PeopleTransportedByBikes",
+                "NumberOfBikes"
+            ],
+            "related_parameters": [
+                "BikeCapacity"
+            ],
+            "code": "# Add constraint ensuring people transported by bikes equals the number of bikes times bike capacity\nmodel.addConstr(PeopleTransportedByBikes == NumberOfBikes * BikeCapacity, name=\"bike_transport_constraint\")"
+        },
+        {
+            "description": "The number of people transported by cars is equal to the total number of cars multiplied by the seating capacity of a car.",
+            "status": "coded",
+            "formulation": "\\textup{PeopleTransportedByCars} = \\textup{NumberOfCars} \\\\times \\textup{CarCapacity}",
+            "related_variables": [
+                "PeopleTransportedByCars",
+                "NumberOfCars"
+            ],
+            "related_parameters": [
+                "CarCapacity"
+            ],
+            "code": "# Add constraint to ensure the number of people transported by cars is equal to \n# the total number of cars multiplied by the seating capacity of a car\nmodel.addConstr(PeopleTransportedByCars == NumberOfCars * CarCapacity, name=\"PeopleTransportedByCars_Constraint\")"
+        },
+        {
+            "description": "The proportion of cars must not exceed the maximum car proportion.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfCars} \\\\leq \\textup{MaxCarProportion} \\\\times (\\textup{NumberOfBikes} + \\textup{NumberOfCars})",
+            "related_variables": [
+                "NumberOfCars",
+                "NumberOfBikes"
+            ],
+            "related_parameters": [
+                "MaxCarProportion"
+            ],
+            "code": "# Add constraint to ensure the proportion of cars does not exceed the maximum allowed proportion\nmodel.addConstr(\n    NumberOfCars <= MaxCarProportion * (NumberOfBikes + NumberOfCars), \n    name=\"max_car_proportion\"\n)"
+        },
+        {
+            "description": "The total number of vehicles is the sum of bikes and cars.",
+            "status": "coded",
+            "formulation": "\\textup{TotalVehicles} = \\textup{NumberOfBikes} + \\textup{NumberOfCars}",
+            "related_variables": [
+                "TotalVehicles",
+                "NumberOfBikes",
+                "NumberOfCars"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint to define TotalVehicles as the sum of NumberOfBikes and NumberOfCars\nmodel.addConstr(TotalVehicles == NumberOfBikes + NumberOfCars, name=\"total_vehicles_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of bikes used to provide transportation.",
+            "symbol": "NumberOfBikes",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfBikes = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfBikes\")"
+        },
+        {
+            "definition": "The number of cars used to provide transportation.",
+            "symbol": "NumberOfCars",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfCars = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfCars\")"
+        },
+        {
+            "definition": "The total number of people transported by bikes.",
+            "symbol": "PeopleTransportedByBikes",
+            "shape": [],
+            "status": "coded",
+            "code": "PeopleTransportedByBikes = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"PeopleTransportedByBikes\")"
+        },
+        {
+            "definition": "The total number of people transported by cars.",
+            "symbol": "PeopleTransportedByCars",
+            "shape": [],
+            "status": "coded",
+            "code": "PeopleTransportedByCars = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"PeopleTransportedByCars\")"
+        },
+        {
+            "definition": "The total number of vehicles used, which is the sum of bikes and cars.",
+            "symbol": "TotalVehicles",
+            "shape": [],
+            "status": "coded",
+            "code": "TotalVehicles = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TotalVehicles\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of bikes needed for transportation.",
+            "status": "coded",
+            "formulation": "\\min \\\\quad \\textup{NumberOfBikes}",
+            "related_variables": [
+                "NumberOfBikes"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(NumberOfBikes, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413163656_nl4opt_prob_178/",
+    "problem_path": "data/nl4opt/prob_178/"
+}

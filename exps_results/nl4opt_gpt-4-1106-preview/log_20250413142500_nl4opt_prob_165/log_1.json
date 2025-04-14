@@ -1,0 +1,256 @@
+{
+    "background": "A meal service company plans deliveries using electric bikes and scooters. Each type of vehicle has a capacity for meals and requires a certain amount of charge.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Capacity of a bike in number of meals",
+            "symbol": "BikeCapacity",
+            "value": 8,
+            "shape": [],
+            "code": "BikeCapacity = data[\"BikeCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of charge required by a bike",
+            "symbol": "BikeCharge",
+            "value": 3,
+            "shape": [],
+            "code": "BikeCharge = data[\"BikeCharge\"] # scalar parameter"
+        },
+        {
+            "definition": "Capacity of a scooter in number of meals",
+            "symbol": "ScooterCapacity",
+            "value": 5,
+            "shape": [],
+            "code": "ScooterCapacity = data[\"ScooterCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of charge required by a scooter",
+            "symbol": "ScooterCharge",
+            "value": 2,
+            "shape": [],
+            "code": "ScooterCharge = data[\"ScooterCharge\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum proportion of electric vehicles that can be bikes",
+            "symbol": "MaxBikeRatio",
+            "value": 0.3,
+            "shape": [],
+            "code": "MaxBikeRatio = data[\"MaxBikeRatio\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of scooters that must be used",
+            "symbol": "MinScooters",
+            "value": 20,
+            "shape": [],
+            "code": "MinScooters = data[\"MinScooters\"] # scalar parameter"
+        },
+        {
+            "definition": "Total units of charge available",
+            "symbol": "TotalCharge",
+            "value": 200,
+            "shape": [],
+            "code": "TotalCharge = data[\"TotalCharge\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of bikes must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfBikes} \\geq 0",
+            "related_variables": [
+                "NumberOfBikes"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint to ensure the number of bikes is non-negative\nmodel.addConstr(NumberOfBikes >= 0, \"numberOfBikes_nonneg\")"
+        },
+        {
+            "description": "The number of scooters used for deliveries must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfScooters} \\geq 0",
+            "related_variables": [
+                "NumberOfScooters"
+            ],
+            "related_parameters": [],
+            "code": "# Since NumberOfScooters has already been defined as an integer variable, \n# we just need to add a constraint to ensure it is non-negative\nmodel.addConstr(NumberOfScooters >= 0, name=\"non_negative_scooters\")"
+        },
+        {
+            "description": "Each bike must carry a non-negative number of meals and cannot exceed its capacity",
+            "status": "coded",
+            "formulation": "\\textup{MealsPerBike} \\geq 0 \\quad \\textup{and} \\quad \\textup{MealsPerBike} \\leq \\textup{BikeCapacity}",
+            "related_variables": [
+                "MealsPerBike"
+            ],
+            "related_parameters": [
+                "BikeCapacity"
+            ],
+            "code": "# Add constraint to ensure non-negative and within capacity meals per bike\nmodel.addConstr(MealsPerBike >= 0, name=\"min_meals\")\nmodel.addConstr(MealsPerBike <= BikeCapacity, name=\"max_capacity\")"
+        },
+        {
+            "description": "Each scooter can carry a non-negative number of meals, up to its capacity.",
+            "status": "coded",
+            "formulation": "0 \\leq \\textup{MealsPerScooter} \\leq \\textup{ScooterCapacity}",
+            "related_variables": [
+                "MealsPerScooter"
+            ],
+            "related_parameters": [
+                "ScooterCapacity"
+            ],
+            "code": "# Add scooter meal capacity constraints\nmodel.addConstr(0 <= MealsPerScooter, name=\"min_meals_per_scooter\")\nmodel.addConstr(MealsPerScooter <= ScooterCapacity, name=\"max_meals_per_scooter\")"
+        },
+        {
+            "description": "The total charge used by bikes and scooters cannot exceed the total available charge",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfBikes} \\cdot \\textup{BikeCharge} + \\textup{NumberOfScooters} \\cdot \\textup{ScooterCharge} \\leq \\textup{TotalCharge}",
+            "related_variables": [
+                "NumberOfBikes",
+                "NumberOfScooters"
+            ],
+            "related_parameters": [
+                "BikeCharge",
+                "ScooterCharge",
+                "TotalCharge"
+            ],
+            "code": "# Add constraint for the total charge used by bikes and scooters not exceeding the total available charge\nmodel.addConstr(NumberOfBikes * BikeCharge + NumberOfScooters * ScooterCharge <= TotalCharge, name=\"charge_capacity\")"
+        },
+        {
+            "description": "At most MaxBikeRatio of the electric vehicles can be bikes",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfBikes} \\leq \\textup{MaxBikeRatio} \\cdot (\\textup{NumberOfBikes} + \\textup{NumberOfScooters})",
+            "related_variables": [
+                "NumberOfBikes",
+                "NumberOfScooters"
+            ],
+            "related_parameters": [
+                "MaxBikeRatio"
+            ],
+            "code": "# At most MaxBikeRatio of the electric vehicles can be bikes\nmodel.addConstr(NumberOfBikes <= MaxBikeRatio * (NumberOfBikes + NumberOfScooters), name=\"MaxBikeRatioConstraint\")"
+        },
+        {
+            "description": "At least MinScooters must be used for the deliveries",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfScooters} \\geq \\textup{MinScooters}",
+            "related_variables": [
+                "NumberOfScooters"
+            ],
+            "related_parameters": [
+                "MinScooters"
+            ],
+            "code": "# Add constraint for the minimum number of scooters\nmodel.addConstr(NumberOfScooters >= MinScooters, name=\"min_scooters\")"
+        },
+        {
+            "description": "The number of meals carried by a bike must not exceed the bike's capacity",
+            "status": "coded",
+            "formulation": "\\textup{MealsPerBike} \\leq \\textup{BikeCapacity}",
+            "related_variables": [
+                "MealsPerBike"
+            ],
+            "related_parameters": [
+                "BikeCapacity"
+            ],
+            "code": "# Add constraint for bike's meal carrying capacity\nmodel.addConstr(MealsPerBike <= BikeCapacity, name=\"MealsPerBike_capacity\")"
+        },
+        {
+            "description": "The number of meals carried by a scooter must not exceed the scooter's capacity",
+            "status": "coded",
+            "formulation": "\\textup{MealsPerScooter} \\leq \\textup{ScooterCapacity}",
+            "related_variables": [
+                "MealsPerScooter"
+            ],
+            "related_parameters": [
+                "ScooterCapacity"
+            ],
+            "code": "# Add constraint to ensure that the meals carried by the scooter do not exceed its capacity\nmodel.addConstr(MealsPerScooter <= ScooterCapacity, name=\"scooter_capacity_constraint\")"
+        },
+        {
+            "description": "The total charge used by all bikes and scooters must not exceed the total available charge",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfBikes} \\times \\textup{BikeCharge} + \\textup{NumberOfScooters} \\times \\textup{ScooterCharge} \\leq \\textup{TotalCharge}",
+            "related_variables": [
+                "NumberOfBikes",
+                "NumberOfScooters"
+            ],
+            "related_parameters": [
+                "BikeCharge",
+                "ScooterCharge",
+                "TotalCharge"
+            ],
+            "code": "# Add constraint to ensure total charge used by all bikes and scooters does not exceed the total available charge\nmodel.addConstr(NumberOfBikes * BikeCharge + NumberOfScooters * ScooterCharge <= TotalCharge, name=\"total_charge_limit\")"
+        },
+        {
+            "description": "The proportion of bikes must not exceed the maximum bike ratio",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfBikes} \\leq (\\textup{NumberOfBikes} + \\textup{NumberOfScooters}) \\times \\textup{MaxBikeRatio}",
+            "related_variables": [
+                "NumberOfBikes",
+                "NumberOfScooters"
+            ],
+            "related_parameters": [
+                "MaxBikeRatio"
+            ],
+            "code": "# Proportion of bikes must not exceed the maximum bike ratio\nmodel.addConstr(NumberOfBikes <= (NumberOfBikes + NumberOfScooters) * MaxBikeRatio, name=\"max_bike_ratio\")"
+        },
+        {
+            "description": "The number of scooters must be at least the minimum number of scooters required",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfScooters} \\geq \\textup{MinScooters}",
+            "related_variables": [
+                "NumberOfScooters"
+            ],
+            "related_parameters": [
+                "MinScooters"
+            ],
+            "code": "# Add constraint for minimum number of scooters\nmodel.addConstr(NumberOfScooters >= MinScooters, name=\"min_scooters_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of bikes used for deliveries",
+            "symbol": "NumberOfBikes",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfBikes = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfBikes\")"
+        },
+        {
+            "definition": "The number of scooters used for deliveries",
+            "symbol": "NumberOfScooters",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfScooters = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfScooters\")"
+        },
+        {
+            "definition": "The number of meals carried by a bike",
+            "symbol": "MealsPerBike",
+            "shape": [],
+            "status": "coded",
+            "code": "MealsPerBike = model.addVar(vtype=gp.GRB.INTEGER, name=\"MealsPerBike\")"
+        },
+        {
+            "definition": "The number of meals carried by a scooter",
+            "symbol": "MealsPerScooter",
+            "shape": [],
+            "status": "coded",
+            "code": "MealsPerScooter = model.addVar(vtype=gp.GRB.INTEGER, name=\"MealsPerScooter\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total number of meals delivered by the company using bikes and scooters",
+            "status": "coded",
+            "formulation": "\\textup{Maximize} \\quad \\textup{NumberOfBikes} \\times \\textup{MealsPerBike} + \\textup{NumberOfScooters} \\times \\textup{MealsPerScooter}",
+            "related_variables": [
+                "NumberOfBikes",
+                "NumberOfScooters",
+                "MealsPerBike",
+                "MealsPerScooter"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(NumberOfBikes * MealsPerBike + NumberOfScooters * MealsPerScooter, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413142500_nl4opt_prob_165/",
+    "problem_path": "data/nl4opt/prob_165/"
+}

@@ -1,0 +1,227 @@
+{
+    "background": "A shipping company must decide how to transport packages using trucks and cars to minimize gas consumption, while meeting package delivery and trip constraints.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of packages transported per trip by truck",
+            "symbol": "PackageTruck",
+            "value": 50,
+            "shape": [],
+            "code": "PackageTruck = data[\"PackageTruck\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of packages transported per trip by car",
+            "symbol": "PackageCar",
+            "value": 30,
+            "shape": [],
+            "code": "PackageCar = data[\"PackageCar\"] # scalar parameter"
+        },
+        {
+            "definition": "Gas used per trip by truck",
+            "symbol": "GasTruck",
+            "value": 20,
+            "shape": [],
+            "code": "GasTruck = data[\"GasTruck\"] # scalar parameter"
+        },
+        {
+            "definition": "Gas used per trip by car",
+            "symbol": "GasCar",
+            "value": 15,
+            "shape": [],
+            "code": "GasCar = data[\"GasCar\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of truck trips",
+            "symbol": "MaxTruckTrips",
+            "value": 5,
+            "shape": [],
+            "code": "MaxTruckTrips = data[\"MaxTruckTrips\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum proportion of trips made by car",
+            "symbol": "MinCarTripProp",
+            "value": 0.33,
+            "shape": [],
+            "code": "MinCarTripProp = data[\"MinCarTripProp\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of packages to be transported",
+            "symbol": "MinPackages",
+            "value": 500,
+            "shape": [],
+            "code": "MinPackages = data[\"MinPackages\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of truck trips must be non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{TruckTrips} \\\\geq 0",
+            "related_variables": [
+                "TruckTrips"
+            ],
+            "related_parameters": [],
+            "code": "# No constraint code needed: Gurobi variables by default enforce non-negativity for continuous variables unless specified otherwise."
+        },
+        {
+            "description": "The number of car trips must be non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{CarTrips} \\\\geq 0",
+            "related_variables": [
+                "CarTrips"
+            ],
+            "related_parameters": [],
+            "code": "# No code is needed: Gurobi variables by default have non-negativity constraints unless explicitly set otherwise."
+        },
+        {
+            "description": "Ensure that the number of truck trips does not exceed the maximum allowed truck trips.",
+            "status": "coded",
+            "formulation": "\\textup{TruckTrips} \\leq \\textup{MaxTruckTrips}",
+            "related_variables": [
+                "TruckTrips"
+            ],
+            "related_parameters": [
+                "MaxTruckTrips"
+            ],
+            "code": "# Add constraint to ensure that the number of truck trips doesn't exceed the maximum allowed trips\nmodel.addConstr(TruckTrips <= MaxTruckTrips, name=\"truck_trip_limit\")"
+        },
+        {
+            "description": "At least MinCarTripProp of all trips must be made by cars.",
+            "status": "coded",
+            "formulation": "(1 - \\textup{MinCarTripProp}) \\cdot \\textup{CarTrips} - \\textup{MinCarTripProp} \\cdot \\textup{TruckTrips} \\geq 0",
+            "related_variables": [
+                "TruckTrips",
+                "CarTrips"
+            ],
+            "related_parameters": [
+                "MinCarTripProp"
+            ],
+            "code": "# Add constraint to ensure at least MinCarTripProp of all trips are made by cars\nmodel.addConstr((1 - MinCarTripProp) * CarTrips - MinCarTripProp * TruckTrips >= 0, name=\"min_car_trip_proportion\")"
+        },
+        {
+            "description": "Ensure at least MinPackages packages are transported.",
+            "status": "coded",
+            "formulation": "\\\\textup{TruckTrips} \\\\cdot \\\\textup{PackageTruck} + \\\\textup{CarTrips} \\\\cdot \\\\textup{PackageCar} \\\\geq \\\\textup{MinPackages}",
+            "related_variables": [
+                "TruckTrips",
+                "CarTrips"
+            ],
+            "related_parameters": [
+                "PackageTruck",
+                "PackageCar",
+                "MinPackages"
+            ],
+            "code": "# Add constraint to ensure at least MinPackages packages are transported\nmodel.addConstr(TruckTrips * PackageTruck + CarTrips * PackageCar >= MinPackages, name=\"min_packages_transport\")"
+        },
+        {
+            "description": "Ensure total number of trips is greater than zero (to avoid division by zero).",
+            "status": "coded",
+            "formulation": "\\textup{TruckTrips} + \\textup{CarTrips} \\geq 1",
+            "related_variables": [
+                "TruckTrips",
+                "CarTrips"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint to ensure total trips are greater than or equal to 1\nmodel.addConstr(TruckTrips + CarTrips >= 1, name=\"total_trips_nonzero\")"
+        },
+        {
+            "description": "Ensure non-negativity of TruckTrips.",
+            "status": "coded",
+            "formulation": "\\textup{TruckTrips} \\geq 0",
+            "related_variables": [
+                "TruckTrips"
+            ],
+            "related_parameters": [],
+            "code": "# No code needed: The non-negativity of TruckTrips is implicitly enforced by Gurobi since it is added as a continuous variable (vtype=gp.GRB.CONTINUOUS), which defaults to non-negative unless explicitly specified otherwise."
+        },
+        {
+            "description": "Ensure non-negativity of CarTrips.",
+            "status": "coded",
+            "formulation": "\\textup{CarTrips} \\geq 0",
+            "related_variables": [
+                "CarTrips"
+            ],
+            "related_parameters": [],
+            "code": "# CarTrips is already non-negative because it is defined as a continuous variable by default in Gurobi."
+        },
+        {
+            "description": "The total number of packages transported must be at least the minimum required",
+            "status": "coded",
+            "formulation": "(\\textup{PackageTruck} \\\\cdot \\textup{TruckTrips}) + (\\textup{PackageCar} \\\\cdot \\textup{CarTrips}) \\\\geq \\textup{MinPackages}",
+            "related_variables": [
+                "TruckTrips",
+                "CarTrips"
+            ],
+            "related_parameters": [
+                "PackageTruck",
+                "PackageCar",
+                "MinPackages"
+            ],
+            "code": "# Add constraint to ensure the total packages transported meets the minimum requirement\nmodel.addConstr((PackageTruck * TruckTrips) + (PackageCar * CarTrips) >= MinPackages, name=\"min_packages_constraint\")"
+        },
+        {
+            "description": "The number of truck trips must not exceed the maximum allowable",
+            "status": "coded",
+            "formulation": "\\textup{TruckTrips} \\\\leq \\textup{MaxTruckTrips}",
+            "related_variables": [
+                "TruckTrips"
+            ],
+            "related_parameters": [
+                "MaxTruckTrips"
+            ],
+            "code": "# Add constraint to restrict the number of truck trips\nmodel.addConstr(TruckTrips <= MaxTruckTrips, name=\"max_truck_trips\")"
+        },
+        {
+            "description": "The proportion of trips made by cars must be at least the minimum required proportion",
+            "status": "coded",
+            "formulation": "(1 - \\textup{MinCarTripProp}) \\\\cdot \\textup{CarTrips} \\\\geq \\textup{MinCarTripProp} \\\\cdot \\textup{TruckTrips}",
+            "related_variables": [
+                "TruckTrips",
+                "CarTrips"
+            ],
+            "related_parameters": [
+                "MinCarTripProp"
+            ],
+            "code": "# Add the constraint ensuring the proportion of trips made by cars meets the minimum required proportion\nmodel.addConstr((1 - MinCarTripProp) * CarTrips >= MinCarTripProp * TruckTrips, name=\"min_car_trip_proportion\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of trips made using trucks.",
+            "symbol": "TruckTrips",
+            "shape": [],
+            "status": "coded",
+            "code": "TruckTrips = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TruckTrips\")"
+        },
+        {
+            "definition": "The number of trips made using cars.",
+            "symbol": "CarTrips",
+            "shape": [],
+            "status": "coded",
+            "code": "CarTrips = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"CarTrips\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total amount of gas consumed for transporting packages",
+            "status": "coded",
+            "formulation": "\\textup{Minimize:} \\quad (\\textup{GasTruck} \\\\cdot \\textup{TruckTrips}) + (\\textup{GasCar} \\\\cdot \\textup{CarTrips})",
+            "related_variables": [
+                "TruckTrips",
+                "CarTrips"
+            ],
+            "related_parameters": [
+                "GasTruck",
+                "GasCar"
+            ],
+            "code": "# Set objective\nmodel.setObjective((GasTruck * TruckTrips) + (GasCar * CarTrips), gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 225.0,
+    "log_path": "logs/log_20250413170942_nl4opt_prob_191/",
+    "problem_path": "data/nl4opt/prob_191/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_191/data.json\", \"r\") as f:\n    data = json.load(f)\n\nPackageTruck = data[\"PackageTruck\"] # scalar parameter\nPackageCar = data[\"PackageCar\"] # scalar parameter\nGasTruck = data[\"GasTruck\"] # scalar parameter\nGasCar = data[\"GasCar\"] # scalar parameter\nMaxTruckTrips = data[\"MaxTruckTrips\"] # scalar parameter\nMinCarTripProp = data[\"MinCarTripProp\"] # scalar parameter\nMinPackages = data[\"MinPackages\"] # scalar parameter\nTruckTrips = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TruckTrips\")\nCarTrips = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"CarTrips\")\n\n# No constraint code needed: Gurobi variables by default enforce non-negativity for continuous variables unless specified otherwise.\n\n# No code is needed: Gurobi variables by default have non-negativity constraints unless explicitly set otherwise.\n\n# Add constraint to ensure that the number of truck trips doesn't exceed the maximum allowed trips\nmodel.addConstr(TruckTrips <= MaxTruckTrips, name=\"truck_trip_limit\")\n\n# Add constraint to ensure at least MinCarTripProp of all trips are made by cars\nmodel.addConstr((1 - MinCarTripProp) * CarTrips - MinCarTripProp * TruckTrips >= 0, name=\"min_car_trip_proportion\")\n\n# Add constraint to ensure at least MinPackages packages are transported\nmodel.addConstr(TruckTrips * PackageTruck + CarTrips * PackageCar >= MinPackages, name=\"min_packages_transport\")\n\n# Add constraint to ensure total trips are greater than or equal to 1\nmodel.addConstr(TruckTrips + CarTrips >= 1, name=\"total_trips_nonzero\")\n\n# No code needed: The non-negativity of TruckTrips is implicitly enforced by Gurobi since it is added as a continuous variable (vtype=gp.GRB.CONTINUOUS), which defaults to non-negative unless explicitly specified otherwise.\n\n# CarTrips is already non-negative because it is defined as a continuous variable by default in Gurobi.\n\n# Add constraint to ensure the total packages transported meets the minimum requirement\nmodel.addConstr((PackageTruck * TruckTrips) + (PackageCar * CarTrips) >= MinPackages, name=\"min_packages_constraint\")\n\n# Add constraint to restrict the number of truck trips\nmodel.addConstr(TruckTrips <= MaxTruckTrips, name=\"max_truck_trips\")\n\n# Add the constraint ensuring the proportion of trips made by cars meets the minimum required proportion\nmodel.addConstr((1 - MinCarTripProp) * CarTrips >= MinCarTripProp * TruckTrips, name=\"min_car_trip_proportion\")\n\n# Set objective\nmodel.setObjective((GasTruck * TruckTrips) + (GasCar * CarTrips), gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

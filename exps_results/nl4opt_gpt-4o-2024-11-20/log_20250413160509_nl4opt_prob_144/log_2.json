@@ -1,0 +1,273 @@
+{
+    "background": "A pool requires the addition of chlorine and water softener, which each take a certain amount of time to become effective. The proportion of chlorine to water softener is limited, and there is a minimum amount of chlorine required and a total amount of chemicals to be used.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Effectiveness time for one unit of chlorine",
+            "symbol": "ChlorineTime",
+            "value": 1,
+            "shape": [],
+            "code": "ChlorineTime = data[\"ChlorineTime\"] # scalar parameter"
+        },
+        {
+            "definition": "Effectiveness time for one unit of water softener",
+            "symbol": "WaterSoftenerTime",
+            "value": 2,
+            "shape": [],
+            "code": "WaterSoftenerTime = data[\"WaterSoftenerTime\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum amount of chlorine required",
+            "symbol": "MinChlorine",
+            "value": 200,
+            "shape": [],
+            "code": "MinChlorine = data[\"MinChlorine\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum ratio of chlorine to water softener",
+            "symbol": "ChlorineSoftenerRatio",
+            "value": 0.5,
+            "shape": [],
+            "code": "ChlorineSoftenerRatio = data[\"ChlorineSoftenerRatio\"] # scalar parameter"
+        },
+        {
+            "definition": "Total units of chemicals required in the pool",
+            "symbol": "TotalChemicals",
+            "value": 500,
+            "shape": [],
+            "code": "TotalChemicals = data[\"TotalChemicals\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Both the number of chlorine and water softener units are non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{ChlorineUnits} \\geq 0 \\\\ \\quad \\textup{WaterSoftenerUnits} \\geq 0",
+            "related_variables": [
+                "ChlorineUnits",
+                "WaterSoftenerUnits"
+            ],
+            "related_parameters": [],
+            "code": "# Add non-negativity constraints for ChlorineUnits and WaterSoftenerUnits\nmodel.addConstr(ChlorineUnits >= 0, name=\"non_negativity_ChlorineUnits\")\nmodel.addConstr(WaterSoftenerUnits >= 0, name=\"non_negativity_WaterSoftenerUnits\")"
+        },
+        {
+            "description": "The amount of chlorine cannot exceed ChlorineSoftenerRatio times the amount of water softener.",
+            "status": "coded",
+            "formulation": "\\textup{ChlorineUnits} \\leq \\textup{ChlorineSoftenerRatio} \\cdot \\textup{WaterSoftenerUnits}",
+            "related_variables": [
+                "ChlorineUnits",
+                "WaterSoftenerUnits"
+            ],
+            "related_parameters": [
+                "ChlorineSoftenerRatio"
+            ],
+            "code": "# Add chlorine to water softener ratio constraint\nmodel.addConstr(ChlorineUnits <= ChlorineSoftenerRatio * WaterSoftenerUnits, name=\"chlorine_softener_ratio\")"
+        },
+        {
+            "description": "At least a minimum amount of chlorine should be added to the pool to meet safety requirements.",
+            "status": "coded",
+            "formulation": "\\textup{ChlorineUnits} \\geq \\textup{MinChlorine}",
+            "related_variables": [
+                "ChlorineUnits"
+            ],
+            "related_parameters": [
+                "MinChlorine"
+            ],
+            "code": "# Add chlorine safety constraint  \nmodel.addConstr(ChlorineUnits >= MinChlorine, name=\"chlorine_safety_requirement\")"
+        },
+        {
+            "description": "The total chemical units added to the pool must equal TotalChemicals.",
+            "status": "coded",
+            "formulation": "\\textup{ChlorineUnits} + \\textup{WaterSoftenerUnits} = \\textup{TotalChemicals}",
+            "related_variables": [
+                "ChlorineUnits",
+                "WaterSoftenerUnits"
+            ],
+            "related_parameters": [
+                "TotalChemicals"
+            ],
+            "code": "# Add constraint to ensure the total chemical units added equals TotalChemicals\nmodel.addConstr(ChlorineUnits + WaterSoftenerUnits == TotalChemicals, name=\"total_chemicals_constraint\")"
+        },
+        {
+            "description": "The amount of chlorine must be at least the minimum required level.",
+            "status": "coded",
+            "formulation": "\\textup{ChlorineUnits} \\geq \\textup{MinChlorine}",
+            "related_variables": [
+                "ChlorineUnits"
+            ],
+            "related_parameters": [
+                "MinChlorine"
+            ],
+            "code": "# Add chlorine minimum requirement constraint\nmodel.addConstr(ChlorineUnits >= MinChlorine, name=\"chlorine_minimum_requirement\")"
+        },
+        {
+            "description": "The total units of chemicals added to the pool must equal the total required amount.",
+            "status": "coded",
+            "formulation": "\\textup{ChlorineUnits} + \\textup{WaterSoftenerUnits} = \\textup{TotalChemicals}",
+            "related_variables": [
+                "ChlorineUnits",
+                "WaterSoftenerUnits"
+            ],
+            "related_parameters": [
+                "TotalChemicals"
+            ],
+            "code": "# Add total chemicals constraint\nmodel.addConstr(ChlorineUnits + WaterSoftenerUnits == TotalChemicals, name=\"total_chemicals_constraint\")"
+        },
+        {
+            "description": "Non-negativity constraint for chlorine units.",
+            "status": "coded",
+            "formulation": "\\textup{ChlorineUnits} \\geq 0",
+            "related_variables": [
+                "ChlorineUnits"
+            ],
+            "related_parameters": [],
+            "code": "# Non-negativity constraint for chlorine units\nmodel.addConstr(ChlorineUnits >= 0, name=\"non_negativity_chlorine_units\")"
+        },
+        {
+            "description": "Non-negativity constraint for water softener units.",
+            "status": "coded",
+            "formulation": "\\textup{WaterSoftenerUnits} \\geq 0",
+            "related_variables": [
+                "WaterSoftenerUnits"
+            ],
+            "related_parameters": [],
+            "code": "# Non-negativity is inherently ensured by the default lower bound of 0 in gurobipy variables."
+        },
+        {
+            "description": "The number of ChlorineUnits must satisfy the minimum chlorine requirement.",
+            "status": "coded",
+            "formulation": "\\textup{ChlorineUnits} \\geq \\textup{MinChlorine}",
+            "related_variables": [
+                "ChlorineUnits"
+            ],
+            "related_parameters": [
+                "MinChlorine"
+            ],
+            "code": "# Ensure that the number of ChlorineUnits satisfies the minimum chlorine requirement\nmodel.addConstr(ChlorineUnits >= MinChlorine, name=\"min_chlorine_req\")"
+        },
+        {
+            "description": "The number of ChlorineUnits must satisfy the chlorine-to-water softener ratio.",
+            "status": "coded",
+            "formulation": "\\textup{ChlorineUnits} \\leq \\textup{ChlorineSoftenerRatio} \\cdot \\textup{WaterSoftenerUnits}",
+            "related_variables": [
+                "ChlorineUnits",
+                "WaterSoftenerUnits"
+            ],
+            "related_parameters": [
+                "ChlorineSoftenerRatio"
+            ],
+            "code": "# Add chlorine-to-water softener ratio constraint\nmodel.addConstr(ChlorineUnits <= ChlorineSoftenerRatio * WaterSoftenerUnits, name=\"chlorine_softener_ratio\")"
+        },
+        {
+            "description": "Ensure MaxTime is greater than or equal to the chlorine readiness time",
+            "status": "coded",
+            "formulation": "\\textup{MaxTime} \\geq \\textup{ChlorineTime} \\times \\textup{ChlorineUnits}",
+            "related_variables": [
+                "MaxTime",
+                "ChlorineUnits"
+            ],
+            "related_parameters": [
+                "ChlorineTime"
+            ],
+            "code": "# Add constraint to ensure MaxTime is greater than or equal to the chlorine readiness time\nmodel.addConstr(MaxTime >= ChlorineTime * ChlorineUnits, name=\"chlorine_max_time_constraint\")"
+        },
+        {
+            "description": "Ensure MaxTime is greater than or equal to the water softener readiness time",
+            "status": "coded",
+            "formulation": "\\textup{MaxTime} \\geq \\textup{WaterSoftenerTime} \\times \\textup{WaterSoftenerUnits}",
+            "related_variables": [
+                "MaxTime",
+                "WaterSoftenerUnits"
+            ],
+            "related_parameters": [
+                "WaterSoftenerTime"
+            ],
+            "code": "# Add constraint to ensure MaxTime is greater than or equal to the water softener readiness time\nmodel.addConstr(MaxTime >= WaterSoftenerTime * WaterSoftenerUnits, name=\"max_time_constraint\")"
+        },
+        {
+            "description": "Enforce the minimum quantity of chlorine required",
+            "status": "coded",
+            "formulation": "\\textup{ChlorineUnits} \\geq \\textup{MinChlorine}",
+            "related_variables": [
+                "ChlorineUnits"
+            ],
+            "related_parameters": [
+                "MinChlorine"
+            ],
+            "code": "# Enforce the minimum quantity of chlorine required\nmodel.addConstr(ChlorineUnits >= MinChlorine, name=\"min_chlorine_constraint\")"
+        },
+        {
+            "description": "Enforce the maximum ratio of chlorine to water softener",
+            "status": "coded",
+            "formulation": "\\textup{ChlorineUnits} \\leq \\textup{ChlorineSoftenerRatio} \\times \\textup{WaterSoftenerUnits}",
+            "related_variables": [
+                "ChlorineUnits",
+                "WaterSoftenerUnits"
+            ],
+            "related_parameters": [
+                "ChlorineSoftenerRatio"
+            ],
+            "code": "# Add constraint to enforce the maximum ratio of chlorine to water softener\nmodel.addConstr(ChlorineUnits <= ChlorineSoftenerRatio * WaterSoftenerUnits, name=\"chlorine_softener_ratio\")"
+        },
+        {
+            "description": "Ensure the total amount of chemicals equals the required total",
+            "status": "coded",
+            "formulation": "\\textup{ChlorineUnits} + \\textup{WaterSoftenerUnits} = \\textup{TotalChemicals}",
+            "related_variables": [
+                "ChlorineUnits",
+                "WaterSoftenerUnits"
+            ],
+            "related_parameters": [
+                "TotalChemicals"
+            ],
+            "code": "# Add constraint to ensure the total amount of chemicals equals the required total\nmodel.addConstr(ChlorineUnits + WaterSoftenerUnits == TotalChemicals, name=\"total_chemicals\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of chlorine units to be added to the pool.",
+            "symbol": "ChlorineUnits",
+            "shape": [],
+            "status": "coded",
+            "code": "ChlorineUnits = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"ChlorineUnits\")"
+        },
+        {
+            "definition": "The number of water softener units to be added to the pool.",
+            "symbol": "WaterSoftenerUnits",
+            "shape": [],
+            "status": "coded",
+            "code": "WaterSoftenerUnits = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"WaterSoftenerUnits\")"
+        },
+        {
+            "definition": "The total time required for the pool to be ready based on the maximum readiness time of chlorine or water softener",
+            "symbol": "MaxTime",
+            "shape": [],
+            "status": "coded",
+            "code": "MaxTime = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"MaxTime\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total readiness time of the pool based on chlorine and water softener effectiveness times",
+            "status": "coded",
+            "formulation": "\\min \\textup{MaxTime}",
+            "related_variables": [
+                "MaxTime",
+                "ChlorineUnits",
+                "WaterSoftenerUnits"
+            ],
+            "related_parameters": [
+                "ChlorineTime",
+                "WaterSoftenerTime"
+            ],
+            "code": "# Set objective\nmodel.setObjective(MaxTime, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 3,
+    "error_message": null,
+    "obj_val": "infeasible",
+    "log_path": "logs/log_20250413160509_nl4opt_prob_144/",
+    "problem_path": "data/nl4opt/prob_144/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_144/data.json\", \"r\") as f:\n    data = json.load(f)\n\nChlorineTime = data[\"ChlorineTime\"] # scalar parameter\nWaterSoftenerTime = data[\"WaterSoftenerTime\"] # scalar parameter\nMinChlorine = data[\"MinChlorine\"] # scalar parameter\nChlorineSoftenerRatio = data[\"ChlorineSoftenerRatio\"] # scalar parameter\nTotalChemicals = data[\"TotalChemicals\"] # scalar parameter\nChlorineUnits = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"ChlorineUnits\")\nWaterSoftenerUnits = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"WaterSoftenerUnits\")\nMaxTime = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"MaxTime\")\n\n# Add non-negativity constraints for ChlorineUnits and WaterSoftenerUnits\nmodel.addConstr(ChlorineUnits >= 0, name=\"non_negativity_ChlorineUnits\")\nmodel.addConstr(WaterSoftenerUnits >= 0, name=\"non_negativity_WaterSoftenerUnits\")\n\n# Add chlorine to water softener ratio constraint\nmodel.addConstr(ChlorineUnits <= ChlorineSoftenerRatio * WaterSoftenerUnits, name=\"chlorine_softener_ratio\")\n\n# Add chlorine safety constraint  \nmodel.addConstr(ChlorineUnits >= MinChlorine, name=\"chlorine_safety_requirement\")\n\n# Add constraint to ensure the total chemical units added equals TotalChemicals\nmodel.addConstr(ChlorineUnits + WaterSoftenerUnits == TotalChemicals, name=\"total_chemicals_constraint\")\n\n# Add chlorine minimum requirement constraint\nmodel.addConstr(ChlorineUnits >= MinChlorine, name=\"chlorine_minimum_requirement\")\n\n# Add total chemicals constraint\nmodel.addConstr(ChlorineUnits + WaterSoftenerUnits == TotalChemicals, name=\"total_chemicals_constraint\")\n\n# Non-negativity constraint for chlorine units\nmodel.addConstr(ChlorineUnits >= 0, name=\"non_negativity_chlorine_units\")\n\n# Non-negativity is inherently ensured by the default lower bound of 0 in gurobipy variables.\n\n# Ensure that the number of ChlorineUnits satisfies the minimum chlorine requirement\nmodel.addConstr(ChlorineUnits >= MinChlorine, name=\"min_chlorine_req\")\n\n# Add chlorine-to-water softener ratio constraint\nmodel.addConstr(ChlorineUnits <= ChlorineSoftenerRatio * WaterSoftenerUnits, name=\"chlorine_softener_ratio\")\n\n# Add constraint to ensure MaxTime is greater than or equal to the chlorine readiness time\nmodel.addConstr(MaxTime >= ChlorineTime * ChlorineUnits, name=\"chlorine_max_time_constraint\")\n\n# Add constraint to ensure MaxTime is greater than or equal to the water softener readiness time\nmodel.addConstr(MaxTime >= WaterSoftenerTime * WaterSoftenerUnits, name=\"max_time_constraint\")\n\n# Enforce the minimum quantity of chlorine required\nmodel.addConstr(ChlorineUnits >= MinChlorine, name=\"min_chlorine_constraint\")\n\n# Add constraint to enforce the maximum ratio of chlorine to water softener\nmodel.addConstr(ChlorineUnits <= ChlorineSoftenerRatio * WaterSoftenerUnits, name=\"chlorine_softener_ratio\")\n\n# Add constraint to ensure the total amount of chemicals equals the required total\nmodel.addConstr(ChlorineUnits + WaterSoftenerUnits == TotalChemicals, name=\"total_chemicals\")\n\n# Set objective\nmodel.setObjective(MaxTime, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

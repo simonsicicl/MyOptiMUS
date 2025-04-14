@@ -1,0 +1,177 @@
+{
+    "background": "A butcher shop is considering the purchase of manual and automatic meat slicers, each with different slicing capacities and maintenance requirements, and aims to find the optimal mix.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of slices per minute a manual slicer can cut",
+            "symbol": "SlicesPerMinuteManual",
+            "value": 5,
+            "shape": [],
+            "code": "SlicesPerMinuteManual = data[\"SlicesPerMinuteManual\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of slices per minute an automatic slicer can cut",
+            "symbol": "SlicesPerMinuteAutomatic",
+            "value": 8,
+            "shape": [],
+            "code": "SlicesPerMinuteAutomatic = data[\"SlicesPerMinuteAutomatic\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of grease required per minute by a manual slicer",
+            "symbol": "GreasePerMinuteManual",
+            "value": 3,
+            "shape": [],
+            "code": "GreasePerMinuteManual = data[\"GreasePerMinuteManual\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of grease required per minute by an automatic slicer",
+            "symbol": "GreasePerMinuteAutomatic",
+            "value": 6,
+            "shape": [],
+            "code": "GreasePerMinuteAutomatic = data[\"GreasePerMinuteAutomatic\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum total number of slices required per minute",
+            "symbol": "MinTotalSlices",
+            "value": 50,
+            "shape": [],
+            "code": "MinTotalSlices = data[\"MinTotalSlices\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum total units of grease that can be used per minute",
+            "symbol": "MaxTotalGrease",
+            "value": 35,
+            "shape": [],
+            "code": "MaxTotalGrease = data[\"MaxTotalGrease\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of manual slicers must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumManualSlicers} \\geq 0",
+            "related_variables": [
+                "NumManualSlicers"
+            ],
+            "related_parameters": [],
+            "code": "# No code needed since the variable NumManualSlicers is already defined as an integer variable which implicitly cannot be negative."
+        },
+        {
+            "description": "The number of automatic slicers must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumAutomaticSlicers} \\geq 0",
+            "related_variables": [
+                "NumAutomaticSlicers"
+            ],
+            "related_parameters": [],
+            "code": "# No code needed since the variable NumAutomaticSlicers is already defined to be an integer, \n# which inherently ensures it is non-negative in the addVar function."
+        },
+        {
+            "description": "Number of manual slicers must be less than or equal to the number of automatic slicers",
+            "status": "coded",
+            "formulation": "\\textup{NumManualSlicers} \\leq \\textup{NumAutomaticSlicers}",
+            "related_variables": [
+                "NumManualSlicers",
+                "NumAutomaticSlicers"
+            ],
+            "related_parameters": [],
+            "code": "# Constraint: Number of manual slicers must be less than or equal to the number of automatic slicers\nmodel.addConstr(NumManualSlicers <= NumAutomaticSlicers, name=\"manual_less_equal_automatic\")"
+        },
+        {
+            "description": "Total slicing capacity must be at least MinTotalSlices slices per minute",
+            "status": "coded",
+            "formulation": "\\textup{NumManualSlicers} \\times \\textup{SlicesPerMinuteManual} + \\textup{NumAutomaticSlicers} \\times \\textup{SlicesPerMinuteAutomatic} \\geq \\textup{MinTotalSlices}",
+            "related_variables": [
+                "NumManualSlicers",
+                "NumAutomaticSlicers"
+            ],
+            "related_parameters": [
+                "SlicesPerMinuteManual",
+                "SlicesPerMinuteAutomatic",
+                "MinTotalSlices"
+            ],
+            "code": "# Add constraint for total slicing capacity to be at least MinTotalSlices slices per minute\nmodel.addConstr(NumManualSlicers * SlicesPerMinuteManual + NumAutomaticSlicers * SlicesPerMinuteAutomatic >= MinTotalSlices, name=\"min_total_slices\")"
+        },
+        {
+            "description": "Total grease usage for all slicers must be at most MaxTotalGrease units per minute",
+            "status": "coded",
+            "formulation": "\\textup{NumManualSlicers} \\cdot \\textup{GreasePerMinuteManual} + \\textup{NumAutomaticSlicers} \\cdot \\textup{GreasePerMinuteAutomatic} \\leq \\textup{MaxTotalGrease}",
+            "related_variables": [
+                "NumManualSlicers",
+                "NumAutomaticSlicers"
+            ],
+            "related_parameters": [
+                "GreasePerMinuteManual",
+                "GreasePerMinuteAutomatic",
+                "MaxTotalGrease"
+            ],
+            "code": "# Add total grease usage constraint\nmodel.addConstr(NumManualSlicers * GreasePerMinuteManual + NumAutomaticSlicers * GreasePerMinuteAutomatic <= MaxTotalGrease, \"TotalGreaseConstraint\")"
+        },
+        {
+            "description": "Ensure the minimum total number of slices required per minute is met",
+            "status": "coded",
+            "formulation": "\\textup{NumManualSlicers} \\times \\textup{SlicesPerMinuteManual} + \\textup{NumAutomaticSlicers} \\times \\textup{SlicesPerMinuteAutomatic} \\geq \\textup{MinTotalSlices}",
+            "related_variables": [
+                "NumManualSlicers",
+                "NumAutomaticSlicers"
+            ],
+            "related_parameters": [
+                "SlicesPerMinuteManual",
+                "SlicesPerMinuteAutomatic",
+                "MinTotalSlices"
+            ],
+            "code": "# Ensure the minimum total number of slices required per minute is met\nmodel.addConstr(\n    NumManualSlicers * SlicesPerMinuteManual + NumAutomaticSlicers * SlicesPerMinuteAutomatic >= MinTotalSlices,\n    name=\"min_total_slices\")"
+        },
+        {
+            "description": "Ensure the total units of grease used per minute do not exceed the maximum allowed",
+            "status": "coded",
+            "formulation": "\\textup{NumManualSlicers} \\times \\textup{GreasePerMinuteManual} + \\textup{NumAutomaticSlicers} \\times \\textup{GreasePerMinuteAutomatic} \\leq \\textup{MaxTotalGrease}",
+            "related_variables": [
+                "NumManualSlicers",
+                "NumAutomaticSlicers"
+            ],
+            "related_parameters": [
+                "GreasePerMinuteManual",
+                "GreasePerMinuteAutomatic",
+                "MaxTotalGrease"
+            ],
+            "code": "# Ensure the total units of grease used per minute do not exceed the maximum allowed\nmodel.addConstr(NumManualSlicers * GreasePerMinuteManual + NumAutomaticSlicers * GreasePerMinuteAutomatic <= MaxTotalGrease, \"max_grease_usage\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of manual slicers the butcher shop will purchase",
+            "symbol": "NumManualSlicers",
+            "shape": [],
+            "status": "coded",
+            "code": "NumManualSlicers = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumManualSlicers\")"
+        },
+        {
+            "definition": "The number of automatic slicers the butcher shop will purchase",
+            "symbol": "NumAutomaticSlicers",
+            "shape": [],
+            "status": "coded",
+            "code": "NumAutomaticSlicers = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumAutomaticSlicers\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of slicers in the butcher shop",
+            "status": "coded",
+            "formulation": "\\min \\textup{NumManualSlicers} + \\textup{NumAutomaticSlicers}",
+            "related_variables": [
+                "NumManualSlicers",
+                "NumAutomaticSlicers"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(NumManualSlicers + NumAutomaticSlicers, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 3,
+    "error_message": null,
+    "obj_val": "infeasible",
+    "log_path": "logs/log_20250414024546_nl4opt_prob_87/",
+    "problem_path": "data/nl4opt/prob_87/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_87/data.json\", \"r\") as f:\n    data = json.load(f)\n\nSlicesPerMinuteManual = data[\"SlicesPerMinuteManual\"] # scalar parameter\nSlicesPerMinuteAutomatic = data[\"SlicesPerMinuteAutomatic\"] # scalar parameter\nGreasePerMinuteManual = data[\"GreasePerMinuteManual\"] # scalar parameter\nGreasePerMinuteAutomatic = data[\"GreasePerMinuteAutomatic\"] # scalar parameter\nMinTotalSlices = data[\"MinTotalSlices\"] # scalar parameter\nMaxTotalGrease = data[\"MaxTotalGrease\"] # scalar parameter\nNumManualSlicers = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumManualSlicers\")\nNumAutomaticSlicers = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumAutomaticSlicers\")\n\n# No code needed since the variable NumManualSlicers is already defined as an integer variable which implicitly cannot be negative.\n\n# No code needed since the variable NumAutomaticSlicers is already defined to be an integer, \n# which inherently ensures it is non-negative in the addVar function.\n\n# Constraint: Number of manual slicers must be less than or equal to the number of automatic slicers\nmodel.addConstr(NumManualSlicers <= NumAutomaticSlicers, name=\"manual_less_equal_automatic\")\n\n# Add constraint for total slicing capacity to be at least MinTotalSlices slices per minute\nmodel.addConstr(NumManualSlicers * SlicesPerMinuteManual + NumAutomaticSlicers * SlicesPerMinuteAutomatic >= MinTotalSlices, name=\"min_total_slices\")\n\n# Add total grease usage constraint\nmodel.addConstr(NumManualSlicers * GreasePerMinuteManual + NumAutomaticSlicers * GreasePerMinuteAutomatic <= MaxTotalGrease, \"TotalGreaseConstraint\")\n\n# Ensure the minimum total number of slices required per minute is met\nmodel.addConstr(\n    NumManualSlicers * SlicesPerMinuteManual + NumAutomaticSlicers * SlicesPerMinuteAutomatic >= MinTotalSlices,\n    name=\"min_total_slices\")\n\n# Ensure the total units of grease used per minute do not exceed the maximum allowed\nmodel.addConstr(NumManualSlicers * GreasePerMinuteManual + NumAutomaticSlicers * GreasePerMinuteAutomatic <= MaxTotalGrease, \"max_grease_usage\")\n\n# Set objective\nmodel.setObjective(NumManualSlicers + NumAutomaticSlicers, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

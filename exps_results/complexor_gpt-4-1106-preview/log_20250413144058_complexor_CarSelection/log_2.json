@@ -1,0 +1,103 @@
+{
+    "background": "The Car Selection Problem seeks to assign a certain number of participants to different cars, based on participants' interests in specific cars, with the goal of maximizing the total number of assignments.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "symbol": "ParticipantNum",
+            "definition": "The total number of participants",
+            "shape": [],
+            "code": "ParticipantNum = data[\"ParticipantNum\"] # scalar parameter"
+        },
+        {
+            "symbol": "CarNum",
+            "definition": "The total number of available cars",
+            "shape": [],
+            "code": "CarNum = data[\"CarNum\"] # scalar parameter"
+        },
+        {
+            "symbol": "InterestMatrix",
+            "definition": "A binary matrix indicating whether a participant is interested in a particular car (1 for interested and 0 for not interested)",
+            "shape": [
+                "ParticipantNum",
+                "CarNum"
+            ],
+            "code": "InterestMatrix = np.array(data[\"InterestMatrix\"]) # ['ParticipantNum', 'CarNum']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Each participant is assigned to at most one car",
+            "status": "coded",
+            "formulation": "\\sum_{j=1}^{\\textup{CarNum}} \\textup{AssignParticipantToCar}_{i,j} \\leq 1 \\quad \\forall i \\in \\{1, \\ldots, \\textup{ParticipantNum}\\}",
+            "related_variables": [
+                "AssignParticipantToCar"
+            ],
+            "related_parameters": [
+                "ParticipantNum",
+                "CarNum"
+            ],
+            "code": "# Each participant is assigned to at most one car\nfor i in range(ParticipantNum):\n    model.addConstr(gp.quicksum(AssignParticipantToCar[i, j] for j in range(CarNum)) <= 1, name=\"participant_car_limit_{}\".format(i))"
+        },
+        {
+            "description": "A participant can only be assigned to a car if they are interested in it",
+            "status": "coded",
+            "formulation": "\\forall p \\in \\{1, \\ldots, \\textup{ParticipantNum}\\}, \\quad \\forall c \\in \\{1, \\ldots, \\textup{CarNum}\\}, \\quad \\textup{AssignParticipantToCar}_{p,c} \\leq \\textup{InterestMatrix}_{p,c}",
+            "related_variables": [
+                "AssignParticipantToCar"
+            ],
+            "related_parameters": [
+                "InterestMatrix",
+                "ParticipantNum",
+                "CarNum"
+            ],
+            "code": "# Constraint: A participant can only be assigned to a car if they are interested in it\nfor p in range(ParticipantNum):\n    for c in range(CarNum):\n        model.addConstr(AssignParticipantToCar[p,c] <= InterestMatrix[p,c], name=f\"interest_constraint_p{p}_c{c}\")"
+        },
+        {
+            "description": "Each participant can be assigned to at most one car and vice versa, and the assignments are binary decisions.",
+            "status": "coded",
+            "formulation": "\\forall i \\in \\{1, ..., \\textup{ParticipantNum}\\}, \\quad \\forall j \\in \\{1, ..., \\textup{CarNum}\\}, \\quad \\textup{AssignParticipantToCar}_{ij} \\in \\{0, 1\\}",
+            "related_variables": [
+                "AssignParticipantToCar"
+            ],
+            "related_parameters": [
+                "ParticipantNum",
+                "CarNum"
+            ],
+            "code": "# Each participant can be assigned to at most one car\nfor i in range(ParticipantNum):\n    model.addConstr(gp.quicksum(AssignParticipantToCar[i, j] for j in range(CarNum)) <= 1, name=\"participant_to_one_car_%d\" % i)\n\n# Each car can have at most one participant assigned\nfor j in range(CarNum):\n    model.addConstr(gp.quicksum(AssignParticipantToCar[i, j] for i in range(ParticipantNum)) <= 1, name=\"one_participant_per_car_%d\" % j)"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Binary variable indicating if a participant is assigned to a car (1 for yes, 0 for no)",
+            "symbol": "AssignParticipantToCar",
+            "shape": [
+                "ParticipantNum",
+                "CarNum"
+            ],
+            "status": "coded",
+            "code": "AssignParticipantToCar = model.addVars(ParticipantNum, CarNum, vtype=gp.GRB.BINARY, name=\"AssignParticipantToCar\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total number of participant-to-car assignments based on participants' interests",
+            "status": "coded",
+            "formulation": "\\max \\sum_{i=1}^{\\textup{ParticipantNum}} \\sum_{j=1}^{\\textup{CarNum}} \\textup{AssignParticipantToCar}_{ij}",
+            "related_variables": [
+                "AssignParticipantToCar"
+            ],
+            "related_parameters": [
+                "ParticipantNum",
+                "CarNum"
+            ],
+            "code": "# Set objective\nmodel.setObjective(gp.quicksum(AssignParticipantToCar[p, c] for p in range(ParticipantNum) for c in range(CarNum)), gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 25.0,
+    "log_path": "logs/log_20250413144058_complexor_CarSelection/",
+    "problem_path": "data/complexor/CarSelection/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/complexor/CarSelection/data.json\", \"r\") as f:\n    data = json.load(f)\n\nParticipantNum = data[\"ParticipantNum\"] # scalar parameter\nCarNum = data[\"CarNum\"] # scalar parameter\nInterestMatrix = np.array(data[\"InterestMatrix\"]) # ['ParticipantNum', 'CarNum']\nAssignParticipantToCar = model.addVars(ParticipantNum, CarNum, vtype=gp.GRB.BINARY, name=\"AssignParticipantToCar\")\n\n# Each participant is assigned to at most one car\nfor i in range(ParticipantNum):\n    model.addConstr(gp.quicksum(AssignParticipantToCar[i, j] for j in range(CarNum)) <= 1, name=\"participant_car_limit_{}\".format(i))\n\n# Constraint: A participant can only be assigned to a car if they are interested in it\nfor p in range(ParticipantNum):\n    for c in range(CarNum):\n        model.addConstr(AssignParticipantToCar[p,c] <= InterestMatrix[p,c], name=f\"interest_constraint_p{p}_c{c}\")\n\n# Each participant can be assigned to at most one car\nfor i in range(ParticipantNum):\n    model.addConstr(gp.quicksum(AssignParticipantToCar[i, j] for j in range(CarNum)) <= 1, name=\"participant_to_one_car_%d\" % i)\n\n# Each car can have at most one participant assigned\nfor j in range(CarNum):\n    model.addConstr(gp.quicksum(AssignParticipantToCar[i, j] for i in range(ParticipantNum)) <= 1, name=\"one_participant_per_car_%d\" % j)\n\n# Set objective\nmodel.setObjective(gp.quicksum(AssignParticipantToCar[p, c] for p in range(ParticipantNum) for c in range(CarNum)), gp.GRB.MAXIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

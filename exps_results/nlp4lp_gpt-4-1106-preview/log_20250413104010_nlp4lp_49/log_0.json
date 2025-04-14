@@ -1,0 +1,192 @@
+{
+    "background": "The company is looking to determine the optimal combination of different alloys to use in the production of various steel types to maximize profit. There are constraints related to the availability, composition, and cost of the alloys, as well as the composition and selling price of the steel types produced.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Total number of different alloys",
+            "symbol": "A",
+            "value": "",
+            "shape": [],
+            "code": "A = data[\"A\"] # scalar parameter"
+        },
+        {
+            "definition": "Total number of different steel types",
+            "symbol": "S",
+            "value": "",
+            "shape": [],
+            "code": "S = data[\"S\"] # scalar parameter"
+        },
+        {
+            "definition": "Available amount of alloy a",
+            "symbol": "AvailableAlloy",
+            "value": "",
+            "shape": [
+                "A"
+            ],
+            "code": "AvailableAlloy = np.array(data[\"AvailableAlloy\"]) # ['A']"
+        },
+        {
+            "definition": "Carbon content of alloy a",
+            "symbol": "CarbonContent",
+            "value": "",
+            "shape": [
+                "A"
+            ],
+            "code": "CarbonContent = np.array(data[\"CarbonContent\"]) # ['A']"
+        },
+        {
+            "definition": "Nickel content of alloy a",
+            "symbol": "NickelContent",
+            "value": "",
+            "shape": [
+                "A"
+            ],
+            "code": "NickelContent = np.array(data[\"NickelContent\"]) # ['A']"
+        },
+        {
+            "definition": "Price of alloy a",
+            "symbol": "AlloyPrice",
+            "value": "",
+            "shape": [
+                "A"
+            ],
+            "code": "AlloyPrice = np.array(data[\"AlloyPrice\"]) # ['A']"
+        },
+        {
+            "definition": "Price of steel type s",
+            "symbol": "SteelPrice",
+            "value": "",
+            "shape": [
+                "S"
+            ],
+            "code": "SteelPrice = np.array(data[\"SteelPrice\"]) # ['S']"
+        },
+        {
+            "definition": "Minimum required carbon content for steel type s",
+            "symbol": "CarbonMin",
+            "value": "",
+            "shape": [
+                "S"
+            ],
+            "code": "CarbonMin = np.array(data[\"CarbonMin\"]) # ['S']"
+        },
+        {
+            "definition": "Maximum allowed nickel content for steel type s",
+            "symbol": "NickelMax",
+            "value": "",
+            "shape": [
+                "S"
+            ],
+            "code": "NickelMax = np.array(data[\"NickelMax\"]) # ['S']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Each alloy's amount used must be non-negative and cannot exceed the available amount of that alloy",
+            "status": "formulated",
+            "formulation": "\\forall a \\in A, \\\\ \\quad 0 \\leq \\textup{AmountUsed}_a \\leq \\textup{AvailableAlloy}_a",
+            "related_variables": [
+                "AmountUsed"
+            ],
+            "related_parameters": [
+                "AvailableAlloy"
+            ]
+        },
+        {
+            "description": "Each steel type must have at least the minimum required carbon content",
+            "status": "formulated",
+            "formulation": "\\sum_{a=1}^{A} (\\textup{CarbonContent}_a \\times \\textup{AmountUsed}_{sa}) \\geq \\textup{CarbonMin}_s \\quad \\forall s \\in \\{1, \\ldots, S\\}",
+            "related_variables": [
+                "AmountUsed"
+            ],
+            "related_parameters": [
+                "CarbonContent",
+                "CarbonMin"
+            ]
+        },
+        {
+            "description": "Total nickel content in steel type s must not exceed NickelMax[s]",
+            "status": "formulated",
+            "formulation": "\\sum_{a=1}^{A} (\\textup{NickelContent}[a] \\times \\textup{AmountUsed}[a, s]) \\leq \\textup{NickelMax}[s], \\quad \\forall s \\in S",
+            "related_variables": [
+                "AmountUsed"
+            ],
+            "related_parameters": [
+                "NickelContent",
+                "NickelMax"
+            ]
+        },
+        {
+            "description": "The total amount of each alloy used in the production of all steel types cannot exceed the total available amount of that alloy",
+            "status": "formulated",
+            "formulation": "\\sum_{s=1}^{\\textup{S}} \\textup{AmountUsed}_{a, s} \\leq \\textup{AvailableAlloy}_a \\quad \\forall a \\in \\{1, \\ldots, \\textup{A}\\}",
+            "related_variables": [
+                "AmountUsed"
+            ],
+            "related_parameters": [
+                "AvailableAlloy",
+                "A",
+                "S"
+            ]
+        },
+        {
+            "description": "Non-negativity constraint on the amount of each steel type produced",
+            "status": "formulated",
+            "formulation": "\\textup{Production}_{s} \\geq 0 \\quad \\forall s \\in \\textup{S}",
+            "related_variables": [
+                "Production"
+            ],
+            "related_parameters": [
+                "S"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Amount of alloy a used in the production process",
+            "symbol": "AmountUsed",
+            "shape": [
+                "A"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "Amount of alloy a used specifically for steel type s",
+            "symbol": "AmountUsed",
+            "shape": [
+                "A",
+                "S"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "Total amount of steel type s produced",
+            "symbol": "Production",
+            "shape": [
+                "S"
+            ],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total profit from producing different steel types",
+            "status": "formulated",
+            "formulation": "\\max \\sum_{s=1}^{S} (\\textup{SteelPrice}_s \\cdot \\textup{Production}_s) - \\sum_{a=1}^{A} (\\textup{AlloyPrice}_a \\cdot \\textup{AmountUsed}_a)",
+            "related_variables": [
+                "Production",
+                "AmountUsed"
+            ],
+            "related_parameters": [
+                "SteelPrice",
+                "AlloyPrice"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413104010_nlp4lp_49/",
+    "problem_path": "data/nlp4lp/49/"
+}

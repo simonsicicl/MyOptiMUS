@@ -1,0 +1,157 @@
+{
+    "background": "The goal is to maximize the total units of currency through transactions with starting quantities, transaction limits for each currency, and defined exchange rates.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of different currencies",
+            "symbol": "N",
+            "value": "",
+            "shape": [],
+            "code": "N = data[\"N\"] # scalar parameter"
+        },
+        {
+            "definition": "Initial amount of currency i",
+            "symbol": "Start",
+            "value": "",
+            "shape": [
+                "N"
+            ],
+            "code": "Start = np.array(data[\"Start\"]) # ['N']"
+        },
+        {
+            "definition": "Limit for the number of transactions for currency i",
+            "symbol": "Limit",
+            "value": "",
+            "shape": [
+                "N"
+            ],
+            "code": "Limit = np.array(data[\"Limit\"]) # ['N']"
+        },
+        {
+            "definition": "Exchange rate from currency i to currency j",
+            "symbol": "Rate",
+            "value": "",
+            "shape": [
+                "N",
+                "N"
+            ],
+            "code": "Rate = np.array(data[\"Rate\"]) # ['N', 'N']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Number of transactions for each currency is non-negative",
+            "status": "runtime_error",
+            "formulation": "\\forall i \\in \\{1,\\ldots,N\\}, \\quad \\textup{TransactionsPerCurrency}_{i} \\geq 0",
+            "related_variables": [
+                "TransactionsPerCurrency"
+            ],
+            "related_parameters": [
+                "N"
+            ],
+            "code": "# Constraint: Number of transactions for each currency is non-negative\nfor i in range(N):\n    model.addConstr(TransactionsPerCurrency[i] >= 0, name=f\"non_negative_transactions_{i}\")"
+        },
+        {
+            "description": "Number of transactions for each currency does not exceed the specified limit",
+            "status": "coded",
+            "formulation": "\\textup{TransactionsPerCurrency}_i \\\\leq \\textup{Limit}_i \\quad \\forall i \\in \\{1, \\ldots, N\\}",
+            "related_variables": [
+                "TransactionsPerCurrency"
+            ],
+            "related_parameters": [
+                "Limit"
+            ],
+            "code": "# Change the TransactionsPerCurrency variable to an integer type since its current definition collides with the second variable definition of the same name\nfor i in range(N):\n    for j in range(N):\n        TransactionsPerCurrency[i, j].vtype = gp.GRB.INTEGER\n\n# Add constraints to ensure the number of transactions for each currency does not exceed the limit\nfor i in range(N):\n    model.addConstr(TransactionsPerCurrency.sum(i, '*') <= Limit[i], name=f\"transaction_limit_{i}\")"
+        },
+        {
+            "description": "Total units of currency after transactions must respect the transaction limits and exchange rates",
+            "status": "coded",
+            "formulation": "\\textup{FinalUnitsOfCurrency}_{i} = \\textup{Start}_{i} + \\sum_{j=1}^{\\textup{N}} (\\textup{TransactionsPerCurrency}_{j \\rightarrow i} \\cdot \\textup{Rate}_{ji}) - \\sum_{j=1}^{\\textup{N}} (\\textup{TransactionsPerCurrency}_{i \\rightarrow j} \\cdot \\textup{Rate}_{ij})",
+            "related_variables": [
+                "FinalUnitsOfCurrency",
+                "TransactionsPerCurrency"
+            ],
+            "related_parameters": [
+                "Start",
+                "Limit",
+                "Rate"
+            ],
+            "code": "# Add constraints for final units of currency to respect transaction limits and exchange rates\nfor i in range(N):\n    model.addConstr(\n        FinalUnitsOfCurrency[i] == Start[i] +\n        gp.quicksum(TransactionsPerCurrency[j, i] * Rate[j, i] for j in range(N)) -\n        gp.quicksum(TransactionsPerCurrency[i, j] * Rate[i, j] for j in range(N)),\n        name=f\"FinalUnitsOfCurrency_{i}\"\n    )"
+        },
+        {
+            "description": "The number of transactions for each currency should not exceed the transaction limit for that currency",
+            "status": "coded",
+            "formulation": "\\sum_{j=1}^{\\textup{N}} \\textup{TransactionsPerCurrency}_{i \\rightarrow j} \\leq \\textup{Limit}_{i} \\quad \\forall i \\in \\{1, ..., \\textup{N}\\}",
+            "related_variables": [
+                "TransactionsPerCurrency"
+            ],
+            "related_parameters": [
+                "Limit"
+            ],
+            "code": "# Add transaction limit constraints for each currency\nfor i in range(N):\n    model.addConstr(gp.quicksum(TransactionsPerCurrency[i, j] for j in range(N)) <= Limit[i], name=\"trans_limit_{}\".format(i))"
+        },
+        {
+            "description": "Transactional relations for each currency should be defined only if currency i can be converted to currency j",
+            "status": "coded",
+            "formulation": "\\textup{TransactionsPerCurrency}_{i \\rightarrow j} \\geq 0 \\quad \\forall i,j \\in \\{1, ..., \\textup{N}\\}",
+            "related_variables": [
+                "TransactionsPerCurrency"
+            ],
+            "related_parameters": [],
+            "code": "# There is no code needed here because the constraint defined is an inherent property of Gurobi variables.\n# By default, Gurobi variables have a lower bound of 0, which aligns with our requirement.\n# The variables 'TransactionsPerCurrency' for each currency pair (i, j) are already defined to be continuous\n# and non-negative by their initial definition in the provided code.\n# Therefore, no additional constraints are necessary to enforce this condition."
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of transactions for currency i",
+            "symbol": "TransactionsPerCurrency",
+            "shape": [
+                "N"
+            ],
+            "status": "coded",
+            "code": "TransactionsPerCurrency = model.addVars(N, vtype=gp.GRB.INTEGER, name=\"TransactionsPerCurrency\")"
+        },
+        {
+            "definition": "Final number of units of currency for currency i after transactions",
+            "symbol": "FinalUnitsOfCurrency",
+            "shape": [
+                "N"
+            ],
+            "status": "coded",
+            "code": "FinalUnitsOfCurrency = model.addVars(N, vtype=gp.GRB.CONTINUOUS, name=\"FinalUnitsOfCurrency\")"
+        },
+        {
+            "definition": "The number of units of currency i exchanged to currency j",
+            "symbol": "TransactionsPerCurrency",
+            "shape": [
+                "N",
+                "N"
+            ],
+            "status": "coded",
+            "code": "TransactionsPerCurrency = model.addVars(N, N, vtype=gp.GRB.CONTINUOUS, name=\"TransactionsPerCurrency\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the final total number of units of currency after transactions between different currencies while respecting transaction limits and exchange rates.",
+            "status": "coded",
+            "formulation": "\\max \\sum_{i=1}^{\\textup{N}} \\textup{FinalUnitsOfCurrency}_{i}",
+            "related_variables": [
+                "FinalUnitsOfCurrency"
+            ],
+            "related_parameters": [
+                "Start",
+                "Limit",
+                "Rate"
+            ],
+            "code": "# Set objective\nmodel.setObjective(gp.quicksum(FinalUnitsOfCurrency[i] for i in range(N)), gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "runtime_error",
+    "solver_output_status": "runtime_error",
+    "error_message": "Traceback (most recent call last):\n  File \"c:\\Users\\Simon\\Desktop\\Courses\\ECE 570\\ECE570_Project\\MyOptiMUS\\evaluator.py\", line 45, in run\n    exec(last_line, local_env, local_env)\n  File \"<string>\", line 3, in <module>\nKeyError: 0\n",
+    "obj_val": null,
+    "log_path": "logs/log_20250413073700_nlp4lp_13/",
+    "problem_path": "data/nlp4lp/13/",
+    "prep_code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nlp4lp/13/data.json\", \"r\") as f:\n    data = json.load(f)\n"
+}

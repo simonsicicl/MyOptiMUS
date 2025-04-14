@@ -1,0 +1,245 @@
+{
+    "background": "A mail delivery service must deliver mail using regular and speed boats, each having different capacities and fuel usage, with a constraint on the number of regular boat trips and a minimum proportion of trips that must be speed boats.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Maximum number of mail pieces a regular boat can carry per trip",
+            "symbol": "RegularCapacity",
+            "value": 20,
+            "shape": [],
+            "code": "RegularCapacity = data[\"RegularCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Fuel usage of a regular boat per trip",
+            "symbol": "RegularFuel",
+            "value": 10,
+            "shape": [],
+            "code": "RegularFuel = data[\"RegularFuel\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of mail pieces a speed boat can carry per trip",
+            "symbol": "SpeedCapacity",
+            "value": 30,
+            "shape": [],
+            "code": "SpeedCapacity = data[\"SpeedCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Fuel usage of a speed boat per trip",
+            "symbol": "SpeedFuel",
+            "value": 20,
+            "shape": [],
+            "code": "SpeedFuel = data[\"SpeedFuel\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of regular boat trips allowed",
+            "symbol": "MaxRegularTrips",
+            "value": 20,
+            "shape": [],
+            "code": "MaxRegularTrips = data[\"MaxRegularTrips\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum percentage of trips that must be made by speed boats",
+            "symbol": "MinSpeedPercentage",
+            "value": 0.5,
+            "shape": [],
+            "code": "MinSpeedPercentage = data[\"MinSpeedPercentage\"] # scalar parameter"
+        },
+        {
+            "definition": "Total number of pieces of mail to be delivered",
+            "symbol": "TotalMail",
+            "value": 1000,
+            "shape": [],
+            "code": "TotalMail = data[\"TotalMail\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of regular boat trips is non-negative.",
+            "status": "formulated",
+            "formulation": "\\textup{RegularTrips} \\geq 0",
+            "related_variables": [
+                "RegularTrips"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "The number of speed boat trips is constrained to be non-negative.",
+            "status": "formulated",
+            "formulation": "\\textup{SpeedTrips} \\geq 0",
+            "related_variables": [
+                "SpeedTrips"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "The number of regular boat trips is constrained to be at most the maximum number of regular trips allowed.",
+            "status": "formulated",
+            "formulation": "\\textup{RegularTrips} \\leq \\textup{MaxRegularTrips}",
+            "related_variables": [
+                "RegularTrips"
+            ],
+            "related_parameters": [
+                "MaxRegularTrips"
+            ]
+        },
+        {
+            "description": "At least MinSpeedPercentage of the total number of trips are made by speed boats.",
+            "status": "formulated",
+            "formulation": "(1 - \\textup{MinSpeedPercentage}) \\cdot \\textup{SpeedTrips} \\geq \\textup{MinSpeedPercentage} \\cdot \\textup{RegularTrips}",
+            "related_variables": [
+                "RegularTrips",
+                "SpeedTrips"
+            ],
+            "related_parameters": [
+                "MinSpeedPercentage"
+            ]
+        },
+        {
+            "description": "The total pieces of mail delivered must be at least \\textup{TotalMail}",
+            "status": "formulated",
+            "formulation": "\\textup{RegularTrips} \\\\times \\textup{RegularCapacity} + \\textup{SpeedTrips} \\\\times \\textup{SpeedCapacity} \\\\geq \\textup{TotalMail}",
+            "related_variables": [
+                "RegularTrips",
+                "SpeedTrips"
+            ],
+            "related_parameters": [
+                "RegularCapacity",
+                "SpeedCapacity",
+                "TotalMail"
+            ]
+        },
+        {
+            "description": "The maximum number of regular trips must not exceed the given limit.",
+            "status": "formulated",
+            "formulation": "\\textup{RegularTrips} \\leq \\textup{MaxRegularTrips}",
+            "related_variables": [
+                "RegularTrips"
+            ],
+            "related_parameters": [
+                "MaxRegularTrips"
+            ]
+        },
+        {
+            "description": "At least a minimum percentage of trips must be made by speed boats.",
+            "status": "formulated",
+            "formulation": "\\textup{SpeedTrips} \\geq \\textup{MinSpeedPercentage} \\cdot (\\textup{RegularTrips} + \\textup{SpeedTrips})",
+            "related_variables": [
+                "SpeedTrips",
+                "RegularTrips"
+            ],
+            "related_parameters": [
+                "MinSpeedPercentage"
+            ]
+        },
+        {
+            "description": "The total number of trips is equal to the sum of regular and speed boat trips.",
+            "status": "formulated",
+            "formulation": "\\textup{TotalTrips} = \\textup{RegularTrips} + \\textup{SpeedTrips}",
+            "related_variables": [
+                "RegularTrips",
+                "SpeedTrips"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "The total number of trips is the sum of regular boat trips and speed boat trips",
+            "status": "formulated",
+            "formulation": "\\textup{TotalTrips} = \\textup{RegularTrips} + \\textup{SpeedTrips}",
+            "related_variables": [
+                "TotalTrips",
+                "RegularTrips",
+                "SpeedTrips"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "The total number of trips made is the sum of trips made by regular and speed boats",
+            "status": "formulated",
+            "formulation": "\\textup{TotalTrips} = \\textup{RegularTrips} + \\textup{SpeedTrips}",
+            "related_variables": [
+                "RegularTrips",
+                "SpeedTrips",
+                "TotalTrips"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "The total mail demand must be met by the capacity of all trips",
+            "status": "formulated",
+            "formulation": "\\textup{RegularTrips} \\cdot \\textup{RegularCapacity} + \\textup{SpeedTrips} \\cdot \\textup{SpeedCapacity} \\geq \\textup{TotalMail}",
+            "related_variables": [
+                "RegularTrips",
+                "SpeedTrips"
+            ],
+            "related_parameters": [
+                "RegularCapacity",
+                "SpeedCapacity",
+                "TotalMail"
+            ]
+        },
+        {
+            "description": "The total number of trips by regular boats must not exceed the maximum allowed",
+            "status": "formulated",
+            "formulation": "\\textup{RegularTrips} \\leq \\textup{MaxRegularTrips}",
+            "related_variables": [
+                "RegularTrips"
+            ],
+            "related_parameters": [
+                "MaxRegularTrips"
+            ]
+        },
+        {
+            "description": "A minimum percentage of trips must be completed using speed boats",
+            "status": "formulated",
+            "formulation": "\\textup{SpeedTrips} \\geq \\textup{MinSpeedPercentage} \\cdot \\textup{TotalTrips}",
+            "related_variables": [
+                "SpeedTrips",
+                "TotalTrips"
+            ],
+            "related_parameters": [
+                "MinSpeedPercentage"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of trips performed by regular boats.",
+            "symbol": "RegularTrips",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "The number of trips performed by speed boats.",
+            "symbol": "SpeedTrips",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "The total number of trips made by both regular and speed boats.",
+            "symbol": "TotalTrips",
+            "shape": [],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total amount of gas consumed for delivering all the mail",
+            "status": "formulated",
+            "formulation": "\\textup{Minimize} \\quad \\textup{RegularFuel} \\cdot \\textup{RegularTrips} + \\textup{SpeedFuel} \\cdot \\textup{SpeedTrips}",
+            "related_variables": [
+                "RegularTrips",
+                "SpeedTrips"
+            ],
+            "related_parameters": [
+                "RegularFuel",
+                "SpeedFuel"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413163036_nl4opt_prob_171/",
+    "problem_path": "data/nl4opt/prob_171/"
+}

@@ -1,0 +1,222 @@
+{
+    "background": "An oil and gas company operates two types of pipes, high-volume and low-volume, with differing capacities and technician monitoring requirements. They aim to meet daily gas demand while adhering to environmental regulations and staffing limitations.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Daily volume allowed by the high-volume pipe",
+            "symbol": "HighVolumeCapacity",
+            "value": 10000,
+            "shape": [],
+            "code": "HighVolumeCapacity = data[\"HighVolumeCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of technicians required to monitor one high-volume pipe",
+            "symbol": "HighVolumeTechs",
+            "value": 12,
+            "shape": [],
+            "code": "HighVolumeTechs = data[\"HighVolumeTechs\"] # scalar parameter"
+        },
+        {
+            "definition": "Daily volume allowed by the low-volume pipe",
+            "symbol": "LowVolumeCapacity",
+            "value": 5000,
+            "shape": [],
+            "code": "LowVolumeCapacity = data[\"LowVolumeCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of technicians required to monitor one low-volume pipe",
+            "symbol": "LowVolumeTechs",
+            "value": 5,
+            "shape": [],
+            "code": "LowVolumeTechs = data[\"LowVolumeTechs\"] # scalar parameter"
+        },
+        {
+            "definition": "Total daily gas volume demand",
+            "symbol": "Demand",
+            "value": 150000,
+            "shape": [],
+            "code": "Demand = data[\"Demand\"] # scalar parameter"
+        },
+        {
+            "definition": "Total number of technicians available",
+            "symbol": "TotalTechs",
+            "value": 160,
+            "shape": [],
+            "code": "TotalTechs = data[\"TotalTechs\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum percentage of high-volume pipes of the total number of pipes",
+            "symbol": "MaxHighVolumePercent",
+            "value": 0.35,
+            "shape": [],
+            "code": "MaxHighVolumePercent = data[\"MaxHighVolumePercent\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of low-volume pipes required",
+            "symbol": "MinLowVolumePipes",
+            "value": 8,
+            "shape": [],
+            "code": "MinLowVolumePipes = data[\"MinLowVolumePipes\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of high-volume pipes is non-negative.",
+            "status": "formulated",
+            "formulation": "\\textup{NumberHighVolumePipes} \\geq 0",
+            "related_variables": [
+                "NumberHighVolumePipes"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "The number of low-volume pipes must be non-negative.",
+            "status": "formulated",
+            "formulation": "\\textup{NumberLowVolumePipes} \\geq 0",
+            "related_variables": [
+                "NumberLowVolumePipes"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "The total gas throughput must be at least the daily demand in US gallons.",
+            "status": "formulated",
+            "formulation": "(\\textup{NumberHighVolumePipes} \\times \\textup{HighVolumeCapacity}) + (\\textup{NumberLowVolumePipes} \\times \\textup{LowVolumeCapacity}) \\geq \\textup{Demand}",
+            "related_variables": [
+                "NumberHighVolumePipes",
+                "NumberLowVolumePipes"
+            ],
+            "related_parameters": [
+                "HighVolumeCapacity",
+                "LowVolumeCapacity",
+                "Demand"
+            ]
+        },
+        {
+            "description": "The total number of technicians required to monitor all pipes should not exceed the total available technicians.",
+            "status": "formulated",
+            "formulation": "\\textup{NumberHighVolumePipes} \\cdot \\textup{HighVolumeTechs} + \\textup{NumberLowVolumePipes} \\cdot \\textup{LowVolumeTechs} \\leq \\textup{TotalTechs}",
+            "related_variables": [
+                "NumberHighVolumePipes",
+                "NumberLowVolumePipes"
+            ],
+            "related_parameters": [
+                "HighVolumeTechs",
+                "LowVolumeTechs",
+                "TotalTechs"
+            ]
+        },
+        {
+            "description": "At most MaxHighVolumePercent percent of the total pipes can be high-volume pipes.",
+            "status": "formulated",
+            "formulation": "(1 - \\textup{MaxHighVolumePercent}) \\cdot \\textup{NumberHighVolumePipes} \\leq \\textup{MaxHighVolumePercent} \\cdot \\textup{NumberLowVolumePipes}",
+            "related_variables": [
+                "NumberHighVolumePipes",
+                "NumberLowVolumePipes"
+            ],
+            "related_parameters": [
+                "MaxHighVolumePercent"
+            ]
+        },
+        {
+            "description": "The number of low-volume pipes used must be at least the minimum required amount.",
+            "status": "formulated",
+            "formulation": "\\textup{NumberLowVolumePipes} \\\\geq \\textup{MinLowVolumePipes}",
+            "related_variables": [
+                "NumberLowVolumePipes"
+            ],
+            "related_parameters": [
+                "MinLowVolumePipes"
+            ]
+        },
+        {
+            "description": "Daily gas demand must be satisfied.",
+            "status": "formulated",
+            "formulation": "\\textup{HighVolumeCapacity} \\cdot \\textup{NumberHighVolumePipes} + \\textup{LowVolumeCapacity} \\cdot \\textup{NumberLowVolumePipes} \\geq \\textup{Demand}",
+            "related_variables": [
+                "NumberHighVolumePipes",
+                "NumberLowVolumePipes"
+            ],
+            "related_parameters": [
+                "HighVolumeCapacity",
+                "LowVolumeCapacity",
+                "Demand"
+            ]
+        },
+        {
+            "description": "Technician availability constraint.",
+            "status": "formulated",
+            "formulation": "\\textup{HighVolumeTechs} \\cdot \\textup{NumberHighVolumePipes} + \\textup{LowVolumeTechs} \\cdot \\textup{NumberLowVolumePipes} \\leq \\textup{TotalTechs}",
+            "related_variables": [
+                "NumberHighVolumePipes",
+                "NumberLowVolumePipes"
+            ],
+            "related_parameters": [
+                "HighVolumeTechs",
+                "LowVolumeTechs",
+                "TotalTechs"
+            ]
+        },
+        {
+            "description": "High-volume pipes must not exceed the specified percentage of total pipes.",
+            "status": "formulated",
+            "formulation": "\\textup{NumberHighVolumePipes} \\leq \\textup{MaxHighVolumePercent} \\cdot (\\textup{NumberHighVolumePipes} + \\textup{NumberLowVolumePipes})",
+            "related_variables": [
+                "NumberHighVolumePipes",
+                "NumberLowVolumePipes"
+            ],
+            "related_parameters": [
+                "MaxHighVolumePercent"
+            ]
+        },
+        {
+            "description": "Minimum number of low-volume pipes required.",
+            "status": "formulated",
+            "formulation": "\\textup{NumberLowVolumePipes} \\geq \\textup{MinLowVolumePipes}",
+            "related_variables": [
+                "NumberLowVolumePipes"
+            ],
+            "related_parameters": [
+                "MinLowVolumePipes"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of high-volume pipes used.",
+            "symbol": "NumberHighVolumePipes",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "The number of low-volume pipes used.",
+            "symbol": "NumberLowVolumePipes",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "The total number of pipes, combining both high-volume and low-volume pipes.",
+            "symbol": "TotalPipes",
+            "shape": [],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of pipes used to meet the daily gas demand.",
+            "status": "formulated",
+            "formulation": "\\textup{Minimize} \\quad \\textup{NumberHighVolumePipes} + \\textup{NumberLowVolumePipes}",
+            "related_variables": [
+                "NumberHighVolumePipes",
+                "NumberLowVolumePipes"
+            ],
+            "related_parameters": []
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413175127_nl4opt_prob_233/",
+    "problem_path": "data/nl4opt/prob_233/"
+}

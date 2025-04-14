@@ -1,0 +1,175 @@
+{
+    "background": "Platinum Database sells two types of subscription software packages, personal and commercial licenses, with associated costs and profits, and aims to maximize profits under certain constraints.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Cost to generate a personal license",
+            "symbol": "PersonalLicenseCost",
+            "value": 550,
+            "shape": [],
+            "code": "PersonalLicenseCost = data[\"PersonalLicenseCost\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost to generate a commercial license",
+            "symbol": "CommercialLicenseCost",
+            "value": 2000,
+            "shape": [],
+            "code": "CommercialLicenseCost = data[\"CommercialLicenseCost\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of licenses sold per month",
+            "symbol": "MaxLicenses",
+            "value": 300,
+            "shape": [],
+            "code": "MaxLicenses = data[\"MaxLicenses\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit per personal license",
+            "symbol": "PersonalLicenseProfit",
+            "value": 450,
+            "shape": [],
+            "code": "PersonalLicenseProfit = data[\"PersonalLicenseProfit\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit per commercial license",
+            "symbol": "CommercialLicenseProfit",
+            "value": 1200,
+            "shape": [],
+            "code": "CommercialLicenseProfit = data[\"CommercialLicenseProfit\"] # scalar parameter"
+        },
+        {
+            "definition": "Total cost limit",
+            "symbol": "TotalCostLimit",
+            "value": 400000,
+            "shape": [],
+            "code": "TotalCostLimit = data[\"TotalCostLimit\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of personal licenses produced is non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{NumberPersonalLicenses} \\\\geq 0",
+            "related_variables": [
+                "NumberPersonalLicenses"
+            ],
+            "related_parameters": [],
+            "code": "# No additional code needed since the variable \"NumberPersonalLicenses\" is defined with non-negativity by default in Gurobi (continuous variables have a non-negative domain by default)."
+        },
+        {
+            "description": "The number of commercial licenses produced must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumberCommercialLicenses} \\geq 0",
+            "related_variables": [
+                "NumberCommercialLicenses"
+            ],
+            "related_parameters": [],
+            "code": "# The variable \"NumberCommercialLicenses\" is already non-negative due to its default lower bound (0) in Gurobi."
+        },
+        {
+            "description": "The combined number of personal and commercial licenses produced cannot exceed MaxLicenses.",
+            "status": "coded",
+            "formulation": "\\textup{NumberPersonalLicenses} + \\textup{NumberCommercialLicenses} \\leq \\textup{MaxLicenses}",
+            "related_variables": [
+                "NumberPersonalLicenses",
+                "NumberCommercialLicenses"
+            ],
+            "related_parameters": [
+                "MaxLicenses"
+            ],
+            "code": "# Add constraint for maximum number of licenses\nmodel.addConstr(NumberPersonalLicenses + NumberCommercialLicenses <= MaxLicenses, name=\"max_licenses_constraint\")"
+        },
+        {
+            "description": "The total cost to produce personal and commercial licenses cannot exceed the total cost limit.",
+            "status": "coded",
+            "formulation": "\\textup{NumberPersonalLicenses} * \\textup{PersonalLicenseCost} + \\textup{NumberCommercialLicenses} * \\textup{CommercialLicenseCost} \\leq \\textup{TotalCostLimit}",
+            "related_variables": [
+                "NumberPersonalLicenses",
+                "NumberCommercialLicenses"
+            ],
+            "related_parameters": [
+                "PersonalLicenseCost",
+                "CommercialLicenseCost",
+                "TotalCostLimit"
+            ],
+            "code": "# Add total cost constraint\nmodel.addConstr(NumberPersonalLicenses * PersonalLicenseCost + NumberCommercialLicenses * CommercialLicenseCost <= TotalCostLimit, name=\"total_cost_limit\")"
+        },
+        {
+            "description": "The total cost of licenses should not exceed the cost limit.",
+            "status": "coded",
+            "formulation": "\\textup{PersonalLicenseCost} \\cdot \\textup{NumberPersonalLicenses} + \\textup{CommercialLicenseCost} \\cdot \\textup{NumberCommercialLicenses} \\leq \\textup{TotalCostLimit}",
+            "related_variables": [
+                "NumberPersonalLicenses",
+                "NumberCommercialLicenses"
+            ],
+            "related_parameters": [
+                "PersonalLicenseCost",
+                "CommercialLicenseCost",
+                "TotalCostLimit"
+            ],
+            "code": "# Add total cost constraint\nmodel.addConstr(\n    PersonalLicenseCost * NumberPersonalLicenses + CommercialLicenseCost * NumberCommercialLicenses <= TotalCostLimit,\n    name=\"total_cost_constraint\"\n)"
+        },
+        {
+            "description": "The total number of licenses sold should not exceed the monthly limit of licenses.",
+            "status": "coded",
+            "formulation": "\\textup{NumberPersonalLicenses} + \\textup{NumberCommercialLicenses} \\leq \\textup{MaxLicenses}",
+            "related_variables": [
+                "NumberPersonalLicenses",
+                "NumberCommercialLicenses"
+            ],
+            "related_parameters": [
+                "MaxLicenses"
+            ],
+            "code": "# Add constraint to ensure the total number of licenses sold does not exceed the monthly limit\nmodel.addConstr(NumberPersonalLicenses + NumberCommercialLicenses <= MaxLicenses, name=\"license_limit\")"
+        },
+        {
+            "description": "The number of licenses produced and sold must not be negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumberPersonalLicenses} \\geq 0, \\quad \\textup{NumberCommercialLicenses} \\geq 0",
+            "related_variables": [
+                "NumberPersonalLicenses",
+                "NumberCommercialLicenses"
+            ],
+            "related_parameters": [],
+            "code": "# Add non-negativity constraints for NumberPersonalLicenses and NumberCommercialLicenses\nmodel.addConstr(NumberPersonalLicenses >= 0, name=\"NonNegativity_NumberPersonalLicenses\")\nmodel.addConstr(NumberCommercialLicenses >= 0, name=\"NonNegativity_NumberCommercialLicenses\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of personal licenses produced.",
+            "symbol": "NumberPersonalLicenses",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberPersonalLicenses = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberPersonalLicenses\")"
+        },
+        {
+            "definition": "The number of commercial licenses produced.",
+            "symbol": "NumberCommercialLicenses",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberCommercialLicenses = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberCommercialLicenses\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the profit from the sale of personal and commercial software licenses.",
+            "status": "coded",
+            "formulation": "\\max \\Big( \\textup{PersonalLicenseProfit} \\cdot \\textup{NumberPersonalLicenses} + \\textup{CommercialLicenseProfit} \\cdot \\textup{NumberCommercialLicenses} \\Big)",
+            "related_variables": [
+                "NumberPersonalLicenses",
+                "NumberCommercialLicenses"
+            ],
+            "related_parameters": [
+                "PersonalLicenseProfit",
+                "CommercialLicenseProfit"
+            ],
+            "code": "# Set objective\nmodel.setObjective(PersonalLicenseProfit * NumberPersonalLicenses + CommercialLicenseProfit * NumberCommercialLicenses, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413173938_nl4opt_prob_221/",
+    "problem_path": "data/nl4opt/prob_221/"
+}

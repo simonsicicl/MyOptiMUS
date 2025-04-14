@@ -1,0 +1,173 @@
+{
+    "background": "A man on a strict diet wants to optimize his meal replacement drink consumption between two brands, alpha and omega, to meet certain dietary requirements while minimizing sugar intake.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Protein content per bottle of alpha brand",
+            "symbol": "ProteinAlpha",
+            "value": 30,
+            "shape": [],
+            "code": "ProteinAlpha = data[\"ProteinAlpha\"] # scalar parameter"
+        },
+        {
+            "definition": "Sugar content per bottle of alpha brand",
+            "symbol": "SugarAlpha",
+            "value": 20,
+            "shape": [],
+            "code": "SugarAlpha = data[\"SugarAlpha\"] # scalar parameter"
+        },
+        {
+            "definition": "Calories per bottle of alpha brand",
+            "symbol": "CaloriesAlpha",
+            "value": 350,
+            "shape": [],
+            "code": "CaloriesAlpha = data[\"CaloriesAlpha\"] # scalar parameter"
+        },
+        {
+            "definition": "Protein content per bottle of omega brand",
+            "symbol": "ProteinOmega",
+            "value": 20,
+            "shape": [],
+            "code": "ProteinOmega = data[\"ProteinOmega\"] # scalar parameter"
+        },
+        {
+            "definition": "Sugar content per bottle of omega brand",
+            "symbol": "SugarOmega",
+            "value": 15,
+            "shape": [],
+            "code": "SugarOmega = data[\"SugarOmega\"] # scalar parameter"
+        },
+        {
+            "definition": "Calories per bottle of omega brand",
+            "symbol": "CaloriesOmega",
+            "value": 300,
+            "shape": [],
+            "code": "CaloriesOmega = data[\"CaloriesOmega\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum protein requirement",
+            "symbol": "MinProtein",
+            "value": 100,
+            "shape": [],
+            "code": "MinProtein = data[\"MinProtein\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum calorie requirement",
+            "symbol": "MinCalories",
+            "value": 2000,
+            "shape": [],
+            "code": "MinCalories = data[\"MinCalories\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum proportion of the drink that can be omega brand",
+            "symbol": "MaxPropOmega",
+            "value": 0.35,
+            "shape": [],
+            "code": "MaxPropOmega = data[\"MaxPropOmega\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Number of alpha brand drinks is non-negative",
+            "status": "coded",
+            "formulation": "\\textup{AlphaBrandDrinks} \\geq 0",
+            "related_variables": [
+                "AlphaBrandDrinks"
+            ],
+            "related_parameters": [],
+            "code": "# Since AlphaBrandDrinks is already defined as non-negative by virtue of being an INTEGER variable in gurobi, no constraint is needed.\n# The constraint AlphaBrandDrinks >= 0 is implicitly handled by gurobi."
+        },
+        {
+            "description": "The number of omega brand drinks consumed must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{OmegaBrandDrinks} \\geq 0",
+            "related_variables": [
+                "OmegaBrandDrinks"
+            ],
+            "related_parameters": [],
+            "code": "model.addConstr(OmegaBrandDrinks >= 0, \"OmegaBrandDrinks_non_negative\")"
+        },
+        {
+            "description": "The total protein provided by consuming alpha and omega brand drinks must be at least the minimum protein requirement",
+            "status": "coded",
+            "formulation": "\\textup{ProteinAlpha} \\cdot \\textup{AlphaBrandDrinks} + \\textup{ProteinOmega} \\cdot \\textup{OmegaBrandDrinks} \\geq \\textup{MinProtein}",
+            "related_variables": [
+                "AlphaBrandDrinks",
+                "OmegaBrandDrinks"
+            ],
+            "related_parameters": [
+                "ProteinAlpha",
+                "ProteinOmega",
+                "MinProtein"
+            ],
+            "code": "ProteinAlpha = data[\"ProteinAlpha\"] # scalar parameter\nProteinOmega = data[\"ProteinOmega\"] # scalar parameter\nMinProtein = data[\"MinProtein\"] # scalar parameter\n\n# Add constraint for minimum protein requirement\nmodel.addConstr(ProteinAlpha * AlphaBrandDrinks + ProteinOmega * OmegaBrandDrinks >= MinProtein, name=\"min_protein_requirement\")"
+        },
+        {
+            "description": "Total calories from both brands must meet the minimum calorie requirement.",
+            "status": "coded",
+            "formulation": "\\textup{CaloriesAlpha} \\cdot \\textup{AlphaBrandDrinks} + \\textup{CaloriesOmega} \\cdot \\textup{OmegaBrandDrinks} \\geq \\textup{MinCalories}",
+            "related_variables": [
+                "AlphaBrandDrinks",
+                "OmegaBrandDrinks"
+            ],
+            "related_parameters": [
+                "CaloriesAlpha",
+                "CaloriesOmega",
+                "MinCalories"
+            ],
+            "code": "# Constraint: Total calories from both brands must meet the minimum calorie requirement\nmodel.addConstr(CaloriesAlpha * AlphaBrandDrinks + CaloriesOmega * OmegaBrandDrinks >= MinCalories, \"min_calorie_requirement\")"
+        },
+        {
+            "description": "At most MaxPropOmega of the drink should be omega brand",
+            "status": "coded",
+            "formulation": "\\textup{OmegaBrandDrinks} \\leq \\textup{MaxPropOmega} \\cdot (\\textup{AlphaBrandDrinks} + \\textup{OmegaBrandDrinks})",
+            "related_variables": [
+                "AlphaBrandDrinks",
+                "OmegaBrandDrinks"
+            ],
+            "related_parameters": [
+                "MaxPropOmega"
+            ],
+            "code": "# At most MaxPropOmega of the drink should be omega brand\nmodel.addConstr(OmegaBrandDrinks <= MaxPropOmega * (AlphaBrandDrinks + OmegaBrandDrinks), name=\"OmegaBrandMaxProportion\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of alpha brand drinks consumed",
+            "symbol": "AlphaBrandDrinks",
+            "shape": [],
+            "status": "coded",
+            "code": "AlphaBrandDrinks = model.addVar(vtype=gp.GRB.INTEGER, name=\"AlphaBrandDrinks\")"
+        },
+        {
+            "definition": "Number of omega brand drinks consumed",
+            "symbol": "OmegaBrandDrinks",
+            "shape": [],
+            "status": "coded",
+            "code": "OmegaBrandDrinks = model.addVar(vtype=gp.GRB.INTEGER, name=\"OmegaBrandDrinks\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total sugar intake from both the alpha and omega brand drinks",
+            "status": "coded",
+            "formulation": "Minimize \\quad \\textup{SugarAlpha} \\cdot \\textup{AlphaBrandDrinks} + \\textup{SugarOmega} \\cdot \\textup{OmegaBrandDrinks}",
+            "related_variables": [
+                "AlphaBrandDrinks",
+                "OmegaBrandDrinks"
+            ],
+            "related_parameters": [
+                "SugarAlpha",
+                "SugarOmega"
+            ],
+            "code": "# Set objective function\nmodel.setObjective(SugarAlpha * AlphaBrandDrinks + SugarOmega * OmegaBrandDrinks, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 110.0,
+    "log_path": "logs/log_20250413105352_nl4opt_prob_101/",
+    "problem_path": "data/nl4opt/prob_101/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_101/data.json\", \"r\") as f:\n    data = json.load(f)\n\nProteinAlpha = data[\"ProteinAlpha\"] # scalar parameter\nSugarAlpha = data[\"SugarAlpha\"] # scalar parameter\nCaloriesAlpha = data[\"CaloriesAlpha\"] # scalar parameter\nProteinOmega = data[\"ProteinOmega\"] # scalar parameter\nSugarOmega = data[\"SugarOmega\"] # scalar parameter\nCaloriesOmega = data[\"CaloriesOmega\"] # scalar parameter\nMinProtein = data[\"MinProtein\"] # scalar parameter\nMinCalories = data[\"MinCalories\"] # scalar parameter\nMaxPropOmega = data[\"MaxPropOmega\"] # scalar parameter\nAlphaBrandDrinks = model.addVar(vtype=gp.GRB.INTEGER, name=\"AlphaBrandDrinks\")\nOmegaBrandDrinks = model.addVar(vtype=gp.GRB.INTEGER, name=\"OmegaBrandDrinks\")\n\n# Since AlphaBrandDrinks is already defined as non-negative by virtue of being an INTEGER variable in gurobi, no constraint is needed.\n# The constraint AlphaBrandDrinks >= 0 is implicitly handled by gurobi.\n\nmodel.addConstr(OmegaBrandDrinks >= 0, \"OmegaBrandDrinks_non_negative\")\n\nProteinAlpha = data[\"ProteinAlpha\"] # scalar parameter\nProteinOmega = data[\"ProteinOmega\"] # scalar parameter\nMinProtein = data[\"MinProtein\"] # scalar parameter\n\n# Add constraint for minimum protein requirement\nmodel.addConstr(ProteinAlpha * AlphaBrandDrinks + ProteinOmega * OmegaBrandDrinks >= MinProtein, name=\"min_protein_requirement\")\n\n# Constraint: Total calories from both brands must meet the minimum calorie requirement\nmodel.addConstr(CaloriesAlpha * AlphaBrandDrinks + CaloriesOmega * OmegaBrandDrinks >= MinCalories, \"min_calorie_requirement\")\n\n# At most MaxPropOmega of the drink should be omega brand\nmodel.addConstr(OmegaBrandDrinks <= MaxPropOmega * (AlphaBrandDrinks + OmegaBrandDrinks), name=\"OmegaBrandMaxProportion\")\n\n# Set objective function\nmodel.setObjective(SugarAlpha * AlphaBrandDrinks + SugarOmega * OmegaBrandDrinks, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

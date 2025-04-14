@@ -1,0 +1,176 @@
+{
+    "background": "A chemical company needs to transport hydrogen using two methods: high pressure tube trailers and liquefied hydrogen tankers, with different capacities and costs, aiming to fulfill a minimum volume and a budget constraint while minimizing the total number of trips.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Capacity of high-pressure tube trailer per trip",
+            "symbol": "TubeCapacity",
+            "value": 50,
+            "shape": [],
+            "code": "TubeCapacity = data[\"TubeCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost of using the high-pressure tube trailer per trip",
+            "symbol": "TubeCost",
+            "value": 500,
+            "shape": [],
+            "code": "TubeCost = data[\"TubeCost\"] # scalar parameter"
+        },
+        {
+            "definition": "Capacity of liquefied hydrogen tanker per trip",
+            "symbol": "TankerCapacity",
+            "value": 30,
+            "shape": [],
+            "code": "TankerCapacity = data[\"TankerCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost of using the liquefied hydrogen tanker per trip",
+            "symbol": "TankerCost",
+            "value": 200,
+            "shape": [],
+            "code": "TankerCost = data[\"TankerCost\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum total volume of hydrogen to be transported",
+            "symbol": "MinVolume",
+            "value": 1000,
+            "shape": [],
+            "code": "MinVolume = data[\"MinVolume\"] # scalar parameter"
+        },
+        {
+            "definition": "Available budget for transportation",
+            "symbol": "Budget",
+            "value": 3750,
+            "shape": [],
+            "code": "Budget = data[\"Budget\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of high-pressure tube trailers used must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{TubeTrailerTrips} \\geq 0",
+            "related_variables": [
+                "TubeTrailerTrips"
+            ],
+            "related_parameters": [],
+            "code": "# No additional code needed since the variable \"TubeTrailerTrips\" is already defined with non-negativity guaranteed by Gurobi's default behavior for continuous variables (min. bound = 0)."
+        },
+        {
+            "description": "The number of liquefied hydrogen tankers used is non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{TankerTrips} \\\\geq 0",
+            "related_variables": [
+                "TankerTrips"
+            ],
+            "related_parameters": [],
+            "code": "# Since TankerTrips is already defined as a continuous variable, it is inherently non-negative in gurobipy. No additional constraint is required."
+        },
+        {
+            "description": "The total transported volume must be at least MinVolume cubic meters.",
+            "status": "coded",
+            "formulation": "\\textup{TubeCapacity} \\cdot \\textup{TubeTrailerTrips} + \\textup{TankerCapacity} \\cdot \\textup{TankerTrips} \\geq \\textup{MinVolume}",
+            "related_variables": [
+                "TubeTrailerTrips",
+                "TankerTrips"
+            ],
+            "related_parameters": [
+                "TubeCapacity",
+                "TankerCapacity",
+                "MinVolume"
+            ],
+            "code": "# Add constraint for total transported volume\nmodel.addConstr(TubeCapacity * TubeTrailerTrips + TankerCapacity * TankerTrips >= MinVolume, name=\"min_volume_constraint\")"
+        },
+        {
+            "description": "The total transportation cost using both high-pressure tube trailers and liquefied hydrogen tankers cannot exceed the available budget.",
+            "status": "coded",
+            "formulation": "\\textup{TubeCost} \\cdot \\textup{TubeTrailerTrips} + \\textup{TankerCost} \\cdot \\textup{TankerTrips} \\leq \\textup{Budget}",
+            "related_variables": [
+                "TubeTrailerTrips",
+                "TankerTrips"
+            ],
+            "related_parameters": [
+                "TubeCost",
+                "TankerCost",
+                "Budget"
+            ],
+            "code": "# Add transportation budget constraint\nmodel.addConstr(\n    TubeTrailerTrips * TubeCost + TankerTrips * TankerCost <= Budget,\n    name=\"transportation_budget\"\n)"
+        },
+        {
+            "description": "The number of high-pressure tube trailer trips is less than the number of liquefied hydrogen tanker trips.",
+            "status": "coded",
+            "formulation": "\\\\textup{TubeTrailerTrips} \\\\leq \\\\textup{TankerTrips} - 1",
+            "related_variables": [
+                "TubeTrailerTrips",
+                "TankerTrips"
+            ],
+            "related_parameters": [],
+            "code": "# Ensure the number of high-pressure tube trailer trips is less than the number of liquefied hydrogen tanker trips\nmodel.addConstr(TubeTrailerTrips <= TankerTrips - 1, name=\"trailer_tanker_trip_relation\")"
+        },
+        {
+            "description": "Total hydrogen transported must meet or exceed the minimum required volume.",
+            "status": "coded",
+            "formulation": "\\textup{TubeCapacity} \\cdot \\textup{TubeTrailerTrips} + \\textup{TankerCapacity} \\cdot \\textup{TankerTrips} \\geq \\textup{MinVolume}",
+            "related_variables": [
+                "TubeTrailerTrips",
+                "TankerTrips"
+            ],
+            "related_parameters": [
+                "TubeCapacity",
+                "TankerCapacity",
+                "MinVolume"
+            ],
+            "code": "# Add total hydrogen transport volume constraint\nmodel.addConstr(\n    TubeCapacity * TubeTrailerTrips + TankerCapacity * TankerTrips >= MinVolume,\n    name=\"hydrogen_transport_volume\"\n)"
+        },
+        {
+            "description": "Total cost must not exceed the allocated budget.",
+            "status": "coded",
+            "formulation": "\\textup{TubeCost} \\cdot \\textup{TubeTrailerTrips} + \\textup{TankerCost} \\cdot \\textup{TankerTrips} \\leq \\textup{Budget}",
+            "related_variables": [
+                "TubeTrailerTrips",
+                "TankerTrips"
+            ],
+            "related_parameters": [
+                "TubeCost",
+                "TankerCost",
+                "Budget"
+            ],
+            "code": "# Add budget constraint\nmodel.addConstr(TubeCost * TubeTrailerTrips + TankerCost * TankerTrips <= Budget, name=\"budget_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of trips made by high-pressure tube trailers",
+            "symbol": "TubeTrailerTrips",
+            "shape": [],
+            "status": "coded",
+            "code": "TubeTrailerTrips = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TubeTrailerTrips\")"
+        },
+        {
+            "definition": "The number of trips made by liquefied hydrogen tankers",
+            "symbol": "TankerTrips",
+            "shape": [],
+            "status": "coded",
+            "code": "TankerTrips = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TankerTrips\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of transportation trips.",
+            "status": "coded",
+            "formulation": "\\textup{Minimize} \\quad \\textup{TubeTrailerTrips} + \\textup{TankerTrips}",
+            "related_variables": [
+                "TubeTrailerTrips",
+                "TankerTrips"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(TubeTrailerTrips + TankerTrips, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413170625_nl4opt_prob_189/",
+    "problem_path": "data/nl4opt/prob_189/"
+}

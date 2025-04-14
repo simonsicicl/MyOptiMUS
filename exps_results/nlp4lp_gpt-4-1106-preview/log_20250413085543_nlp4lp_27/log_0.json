@@ -1,0 +1,246 @@
+{
+    "background": "The problem is to maximize the total productive capacity considering multiple inputs and constraints over a five-year period.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Total number of years in the planning horizon",
+            "symbol": "K",
+            "value": 5,
+            "shape": [],
+            "code": "K = data[\"K\"] # scalar parameter"
+        },
+        {
+            "definition": "Input one coefficients matrix",
+            "symbol": "InputOne",
+            "value": "",
+            "shape": [
+                "K",
+                "K"
+            ],
+            "code": "InputOne = np.array(data[\"InputOne\"]) # ['K', 'K']"
+        },
+        {
+            "definition": "Manpower coefficients for input one",
+            "symbol": "ManpowerOne",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "ManpowerOne = np.array(data[\"ManpowerOne\"]) # ['K']"
+        },
+        {
+            "definition": "Input two coefficients matrix",
+            "symbol": "InputTwo",
+            "value": "",
+            "shape": [
+                "K",
+                "K"
+            ],
+            "code": "InputTwo = np.array(data[\"InputTwo\"]) # ['K', 'K']"
+        },
+        {
+            "definition": "Manpower coefficients for input two",
+            "symbol": "Manpowertwo",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "Manpowertwo = np.array(data[\"Manpowertwo\"]) # ['K']"
+        },
+        {
+            "definition": "Initial stock level for each of the productive units",
+            "symbol": "Stock",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "Stock = np.array(data[\"Stock\"]) # ['K']"
+        },
+        {
+            "definition": "Productive capacity for each productive unit",
+            "symbol": "Capacity",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "Capacity = np.array(data[\"Capacity\"]) # ['K']"
+        },
+        {
+            "definition": "Company-wide manpower limit",
+            "symbol": "ManpowerLimit",
+            "value": "",
+            "shape": [],
+            "code": "ManpowerLimit = data[\"ManpowerLimit\"] # scalar parameter"
+        },
+        {
+            "definition": "Demand for each of the productive units at the end of the planning horizon",
+            "symbol": "Demand",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "Demand = np.array(data[\"Demand\"]) # ['K']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The company-wide manpower limit constraint ensures that the total manpower used across all productive units over the planning horizon does not exceed the available manpower limit.",
+            "status": "formulated",
+            "formulation": "\\sum_{k=1}^{K} (\\textup{ManpowerOne}[k] \\times \\textup{InputOneCoefficients}_{k} + \\textup{Manpowertwo}[k] \\times \\textup{InputTwoCoefficients}_{k}) \\leq \\textup{ManpowerLimit}",
+            "related_variables": [
+                "InputOneCoefficients",
+                "InputTwoCoefficients"
+            ],
+            "related_parameters": [
+                "ManpowerOne",
+                "Manpowertwo",
+                "ManpowerLimit"
+            ]
+        },
+        {
+            "description": "Production must be greater than or equal to demand levels at the end of the planning horizon",
+            "status": "formulated",
+            "formulation": "\\sum_{k=1}^{K} (\\textup{InputOneCoefficients}_{k} \\cdot \\textup{InputOne}_{k,K} + \\textup{InputTwoCoefficients}_{k} \\cdot \\textup{InputTwo}_{k,K}) + \\textup{Stock}_{K} \\geq \\textup{Demand}_{K}",
+            "related_variables": [
+                "InputOneCoefficients",
+                "InputTwoCoefficients"
+            ],
+            "related_parameters": [
+                "InputOne",
+                "InputTwo",
+                "Stock",
+                "Demand"
+            ]
+        },
+        {
+            "description": "Non-negativity constraints for input coefficients",
+            "status": "formulated",
+            "formulation": "\\begin{align*} \\textup{InputOneCoefficients}_k &\\geq 0, \\quad \\forall k \\in \\{1,...,K\\} \\\\ \\textup{InputTwoCoefficients}_k &\\geq 0, \\quad \\forall k \\in \\{1,...,K\\} \\end{align*}",
+            "related_variables": [
+                "InputOneCoefficients",
+                "InputTwoCoefficients"
+            ],
+            "related_parameters": [
+                "K"
+            ]
+        },
+        {
+            "description": "Production in each year must be less than or equal to the productive capacity for that year",
+            "status": "formulated",
+            "formulation": "\\textup{InputOneCoefficients}_{k} \\cdot \\textup{InputOne}_{k,k} + \\textup{InputTwoCoefficients}_{k} \\cdot \\textup{InputTwo}_{k,k} \\leq \\textup{Capacity}_{k} \\quad \\forall k \\in \\{1, ..., K\\}",
+            "related_variables": [
+                "InputOneCoefficients",
+                "InputTwoCoefficients"
+            ],
+            "related_parameters": [
+                "InputOne",
+                "InputTwo",
+                "Capacity"
+            ]
+        },
+        {
+            "description": "Manpower used in each year must be less than or equal to the company-wide manpower limit",
+            "status": "formulated",
+            "formulation": "\\textup{InputOneCoefficients}_{k} \\cdot \\textup{ManpowerOne}_{k} + \\textup{InputTwoCoefficients}_{k} \\cdot \\textup{Manpowertwo}_{k} \\leq \\textup{ManpowerLimit} \\quad \\forall k \\in \\{1, ..., K\\}",
+            "related_variables": [
+                "InputOneCoefficients",
+                "InputTwoCoefficients"
+            ],
+            "related_parameters": [
+                "ManpowerOne",
+                "Manpowertwo",
+                "ManpowerLimit"
+            ]
+        },
+        {
+            "description": "Manpower constraints for input one over the planning horizon considering the Manpower coefficients for input one",
+            "status": "formulated",
+            "formulation": "\\sum_{k=1}^{K} \\textup{ManpowerOne}[k] \\cdot \\textup{InputOneCoefficients}[k] \\leq \\textup{ManpowerLimit}",
+            "related_variables": [
+                "InputOneCoefficients"
+            ],
+            "related_parameters": [
+                "ManpowerOne",
+                "ManpowerLimit"
+            ]
+        },
+        {
+            "description": "Manpower constraints for input two over the planning horizon considering the Manpower coefficients for input two",
+            "status": "formulated",
+            "formulation": "\\sum_{k=1}^{K} \\textup{Manpowertwo}[k] \\cdot \\textup{InputTwoCoefficients}[k] \\leq \\textup{ManpowerLimit}",
+            "related_variables": [
+                "InputTwoCoefficients"
+            ],
+            "related_parameters": [
+                "Manpowertwo",
+                "ManpowerLimit"
+            ]
+        },
+        {
+            "description": "Ensure productive unit capacities are not exceeded",
+            "status": "formulated",
+            "formulation": "\\sum_{k=1}^{K} \\textup{InputOneCoefficients}[k] + \\textup{InputTwoCoefficients}[k] \\leq \\textup{Capacity}[j], \\quad \\forall j \\in \\{1, \\ldots, K\\}",
+            "related_variables": [
+                "InputOneCoefficients",
+                "InputTwoCoefficients"
+            ],
+            "related_parameters": [
+                "Capacity"
+            ]
+        },
+        {
+            "description": "Meets the demand for each of the productive units at the end of the planning horizon",
+            "status": "formulated",
+            "formulation": "\\sum_{k=1}^{K} (\\textup{InputOne}[j][k] \\cdot \\textup{InputOneCoefficients}[k] + \\textup{InputTwo}[j][k] \\cdot \\textup{InputTwoCoefficients}[k]) \\geq \\textup{Demand}[j], \\quad \\forall j \\in \\{1, \\ldots, K\\}",
+            "related_variables": [
+                "InputOneCoefficients",
+                "InputTwoCoefficients"
+            ],
+            "related_parameters": [
+                "InputOne",
+                "InputTwo",
+                "Demand"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Decision variable representing the coefficients for input one in each year over the planning horizon.",
+            "symbol": "InputOneCoefficients",
+            "shape": [
+                "K"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "Decision variable representing the coefficients for input two in each year over the planning horizon.",
+            "symbol": "InputTwoCoefficients",
+            "shape": [
+                "K"
+            ],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize total productive capacity at the end of the five years",
+            "status": "formulated",
+            "formulation": "\\max \\sum_{k=1}^{K} \\textup{Stock}[k] + \\sum_{j=1}^{K} \\sum_{k=1}^{K} (\\textup{InputOne}[j][k] \\cdot \\textup{InputOneCoefficients}[k] + \\textup{InputTwo}[j][k] \\cdot \\textup{InputTwoCoefficients}[k])",
+            "related_variables": [
+                "InputOneCoefficients",
+                "InputTwoCoefficients"
+            ],
+            "related_parameters": [
+                "Stock",
+                "InputOne",
+                "InputTwo"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413085543_nlp4lp_27/",
+    "problem_path": "data/nlp4lp/27/"
+}

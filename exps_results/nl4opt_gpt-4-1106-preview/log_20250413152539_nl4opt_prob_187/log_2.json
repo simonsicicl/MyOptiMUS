@@ -1,0 +1,210 @@
+{
+    "background": "A farmer needs to transport boxes of corn to the mainland using two transportation methods: ferry and light rail. Each method has a different capacity and there is a requirement for the minimum ratio of rail trips to ferry trips.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Maximum number of boxes of corn per ferry trip",
+            "symbol": "FerryCapacity",
+            "value": 20,
+            "shape": [],
+            "code": "FerryCapacity = data[\"FerryCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of boxes of corn per light rail trip",
+            "symbol": "RailCapacity",
+            "value": 15,
+            "shape": [],
+            "code": "RailCapacity = data[\"RailCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum ratio of light rail trips to ferry trips",
+            "symbol": "MinRailToFerryRatio",
+            "value": 4,
+            "shape": [],
+            "code": "MinRailToFerryRatio = data[\"MinRailToFerryRatio\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum total number of boxes of corn to send",
+            "symbol": "MinCornBoxes",
+            "value": 500,
+            "shape": [],
+            "code": "MinCornBoxes = data[\"MinCornBoxes\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Number of ferry trips must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{FerryTrips} \\geq 0",
+            "related_variables": [
+                "FerryTrips"
+            ],
+            "related_parameters": [],
+            "code": "# Since the variable FerryTrips is already defined as an integer variable, we only need to add the non-negativity constraint\nmodel.addConstr(FerryTrips >= 0, name=\"non_negative_ferry_trips\")"
+        },
+        {
+            "description": "Number of light rail trips is non-negative",
+            "status": "coded",
+            "formulation": "\\textup{LightRailTrips} \\geq 0",
+            "related_variables": [
+                "LightRailTrips"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint for non-negative number of light rail trips\nmodel.addConstr(LightRailTrips >= 0, name=\"non_negative_LightRailTrips\")"
+        },
+        {
+            "description": "The total number of boxes transported by ferry in all trips must not exceed the product of the number of ferry trips and ferry capacity",
+            "status": "coded",
+            "formulation": "\\textup{TotalBoxesByFerry} \\leq \\textup{FerryTrips} \\times \\textup{FerryCapacity}",
+            "related_variables": [
+                "TotalBoxesByFerry",
+                "FerryTrips"
+            ],
+            "related_parameters": [
+                "FerryCapacity"
+            ],
+            "code": "# Constraint for the maximum number of boxes transported by ferry\nmodel.addConstr(TotalBoxesByFerry <= FerryTrips * FerryCapacity, name=\"ferry_capacity_constraint\")"
+        },
+        {
+            "description": "Each light rail trip can only carry up to RailCapacity boxes",
+            "status": "coded",
+            "formulation": "\\textup{TotalBoxesByLightRail} \\leq \\textup{LightRailTrips} \\times \\textup{RailCapacity}",
+            "related_variables": [
+                "TotalBoxesByLightRail",
+                "LightRailTrips"
+            ],
+            "related_parameters": [
+                "RailCapacity"
+            ],
+            "code": "# Constraint: Each light rail trip can only carry up to RailCapacity boxes\nmodel.addConstr(TotalBoxesByLightRail <= LightRailTrips * RailCapacity, name=\"rail_capacity_constraint\")"
+        },
+        {
+            "description": "Number of light rail trips must be at least MinRailToFerryRatio times the number of ferry trips",
+            "status": "coded",
+            "formulation": "\\textup{LightRailTrips} \\geq \\textup{MinRailToFerryRatio} \\times \\textup{FerryTrips}",
+            "related_variables": [
+                "LightRailTrips",
+                "FerryTrips"
+            ],
+            "related_parameters": [
+                "MinRailToFerryRatio"
+            ],
+            "code": "# Constraint: Number of light rail trips must be at least MinRailToFerryRatio times the number of ferry trips\nmodel.addConstr(LightRailTrips >= MinRailToFerryRatio * FerryTrips, name=\"min_rail_to_ferry_ratio\")"
+        },
+        {
+            "description": "At least MinCornBoxes boxes of corn must be sent",
+            "status": "coded",
+            "formulation": "\\textup{TotalBoxesByFerry} + \\textup{TotalBoxesByLightRail} \\geq \\textup{MinCornBoxes}",
+            "related_variables": [
+                "TotalBoxesByFerry",
+                "TotalBoxesByLightRail"
+            ],
+            "related_parameters": [
+                "MinCornBoxes"
+            ],
+            "code": "# Add constraint to ensure at least MinCornBoxes boxes of corn must be sent\nmodel.addConstr(TotalBoxesByFerry + TotalBoxesByLightRail >= MinCornBoxes, name=\"min_corn_boxes\")"
+        },
+        {
+            "description": "Ensure the minimum ratio of light rail trips to ferry trips is met",
+            "status": "coded",
+            "formulation": "\\textup{LightRailTrips} \\geq \\textup{MinRailToFerryRatio} \\times \\textup{FerryTrips}",
+            "related_variables": [
+                "LightRailTrips",
+                "FerryTrips"
+            ],
+            "related_parameters": [
+                "MinRailToFerryRatio"
+            ],
+            "code": "# Ensure the minimum ratio of light rail trips to ferry trips is met\nmodel.addConstr(LightRailTrips >= MinRailToFerryRatio * FerryTrips, name=\"MinRatio_LightRailToFerry\")"
+        },
+        {
+            "description": "Ensure the total number of boxes transported by ferry meets its capacity constraint",
+            "status": "coded",
+            "formulation": "\\textup{TotalBoxesByFerry} = \\textup{FerryTrips} \\times \\textup{FerryCapacity}",
+            "related_variables": [
+                "TotalBoxesByFerry",
+                "FerryTrips"
+            ],
+            "related_parameters": [
+                "FerryCapacity"
+            ],
+            "code": "# Ensure the total number of boxes transported by ferry meets its capacity constraint\nmodel.addConstr(TotalBoxesByFerry == FerryTrips * FerryCapacity, name=\"ferry_capacity_constraint\")"
+        },
+        {
+            "description": "Ensure the total number of boxes transported by light rail meets its capacity constraint",
+            "status": "coded",
+            "formulation": "\\textup{TotalBoxesByLightRail} = \\textup{LightRailTrips} \\times \\textup{RailCapacity}",
+            "related_variables": [
+                "TotalBoxesByLightRail",
+                "LightRailTrips"
+            ],
+            "related_parameters": [
+                "RailCapacity"
+            ],
+            "code": "# Constraint to ensure the total number of boxes by light rail meets its capacity\nmodel.addConstr(TotalBoxesByLightRail == LightRailTrips * RailCapacity, name=\"TotalBoxesByLightRailCapacity\")"
+        },
+        {
+            "description": "Ensure that the total number of boxes of corn transported meets the minimum requirement",
+            "status": "coded",
+            "formulation": "\\textup{TotalBoxesByFerry} + \\textup{TotalBoxesByLightRail} \\geq \\textup{MinCornBoxes}",
+            "related_variables": [
+                "TotalBoxesByFerry",
+                "TotalBoxesByLightRail"
+            ],
+            "related_parameters": [
+                "MinCornBoxes"
+            ],
+            "code": "# Ensure the total number of boxes of corn transported meets the minimum requirement\nmodel.addConstr(TotalBoxesByFerry + TotalBoxesByLightRail >= MinCornBoxes, name=\"min_corn_boxes_requirement\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of ferry trips to transport boxes of corn",
+            "symbol": "FerryTrips",
+            "shape": [],
+            "status": "coded",
+            "code": "FerryTrips = model.addVar(vtype=gp.GRB.INTEGER, name=\"FerryTrips\")"
+        },
+        {
+            "definition": "Number of light rail trips to transport boxes of corn",
+            "symbol": "LightRailTrips",
+            "shape": [],
+            "status": "coded",
+            "code": "LightRailTrips = model.addVar(vtype=gp.GRB.INTEGER, name=\"LightRailTrips\")"
+        },
+        {
+            "definition": "Total number of boxes of corn transported by the ferry",
+            "symbol": "TotalBoxesByFerry",
+            "shape": [],
+            "status": "coded",
+            "code": "TotalBoxesByFerry = model.addVar(vtype=gp.GRB.INTEGER, name=\"TotalBoxesByFerry\")"
+        },
+        {
+            "definition": "Total number of boxes of corn transported by light rail",
+            "symbol": "TotalBoxesByLightRail",
+            "shape": [],
+            "status": "coded",
+            "code": "TotalBoxesByLightRail = model.addVar(vtype=gp.GRB.INTEGER, name=\"TotalBoxesByLightRail\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of ferry and light rail trips",
+            "status": "coded",
+            "formulation": "\\textup{Minimize} \\quad \\textup{FerryTrips} + \\textup{LightRailTrips}",
+            "related_variables": [
+                "FerryTrips",
+                "LightRailTrips"
+            ],
+            "related_parameters": [],
+            "code": "# Set the objective function\nmodel.setObjective(FerryTrips + LightRailTrips, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 32.0,
+    "log_path": "logs/log_20250413152539_nl4opt_prob_187/",
+    "problem_path": "data/nl4opt/prob_187/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_187/data.json\", \"r\") as f:\n    data = json.load(f)\n\nFerryCapacity = data[\"FerryCapacity\"] # scalar parameter\nRailCapacity = data[\"RailCapacity\"] # scalar parameter\nMinRailToFerryRatio = data[\"MinRailToFerryRatio\"] # scalar parameter\nMinCornBoxes = data[\"MinCornBoxes\"] # scalar parameter\nFerryTrips = model.addVar(vtype=gp.GRB.INTEGER, name=\"FerryTrips\")\nLightRailTrips = model.addVar(vtype=gp.GRB.INTEGER, name=\"LightRailTrips\")\nTotalBoxesByFerry = model.addVar(vtype=gp.GRB.INTEGER, name=\"TotalBoxesByFerry\")\nTotalBoxesByLightRail = model.addVar(vtype=gp.GRB.INTEGER, name=\"TotalBoxesByLightRail\")\n\n# Since the variable FerryTrips is already defined as an integer variable, we only need to add the non-negativity constraint\nmodel.addConstr(FerryTrips >= 0, name=\"non_negative_ferry_trips\")\n\n# Add constraint for non-negative number of light rail trips\nmodel.addConstr(LightRailTrips >= 0, name=\"non_negative_LightRailTrips\")\n\n# Constraint for the maximum number of boxes transported by ferry\nmodel.addConstr(TotalBoxesByFerry <= FerryTrips * FerryCapacity, name=\"ferry_capacity_constraint\")\n\n# Constraint: Each light rail trip can only carry up to RailCapacity boxes\nmodel.addConstr(TotalBoxesByLightRail <= LightRailTrips * RailCapacity, name=\"rail_capacity_constraint\")\n\n# Constraint: Number of light rail trips must be at least MinRailToFerryRatio times the number of ferry trips\nmodel.addConstr(LightRailTrips >= MinRailToFerryRatio * FerryTrips, name=\"min_rail_to_ferry_ratio\")\n\n# Add constraint to ensure at least MinCornBoxes boxes of corn must be sent\nmodel.addConstr(TotalBoxesByFerry + TotalBoxesByLightRail >= MinCornBoxes, name=\"min_corn_boxes\")\n\n# Ensure the minimum ratio of light rail trips to ferry trips is met\nmodel.addConstr(LightRailTrips >= MinRailToFerryRatio * FerryTrips, name=\"MinRatio_LightRailToFerry\")\n\n# Ensure the total number of boxes transported by ferry meets its capacity constraint\nmodel.addConstr(TotalBoxesByFerry == FerryTrips * FerryCapacity, name=\"ferry_capacity_constraint\")\n\n# Constraint to ensure the total number of boxes by light rail meets its capacity\nmodel.addConstr(TotalBoxesByLightRail == LightRailTrips * RailCapacity, name=\"TotalBoxesByLightRailCapacity\")\n\n# Ensure the total number of boxes of corn transported meets the minimum requirement\nmodel.addConstr(TotalBoxesByFerry + TotalBoxesByLightRail >= MinCornBoxes, name=\"min_corn_boxes_requirement\")\n\n# Set the objective function\nmodel.setObjective(FerryTrips + LightRailTrips, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

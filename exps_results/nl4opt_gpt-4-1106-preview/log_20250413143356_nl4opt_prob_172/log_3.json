@@ -1,0 +1,238 @@
+{
+    "background": "A chicken farmer needs to transport his sold chickens using either buses or cars, with specific capacities and trip durations for each mode of transportation. The goal is to minimize the transport time within the constraints of maximum trips and trip distribution.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of chicken a bus can carry",
+            "symbol": "BusCapacity",
+            "value": 100,
+            "shape": [],
+            "code": "BusCapacity = data[\"BusCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Time taken per trip by bus",
+            "symbol": "BusTripTime",
+            "value": 2,
+            "shape": [],
+            "code": "BusTripTime = data[\"BusTripTime\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of bus trips allowed",
+            "symbol": "MaxBusTrips",
+            "value": 10,
+            "shape": [],
+            "code": "MaxBusTrips = data[\"MaxBusTrips\"] # scalar parameter"
+        },
+        {
+            "definition": "Percentage of trips that must be by car",
+            "symbol": "MinimumCarTripPercentage",
+            "value": 0.6,
+            "shape": [],
+            "code": "MinimumCarTripPercentage = data[\"MinimumCarTripPercentage\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of chicken a car can carry",
+            "symbol": "CarCapacity",
+            "value": 40,
+            "shape": [],
+            "code": "CarCapacity = data[\"CarCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Time taken per trip by car",
+            "symbol": "CarTripTime",
+            "value": 1.5,
+            "shape": [],
+            "code": "CarTripTime = data[\"CarTripTime\"] # scalar parameter"
+        },
+        {
+            "definition": "Total number of chicken to be transported",
+            "symbol": "TotalChicken",
+            "value": 1200,
+            "shape": [],
+            "code": "TotalChicken = data[\"TotalChicken\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Number of bus trips must be non-negative and not exceed maximum allowed",
+            "status": "coded",
+            "formulation": "\\textup{BusTrips} \\geq 0 \\quad \\textup{and} \\quad \\textup{BusTrips} \\leq \\textup{MaxBusTrips}",
+            "related_variables": [
+                "BusTrips"
+            ],
+            "related_parameters": [
+                "MaxBusTrips"
+            ],
+            "code": "# Ensure BusTrips variable is non-negative and does not exceed MaxBusTrips\nmodel.addConstr(BusTrips >= 0, name=\"min_bus_trips\")\nmodel.addConstr(BusTrips <= MaxBusTrips, name=\"max_bus_trips\")"
+        },
+        {
+            "description": "Number of car trips is non-negative",
+            "status": "coded",
+            "formulation": "\\textup{CarTrips} \\geq 0",
+            "related_variables": [
+                "CarTrips"
+            ],
+            "related_parameters": [],
+            "code": "# Since CarTrips has already been added as a non-negative integer var, no constraint required\n# The variable definition inherently enforces CarTrips >= 0"
+        },
+        {
+            "description": "There can be at most MaxBusTrips bus trips",
+            "status": "coded",
+            "formulation": "\\textup{BusTrips} \\leq \\textup{MaxBusTrips}",
+            "related_variables": [
+                "BusTrips"
+            ],
+            "related_parameters": [
+                "MaxBusTrips"
+            ],
+            "code": "# Add constraint for maximum number of bus trips\nmodel.addConstr(BusTrips <= MaxBusTrips, name=\"max_bus_trips_constraint\")"
+        },
+        {
+            "description": "At least a certain percentage of trips must be by car",
+            "status": "coded",
+            "formulation": "\\textup{CarTrips} \\geq \\textup{MinimumCarTripPercentage} \\times (\\textup{CarTrips} + \\textup{BusTrips})",
+            "related_variables": [
+                "CarTrips",
+                "BusTrips"
+            ],
+            "related_parameters": [
+                "MinimumCarTripPercentage"
+            ],
+            "code": "# Add constraint for the minimum percentage of trips that must be by car\nmodel.addConstr(CarTrips >= MinimumCarTripPercentage * (CarTrips + BusTrips), name=\"min_car_trip_percentage\")"
+        },
+        {
+            "description": "Total number of chickens transported must be at least TotalChicken",
+            "status": "coded",
+            "formulation": "\\textup{BusCapacity} \\times \\textup{BusTrips} + \\textup{CarCapacity} \\times \\textup{CarTrips} \\geq \\textup{TotalChicken}",
+            "related_variables": [
+                "BusTrips",
+                "CarTrips"
+            ],
+            "related_parameters": [
+                "BusCapacity",
+                "CarCapacity",
+                "TotalChicken"
+            ],
+            "code": "# Add constraint for total number of chickens transported\nmodel.addConstr(BusCapacity * BusTrips + CarCapacity * CarTrips >= TotalChicken, name=\"total_chickens_transported\")"
+        },
+        {
+            "description": "Number of car trips must satisfy the requirement of minimum percentage of total trips",
+            "status": "coded",
+            "formulation": "\\textup{CarTrips} \\geq \\textup{MinimumCarTripPercentage} \\times (\\textup{CarTrips} + \\textup{BusTrips})",
+            "related_variables": [
+                "CarTrips",
+                "BusTrips"
+            ],
+            "related_parameters": [
+                "MinimumCarTripPercentage"
+            ],
+            "code": ""
+        },
+        {
+            "description": "Total trips should be enough to transport all chickens based on their capacities",
+            "status": "coded",
+            "formulation": "\\textup{CarTrips} \\times \\textup{CarCapacity} + \\textup{BusTrips} \\times \\textup{BusCapacity} \\geq \\textup{TotalChicken}",
+            "related_variables": [
+                "CarTrips",
+                "BusTrips"
+            ],
+            "related_parameters": [
+                "CarCapacity",
+                "BusCapacity",
+                "TotalChicken"
+            ],
+            "code": "```"
+        },
+        {
+            "description": "The number of trips by bus is bounded by the maximum allowed",
+            "status": "coded",
+            "formulation": "\\textup{BusTrips} \\leq \\textup{MaxBusTrips}",
+            "related_variables": [
+                "BusTrips"
+            ],
+            "related_parameters": [
+                "MaxBusTrips"
+            ],
+            "code": "# Add constraint for the maximum number of bus trips allowed\nmodel.addConstr(BusTrips <= MaxBusTrips, name=\"max_bus_trips\")"
+        },
+        {
+            "description": "Ensure that the total capacity of trips meets or exceeds the total chickens to be transported",
+            "status": "coded",
+            "formulation": "\\textup{BusCapacity} \\times \\textup{BusTrips} + \\textup{CarCapacity} \\times \\textup{CarTrips} \\geq \\textup{TotalChicken}",
+            "related_variables": [
+                "BusTrips",
+                "CarTrips"
+            ],
+            "related_parameters": [
+                "BusCapacity",
+                "CarCapacity",
+                "TotalChicken"
+            ],
+            "code": "# Ensure the total capacity of trips meets or exceeds the total chickens to be transported\nmodel.addConstr((BusCapacity * BusTrips) + (CarCapacity * CarTrips) >= TotalChicken, \"chicken_transportation_capacity\")"
+        },
+        {
+            "description": "Ensure that the maximum number of bus trips does not exceed the limit",
+            "status": "coded",
+            "formulation": "\\textup{BusTrips} \\leq \\textup{MaxBusTrips}",
+            "related_variables": [
+                "BusTrips"
+            ],
+            "related_parameters": [
+                "MaxBusTrips"
+            ],
+            "code": "model.addConstr(BusTrips <= MaxBusTrips, name=\"max_bus_trips_constraint\")"
+        },
+        {
+            "description": "Ensure that the minimum percentage of trips that must be by car is maintained",
+            "status": "coded",
+            "formulation": "\\textup{CarTrips} \\geq \\textup{MinimumCarTripPercentage} \\times (\\textup{BusTrips} + \\textup{CarTrips})",
+            "related_variables": [
+                "BusTrips",
+                "CarTrips"
+            ],
+            "related_parameters": [
+                "MinimumCarTripPercentage"
+            ],
+            "code": "```"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of trips made by bus",
+            "symbol": "BusTrips",
+            "shape": [],
+            "status": "coded",
+            "code": "BusTrips = model.addVar(vtype=gp.GRB.INTEGER, name=\"BusTrips\")"
+        },
+        {
+            "definition": "Number of trips made by car",
+            "symbol": "CarTrips",
+            "shape": [],
+            "status": "coded",
+            "code": "CarTrips = model.addVar(vtype=gp.GRB.INTEGER, name=\"CarTrips\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total time needed to transport all chickens",
+            "status": "coded",
+            "formulation": "\\textup{TotalTime} = \\textup{BusTripTime} \\times \\textup{BusTrips} + \\textup{CarTripTime} \\times \\textup{CarTrips}",
+            "related_variables": [
+                "BusTrips",
+                "CarTrips"
+            ],
+            "related_parameters": [
+                "BusTripTime",
+                "CarTripTime"
+            ],
+            "code": "# Define objective\nmodel.setObjective(BusTripTime * BusTrips + CarTripTime * CarTrips, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "runtime_error",
+    "solver_output_status": "runtime_error",
+    "error_message": "Traceback (most recent call last):\n  File \"c:\\Users\\Simon\\Desktop\\Courses\\ECE 570\\ECE570_Project\\MyOptiMUS\\evaluator.py\", line 45, in run\n    exec(last_line, local_env, local_env)\n  File \"<string>\", line 1\n    ```\n    ^\nSyntaxError: invalid syntax\n",
+    "obj_val": null,
+    "log_path": "logs/log_20250413143356_nl4opt_prob_172/",
+    "problem_path": "data/nl4opt/prob_172/",
+    "prep_code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_172/data.json\", \"r\") as f:\n    data = json.load(f)\n"
+}

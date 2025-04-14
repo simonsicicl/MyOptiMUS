@@ -1,0 +1,209 @@
+{
+    "background": "A pharmacy manufactures eye cream and foot cream using two machines with specific production capabilities and distilled water requirements. The goal is to minimize the total production time while meeting minimum cream production requirements.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Amount of eye cream produced by machine 1 per hour",
+            "symbol": "EyeMachine1",
+            "value": 30,
+            "shape": [],
+            "code": "EyeMachine1 = data[\"EyeMachine1\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of foot cream produced by machine 1 per hour",
+            "symbol": "FootMachine1",
+            "value": 60,
+            "shape": [],
+            "code": "FootMachine1 = data[\"FootMachine1\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of eye cream produced by machine 2 per hour",
+            "symbol": "EyeMachine2",
+            "value": 45,
+            "shape": [],
+            "code": "EyeMachine2 = data[\"EyeMachine2\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of foot cream produced by machine 2 per hour",
+            "symbol": "FootMachine2",
+            "value": 30,
+            "shape": [],
+            "code": "FootMachine2 = data[\"FootMachine2\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of distilled water required by machine 1 per hour",
+            "symbol": "WaterMachine1",
+            "value": 20,
+            "shape": [],
+            "code": "WaterMachine1 = data[\"WaterMachine1\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of distilled water required by machine 2 per hour",
+            "symbol": "WaterMachine2",
+            "value": 15,
+            "shape": [],
+            "code": "WaterMachine2 = data[\"WaterMachine2\"] # scalar parameter"
+        },
+        {
+            "definition": "Total amount of distilled water available",
+            "symbol": "TotalWater",
+            "value": 1200,
+            "shape": [],
+            "code": "TotalWater = data[\"TotalWater\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum required amount of eye cream to be produced",
+            "symbol": "MinEyeCream",
+            "value": 1300,
+            "shape": [],
+            "code": "MinEyeCream = data[\"MinEyeCream\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum required amount of foot cream to be produced",
+            "symbol": "MinFootCream",
+            "value": 1500,
+            "shape": [],
+            "code": "MinFootCream = data[\"MinFootCream\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The total amount of eye cream produced must be at least MinEyeCream",
+            "status": "formulated",
+            "formulation": "\\\\textup{TimeMachine1Eye} \\\\times \\\\textup{EyeMachine1} + \\\\textup{TimeMachine2Eye} \\\\times \\\\textup{EyeMachine2} \\\\geq \\\\textup{MinEyeCream}",
+            "related_variables": [
+                "TimeMachine1Eye",
+                "TimeMachine2Eye"
+            ],
+            "related_parameters": [
+                "MinEyeCream",
+                "EyeMachine1",
+                "EyeMachine2"
+            ]
+        },
+        {
+            "description": "The total production of foot cream from both machines should be at least the minimum required amount of foot cream (MinFootCream).",
+            "status": "formulated",
+            "formulation": "\\textup{FootMachine1} \\cdot \\textup{TimeMachine1Foot} + \\textup{FootMachine2} \\cdot \\textup{TimeMachine2Foot} \\geq \\textup{MinFootCream}",
+            "related_variables": [
+                "TimeMachine1Foot",
+                "TimeMachine2Foot"
+            ],
+            "related_parameters": [
+                "FootMachine1",
+                "FootMachine2",
+                "MinFootCream"
+            ]
+        },
+        {
+            "description": "Time spent on Machine 1 is non-negative. Machine 1 consists of two variables representing time spent producing eye cream and foot cream, both of which must be greater than or equal to zero.",
+            "status": "formulated",
+            "formulation": "\\textup{TimeMachine1Eye} \\geq 0 \\quad \\textup{and} \\quad \\textup{TimeMachine1Foot} \\geq 0",
+            "related_variables": [
+                "TimeMachine1Eye",
+                "TimeMachine1Foot"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Non-negativity constraints for time spent on Machine 2",
+            "status": "formulated",
+            "formulation": "\\textup{TimeMachine2Eye} \\geq 0 \\quad \\\\\\\\ \\quad \\textup{TimeMachine2Foot} \\geq 0",
+            "related_variables": [
+                "TimeMachine2Eye",
+                "TimeMachine2Foot"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Ensure that the total production of eye cream meets the minimum requirement.",
+            "status": "formulated",
+            "formulation": "\\textup{TimeMachine1Eye} \\cdot \\textup{EyeMachine1} + \\textup{TimeMachine2Eye} \\cdot \\textup{EyeMachine2} \\geq \\textup{MinEyeCream}",
+            "related_variables": [
+                "TimeMachine1Eye",
+                "TimeMachine2Eye"
+            ],
+            "related_parameters": [
+                "EyeMachine1",
+                "EyeMachine2",
+                "MinEyeCream"
+            ]
+        },
+        {
+            "description": "Ensure that the total production of foot cream meets the minimum requirement.",
+            "status": "formulated",
+            "formulation": "\\textup{TimeMachine1Foot} \\cdot \\textup{FootMachine1} + \\textup{TimeMachine2Foot} \\cdot \\textup{FootMachine2} \\geq \\textup{MinFootCream}",
+            "related_variables": [
+                "TimeMachine1Foot",
+                "TimeMachine2Foot"
+            ],
+            "related_parameters": [
+                "FootMachine1",
+                "FootMachine2",
+                "MinFootCream"
+            ]
+        },
+        {
+            "description": "Ensure that the total distilled water used does not exceed the available amount.",
+            "status": "formulated",
+            "formulation": "(\\textup{TimeMachine1Eye} + \\textup{TimeMachine1Foot}) \\cdot \\textup{WaterMachine1} + (\\textup{TimeMachine2Eye} + \\textup{TimeMachine2Foot}) \\cdot \\textup{WaterMachine2} \\leq \\textup{TotalWater}",
+            "related_variables": [
+                "TimeMachine1Eye",
+                "TimeMachine1Foot",
+                "TimeMachine2Eye",
+                "TimeMachine2Foot"
+            ],
+            "related_parameters": [
+                "WaterMachine1",
+                "WaterMachine2",
+                "TotalWater"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Hours Machine 1 runs to produce eye cream",
+            "symbol": "TimeMachine1Eye",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "Hours Machine 1 runs to produce foot cream",
+            "symbol": "TimeMachine1Foot",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "Hours Machine 2 runs to produce eye cream",
+            "symbol": "TimeMachine2Eye",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "Hours Machine 2 runs to produce foot cream",
+            "symbol": "TimeMachine2Foot",
+            "shape": [],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total time spent using Machine 1 and Machine 2 to manufacture eye cream and foot cream.",
+            "status": "formulated",
+            "formulation": "\\textup{Minimize} \\quad \\textup{TimeMachine1Eye} + \\textup{TimeMachine1Foot} + \\textup{TimeMachine2Eye} + \\textup{TimeMachine2Foot}",
+            "related_variables": [
+                "TimeMachine1Eye",
+                "TimeMachine1Foot",
+                "TimeMachine2Eye",
+                "TimeMachine2Foot"
+            ],
+            "related_parameters": []
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413154725_nl4opt_prob_126/",
+    "problem_path": "data/nl4opt/prob_126/"
+}

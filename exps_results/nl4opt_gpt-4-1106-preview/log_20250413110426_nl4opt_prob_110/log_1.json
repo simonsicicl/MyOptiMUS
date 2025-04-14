@@ -1,0 +1,182 @@
+{
+    "background": "A patient needs to treat a sore throat with syrups containing medicinal and sugar units. Each syrup delivers different units of medicine to the throat and lungs.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Medicine delivered to the throat by syrup 1 per serving",
+            "symbol": "MedicineThroat1",
+            "value": 0.5,
+            "shape": [],
+            "code": "MedicineThroat1 = data[\"MedicineThroat1\"] # scalar parameter"
+        },
+        {
+            "definition": "Medicine delivered to the lungs by syrup 1 per serving",
+            "symbol": "MedicineLungs1",
+            "value": 0.4,
+            "shape": [],
+            "code": "MedicineLungs1 = data[\"MedicineLungs1\"] # scalar parameter"
+        },
+        {
+            "definition": "Medicine delivered to the throat by syrup 2 per serving",
+            "symbol": "MedicineThroat2",
+            "value": 0.2,
+            "shape": [],
+            "code": "MedicineThroat2 = data[\"MedicineThroat2\"] # scalar parameter"
+        },
+        {
+            "definition": "Medicine delivered to the lungs by syrup 2 per serving",
+            "symbol": "MedicineLungs2",
+            "value": 0.5,
+            "shape": [],
+            "code": "MedicineLungs2 = data[\"MedicineLungs2\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of sugar contained in syrup 1 per serving",
+            "symbol": "Sugar1",
+            "value": 0.5,
+            "shape": [],
+            "code": "Sugar1 = data[\"Sugar1\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of sugar contained in syrup 2 per serving",
+            "symbol": "Sugar2",
+            "value": 0.3,
+            "shape": [],
+            "code": "Sugar2 = data[\"Sugar2\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum medicine units for the throat the patient can intake",
+            "symbol": "MaxMedicineThroat",
+            "value": 5,
+            "shape": [],
+            "code": "MaxMedicineThroat = data[\"MaxMedicineThroat\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum medicine units for the lungs the patient needs to intake",
+            "symbol": "MinMedicineLungs",
+            "value": 4,
+            "shape": [],
+            "code": "MinMedicineLungs = data[\"MinMedicineLungs\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of servings of syrup 1 must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{ServingsSyrup1} \\geq 0",
+            "related_variables": [
+                "ServingsSyrup1"
+            ],
+            "related_parameters": [],
+            "code": "model.addConstr(ServingsSyrup1 >= 0, name=\"non_negative_servings_syrup1\")"
+        },
+        {
+            "description": "The number of servings of syrup 2 must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{ServingsSyrup2} \\geq 0",
+            "related_variables": [
+                "ServingsSyrup2"
+            ],
+            "related_parameters": [],
+            "code": "model.addConstr(ServingsSyrup2 >= 0, name=\"non_negative_servings_syrup2\")"
+        },
+        {
+            "description": "Total medicine for the throat from both syrups should not exceed MaxMedicineThroat units",
+            "status": "coded",
+            "formulation": "\\textup{MedicineThroat1} \\cdot \\textup{ServingsSyrup1} + \\textup{MedicineThroat2} \\cdot \\textup{ServingsSyrup2} \\leq \\textup{MaxMedicineThroat}",
+            "related_variables": [
+                "ServingsSyrup1",
+                "ServingsSyrup2"
+            ],
+            "related_parameters": [
+                "MedicineThroat1",
+                "MedicineThroat2",
+                "MaxMedicineThroat"
+            ],
+            "code": "model.addConstr(MedicineThroat1 * ServingsSyrup1 + MedicineThroat2 * ServingsSyrup2 <= MaxMedicineThroat, name=\"MaxMedicineThroatConstraint\")"
+        },
+        {
+            "description": "Total medicine to the lungs from both syrups should be at least MinMedicineLungs units",
+            "status": "coded",
+            "formulation": "\\textup{MedicineLungs1} \\times \\textup{ServingsSyrup1} + \\textup{MedicineLungs2} \\times \\textup{ServingsSyrup2} \\geq \\textup{MinMedicineLungs}",
+            "related_variables": [
+                "ServingsSyrup1",
+                "ServingsSyrup2"
+            ],
+            "related_parameters": [
+                "MedicineLungs1",
+                "MedicineLungs2",
+                "MinMedicineLungs"
+            ],
+            "code": "# Add constraint for minimum medicine delivered to the lungs\nmodel.addConstr(MedicineLungs1 * ServingsSyrup1 + MedicineLungs2 * ServingsSyrup2 >= MinMedicineLungs, name=\"min_medicine_to_lungs\")"
+        },
+        {
+            "description": "The total medicine delivered to the throat by the syrups should not exceed the maximum allowed",
+            "status": "coded",
+            "formulation": "\\textup{MedicineThroat1} \\times \\textup{ServingsSyrup1} + \\textup{MedicineThroat2} \\times \\textup{ServingsSyrup2} \\leq \\textup{MaxMedicineThroat}",
+            "related_variables": [
+                "ServingsSyrup1",
+                "ServingsSyrup2"
+            ],
+            "related_parameters": [
+                "MedicineThroat1",
+                "MedicineThroat2",
+                "MaxMedicineThroat"
+            ],
+            "code": "# Add constraint for the maximum medicine delivered to the throat by the syrups\nmodel.addConstr(MedicineThroat1 * ServingsSyrup1 + MedicineThroat2 * ServingsSyrup2 <= MaxMedicineThroat, name=\"max_medicine_throat\")"
+        },
+        {
+            "description": "The total medicine delivered to the lungs by the syrups should meet or exceed the minimum requirement",
+            "status": "coded",
+            "formulation": "\\textup{MedicineLungs1} \\times \\textup{ServingsSyrup1} + \\textup{MedicineLungs2} \\times \\textup{ServingsSyrup2} \\geq \\textup{MinMedicineLungs}",
+            "related_variables": [
+                "ServingsSyrup1",
+                "ServingsSyrup2"
+            ],
+            "related_parameters": [
+                "MedicineLungs1",
+                "MedicineLungs2",
+                "MinMedicineLungs"
+            ],
+            "code": "# Constraint to ensure the total medicine delivered to the lungs by the syrups meets or exceeds the minimum requirement\nmodel.addConstr(MedicineLungs1 * ServingsSyrup1 + MedicineLungs2 * ServingsSyrup2 >= MinMedicineLungs, \"min_medicine_to_lungs\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of servings of syrup 1",
+            "symbol": "ServingsSyrup1",
+            "shape": [],
+            "status": "coded",
+            "code": "ServingsSyrup1 = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"ServingsSyrup1\")"
+        },
+        {
+            "definition": "The number of servings of syrup 2",
+            "symbol": "ServingsSyrup2",
+            "shape": [],
+            "status": "coded",
+            "code": "ServingsSyrup2 = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"ServingsSyrup2\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the patient's total sugar intake from consuming syrups",
+            "status": "coded",
+            "formulation": "\\min \\left( \\textup{Sugar1} \\times \\textup{ServingsSyrup1} + \\textup{Sugar2} \\times \\textup{ServingsSyrup2} \\right)",
+            "related_variables": [
+                "ServingsSyrup1",
+                "ServingsSyrup2"
+            ],
+            "related_parameters": [
+                "Sugar1",
+                "Sugar2"
+            ],
+            "code": "# Objective function: Minimize the patient's total sugar intake from consuming syrups\nmodel.setObjective(Sugar1 * ServingsSyrup1 + Sugar2 * ServingsSyrup2, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413110426_nl4opt_prob_110/",
+    "problem_path": "data/nl4opt/prob_110/"
+}

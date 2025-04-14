@@ -1,0 +1,148 @@
+{
+    "background": "The manufacturer is looking to determine the optimal combination of various alloys to produce a specified total quantity with certain target components at minimal cost.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Quantity of alloy to produce",
+            "symbol": "AlloyQuantity",
+            "value": 0,
+            "shape": [],
+            "code": "AlloyQuantity = data[\"AlloyQuantity\"] # scalar parameter"
+        },
+        {
+            "definition": "Quantity of target components in the alloy",
+            "symbol": "Target",
+            "value": 0,
+            "shape": [
+                "M"
+            ],
+            "code": "Target = np.array(data[\"Target\"]) # ['M']"
+        },
+        {
+            "definition": "Ratio of each component k in the alloy m",
+            "symbol": "Ratio",
+            "value": 0,
+            "shape": [
+                "K",
+                "M"
+            ],
+            "code": "Ratio = np.array(data[\"Ratio\"]) # ['K', 'M']"
+        },
+        {
+            "definition": "Price of each alloy k",
+            "symbol": "Price",
+            "value": 0,
+            "shape": [
+                "K"
+            ],
+            "code": "Price = np.array(data[\"Price\"]) # ['K']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Total quantity of alloys produced is exactly AlloyQuantity",
+            "status": "coded",
+            "formulation": "\\sum_{m=1}^{M} \\textup{AlloyProduced}_{m} = \\textup{AlloyQuantity}",
+            "related_variables": [
+                "AlloyProduced"
+            ],
+            "related_parameters": [
+                "AlloyQuantity"
+            ],
+            "code": "# Add constraint for the total quantity of alloys produced to match AlloyQuantity\nmodel.addConstr(gp.quicksum(AlloyProduced[m] for m in range(M)) == AlloyQuantity, name=\"total_alloy_produced\")"
+        },
+        {
+            "description": "The quantity of each target component in the alloy must be met or exceeded",
+            "status": "coded",
+            "formulation": "\\sum_{k=1}^{K} \\textup{Ratio}_{k,m} \\times \\textup{AlloyProduced}_{k} \\geq \\textup{Target}_{m} \\quad \\forall m \\in M",
+            "related_variables": [
+                "AlloyProduced"
+            ],
+            "related_parameters": [
+                "Ratio",
+                "Target"
+            ],
+            "code": "# Ensure that the quantity of each target component in the alloy is met or exceeded\nfor m in range(M):\n    model.addConstr(gp.quicksum(Ratio[k, m] * AlloyProduced[k] for k in range(K)) >= Target[m], name=f\"target_component_{m}\")"
+        },
+        {
+            "description": "The quantity of each component k in alloy m must adhere to the specified Ratio. This is to ensure that the alloy produced has the right composition.",
+            "status": "coded",
+            "formulation": "\\forall k \\in K, \\quad \\forall m \\in M, \\quad \\textup{Ratio}_{km} \\times \\textup{AlloyProduced}_{m} = \\textup{Target}_{km}",
+            "related_variables": [
+                "AlloyProduced"
+            ],
+            "related_parameters": [
+                "Ratio",
+                "Target"
+            ],
+            "code": "# Composition constraint for each component k in alloy m\nfor k in K:\n    for m in M:\n        model.addConstr(AlloyProduced[m] * Ratio[k, m] == Target[k, m], name=f\"comp_ratio_{k}_{m}\")"
+        },
+        {
+            "description": "Each alloy's quantity must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{AlloyProduced}_m \\geq 0, \\quad \\forall m \\in \\{1, \\ldots, M\\}",
+            "related_variables": [
+                "AlloyProduced"
+            ],
+            "related_parameters": [],
+            "code": "# Alloy quantity non-negativity constraints\nfor m in range(M):\n    model.addConstr(AlloyProduced[m] >= 0, name=\"alloy_nonnegativity\")"
+        },
+        {
+            "description": "Ensure that the total quantity produced matches the specified alloy quantity",
+            "status": "coded",
+            "formulation": "\\sum_{m=1}^{M} \\textup{AlloyProduced}_{m} = \\textup{AlloyQuantity}",
+            "related_variables": [
+                "AlloyProduced"
+            ],
+            "related_parameters": [
+                "AlloyQuantity"
+            ],
+            "code": "# Ensure that the total quantity produced matches the specified alloy quantity\nmodel.addConstr(gp.quicksum(AlloyProduced[m] for m in range(M)) == AlloyQuantity, name=\"match_alloy_quantity\")"
+        },
+        {
+            "description": "Ensure that the composition of each target component in the alloy is met",
+            "status": "coded",
+            "formulation": "\\forall m \\in M: \\sum_{k=1}^{K} \\textup{Ratio}_{km} \\cdot \\textup{AlloyProduced}_{m} = \\textup{Target}_{m}",
+            "related_variables": [
+                "AlloyProduced"
+            ],
+            "related_parameters": [
+                "Target",
+                "Ratio"
+            ],
+            "code": "# Ensure that the composition of each target component in the alloy is met\nfor m in M:\n    model.addConstr(gp.quicksum(Ratio[k, m] * AlloyProduced[m] for k in range(K)) == Target[m], name=f\"alloy_composition_{m}\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Quantity of each target alloy produced",
+            "symbol": "AlloyProduced",
+            "shape": [
+                "M"
+            ],
+            "status": "coded",
+            "code": "AlloyProduced = model.addVars(M, vtype=gp.GRB.CONTINUOUS, name=\"AlloyProduced\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total cost for producing the specified quantity of alloy",
+            "status": "coded",
+            "formulation": "\\min \\sum_{k=1}^{K} \\sum_{m=1}^{M} \\textup{Price}_{k} \\cdot \\textup{Ratio}_{km} \\cdot \\textup{AlloyProduced}_{m}",
+            "related_variables": [
+                "AlloyProduced"
+            ],
+            "related_parameters": [
+                "Price",
+                "Ratio"
+            ],
+            "code": "# Set objective\nmodel.setObjective(gp.quicksum(Price[k] * Ratio[k, m] * AlloyProduced[m] for k in range(K) for m in range(M)), gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413091426_nlp4lp_39/",
+    "problem_path": "data/nlp4lp/39/"
+}

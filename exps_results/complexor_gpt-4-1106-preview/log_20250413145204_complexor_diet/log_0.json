@@ -1,0 +1,213 @@
+{
+    "background": "This is a diet optimization problem involving the selection of a set of foods that meet nutritional needs within specified ranges while minimizing total cost.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "symbol": "NutrientCount",
+            "definition": "The number of different nutrients",
+            "shape": [],
+            "code": "NutrientCount = data[\"NutrientCount\"] # scalar parameter"
+        },
+        {
+            "symbol": "FoodCount",
+            "definition": "The number of different foods",
+            "shape": [],
+            "code": "FoodCount = data[\"FoodCount\"] # scalar parameter"
+        },
+        {
+            "symbol": "Cost",
+            "definition": "The cost of each food item",
+            "shape": [
+                "FoodCount"
+            ],
+            "code": "Cost = np.array(data[\"Cost\"]) # ['FoodCount']"
+        },
+        {
+            "symbol": "FoodMin",
+            "definition": "The minimum quantity of each food that can be bought",
+            "shape": [
+                "FoodCount"
+            ],
+            "code": "FoodMin = np.array(data[\"FoodMin\"]) # ['FoodCount']"
+        },
+        {
+            "symbol": "FoodMax",
+            "definition": "The maximum quantity of each food that can be bought",
+            "shape": [
+                "FoodCount"
+            ],
+            "code": "FoodMax = np.array(data[\"FoodMax\"]) # ['FoodCount']"
+        },
+        {
+            "symbol": "NutrientMin",
+            "definition": "The minimum required quantity of each nutrient",
+            "shape": [
+                "NutrientCount"
+            ],
+            "code": "NutrientMin = np.array(data[\"NutrientMin\"]) # ['NutrientCount']"
+        },
+        {
+            "symbol": "NutrientMax",
+            "definition": "The maximum allowed quantity of each nutrient",
+            "shape": [
+                "NutrientCount"
+            ],
+            "code": "NutrientMax = np.array(data[\"NutrientMax\"]) # ['NutrientCount']"
+        },
+        {
+            "symbol": "AmountNutrient",
+            "definition": "The amount of each nutrient in each food",
+            "shape": [
+                "FoodCount",
+                "NutrientCount"
+            ],
+            "code": "AmountNutrient = np.array(data[\"AmountNutrient\"]) # ['FoodCount', 'NutrientCount']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Each food's purchased amount should be no less than its minimum required amount",
+            "status": "formulated",
+            "formulation": "\\textup{AmountFood}_j \\geq \\textup{FoodMin}_j, \\quad \\forall j \\in \\{1, \\dots, \\textup{FoodCount}\\}",
+            "related_variables": [
+                "AmountFood"
+            ],
+            "related_parameters": [
+                "FoodMin",
+                "FoodCount"
+            ]
+        },
+        {
+            "description": "For each food j, the amount bought must be less than or equal to FoodMax_j",
+            "status": "formulated",
+            "formulation": "\\forall j : 0 \\leq \\textup{AmountFood}_{j} \\leq \\textup{FoodMax}_{j}",
+            "related_variables": [
+                "AmountFood"
+            ],
+            "related_parameters": [
+                "FoodMax"
+            ]
+        },
+        {
+            "description": "Each nutrient's total amount from all foods must be greater than or equal to the minimum required quantity for that nutrient",
+            "status": "formulated",
+            "formulation": "\\sum_{j=1}^{\\textup{FoodCount}} (\\textup{AmountNutrient}_{ji} \\cdot \\textup{AmountFood}_{j}) \\geq \\textup{NutrientMin}_{i} \\quad \\forall i \\in \\{1, \\ldots, \\textup{NutrientCount}\\}",
+            "related_variables": [
+                "AmountFood"
+            ],
+            "related_parameters": [
+                "NutrientCount",
+                "FoodCount",
+                "AmountNutrient",
+                "NutrientMin"
+            ]
+        },
+        {
+            "description": "Total nutrient intake from the selected foods must not exceed the maximum allowed quantity for each nutrient",
+            "status": "formulated",
+            "formulation": "\\sum_{j=1}^{\\textup{FoodCount}} \\textup{AmountNutrient}_{ji} \\cdot \\textup{AmountFood}_{j} \\leq \\textup{NutrientMax}_{i} \\quad \\forall i \\in \\{1, \\ldots, \\textup{NutrientCount}\\}",
+            "related_variables": [
+                "AmountFood"
+            ],
+            "related_parameters": [
+                "FoodCount",
+                "NutrientCount",
+                "NutrientMax",
+                "AmountNutrient"
+            ]
+        },
+        {
+            "description": "All food quantities must be non-negative.",
+            "status": "formulated",
+            "formulation": "\\forall i \\in \\{1, \\dots, \\textup{FoodCount}\\}, \\quad \\textup{AmountFood}_i \\geq 0",
+            "related_variables": [
+                "AmountFood"
+            ],
+            "related_parameters": [
+                "FoodCount"
+            ]
+        },
+        {
+            "description": "Ensure that the amount of nutrient j from all foods i is at least the minimum required quantity of nutrient j",
+            "status": "formulated",
+            "formulation": "\\sum_{i=1}^{\\textup{FoodCount}} \\textup{AmountNutrient}_{ij} \\cdot \\textup{AmountFood}_i \\geq \\textup{NutrientMin}_j, \\quad \\forall j \\in \\{1, \\ldots, \\textup{NutrientCount}\\}",
+            "related_variables": [
+                "AmountFood"
+            ],
+            "related_parameters": [
+                "AmountNutrient",
+                "NutrientMin",
+                "FoodCount",
+                "NutrientCount"
+            ]
+        },
+        {
+            "description": "Ensure that the amount of nutrient j from all foods i does not exceed the maximum allowed quantity of nutrient j",
+            "status": "formulated",
+            "formulation": "\\sum_{i=1}^{\\textup{FoodCount}} \\textup{AmountNutrient}_{ij} \\cdot \\textup{AmountFood}_i \\leq \\textup{NutrientMax}_j, \\quad \\forall j \\in \\{1, \\ldots, \\textup{NutrientCount}\\}",
+            "related_variables": [
+                "AmountFood"
+            ],
+            "related_parameters": [
+                "AmountNutrient",
+                "NutrientMax",
+                "FoodCount",
+                "NutrientCount"
+            ]
+        },
+        {
+            "description": "Ensure that the amount of each food i bought is at least the minimum quantity allowed for that food",
+            "status": "formulated",
+            "formulation": "\\textup{AmountFood}_i \\geq \\textup{FoodMin}_i, \\quad \\forall i \\in \\{1, \\ldots, \\textup{FoodCount}\\}",
+            "related_variables": [
+                "AmountFood"
+            ],
+            "related_parameters": [
+                "FoodMin",
+                "FoodCount"
+            ]
+        },
+        {
+            "description": "Ensure that the amount of each food i bought does not exceed the maximum quantity allowed for that food",
+            "status": "formulated",
+            "formulation": "\\textup{AmountFood}_i \\leq \\textup{FoodMax}_i, \\quad \\forall i \\in \\{1, \\ldots, \\textup{FoodCount}\\}",
+            "related_variables": [
+                "AmountFood"
+            ],
+            "related_parameters": [
+                "FoodMax",
+                "FoodCount"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The amount of each food that is bought",
+            "symbol": "AmountFood",
+            "shape": [
+                "FoodCount"
+            ],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total cost of buying foods",
+            "status": "formulated",
+            "formulation": "\\textup{Minimize}\\quad \\sum_{i=1}^{\\textup{FoodCount}} \\textup{Cost}_i \\cdot \\textup{AmountFood}_i",
+            "related_variables": [
+                "AmountFood"
+            ],
+            "related_parameters": [
+                "Cost",
+                "FoodCount"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413145204_complexor_diet/",
+    "problem_path": "data/complexor/diet/"
+}

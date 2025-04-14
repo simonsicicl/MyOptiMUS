@@ -1,0 +1,183 @@
+{
+    "background": "There are two machines available to deliver medicine to a patient's heart and brain, with each machine delivering different quantities of medicine and producing different amounts of waste.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Amount of medicine delivered to the heart per minute by machine 1",
+            "symbol": "MedicineHeartMachine1",
+            "value": 0.5,
+            "shape": [],
+            "code": "MedicineHeartMachine1 = data[\"MedicineHeartMachine1\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of medicine delivered to the heart per minute by machine 2",
+            "symbol": "MedicineHeartMachine2",
+            "value": 0.3,
+            "shape": [],
+            "code": "MedicineHeartMachine2 = data[\"MedicineHeartMachine2\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of medicine delivered to the brain per minute by machine 1",
+            "symbol": "MedicineBrainMachine1",
+            "value": 0.8,
+            "shape": [],
+            "code": "MedicineBrainMachine1 = data[\"MedicineBrainMachine1\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of medicine delivered to the brain per minute by machine 2",
+            "symbol": "MedicineBrainMachine2",
+            "value": 1.0,
+            "shape": [],
+            "code": "MedicineBrainMachine2 = data[\"MedicineBrainMachine2\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of waste produced per minute by machine 1",
+            "symbol": "WasteMachine1",
+            "value": 0.3,
+            "shape": [],
+            "code": "WasteMachine1 = data[\"WasteMachine1\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of waste produced per minute by machine 2",
+            "symbol": "WasteMachine2",
+            "value": 0.5,
+            "shape": [],
+            "code": "WasteMachine2 = data[\"WasteMachine2\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum units of medicine that can be received by the heart",
+            "symbol": "MaxMedicineHeart",
+            "value": 8,
+            "shape": [],
+            "code": "MaxMedicineHeart = data[\"MaxMedicineHeart\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum units of medicine that should be received by the brain",
+            "symbol": "MinMedicineBrain",
+            "value": 4,
+            "shape": [],
+            "code": "MinMedicineBrain = data[\"MinMedicineBrain\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Minutes on machine 1 is non-negative",
+            "status": "coded",
+            "formulation": "MinutesOnMachine1 \\geq 0",
+            "related_variables": [
+                "MinutesOnMachine1"
+            ],
+            "related_parameters": [],
+            "code": "# Since MinutesOnMachine1 is already a non-negative continuous variable by virtue of its definition, no additional constraint is needed.\n# The Gurobi default lower bound for continuous variables is 0, which enforces the non-negativity."
+        },
+        {
+            "description": "Minutes on machine 2 must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{MinutesOnMachine2} \\geq 0",
+            "related_variables": [
+                "MinutesOnMachine2"
+            ],
+            "related_parameters": [],
+            "code": "# Constraint: Minutes on machine 2 must be non-negative\nmodel.addConstr(MinutesOnMachine2 >= 0, name=\"non_negative_machine2\")"
+        },
+        {
+            "description": "Total amount of medicine delivered to the heart by both machines should not exceed the maximum allowed",
+            "status": "coded",
+            "formulation": "MedicineHeartMachine1 \\times \\textup{MinutesOnMachine1} + MedicineHeartMachine2 \\times \\textup{MinutesOnMachine2} \\leq MaxMedicineHeart",
+            "related_variables": [
+                "MinutesOnMachine1",
+                "MinutesOnMachine2"
+            ],
+            "related_parameters": [
+                "MedicineHeartMachine1",
+                "MedicineHeartMachine2",
+                "MaxMedicineHeart"
+            ],
+            "code": "# Add constraint for maximum medicine delivered to the heart\nmodel.addConstr(MedicineHeartMachine1 * MinutesOnMachine1 + MedicineHeartMachine2 * MinutesOnMachine2 <= MaxMedicineHeart, \"max_medicine_heart_constraint\")"
+        },
+        {
+            "description": "The brain must receive at least the minimum required units of medicine",
+            "status": "coded",
+            "formulation": "\\textup{MedicineBrainMachine1} \\cdot \\textup{MinutesOnMachine1} + \\textup{MedicineBrainMachine2} \\cdot \\textup{MinutesOnMachine2} \\geq \\textup{MinMedicineBrain}",
+            "related_variables": [
+                "MinutesOnMachine1",
+                "MinutesOnMachine2"
+            ],
+            "related_parameters": [
+                "MedicineBrainMachine1",
+                "MedicineBrainMachine2",
+                "MinMedicineBrain"
+            ],
+            "code": "# Add constraint to ensure the brain receives at least the minimum required units of medicine\nmodel.addConstr(MedicineBrainMachine1 * MinutesOnMachine1 + MedicineBrainMachine2 * MinutesOnMachine2 >= MinMedicineBrain, \"MinMedicineBrainConstraint\")"
+        },
+        {
+            "description": "Ensure the heart receives at most a maximum units of medicine",
+            "status": "coded",
+            "formulation": "\\textup{MedicineHeartMachine1} \\times \\textup{MinutesOnMachine1} + \\textup{MedicineHeartMachine2} \\times \\textup{MinutesOnMachine2} \\leq \\textup{MaxMedicineHeart}",
+            "related_variables": [
+                "MinutesOnMachine1",
+                "MinutesOnMachine2"
+            ],
+            "related_parameters": [
+                "MedicineHeartMachine1",
+                "MedicineHeartMachine2",
+                "MaxMedicineHeart"
+            ],
+            "code": "# Ensure the heart receives at most a maximum units of medicine\nheart_medicine_constraint = MedicineHeartMachine1 * MinutesOnMachine1 + MedicineHeartMachine2 * MinutesOnMachine2 <= MaxMedicineHeart\nmodel.addConstr(heart_medicine_constraint, name=\"max_heart_medicine_constraint\")"
+        },
+        {
+            "description": "Ensure the brain receives at least a minimum units of medicine",
+            "status": "coded",
+            "formulation": "\\textup{MedicineBrainMachine1} \\times \\textup{MinutesOnMachine1} + \\textup{MedicineBrainMachine2} \\times \\textup{MinutesOnMachine2} \\geq \\textup{MinMedicineBrain}",
+            "related_variables": [
+                "MinutesOnMachine1",
+                "MinutesOnMachine2"
+            ],
+            "related_parameters": [
+                "MedicineBrainMachine1",
+                "MedicineBrainMachine2",
+                "MinMedicineBrain"
+            ],
+            "code": "# Ensure the brain receives at least a minimum units of medicine\nmodel.addConstr(MedicineBrainMachine1 * MinutesOnMachine1 + MedicineBrainMachine2 * MinutesOnMachine2 >= MinMedicineBrain, name=\"min_medicine_to_brain\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Minutes of operation for machine 1",
+            "symbol": "MinutesOnMachine1",
+            "shape": [],
+            "status": "coded",
+            "code": "MinutesOnMachine1 = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"MinutesOnMachine1\")"
+        },
+        {
+            "definition": "Minutes of operation for machine 2",
+            "symbol": "MinutesOnMachine2",
+            "shape": [],
+            "status": "coded",
+            "code": "MinutesOnMachine2 = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"MinutesOnMachine2\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total amount of waste produced by machines during the delivery of medicine",
+            "status": "coded",
+            "formulation": "\\textup{TotalWaste} = \\textup{WasteMachine1} \\times \\textup{MinutesOnMachine1} + \\textup{WasteMachine2} \\times \\textup{MinutesOnMachine2}",
+            "related_variables": [
+                "MinutesOnMachine1",
+                "MinutesOnMachine2"
+            ],
+            "related_parameters": [
+                "WasteMachine1",
+                "WasteMachine2"
+            ],
+            "code": "# Set objective\nmodel.setObjective(WasteMachine1 * MinutesOnMachine1 + WasteMachine2 * MinutesOnMachine2, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 1.5,
+    "log_path": "logs/log_20250413111534_nl4opt_prob_120/",
+    "problem_path": "data/nl4opt/prob_120/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_120/data.json\", \"r\") as f:\n    data = json.load(f)\n\nMedicineHeartMachine1 = data[\"MedicineHeartMachine1\"] # scalar parameter\nMedicineHeartMachine2 = data[\"MedicineHeartMachine2\"] # scalar parameter\nMedicineBrainMachine1 = data[\"MedicineBrainMachine1\"] # scalar parameter\nMedicineBrainMachine2 = data[\"MedicineBrainMachine2\"] # scalar parameter\nWasteMachine1 = data[\"WasteMachine1\"] # scalar parameter\nWasteMachine2 = data[\"WasteMachine2\"] # scalar parameter\nMaxMedicineHeart = data[\"MaxMedicineHeart\"] # scalar parameter\nMinMedicineBrain = data[\"MinMedicineBrain\"] # scalar parameter\nMinutesOnMachine1 = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"MinutesOnMachine1\")\nMinutesOnMachine2 = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"MinutesOnMachine2\")\n\n# Since MinutesOnMachine1 is already a non-negative continuous variable by virtue of its definition, no additional constraint is needed.\n# The Gurobi default lower bound for continuous variables is 0, which enforces the non-negativity.\n\n# Constraint: Minutes on machine 2 must be non-negative\nmodel.addConstr(MinutesOnMachine2 >= 0, name=\"non_negative_machine2\")\n\n# Add constraint for maximum medicine delivered to the heart\nmodel.addConstr(MedicineHeartMachine1 * MinutesOnMachine1 + MedicineHeartMachine2 * MinutesOnMachine2 <= MaxMedicineHeart, \"max_medicine_heart_constraint\")\n\n# Add constraint to ensure the brain receives at least the minimum required units of medicine\nmodel.addConstr(MedicineBrainMachine1 * MinutesOnMachine1 + MedicineBrainMachine2 * MinutesOnMachine2 >= MinMedicineBrain, \"MinMedicineBrainConstraint\")\n\n# Ensure the heart receives at most a maximum units of medicine\nheart_medicine_constraint = MedicineHeartMachine1 * MinutesOnMachine1 + MedicineHeartMachine2 * MinutesOnMachine2 <= MaxMedicineHeart\nmodel.addConstr(heart_medicine_constraint, name=\"max_heart_medicine_constraint\")\n\n# Ensure the brain receives at least a minimum units of medicine\nmodel.addConstr(MedicineBrainMachine1 * MinutesOnMachine1 + MedicineBrainMachine2 * MinutesOnMachine2 >= MinMedicineBrain, name=\"min_medicine_to_brain\")\n\n# Set objective\nmodel.setObjective(WasteMachine1 * MinutesOnMachine1 + WasteMachine2 * MinutesOnMachine2, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

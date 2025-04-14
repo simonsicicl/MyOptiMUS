@@ -1,0 +1,229 @@
+{
+    "background": "A mall is looking to purchase two types of hand sanitizer machines, motion activated and manual, with considerations for hygiene, drop delivery rate, and energy consumption.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of drops per minute a motion activated machine can deliver",
+            "symbol": "MotionDropsPerMinute",
+            "value": 50,
+            "shape": [],
+            "code": "MotionDropsPerMinute = data[\"MotionDropsPerMinute\"] # scalar parameter"
+        },
+        {
+            "definition": "Energy consumption of a motion activated machine in kWh",
+            "symbol": "MotionConsumption",
+            "value": 30,
+            "shape": [],
+            "code": "MotionConsumption = data[\"MotionConsumption\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of drops per minute a manual machine can deliver",
+            "symbol": "ManualDropsPerMinute",
+            "value": 75,
+            "shape": [],
+            "code": "ManualDropsPerMinute = data[\"ManualDropsPerMinute\"] # scalar parameter"
+        },
+        {
+            "definition": "Energy consumption of a manual machine in kWh",
+            "symbol": "ManualConsumption",
+            "value": 20,
+            "shape": [],
+            "code": "ManualConsumption = data[\"ManualConsumption\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum fraction of machines that can be manual",
+            "symbol": "MaxManualFraction",
+            "value": 0.4,
+            "shape": [],
+            "code": "MaxManualFraction = data[\"MaxManualFraction\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of motion activated machines required",
+            "symbol": "MinMotionMachines",
+            "value": 3,
+            "shape": [],
+            "code": "MinMotionMachines = data[\"MinMotionMachines\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of total drops per minute required",
+            "symbol": "MinDropsPerMinute",
+            "value": 1000,
+            "shape": [],
+            "code": "MinDropsPerMinute = data[\"MinDropsPerMinute\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum allowable energy consumption in kWh per minute",
+            "symbol": "MaxEnergyPerMinute",
+            "value": 500,
+            "shape": [],
+            "code": "MaxEnergyPerMinute = data[\"MaxEnergyPerMinute\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of motion activated machines must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfMotionActivatedMachines} \\geq 0",
+            "related_variables": [
+                "NumberOfMotionActivatedMachines"
+            ],
+            "related_parameters": [],
+            "code": "# No code needed since the variable NumberOfMotionActivatedMachines is already defined as an integer, which implicitly enforces non-negativity"
+        },
+        {
+            "description": "The number of manual machines is non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfManualMachines} \\geq 0",
+            "related_variables": [
+                "NumberOfManualMachines"
+            ],
+            "related_parameters": [],
+            "code": "# Constraint: The number of manual machines is non-negative\nmodel.addConstr(NumberOfManualMachines >= 0, name=\"non_negativity_ManualMachines\")"
+        },
+        {
+            "description": "At most MaxManualFraction of the total machines can be manual",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfManualMachines} \\leq \\textup{MaxManualFraction} \\cdot (\\textup{NumberOfMotionActivatedMachines} + \\textup{NumberOfManualMachines})",
+            "related_variables": [
+                "NumberOfMotionActivatedMachines",
+                "NumberOfManualMachines"
+            ],
+            "related_parameters": [
+                "MaxManualFraction"
+            ],
+            "code": "# Add constraint: At most MaxManualFraction of the total machines can be manual\nmodel.addConstr(NumberOfManualMachines <= MaxManualFraction * (NumberOfMotionActivatedMachines + NumberOfManualMachines), \"MaxManualMachinesConstraint\")"
+        },
+        {
+            "description": "At least MinMotionMachines should be motion activated",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfMotionActivatedMachines} \\geq \\textup{MinMotionMachines}",
+            "related_variables": [
+                "NumberOfMotionActivatedMachines"
+            ],
+            "related_parameters": [
+                "MinMotionMachines"
+            ],
+            "code": "# Ensure at least MinMotionMachines are motion activated\nmodel.addConstr(NumberOfMotionActivatedMachines >= MinMotionMachines, name=\"min_motion_machines\")"
+        },
+        {
+            "description": "The mall must deliver at least MinDropsPerMinute drops per minute",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfMotionActivatedMachines} \\times \\textup{MotionDropsPerMinute} + \\textup{NumberOfManualMachines} \\times \\textup{ManualDropsPerMinute} \\geq \\textup{MinDropsPerMinute}",
+            "related_variables": [
+                "NumberOfMotionActivatedMachines",
+                "NumberOfManualMachines"
+            ],
+            "related_parameters": [
+                "MotionDropsPerMinute",
+                "ManualDropsPerMinute",
+                "MinDropsPerMinute"
+            ],
+            "code": "# Add constraint for minimum drops per minute required by the mall\nmodel.addConstr(\n    NumberOfMotionActivatedMachines * MotionDropsPerMinute + NumberOfManualMachines * ManualDropsPerMinute >= MinDropsPerMinute,\n    name=\"min_drops_per_minute\"\n)"
+        },
+        {
+            "description": "Total energy consumption of both motion activated and manual hand sanitizer machines must not exceed the maximum energy allowed per minute",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfMotionActivatedMachines} \\cdot \\textup{MotionConsumption} + \\textup{NumberOfManualMachines} \\cdot \\textup{ManualConsumption} \\leq \\textup{MaxEnergyPerMinute}",
+            "related_variables": [
+                "NumberOfMotionActivatedMachines",
+                "NumberOfManualMachines"
+            ],
+            "related_parameters": [
+                "MotionConsumption",
+                "ManualConsumption",
+                "MaxEnergyPerMinute"
+            ],
+            "code": "# Add constraint for maximum energy consumption per minute\nmodel.addConstr(\n    (NumberOfMotionActivatedMachines * MotionConsumption +\n     NumberOfManualMachines * ManualConsumption) <= MaxEnergyPerMinute,\n    name=\"max_energy_consumption\"\n)"
+        },
+        {
+            "description": "The total number of drops per minute from all machines must meet the minimum requirement",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfMotionActivatedMachines} \\cdot \\textup{MotionDropsPerMinute} + \\textup{NumberOfManualMachines} \\cdot \\textup{ManualDropsPerMinute} \\geq \\textup{MinDropsPerMinute}",
+            "related_variables": [
+                "NumberOfMotionActivatedMachines",
+                "NumberOfManualMachines"
+            ],
+            "related_parameters": [
+                "MotionDropsPerMinute",
+                "ManualDropsPerMinute",
+                "MinDropsPerMinute"
+            ],
+            "code": "# Add constraint to meet minimum drops per minute requirement from all machines\nmodel.addConstr(NumberOfMotionActivatedMachines * MotionDropsPerMinute + NumberOfManualMachines * ManualDropsPerMinute >= MinDropsPerMinute, \"min_drops_per_minute\")"
+        },
+        {
+            "description": "The energy consumption from all machines must not exceed the maximum allowable energy consumption per minute",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfMotionActivatedMachines} \\cdot \\textup{MotionConsumption} + \\textup{NumberOfManualMachines} \\cdot \\textup{ManualConsumption} \\leq \\textup{MaxEnergyPerMinute}",
+            "related_variables": [
+                "NumberOfMotionActivatedMachines",
+                "NumberOfManualMachines"
+            ],
+            "related_parameters": [
+                "MotionConsumption",
+                "ManualConsumption",
+                "MaxEnergyPerMinute"
+            ],
+            "code": "# Energy consumption constraint\nenergy_consumption_constraint = NumberOfMotionActivatedMachines * MotionConsumption + NumberOfManualMachines * ManualConsumption\nmodel.addConstr(energy_consumption_constraint <= MaxEnergyPerMinute, name=\"Max_Energy_Consumption_Per_Minute\")"
+        },
+        {
+            "description": "The number of manual machines cannot exceed the maximum fraction allowed of the total machines",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfManualMachines} \\leq \\textup{MaxManualFraction} \\cdot (\\textup{NumberOfMotionActivatedMachines} + \\textup{NumberOfManualMachines})",
+            "related_variables": [
+                "NumberOfMotionActivatedMachines",
+                "NumberOfManualMachines"
+            ],
+            "related_parameters": [
+                "MaxManualFraction"
+            ],
+            "code": "# The number of manual machines cannot exceed the maximum fraction allowed of the total machines\nmodel.addConstr(NumberOfManualMachines <= MaxManualFraction * (NumberOfMotionActivatedMachines + NumberOfManualMachines), name=\"max_manual_machines_fraction\")"
+        },
+        {
+            "description": "The number of motion activated machines must meet at least the minimum required",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfMotionActivatedMachines} \\geq \\textup{MinMotionMachines}",
+            "related_variables": [
+                "NumberOfMotionActivatedMachines"
+            ],
+            "related_parameters": [
+                "MinMotionMachines"
+            ],
+            "code": "# Constraint: Number of motion activated machines must meet at least the minimum required\nmodel.addConstr(NumberOfMotionActivatedMachines >= MinMotionMachines, name=\"min_motion_activated_machines\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of motion activated hand sanitizer machines to be purchased",
+            "symbol": "NumberOfMotionActivatedMachines",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfMotionActivatedMachines = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfMotionActivatedMachines\")"
+        },
+        {
+            "definition": "The number of manual hand sanitizer machines to be purchased",
+            "symbol": "NumberOfManualMachines",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfManualMachines = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfManualMachines\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of hand sanitizer machines to be purchased by the mall",
+            "status": "coded",
+            "formulation": "\\textup{Minimize} \\quad \\textup{NumberOfMotionActivatedMachines} + \\textup{NumberOfManualMachines}",
+            "related_variables": [
+                "NumberOfMotionActivatedMachines",
+                "NumberOfManualMachines"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(NumberOfMotionActivatedMachines + NumberOfManualMachines, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250414023925_nl4opt_prob_81/",
+    "problem_path": "data/nl4opt/prob_81/"
+}

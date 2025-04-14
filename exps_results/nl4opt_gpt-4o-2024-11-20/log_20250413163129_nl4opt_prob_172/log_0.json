@@ -1,0 +1,207 @@
+{
+    "background": "A chicken farmer needs to transport his sold chickens using either buses or cars, with specific capacities and trip durations for each mode of transportation. The goal is to minimize the transport time within the constraints of maximum trips and trip distribution.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of chicken a bus can carry",
+            "symbol": "BusCapacity",
+            "value": 100,
+            "shape": [],
+            "code": "BusCapacity = data[\"BusCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Time taken per trip by bus",
+            "symbol": "BusTripTime",
+            "value": 2,
+            "shape": [],
+            "code": "BusTripTime = data[\"BusTripTime\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of bus trips allowed",
+            "symbol": "MaxBusTrips",
+            "value": 10,
+            "shape": [],
+            "code": "MaxBusTrips = data[\"MaxBusTrips\"] # scalar parameter"
+        },
+        {
+            "definition": "Percentage of trips that must be by car",
+            "symbol": "MinimumCarTripPercentage",
+            "value": 0.6,
+            "shape": [],
+            "code": "MinimumCarTripPercentage = data[\"MinimumCarTripPercentage\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of chicken a car can carry",
+            "symbol": "CarCapacity",
+            "value": 40,
+            "shape": [],
+            "code": "CarCapacity = data[\"CarCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Time taken per trip by car",
+            "symbol": "CarTripTime",
+            "value": 1.5,
+            "shape": [],
+            "code": "CarTripTime = data[\"CarTripTime\"] # scalar parameter"
+        },
+        {
+            "definition": "Total number of chicken to be transported",
+            "symbol": "TotalChicken",
+            "value": 1200,
+            "shape": [],
+            "code": "TotalChicken = data[\"TotalChicken\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of bus trips must be non-negative.",
+            "status": "formulated",
+            "formulation": "\\\\textup{NumberOfBusTrips} \\\\geq 0",
+            "related_variables": [
+                "NumberOfBusTrips"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Ensure the number of car trips is non-negative.",
+            "status": "formulated",
+            "formulation": "\\textup{NumberOfCarTrips} \\geq 0",
+            "related_variables": [
+                "NumberOfCarTrips"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "The number of bus trips must not exceed the maximum allowed bus trips.",
+            "status": "formulated",
+            "formulation": "\\textup{NumberOfBusTrips} \\leq \\textup{MaxBusTrips}",
+            "related_variables": [
+                "NumberOfBusTrips"
+            ],
+            "related_parameters": [
+                "MaxBusTrips"
+            ]
+        },
+        {
+            "description": "Constraint ensuring that at least MinimumCarTripPercentage of the trips must be by car.",
+            "status": "formulated",
+            "formulation": "\\textup{NumberOfCarTrips} \\geq \\textup{MinimumCarTripPercentage} \\cdot \\textup{TotalTrips}",
+            "related_variables": [
+                "NumberOfCarTrips",
+                "TotalTrips"
+            ],
+            "related_parameters": [
+                "MinimumCarTripPercentage"
+            ]
+        },
+        {
+            "description": "The total number of chickens transported by buses and cars must be at least equal to the total required chickens (TotalChicken).",
+            "status": "formulated",
+            "formulation": "\\textup{BusCapacity} \\times \\textup{NumberOfBusTrips} + \\textup{CarCapacity} \\times \\textup{NumberOfCarTrips} \\geq \\textup{TotalChicken}",
+            "related_variables": [
+                "NumberOfBusTrips",
+                "NumberOfCarTrips"
+            ],
+            "related_parameters": [
+                "BusCapacity",
+                "CarCapacity",
+                "TotalChicken"
+            ]
+        },
+        {
+            "description": "Auxiliary constraint defining TotalTrips as the sum of car and bus trips.",
+            "status": "formulated",
+            "formulation": "\\textup{TotalTrips} = \\textup{NumberOfCarTrips} + \\textup{NumberOfBusTrips}",
+            "related_variables": [
+                "TotalTrips",
+                "NumberOfCarTrips",
+                "NumberOfBusTrips"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "The total number of chickens transported should match the total demand.",
+            "status": "formulated",
+            "formulation": "\\textup{BusCapacity} \\cdot \\textup{NumberOfBusTrips} + \\textup{CarCapacity} \\cdot \\textup{NumberOfCarTrips} = \\textup{TotalChicken}",
+            "related_variables": [
+                "NumberOfBusTrips",
+                "NumberOfCarTrips"
+            ],
+            "related_parameters": [
+                "BusCapacity",
+                "CarCapacity",
+                "TotalChicken"
+            ]
+        },
+        {
+            "description": "The number of bus trips should not exceed the maximum allowed.",
+            "status": "formulated",
+            "formulation": "\\textup{NumberOfBusTrips} \\leq \\textup{MaxBusTrips}",
+            "related_variables": [
+                "NumberOfBusTrips"
+            ],
+            "related_parameters": [
+                "MaxBusTrips"
+            ]
+        },
+        {
+            "description": "At least a minimum percentage of trips must be made by car.",
+            "status": "formulated",
+            "formulation": "\\textup{NumberOfCarTrips} \\geq \\textup{MinimumCarTripPercentage} \\cdot (\\textup{NumberOfCarTrips} + \\textup{NumberOfBusTrips})",
+            "related_variables": [
+                "NumberOfCarTrips",
+                "NumberOfBusTrips"
+            ],
+            "related_parameters": [
+                "MinimumCarTripPercentage"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of trips undertaken by bus.",
+            "symbol": "NumberOfBusTrips",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "The number of trips undertaken by car.",
+            "symbol": "NumberOfCarTrips",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "The total number of trips (sum of car and bus trips).",
+            "symbol": "TotalTrips",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "The total number of trips undertaken, which is the sum of car and bus trips.",
+            "symbol": "TotalTrips",
+            "shape": [],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total time needed to transport all chickens.",
+            "status": "formulated",
+            "formulation": "\\textup{BusTripTime} \\cdot \\textup{NumberOfBusTrips} + \\textup{CarTripTime} \\cdot \\textup{NumberOfCarTrips}",
+            "related_variables": [
+                "NumberOfBusTrips",
+                "NumberOfCarTrips"
+            ],
+            "related_parameters": [
+                "BusTripTime",
+                "CarTripTime"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413163129_nl4opt_prob_172/",
+    "problem_path": "data/nl4opt/prob_172/"
+}

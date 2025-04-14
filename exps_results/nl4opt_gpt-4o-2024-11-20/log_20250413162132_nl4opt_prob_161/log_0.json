@@ -1,0 +1,184 @@
+{
+    "background": "A toy store needs to deliver gifts using two different shipping companies, the store aims to minimize the diesel consumption while meeting gift delivery and company usage requirements.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of gifts delivered by the new company per trip",
+            "symbol": "GiftsNew",
+            "value": 50,
+            "shape": [],
+            "code": "GiftsNew = data[\"GiftsNew\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of gifts delivered by the old company per trip",
+            "symbol": "GiftsOld",
+            "value": 70,
+            "shape": [],
+            "code": "GiftsOld = data[\"GiftsOld\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of diesel used by the new company per trip",
+            "symbol": "DieselNew",
+            "value": 30,
+            "shape": [],
+            "code": "DieselNew = data[\"DieselNew\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of diesel used by the old company per trip",
+            "symbol": "DieselOld",
+            "value": 40,
+            "shape": [],
+            "code": "DieselOld = data[\"DieselOld\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum total number of gifts that need to be delivered",
+            "symbol": "MinGifts",
+            "value": 1000,
+            "shape": [],
+            "code": "MinGifts = data[\"MinGifts\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of trips the new company can make",
+            "symbol": "MaxTripsNew",
+            "value": 15,
+            "shape": [],
+            "code": "MaxTripsNew = data[\"MaxTripsNew\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum percentage of all trips that must be made by the old company",
+            "symbol": "MinPercentOld",
+            "value": 0.4,
+            "shape": [],
+            "code": "MinPercentOld = data[\"MinPercentOld\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of trips by the new company must be non-negative.",
+            "status": "formulated",
+            "formulation": "\\\\textup{TripsNew} \\\\geq 0",
+            "related_variables": [
+                "TripsNew"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "The number of trips made by the old company must be non-negative.",
+            "status": "formulated",
+            "formulation": "\\textup{TripsOld} \\geq 0",
+            "related_variables": [
+                "TripsOld"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Ensure at least MinGifts gifts are delivered in total, considering the trips made by both companies and the number of gifts delivered per trip by each company.",
+            "status": "formulated",
+            "formulation": "\\\\textup{TripsNew} \\\\times \\\\textup{GiftsNew} + \\\\textup{TripsOld} \\\\times \\\\textup{GiftsOld} \\\\geq \\\\textup{MinGifts}",
+            "related_variables": [
+                "TripsNew",
+                "TripsOld"
+            ],
+            "related_parameters": [
+                "GiftsNew",
+                "GiftsOld",
+                "MinGifts"
+            ]
+        },
+        {
+            "description": "The number of trips made by the new company cannot exceed the maximum limit allowed, MaxTripsNew.",
+            "status": "formulated",
+            "formulation": "\\textup{TripsNew} \\leq \\textup{MaxTripsNew}",
+            "related_variables": [
+                "TripsNew"
+            ],
+            "related_parameters": [
+                "MaxTripsNew"
+            ]
+        },
+        {
+            "description": "At least MinPercentOld percent of all trips must be made by the old company.",
+            "status": "formulated",
+            "formulation": "\\\\textup{TripsOld} \\\\geq \\\\frac{\\\\textup{MinPercentOld}}{1 - \\\\textup{MinPercentOld}} \\\\cdot \\\\textup{TripsNew}",
+            "related_variables": [
+                "TripsOld",
+                "TripsNew"
+            ],
+            "related_parameters": [
+                "MinPercentOld"
+            ]
+        },
+        {
+            "description": "The total number of gifts delivered must be at least the minimum required",
+            "status": "formulated",
+            "formulation": "\\textup{GiftsNew} \\cdot \\textup{TripsNew} + \\textup{GiftsOld} \\cdot \\textup{TripsOld} \\geq \\textup{MinGifts}",
+            "related_variables": [
+                "TripsNew",
+                "TripsOld"
+            ],
+            "related_parameters": [
+                "GiftsNew",
+                "GiftsOld",
+                "MinGifts"
+            ]
+        },
+        {
+            "description": "The number of trips made by the new company must not exceed the maximum allowed",
+            "status": "formulated",
+            "formulation": "\\textup{TripsNew} \\leq \\textup{MaxTripsNew}",
+            "related_variables": [
+                "TripsNew"
+            ],
+            "related_parameters": [
+                "MaxTripsNew"
+            ]
+        },
+        {
+            "description": "The old company must make at least a minimum percentage of all trips",
+            "status": "formulated",
+            "formulation": "\\textup{TripsOld} \\geq \\frac{\\textup{MinPercentOld}}{1 - \\textup{MinPercentOld}} \\cdot \\textup{TripsNew}",
+            "related_variables": [
+                "TripsNew",
+                "TripsOld"
+            ],
+            "related_parameters": [
+                "MinPercentOld"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of trips made by the new company.",
+            "symbol": "TripsNew",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "The number of trips made by the old company.",
+            "symbol": "TripsOld",
+            "shape": [],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total amount of diesel used for delivering the gifts",
+            "status": "formulated",
+            "formulation": "\\textup{Minimize} \\quad \\textup{DieselNew} \\cdot \\textup{TripsNew} + \\textup{DieselOld} \\cdot \\textup{TripsOld}",
+            "related_variables": [
+                "TripsNew",
+                "TripsOld"
+            ],
+            "related_parameters": [
+                "DieselNew",
+                "DieselOld"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413162132_nl4opt_prob_161/",
+    "problem_path": "data/nl4opt/prob_161/"
+}

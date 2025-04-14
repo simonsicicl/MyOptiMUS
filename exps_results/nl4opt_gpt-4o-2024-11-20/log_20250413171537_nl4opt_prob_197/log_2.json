@@ -1,0 +1,148 @@
+{
+    "background": "A fishing boat requires transportation of fish to shore while adhering to environmental rules, using a mix of canoes and diesel boats.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Capacity of a canoe to carry fish",
+            "symbol": "CanoeCapacity",
+            "value": 10,
+            "shape": [],
+            "code": "CanoeCapacity = data[\"CanoeCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Capacity of a diesel boat to carry fish",
+            "symbol": "DieselBoatCapacity",
+            "value": 15,
+            "shape": [],
+            "code": "DieselBoatCapacity = data[\"DieselBoatCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of canoes for each diesel boat",
+            "symbol": "CanoesPerDieselBoat",
+            "value": 3,
+            "shape": [],
+            "code": "CanoesPerDieselBoat = data[\"CanoesPerDieselBoat\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of fish to transport to shore",
+            "symbol": "MinimumFishToTransport",
+            "value": 1000,
+            "shape": [],
+            "code": "MinimumFishToTransport = data[\"MinimumFishToTransport\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of canoes used must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfCanoes} \\geq 0",
+            "related_variables": [
+                "NumberOfCanoes"
+            ],
+            "related_parameters": [],
+            "code": "# Since the variable \"NumberOfCanoes\" is already defined with non-negativity enforced as it is declared as continuous (vtype=gp.GRB.CONTINUOUS), no additional constraint is needed."
+        },
+        {
+            "description": "The number of diesel boats is non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{NumberOfDieselBoats} \\\\geq 0",
+            "related_variables": [
+                "NumberOfDieselBoats"
+            ],
+            "related_parameters": [],
+            "code": "# The constraint is already defined inherently by the non-negative domain of the continuous variable \"NumberOfDieselBoats\"."
+        },
+        {
+            "description": "The number of canoes must be at least CanoesPerDieselBoat times the number of diesel boats.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfCanoes} \\geq \\textup{CanoesPerDieselBoat} \\times \\textup{NumberOfDieselBoats}",
+            "related_variables": [
+                "NumberOfCanoes",
+                "NumberOfDieselBoats"
+            ],
+            "related_parameters": [
+                "CanoesPerDieselBoat"
+            ],
+            "code": "# Add constraint: Number of canoes must be at least CanoesPerDieselBoat times the number of diesel boats\nmodel.addConstr(NumberOfCanoes >= CanoesPerDieselBoat * NumberOfDieselBoats, name=\"canoe_diesel_constraint\")"
+        },
+        {
+            "description": "The total number of fish transported using canoes and diesel boats must be at least the minimum required amount.",
+            "status": "coded",
+            "formulation": "\\\\textup{NumberOfCanoes} \\\\cdot \\\\textup{CanoeCapacity} + \\\\textup{NumberOfDieselBoats} \\\\cdot \\\\textup{DieselBoatCapacity} \\\\geq \\\\textup{MinimumFishToTransport}",
+            "related_variables": [
+                "NumberOfCanoes",
+                "NumberOfDieselBoats"
+            ],
+            "related_parameters": [
+                "CanoeCapacity",
+                "DieselBoatCapacity",
+                "MinimumFishToTransport"
+            ],
+            "code": "# Add constraint ensuring total number of fish transported meets or exceeds the minimum required amount\nmodel.addConstr(NumberOfCanoes * CanoeCapacity + NumberOfDieselBoats * DieselBoatCapacity >= MinimumFishToTransport, name=\"minimum_fish_transport\")"
+        },
+        {
+            "description": "The total fish transported by canoes and diesel boats must meet or exceed the minimum required",
+            "status": "coded",
+            "formulation": "\\textup{CanoeCapacity} \\cdot \\textup{NumberOfCanoes} + \\textup{DieselBoatCapacity} \\cdot \\textup{NumberOfDieselBoats} \\geq \\textup{MinimumFishToTransport}",
+            "related_variables": [
+                "NumberOfCanoes",
+                "NumberOfDieselBoats"
+            ],
+            "related_parameters": [
+                "CanoeCapacity",
+                "DieselBoatCapacity",
+                "MinimumFishToTransport"
+            ],
+            "code": "model.addConstr(\n    CanoeCapacity * NumberOfCanoes + DieselBoatCapacity * NumberOfDieselBoats >= MinimumFishToTransport,\n    name=\"minimum_fish_transport_constraint\"\n)"
+        },
+        {
+            "description": "Each diesel boat must have at least a minimum number of corresponding canoes",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfCanoes} \\geq \\textup{CanoesPerDieselBoat} \\cdot \\textup{NumberOfDieselBoats}",
+            "related_variables": [
+                "NumberOfCanoes",
+                "NumberOfDieselBoats"
+            ],
+            "related_parameters": [
+                "CanoesPerDieselBoat"
+            ],
+            "code": "# Add constraint ensuring minimum canoes for each diesel boat\nmodel.addConstr(\n    NumberOfCanoes >= CanoesPerDieselBoat * NumberOfDieselBoats,\n    name=\"min_canoes_per_diesel_boat\"\n)"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of canoes used by the fishing boat.",
+            "symbol": "NumberOfCanoes",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfCanoes = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfCanoes\")"
+        },
+        {
+            "definition": "The number of diesel boats used to transport fish.",
+            "symbol": "NumberOfDieselBoats",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfDieselBoats = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfDieselBoats\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of canoes and diesel boats needed for transportation",
+            "status": "coded",
+            "formulation": "\\textup{Minimize} \\quad \\textup{NumberOfCanoes} + \\textup{NumberOfDieselBoats}",
+            "related_variables": [
+                "NumberOfCanoes",
+                "NumberOfDieselBoats"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(NumberOfCanoes + NumberOfDieselBoats, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 88.8888888888889,
+    "log_path": "logs/log_20250413171537_nl4opt_prob_197/",
+    "problem_path": "data/nl4opt/prob_197/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_197/data.json\", \"r\") as f:\n    data = json.load(f)\n\nCanoeCapacity = data[\"CanoeCapacity\"] # scalar parameter\nDieselBoatCapacity = data[\"DieselBoatCapacity\"] # scalar parameter\nCanoesPerDieselBoat = data[\"CanoesPerDieselBoat\"] # scalar parameter\nMinimumFishToTransport = data[\"MinimumFishToTransport\"] # scalar parameter\nNumberOfCanoes = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfCanoes\")\nNumberOfDieselBoats = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfDieselBoats\")\n\n# Since the variable \"NumberOfCanoes\" is already defined with non-negativity enforced as it is declared as continuous (vtype=gp.GRB.CONTINUOUS), no additional constraint is needed.\n\n# The constraint is already defined inherently by the non-negative domain of the continuous variable \"NumberOfDieselBoats\".\n\n# Add constraint: Number of canoes must be at least CanoesPerDieselBoat times the number of diesel boats\nmodel.addConstr(NumberOfCanoes >= CanoesPerDieselBoat * NumberOfDieselBoats, name=\"canoe_diesel_constraint\")\n\n# Add constraint ensuring total number of fish transported meets or exceeds the minimum required amount\nmodel.addConstr(NumberOfCanoes * CanoeCapacity + NumberOfDieselBoats * DieselBoatCapacity >= MinimumFishToTransport, name=\"minimum_fish_transport\")\n\nmodel.addConstr(\n    CanoeCapacity * NumberOfCanoes + DieselBoatCapacity * NumberOfDieselBoats >= MinimumFishToTransport,\n    name=\"minimum_fish_transport_constraint\"\n)\n\n# Add constraint ensuring minimum canoes for each diesel boat\nmodel.addConstr(\n    NumberOfCanoes >= CanoesPerDieselBoat * NumberOfDieselBoats,\n    name=\"min_canoes_per_diesel_boat\"\n)\n\n# Set objective\nmodel.setObjective(NumberOfCanoes + NumberOfDieselBoats, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

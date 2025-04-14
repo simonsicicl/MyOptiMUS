@@ -1,0 +1,156 @@
+{
+    "background": "A daycare center needs to schedule buses and personal cars to pick up children, with capacity constraints on each vehicle type and certain requirements for the minimum number of children picked up, and the minimum number of personal cars due to children's special attention needs.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Capacity of a bus",
+            "symbol": "BusCapacity",
+            "value": 9,
+            "shape": [],
+            "code": "BusCapacity = data[\"BusCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Capacity of a personal car",
+            "symbol": "CarCapacity",
+            "value": 4,
+            "shape": [],
+            "code": "CarCapacity = data[\"CarCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum total number of children to pick up",
+            "symbol": "MinChildren",
+            "value": 100,
+            "shape": [],
+            "code": "MinChildren = data[\"MinChildren\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of personal cars due to children needing extra attention",
+            "symbol": "MinCars",
+            "value": 5,
+            "shape": [],
+            "code": "MinCars = data[\"MinCars\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Number of buses used must be non-negative",
+            "status": "coded",
+            "formulation": "BusesUsed \\geq 0",
+            "related_variables": [
+                "BusesUsed"
+            ],
+            "related_parameters": [],
+            "code": "model.addConstr(BusesUsed >= 0, name=\"BusesUsed_non_negative\")"
+        },
+        {
+            "description": "Number of personal cars is non-negative",
+            "status": "coded",
+            "formulation": "\\textup{PersonalCarsUsed} \\geq 0",
+            "related_variables": [
+                "PersonalCarsUsed"
+            ],
+            "related_parameters": [],
+            "code": "# Since PersonalCarsUsed is already defined as a non-negative integer variable, no additional constraint is needed\n# PersonalCarsUsed >= 0 is inherently enforced by the variable definition"
+        },
+        {
+            "description": "The total capacity of buses and cars must accommodate at least MinChildren children",
+            "status": "coded",
+            "formulation": "\\textup{BusesUsed} \\cdot \\textup{BusCapacity} + \\textup{PersonalCarsUsed} \\cdot \\textup{CarCapacity} \\geq \\textup{MinChildren}",
+            "related_variables": [
+                "BusesUsed",
+                "PersonalCarsUsed"
+            ],
+            "related_parameters": [
+                "BusCapacity",
+                "CarCapacity",
+                "MinChildren"
+            ],
+            "code": "# Add constraint to ensure the total capacity of buses and cars accommodate at least MinChildren\nmodel.addConstr(BusesUsed * BusCapacity + PersonalCarsUsed * CarCapacity >= MinChildren, \"min_children_capacity\")"
+        },
+        {
+            "description": "There must be more buses than personal cars used to pick up children",
+            "status": "coded",
+            "formulation": "\\textup{BusesUsed} \\geq \\textup{PersonalCarsUsed} + 1",
+            "related_variables": [
+                "BusesUsed",
+                "PersonalCarsUsed"
+            ],
+            "related_parameters": [],
+            "code": "# Constraint for more buses than personal cars\nmodel.addConstr(BusesUsed >= PersonalCarsUsed + 1, name=\"buses_vs_cars_constraint\")"
+        },
+        {
+            "description": "There must be at least the minimum number of personal cars specified by MinCars",
+            "status": "coded",
+            "formulation": "\\textup{PersonalCarsUsed} \\geq \\textup{MinCars}",
+            "related_variables": [
+                "PersonalCarsUsed"
+            ],
+            "related_parameters": [
+                "MinCars"
+            ],
+            "code": "# Add constraint to ensure the number of personal cars used is at least the minimum\nmodel.addConstr(PersonalCarsUsed >= MinCars, name=\"min_personal_cars\")"
+        },
+        {
+            "description": "Ensure that the minimum number of personal cars are used",
+            "status": "coded",
+            "formulation": "\\textup{PersonalCarsUsed} \\geq \\textup{MinCars}",
+            "related_variables": [
+                "PersonalCarsUsed"
+            ],
+            "related_parameters": [
+                "MinCars"
+            ],
+            "code": "# Add constraint to ensure that the minimum number of personal cars are used\nmodel.addConstr(PersonalCarsUsed >= MinCars, name=\"min_personal_cars_used\")"
+        },
+        {
+            "description": "Ensure that the minimum number of children are picked up",
+            "status": "coded",
+            "formulation": "\\textup{BusesUsed} \\times \\textup{BusCapacity} + \\textup{PersonalCarsUsed} \\times \\textup{CarCapacity} \\geq \\textup{MinChildren}",
+            "related_variables": [
+                "BusesUsed",
+                "PersonalCarsUsed"
+            ],
+            "related_parameters": [
+                "BusCapacity",
+                "CarCapacity",
+                "MinChildren"
+            ],
+            "code": "# Ensure that the minimum number of children are picked up\nmodel.addConstr(BusesUsed * BusCapacity + PersonalCarsUsed * CarCapacity >= MinChildren, name=\"min_children_pickup\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of buses used to pick up children",
+            "symbol": "BusesUsed",
+            "shape": [],
+            "status": "coded",
+            "code": "BusesUsed = model.addVar(vtype=gp.GRB.INTEGER, name=\"BusesUsed\")"
+        },
+        {
+            "definition": "Number of personal cars used to pick up children",
+            "symbol": "PersonalCarsUsed",
+            "shape": [],
+            "status": "coded",
+            "code": "PersonalCarsUsed = model.addVar(vtype=gp.GRB.INTEGER, name=\"PersonalCarsUsed\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of buses and personal cars scheduled",
+            "status": "coded",
+            "formulation": "\\min \\textup{BusesUsed} + \\textup{PersonalCarsUsed}",
+            "related_variables": [
+                "BusesUsed",
+                "PersonalCarsUsed"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(BusesUsed + PersonalCarsUsed, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413180045_nl4opt_prob_280/",
+    "problem_path": "data/nl4opt/prob_280/"
+}

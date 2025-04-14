@@ -1,0 +1,216 @@
+{
+    "background": "A mall is looking to purchase two types of hand sanitizer machines, motion activated and manual, with considerations for hygiene, drop delivery rate, and energy consumption.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of drops per minute a motion activated machine can deliver",
+            "symbol": "MotionDropsPerMinute",
+            "value": 50,
+            "shape": [],
+            "code": "MotionDropsPerMinute = data[\"MotionDropsPerMinute\"] # scalar parameter"
+        },
+        {
+            "definition": "Energy consumption of a motion activated machine in kWh",
+            "symbol": "MotionConsumption",
+            "value": 30,
+            "shape": [],
+            "code": "MotionConsumption = data[\"MotionConsumption\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of drops per minute a manual machine can deliver",
+            "symbol": "ManualDropsPerMinute",
+            "value": 75,
+            "shape": [],
+            "code": "ManualDropsPerMinute = data[\"ManualDropsPerMinute\"] # scalar parameter"
+        },
+        {
+            "definition": "Energy consumption of a manual machine in kWh",
+            "symbol": "ManualConsumption",
+            "value": 20,
+            "shape": [],
+            "code": "ManualConsumption = data[\"ManualConsumption\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum fraction of machines that can be manual",
+            "symbol": "MaxManualFraction",
+            "value": 0.4,
+            "shape": [],
+            "code": "MaxManualFraction = data[\"MaxManualFraction\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of motion activated machines required",
+            "symbol": "MinMotionMachines",
+            "value": 3,
+            "shape": [],
+            "code": "MinMotionMachines = data[\"MinMotionMachines\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of total drops per minute required",
+            "symbol": "MinDropsPerMinute",
+            "value": 1000,
+            "shape": [],
+            "code": "MinDropsPerMinute = data[\"MinDropsPerMinute\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum allowable energy consumption in kWh per minute",
+            "symbol": "MaxEnergyPerMinute",
+            "value": 500,
+            "shape": [],
+            "code": "MaxEnergyPerMinute = data[\"MaxEnergyPerMinute\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of motion activated machines is non-negative.",
+            "status": "formulated",
+            "formulation": "\\textup{MotionMachines} \\geq 0",
+            "related_variables": [
+                "MotionMachines"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "The number of manual machines is non-negative.",
+            "status": "formulated",
+            "formulation": "\\\\textup{ManualMachines} \\\\geq 0",
+            "related_variables": [
+                "ManualMachines"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "At most MaxManualFraction of the total machines can be manual.",
+            "status": "formulated",
+            "formulation": "(1 - \\textup{MaxManualFraction}) \\cdot \\textup{ManualMachines} \\leq \\textup{MaxManualFraction} \\cdot \\textup{MotionMachines}",
+            "related_variables": [
+                "ManualMachines",
+                "MotionMachines"
+            ],
+            "related_parameters": [
+                "MaxManualFraction"
+            ]
+        },
+        {
+            "description": "Ensure at least MinMotionMachines motion activated machines are purchased.",
+            "status": "formulated",
+            "formulation": "\\textup{MotionMachines} \\geq \\textup{MinMotionMachines}",
+            "related_variables": [
+                "MotionMachines"
+            ],
+            "related_parameters": [
+                "MinMotionMachines"
+            ]
+        },
+        {
+            "description": "The total drops per minute delivered by the hand sanitizer machines must be at least the minimum required number of drops per minute, MinDropsPerMinute.",
+            "status": "formulated",
+            "formulation": "\\textup{MotionDropsPerMinute} \\cdot \\textup{MotionMachines} + \\textup{ManualDropsPerMinute} \\cdot \\textup{ManualMachines} \\geq \\textup{MinDropsPerMinute}",
+            "related_variables": [
+                "MotionMachines",
+                "ManualMachines"
+            ],
+            "related_parameters": [
+                "MotionDropsPerMinute",
+                "ManualDropsPerMinute",
+                "MinDropsPerMinute"
+            ]
+        },
+        {
+            "description": "The energy consumption per minute cannot exceed the maximum allowable limit, MaxEnergyPerMinute.",
+            "status": "formulated",
+            "formulation": "\\\\textup{MotionConsumption} \\\\times \\\\textup{MotionMachines} + \\\\textup{ManualConsumption} \\\\times \\\\textup{ManualMachines} \\\\leq \\\\textup{MaxEnergyPerMinute}",
+            "related_variables": [
+                "MotionMachines",
+                "ManualMachines"
+            ],
+            "related_parameters": [
+                "MotionConsumption",
+                "ManualConsumption",
+                "MaxEnergyPerMinute"
+            ]
+        },
+        {
+            "description": "Ensure the total number of drops per minute meets the required minimum.",
+            "status": "formulated",
+            "formulation": "\\textup{MotionDropsPerMinute} \\cdot \\textup{MotionMachines} + \\textup{ManualDropsPerMinute} \\cdot \\textup{ManualMachines} \\geq \\textup{MinDropsPerMinute}",
+            "related_variables": [
+                "MotionMachines",
+                "ManualMachines"
+            ],
+            "related_parameters": [
+                "MotionDropsPerMinute",
+                "ManualDropsPerMinute",
+                "MinDropsPerMinute"
+            ]
+        },
+        {
+            "description": "Ensure the total energy consumption does not exceed the maximum allowed.",
+            "status": "formulated",
+            "formulation": "\\textup{MotionConsumption} \\cdot \\textup{MotionMachines} + \\textup{ManualConsumption} \\cdot \\textup{ManualMachines} \\leq \\textup{MaxEnergyPerMinute}",
+            "related_variables": [
+                "MotionMachines",
+                "ManualMachines"
+            ],
+            "related_parameters": [
+                "MotionConsumption",
+                "ManualConsumption",
+                "MaxEnergyPerMinute"
+            ]
+        },
+        {
+            "description": "Ensure the fraction of manual machines does not exceed the maximum allowed.",
+            "status": "formulated",
+            "formulation": "\\textup{ManualMachines} \\leq \\textup{MaxManualFraction} \\cdot (\\textup{MotionMachines} + \\textup{ManualMachines})",
+            "related_variables": [
+                "MotionMachines",
+                "ManualMachines"
+            ],
+            "related_parameters": [
+                "MaxManualFraction"
+            ]
+        },
+        {
+            "description": "Ensure at least a minimum number of motion activated machines are purchased.",
+            "status": "formulated",
+            "formulation": "\\textup{MotionMachines} \\geq \\textup{MinMotionMachines}",
+            "related_variables": [
+                "MotionMachines"
+            ],
+            "related_parameters": [
+                "MinMotionMachines"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of motion activated machines",
+            "symbol": "MotionMachines",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "Number of manual machines",
+            "symbol": "ManualMachines",
+            "shape": [],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of hand sanitizer machines the mall should buy.",
+            "status": "formulated",
+            "formulation": "\\textup{Minimize} \\quad \\textup{MotionMachines} + \\textup{ManualMachines}",
+            "related_variables": [
+                "MotionMachines",
+                "ManualMachines"
+            ],
+            "related_parameters": []
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250414060907_nl4opt_prob_81/",
+    "problem_path": "data/nl4opt/prob_81/"
+}

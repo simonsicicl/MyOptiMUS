@@ -1,0 +1,257 @@
+{
+    "background": "A village needs to optimize its mail delivery system to adjacent villages using runners and canoers with certain constraints on capacity, time, and delivery methods.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of bags of mail a runner can carry",
+            "symbol": "BagsPerRunner",
+            "value": 3,
+            "shape": [],
+            "code": "BagsPerRunner = data[\"BagsPerRunner\"] # scalar parameter"
+        },
+        {
+            "definition": "Time taken for a runner to deliver mail",
+            "symbol": "TimePerRunner",
+            "value": 4,
+            "shape": [],
+            "code": "TimePerRunner = data[\"TimePerRunner\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of bags of mail a canoer can carry",
+            "symbol": "BagsPerCanoer",
+            "value": 10,
+            "shape": [],
+            "code": "BagsPerCanoer = data[\"BagsPerCanoer\"] # scalar parameter"
+        },
+        {
+            "definition": "Time taken for a canoer to deliver mail",
+            "symbol": "TimePerCanoer",
+            "value": 2,
+            "shape": [],
+            "code": "TimePerCanoer = data[\"TimePerCanoer\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum proportion of deliveries that can be done by canoe",
+            "symbol": "MaxCanoeProportion",
+            "value": 0.33,
+            "shape": [],
+            "code": "MaxCanoeProportion = data[\"MaxCanoeProportion\"] # scalar parameter"
+        },
+        {
+            "definition": "Total available hours for delivery",
+            "symbol": "TotalHours",
+            "value": 200,
+            "shape": [],
+            "code": "TotalHours = data[\"TotalHours\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of runners to be used",
+            "symbol": "MinRunners",
+            "value": 4,
+            "shape": [],
+            "code": "MinRunners = data[\"MinRunners\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "At most MaxCanoeProportion of deliveries can be by canoe",
+            "status": "formulated",
+            "formulation": "\\textup{DeliveriesByCanoe} \\leq \\textup{MaxCanoeProportion} \\cdot \\textup{TotalDeliveries}",
+            "related_variables": [
+                "DeliveriesByCanoe",
+                "TotalDeliveries"
+            ],
+            "related_parameters": [
+                "MaxCanoeProportion"
+            ]
+        },
+        {
+            "description": "The total delivery time cannot exceed the total available hours (TotalHours).",
+            "status": "formulated",
+            "formulation": "\\textup{TotalTime} \\leq \\textup{TotalHours}",
+            "related_variables": [
+                "TotalTime"
+            ],
+            "related_parameters": [
+                "TotalHours"
+            ]
+        },
+        {
+            "description": "The total number of deliveries completed by runners must be at least equal to the minimum required number of runners.",
+            "status": "formulated",
+            "formulation": "\\textup{DeliveriesByRunner} \\geq \\textup{MinRunners}",
+            "related_variables": [
+                "DeliveriesByRunner"
+            ],
+            "related_parameters": [
+                "MinRunners"
+            ]
+        },
+        {
+            "description": "The number of runners used is non-negative",
+            "status": "formulated",
+            "formulation": "\\textup{RunnersUsed} \\geq 0",
+            "related_variables": [
+                "RunnersUsed"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "The number of canoers used must be non-negative.",
+            "status": "formulated",
+            "formulation": "\\textup{CanoersUsed} \\geq 0",
+            "related_variables": [
+                "CanoersUsed"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "TotalDeliveries is the sum of deliveries by canoers and runners",
+            "status": "formulated",
+            "formulation": "\\textup{TotalDeliveries} = \\textup{DeliveriesByCanoe} + \\textup{DeliveriesByRunner}",
+            "related_variables": [
+                "TotalDeliveries",
+                "DeliveriesByCanoe",
+                "DeliveriesByRunner"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "An auxiliary constraint defining TotalTime as the sum of the time contributions from runners and canoers.",
+            "status": "formulated",
+            "formulation": "\\textup{TotalTime} = \\textup{DeliveriesByRunner} \\times \\textup{TimePerRunner} + \\textup{DeliveriesByCanoe} \\times \\textup{TimePerCanoer}",
+            "related_variables": [
+                "TotalTime",
+                "DeliveriesByRunner",
+                "DeliveriesByCanoe"
+            ],
+            "related_parameters": [
+                "TimePerRunner",
+                "TimePerCanoer"
+            ]
+        },
+        {
+            "description": "Total deliveries is the sum of deliveries by runners and canoers.",
+            "status": "formulated",
+            "formulation": "\\textup{TotalDeliveries} = \\textup{DeliveriesByRunner} + \\textup{DeliveriesByCanoe}",
+            "related_variables": [
+                "TotalDeliveries",
+                "DeliveriesByRunner",
+                "DeliveriesByCanoe"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Total time spent on all deliveries must not exceed total available hours.",
+            "status": "formulated",
+            "formulation": "(\\textup{DeliveriesByRunner} \\times \\textup{TimePerRunner}) + (\\textup{DeliveriesByCanoe} \\times \\textup{TimePerCanoer}) \\leq \\textup{TotalHours}",
+            "related_variables": [
+                "DeliveriesByRunner",
+                "DeliveriesByCanoe"
+            ],
+            "related_parameters": [
+                "TimePerRunner",
+                "TimePerCanoer",
+                "TotalHours"
+            ]
+        },
+        {
+            "description": "Proportion of deliveries done by canoers must be less than or equal to maximum canoe proportion.",
+            "status": "formulated",
+            "formulation": "\\textup{CanoeProportion} \\leq \\textup{MaxCanoeProportion}",
+            "related_variables": [
+                "CanoeProportion"
+            ],
+            "related_parameters": [
+                "MaxCanoeProportion"
+            ]
+        },
+        {
+            "description": "Proportion of deliveries by canoers is defined as deliveries by canoers divided by total deliveries.",
+            "status": "formulated",
+            "formulation": "\\textup{CanoeProportion} \\times \\textup{TotalDeliveries} = \\textup{DeliveriesByCanoe}",
+            "related_variables": [
+                "CanoeProportion",
+                "TotalDeliveries",
+                "DeliveriesByCanoe"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Minimum number of runners must be used for mail delivery.",
+            "status": "formulated",
+            "formulation": "\\textup{RunnersUsed} \\geq \\textup{MinRunners}",
+            "related_variables": [
+                "RunnersUsed"
+            ],
+            "related_parameters": [
+                "MinRunners"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Total number of delivery trips completed by canoers",
+            "symbol": "DeliveriesByCanoe",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "Total number of delivery trips",
+            "symbol": "TotalDeliveries",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "Total number of delivery trips completed by runners",
+            "symbol": "DeliveriesByRunner",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "The total time spent on all deliveries, including both runners and canoers.",
+            "symbol": "TotalTime",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "The number of runners physically used for mail delivery",
+            "symbol": "RunnersUsed",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "The number of canoers physically used for mail delivery",
+            "symbol": "CanoersUsed",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "Proportion of deliveries completed by canoers.",
+            "symbol": "CanoeProportion",
+            "shape": [],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total amount of mail delivered using runners and canoers.",
+            "status": "formulated",
+            "formulation": "(\\textup{DeliveriesByRunner} \\times \\textup{BagsPerRunner}) + (\\textup{DeliveriesByCanoe} \\times \\textup{BagsPerCanoer})",
+            "related_variables": [
+                "DeliveriesByRunner",
+                "DeliveriesByCanoe"
+            ],
+            "related_parameters": [
+                "BagsPerRunner",
+                "BagsPerCanoer"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250414054602_nl4opt_prob_269/",
+    "problem_path": "data/nl4opt/prob_269/"
+}

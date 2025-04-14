@@ -1,0 +1,274 @@
+{
+    "background": "A factory operates two types of machines, A and B, to produce items. Both machines have different production rates and energy consumptions. The factory must meet minimum production requirements, adhere to electricity limitations, maintain a certain percentage of machine type B, and ensure a minimum number of machine A are used.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of items machine A can make per day",
+            "symbol": "ItemsAMadePerDay",
+            "value": 30,
+            "shape": [],
+            "code": "ItemsAMadePerDay = data[\"ItemsAMadePerDay\"] # scalar parameter"
+        },
+        {
+            "definition": "Electricity consumed by machine A per day",
+            "symbol": "ElectricityA",
+            "value": 100,
+            "shape": [],
+            "code": "ElectricityA = data[\"ElectricityA\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of items machine B can make per day",
+            "symbol": "ItemsBMadePerDay",
+            "value": 50,
+            "shape": [],
+            "code": "ItemsBMadePerDay = data[\"ItemsBMadePerDay\"] # scalar parameter"
+        },
+        {
+            "definition": "Electricity consumed by machine B per day",
+            "symbol": "ElectricityB",
+            "value": 120,
+            "shape": [],
+            "code": "ElectricityB = data[\"ElectricityB\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum total items the factory must produce per day",
+            "symbol": "MinItems",
+            "value": 1000,
+            "shape": [],
+            "code": "MinItems = data[\"MinItems\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum amount of electricity available for the factory per day",
+            "symbol": "MaxElectricity",
+            "value": 3000,
+            "shape": [],
+            "code": "MaxElectricity = data[\"MaxElectricity\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum percentage of type B machines",
+            "symbol": "MaxPercentB",
+            "value": 0.3,
+            "shape": [],
+            "code": "MaxPercentB = data[\"MaxPercentB\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of machine A to be used",
+            "symbol": "MinMachineA",
+            "value": 5,
+            "shape": [],
+            "code": "MinMachineA = data[\"MinMachineA\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The total number of items produced by machines A and B together must be at least the minimum required items per day.",
+            "status": "coded",
+            "formulation": "\\textup{NumberMachinesA} \\cdot \\textup{ItemsAMadePerDay} + \\textup{NumberMachinesB} \\cdot \\textup{ItemsBMadePerDay} \\geq \\textup{MinItems}",
+            "related_variables": [
+                "NumberMachinesA",
+                "NumberMachinesB"
+            ],
+            "related_parameters": [
+                "ItemsAMadePerDay",
+                "ItemsBMadePerDay",
+                "MinItems"
+            ],
+            "code": "# Add constraint to ensure the total number of items produced by machines A and B meets the minimum required number of items per day  \nmodel.addConstr(NumberMachinesA * ItemsAMadePerDay + NumberMachinesB * ItemsBMadePerDay >= MinItems, name=\"min_items_constraint\")"
+        },
+        {
+            "description": "The total electricity consumption by machines A and B is at most MaxElectricity kWh per day.",
+            "status": "coded",
+            "formulation": "\\textup{ElectricityA} \\cdot \\textup{NumberMachinesA} + \\textup{ElectricityB} \\cdot \\textup{NumberMachinesB} \\leq \\textup{MaxElectricity}",
+            "related_variables": [
+                "NumberMachinesA",
+                "NumberMachinesB"
+            ],
+            "related_parameters": [
+                "ElectricityA",
+                "ElectricityB",
+                "MaxElectricity"
+            ],
+            "code": "# Add constraint for total electricity consumption\nmodel.addConstr(\n    NumberMachinesA * ElectricityA + NumberMachinesB * ElectricityB <= MaxElectricity,\n    name=\"total_electricity_consumption\"\n)"
+        },
+        {
+            "description": "The number of machine type B should be at most MaxPercentB percent of the total number of machines.",
+            "status": "coded",
+            "formulation": "\\textup{NumberMachinesB} \\leq \\frac{\\textup{MaxPercentB}}{1 - \\textup{MaxPercentB}} \\cdot \\textup{NumberMachinesA}",
+            "related_variables": [
+                "NumberMachinesA",
+                "NumberMachinesB"
+            ],
+            "related_parameters": [
+                "MaxPercentB"
+            ],
+            "code": "# Add constraint ensuring NumberMachinesB is at most MaxPercentB percent of the total \nmodel.addConstr(NumberMachinesB <= (MaxPercentB / (1 - MaxPercentB)) * NumberMachinesA, name=\"limit_machine_B_percentage\")"
+        },
+        {
+            "description": "The number of machine A used each day must be greater than or equal to the minimum threshold specified by MinMachineA.",
+            "status": "coded",
+            "formulation": "\\textup{NumberMachinesA} \\geq \\textup{MinMachineA}",
+            "related_variables": [
+                "NumberMachinesA"
+            ],
+            "related_parameters": [
+                "MinMachineA"
+            ],
+            "code": "# Add constraint for minimum number of machine A\nmodel.addConstr(NumberMachinesA >= MinMachineA, name=\"min_machines_constraint\")"
+        },
+        {
+            "description": "The total electricity used by machine A is at most ElectricityA multiplied by the number of machine A.",
+            "status": "runtime_error",
+            "formulation": "\\textup{TotalElectricityA} \\leq \\textup{ElectricityA} \\times \\textup{NumberMachinesA}",
+            "related_variables": [
+                "NumberMachinesA"
+            ],
+            "related_parameters": [
+                "ElectricityA"
+            ],
+            "code": "# Add electricity usage constraint for machine A\nmodel.addConstr(TotalElectricityA <= ElectricityA * NumberMachinesA, name=\"electricity_usage_machine_A\")"
+        },
+        {
+            "description": "Total electricity used by machine B is at most ElectricityB times the number of machine B.",
+            "status": "coded",
+            "formulation": "\\textup{ElectricityUsedB} \\leq \\textup{ElectricityB} \\times \\textup{NumberMachinesB}",
+            "related_variables": [
+                "ElectricityUsedB",
+                "NumberMachinesB"
+            ],
+            "related_parameters": [
+                "ElectricityB"
+            ],
+            "code": "# Add constraint to limit total electricity used by machine B\nmodel.addConstr(ElectricityUsedB <= ElectricityB * NumberMachinesB, name=\"electricity_limit_B\")"
+        },
+        {
+            "description": "The electricity used by machine B is equal to ElectricityB multiplied by the number of type B machines used.",
+            "status": "coded",
+            "formulation": "\\textup{ElectricityUsedB} = \\textup{ElectricityB} \\times \\textup{NumberMachinesB}",
+            "related_variables": [
+                "ElectricityUsedB",
+                "NumberMachinesB"
+            ],
+            "related_parameters": [
+                "ElectricityB"
+            ],
+            "code": "# Add constraint to define electricity used by machine B\nmodel.addConstr(ElectricityUsedB == ElectricityB * NumberMachinesB, name=\"electricity_usage_B\")"
+        },
+        {
+            "description": "Ensure total production meets the minimum required production each day.",
+            "status": "coded",
+            "formulation": "\\textup{ItemsAMadePerDay} \\cdot \\textup{NumberMachinesA} + \\textup{ItemsBMadePerDay} \\cdot \\textup{NumberMachinesB} \\geq \\textup{MinItems}",
+            "related_variables": [
+                "NumberMachinesA",
+                "NumberMachinesB"
+            ],
+            "related_parameters": [
+                "ItemsAMadePerDay",
+                "ItemsBMadePerDay",
+                "MinItems"
+            ],
+            "code": "# Add production minimum constraint\nmodel.addConstr(NumberMachinesA * ItemsAMadePerDay + NumberMachinesB * ItemsBMadePerDay >= MinItems, name=\"min_production_constraint\")"
+        },
+        {
+            "description": "Ensure that total electricity usage does not exceed the maximum limit.",
+            "status": "coded",
+            "formulation": "\\textup{ElectricityA} \\cdot \\textup{NumberMachinesA} + \\textup{ElectricityB} \\cdot \\textup{NumberMachinesB} \\leq \\textup{MaxElectricity}",
+            "related_variables": [
+                "NumberMachinesA",
+                "NumberMachinesB"
+            ],
+            "related_parameters": [
+                "ElectricityA",
+                "ElectricityB",
+                "MaxElectricity"
+            ],
+            "code": "# Add electricity usage constraint\nmodel.addConstr(\n    NumberMachinesA * ElectricityA + NumberMachinesB * ElectricityB <= MaxElectricity,\n    name=\"electricity_limit\"\n)"
+        },
+        {
+            "description": "Limit the percentage of type B machines relative to the total machines used.",
+            "status": "coded",
+            "formulation": "\\textup{NumberMachinesB} \\leq \\textup{MaxPercentB} \\cdot \\textup{TotalMachinesUsed}",
+            "related_variables": [
+                "NumberMachinesB",
+                "TotalMachinesUsed"
+            ],
+            "related_parameters": [
+                "MaxPercentB"
+            ],
+            "code": "# Add constraint to limit the percentage of type B machines\nmodel.addConstr(NumberMachinesB <= MaxPercentB * TotalMachinesUsed, name=\"limit_percentage_B\")"
+        },
+        {
+            "description": "Ensure at least a minimum number of machine A is used.",
+            "status": "coded",
+            "formulation": "\\textup{NumberMachinesA} \\geq \\textup{MinMachineA}",
+            "related_variables": [
+                "NumberMachinesA"
+            ],
+            "related_parameters": [
+                "MinMachineA"
+            ],
+            "code": "# Ensure at least a minimum number of machine A is used\nmodel.addConstr(NumberMachinesA >= MinMachineA, name=\"min_machines_A\")"
+        },
+        {
+            "description": "Define the total number of machines as the sum of A and B machines.",
+            "status": "coded",
+            "formulation": "\\textup{NumberMachinesA} + \\textup{NumberMachinesB} = \\textup{TotalMachinesUsed}",
+            "related_variables": [
+                "NumberMachinesA",
+                "NumberMachinesB",
+                "TotalMachinesUsed"
+            ],
+            "related_parameters": [],
+            "code": "# Add a constraint to define the total machines used as the sum of type A and type B machines\nmodel.addConstr(NumberMachinesA + NumberMachinesB == TotalMachinesUsed, name=\"total_machines_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of machine A used each day.",
+            "symbol": "NumberMachinesA",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberMachinesA = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberMachinesA\")"
+        },
+        {
+            "definition": "The number of machine B used each day.",
+            "symbol": "NumberMachinesB",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberMachinesB = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberMachinesB\")"
+        },
+        {
+            "definition": "The total electricity consumed by machine B per day",
+            "symbol": "ElectricityUsedB",
+            "shape": [],
+            "status": "coded",
+            "code": "ElectricityUsedB = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"ElectricityUsedB\")"
+        },
+        {
+            "definition": "The total number of machines used, which is the sum of type A and type B machines.",
+            "symbol": "TotalMachinesUsed",
+            "shape": [],
+            "status": "coded",
+            "code": "TotalMachinesUsed = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TotalMachinesUsed\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of machines used (both A and B).",
+            "status": "coded",
+            "formulation": "\\textup{Minimize:} \\quad \\textup{NumberMachinesA} + \\textup{NumberMachinesB}",
+            "related_variables": [
+                "NumberMachinesA",
+                "NumberMachinesB"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(NumberMachinesA + NumberMachinesB, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "runtime_error",
+    "solver_output_status": "runtime_error",
+    "error_message": "Traceback (most recent call last):\n  File \"c:\\Users\\Simon\\Desktop\\Courses\\ECE 570\\ECE570_Project\\MyOptiMUS3\\evaluator.py\", line 45, in run\n    exec(last_line, local_env, local_env)\n  File \"<string>\", line 2, in <module>\nNameError: name 'TotalElectricityA' is not defined. Did you mean: 'ElectricityA'?\n",
+    "obj_val": null,
+    "log_path": "logs/log_20250414061919_nl4opt_prob_91/",
+    "problem_path": "data/nl4opt/prob_91/",
+    "prep_code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_91/data.json\", \"r\") as f:\n    data = json.load(f)\n"
+}

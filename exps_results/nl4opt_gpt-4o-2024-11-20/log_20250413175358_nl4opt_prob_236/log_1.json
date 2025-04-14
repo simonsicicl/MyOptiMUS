@@ -1,0 +1,277 @@
+{
+    "background": "A food delivery person can work shifts on either bikes or scooters, with different numbers of orders delivered, energy required, and tips earned for each. They have limited shifts and energy per month, and a minimum order and scooter shift requirement.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Orders delivered on a bike shift",
+            "symbol": "OrdersBike",
+            "value": 10,
+            "shape": [],
+            "code": "OrdersBike = data[\"OrdersBike\"] # scalar parameter"
+        },
+        {
+            "definition": "Energy consumed on a bike shift",
+            "symbol": "EnergyBike",
+            "value": 5,
+            "shape": [],
+            "code": "EnergyBike = data[\"EnergyBike\"] # scalar parameter"
+        },
+        {
+            "definition": "Tips received on a bike shift",
+            "symbol": "TipsBike",
+            "value": 50,
+            "shape": [],
+            "code": "TipsBike = data[\"TipsBike\"] # scalar parameter"
+        },
+        {
+            "definition": "Orders delivered on a scooter shift",
+            "symbol": "OrdersScooter",
+            "value": 7,
+            "shape": [],
+            "code": "OrdersScooter = data[\"OrdersScooter\"] # scalar parameter"
+        },
+        {
+            "definition": "Energy consumed on a scooter shift",
+            "symbol": "EnergyScooter",
+            "value": 6,
+            "shape": [],
+            "code": "EnergyScooter = data[\"EnergyScooter\"] # scalar parameter"
+        },
+        {
+            "definition": "Tips received on a scooter shift",
+            "symbol": "TipsScooter",
+            "value": 43,
+            "shape": [],
+            "code": "TipsScooter = data[\"TipsScooter\"] # scalar parameter"
+        },
+        {
+            "definition": "Total shifts available per month",
+            "symbol": "TotalShifts",
+            "value": 40,
+            "shape": [],
+            "code": "TotalShifts = data[\"TotalShifts\"] # scalar parameter"
+        },
+        {
+            "definition": "Total energy available",
+            "symbol": "TotalEnergy",
+            "value": 230,
+            "shape": [],
+            "code": "TotalEnergy = data[\"TotalEnergy\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum orders required",
+            "symbol": "MinOrders",
+            "value": 320,
+            "shape": [],
+            "code": "MinOrders = data[\"MinOrders\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum scooter shifts required",
+            "symbol": "MinScooterShifts",
+            "value": 5,
+            "shape": [],
+            "code": "MinScooterShifts = data[\"MinScooterShifts\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The total number of shifts is non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{BikeShifts} + \\textup{ScooterShifts} \\geq 0",
+            "related_variables": [
+                "BikeShifts",
+                "ScooterShifts"
+            ],
+            "related_parameters": [],
+            "code": "# Add non-negativity constraint for total shifts\nmodel.addConstr(BikeShifts + ScooterShifts >= 0, name=\"non_negative_shifts\")"
+        },
+        {
+            "description": "The number of bike shifts must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{BikeShifts} \\geq 0",
+            "related_variables": [
+                "BikeShifts"
+            ],
+            "related_parameters": [],
+            "code": "# No additional code is required because the variable \"BikeShifts\" is already defined as non-negative (continuous variables in Gurobi are non-negative by default)."
+        },
+        {
+            "description": "The number of scooter shifts worked must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{ScooterShifts} \\geq 0",
+            "related_variables": [
+                "ScooterShifts"
+            ],
+            "related_parameters": [],
+            "code": "# No additional code needed since the variable \"ScooterShifts\" is defined with non-negativity by default through its continuous type."
+        },
+        {
+            "description": "The total number of shifts worked using bikes and scooters should not exceed the maximum number of shifts available per month.",
+            "status": "coded",
+            "formulation": "\\textup{BikeShifts} + \\textup{ScooterShifts} \\\\leq \\textup{TotalShifts}",
+            "related_variables": [
+                "BikeShifts",
+                "ScooterShifts"
+            ],
+            "related_parameters": [
+                "TotalShifts"
+            ],
+            "code": "# Add constraint to ensure the total number of shifts worked using bikes and scooters does not exceed the total available shifts\nmodel.addConstr(BikeShifts + ScooterShifts <= TotalShifts, name=\"max_shift_constraint\")"
+        },
+        {
+            "description": "The total energy used by all shifts (bike and scooter) should not exceed the available total energy (TotalEnergy).",
+            "status": "coded",
+            "formulation": "\\\\textup{EnergyBike} \\\\times \\\\textup{BikeShifts} + \\\\textup{EnergyScooter} \\\\times \\\\textup{ScooterShifts} \\\\leq \\\\textup{TotalEnergy}",
+            "related_variables": [
+                "BikeShifts",
+                "ScooterShifts"
+            ],
+            "related_parameters": [
+                "EnergyBike",
+                "EnergyScooter",
+                "TotalEnergy"
+            ],
+            "code": "# Add energy usage constraint\nmodel.addConstr(EnergyBike * BikeShifts + EnergyScooter * ScooterShifts <= TotalEnergy, name=\"energy_usage_limit\")"
+        },
+        {
+            "description": "The total number of orders delivered must be at least the minimum required orders \\textup{MinOrders}.",
+            "status": "coded",
+            "formulation": "\\textup{OrdersBike} \\times \\textup{BikeShifts} + \\textup{OrdersScooter} \\times \\textup{ScooterShifts} \\geq \\textup{MinOrders}",
+            "related_variables": [
+                "BikeShifts",
+                "ScooterShifts"
+            ],
+            "related_parameters": [
+                "OrdersBike",
+                "OrdersScooter",
+                "MinOrders"
+            ],
+            "code": "# Add constraint for minimum required orders\nmodel.addConstr(\n    BikeShifts * OrdersBike + ScooterShifts * OrdersScooter >= MinOrders,\n    name=\"min_order_requirement\"\n)"
+        },
+        {
+            "description": "The number of scooter shifts must be at least the minimum required scooter shifts.",
+            "status": "coded",
+            "formulation": "\\textup{ScooterShifts} \\geq \\textup{MinScooterShifts}",
+            "related_variables": [
+                "ScooterShifts"
+            ],
+            "related_parameters": [
+                "MinScooterShifts"
+            ],
+            "code": "# Add constraint to ensure the number of scooter shifts meets the minimum required\nmodel.addConstr(ScooterShifts >= MinScooterShifts, name=\"min_scooter_shifts\")"
+        },
+        {
+            "description": "Bike shifts must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{BikeShifts} \\geq 0",
+            "related_variables": [
+                "BikeShifts"
+            ],
+            "related_parameters": [],
+            "code": "# The variable \"BikeShifts\" is constrained to be non-negative by its definition as a non-negative continuous variable (vtype=gp.GRB.CONTINUOUS), so no additional constraint is needed."
+        },
+        {
+            "description": "Scooter shifts must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{ScooterShifts} \\geq 0",
+            "related_variables": [
+                "ScooterShifts"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint for non-negative scooter shifts\nmodel.addConstr(ScooterShifts >= 0, name=\"non_negative_scooter_shifts\")"
+        },
+        {
+            "description": "The total number of shifts cannot exceed the total shifts available.",
+            "status": "coded",
+            "formulation": "\\textup{BikeShifts} + \\textup{ScooterShifts} \\leq \\textup{TotalShifts}",
+            "related_variables": [
+                "BikeShifts",
+                "ScooterShifts"
+            ],
+            "related_parameters": [
+                "TotalShifts"
+            ],
+            "code": "# Adding the constraint for total number of shifts\nmodel.addConstr(BikeShifts + ScooterShifts <= TotalShifts, name=\"total_shifts_constraint\")"
+        },
+        {
+            "description": "The total energy consumed by shifts cannot exceed the available energy.",
+            "status": "coded",
+            "formulation": "\\textup{EnergyBike} \\cdot \\textup{BikeShifts} + \\textup{EnergyScooter} \\cdot \\textup{ScooterShifts} \\leq \\textup{TotalEnergy}",
+            "related_variables": [
+                "BikeShifts",
+                "ScooterShifts"
+            ],
+            "related_parameters": [
+                "EnergyBike",
+                "EnergyScooter",
+                "TotalEnergy"
+            ],
+            "code": "# Add energy consumption constraint\nmodel.addConstr(EnergyBike * BikeShifts + EnergyScooter * ScooterShifts <= TotalEnergy, name=\"energy_consumption\")"
+        },
+        {
+            "description": "The total orders delivered should be at least the minimum required orders.",
+            "status": "coded",
+            "formulation": "\\textup{OrdersBike} \\cdot \\textup{BikeShifts} + \\textup{OrdersScooter} \\cdot \\textup{ScooterShifts} \\geq \\textup{MinOrders}",
+            "related_variables": [
+                "BikeShifts",
+                "ScooterShifts"
+            ],
+            "related_parameters": [
+                "OrdersBike",
+                "OrdersScooter",
+                "MinOrders"
+            ],
+            "code": "# Add constraint to ensure the total orders delivered meet the minimum required orders\nmodel.addConstr(\n    BikeShifts * OrdersBike + ScooterShifts * OrdersScooter >= MinOrders,\n    name=\"min_orders_constraint\"\n)"
+        },
+        {
+            "description": "The minimum number of scooter shifts must be at least the required threshold.",
+            "status": "coded",
+            "formulation": "\\textup{ScooterShifts} \\geq \\textup{MinScooterShifts}",
+            "related_variables": [
+                "ScooterShifts"
+            ],
+            "related_parameters": [
+                "MinScooterShifts"
+            ],
+            "code": "# Add minimum scooter shifts constraint\nmodel.addConstr(ScooterShifts >= MinScooterShifts, name=\"min_scooter_shifts\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of shifts worked using a bike.",
+            "symbol": "BikeShifts",
+            "shape": [],
+            "status": "coded",
+            "code": "BikeShifts = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"BikeShifts\")"
+        },
+        {
+            "definition": "The number of shifts worked using a scooter.",
+            "symbol": "ScooterShifts",
+            "shape": [],
+            "status": "coded",
+            "code": "ScooterShifts = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"ScooterShifts\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total tips received from all shifts worked on bikes and scooters.",
+            "status": "coded",
+            "formulation": "\\textup{Maximize} \\quad \\textup{TipsBike} \\cdot \\textup{BikeShifts} + \\textup{TipsScooter} \\cdot \\textup{ScooterShifts}",
+            "related_variables": [
+                "BikeShifts",
+                "ScooterShifts"
+            ],
+            "related_parameters": [
+                "TipsBike",
+                "TipsScooter"
+            ],
+            "code": "# Set objective\nmodel.setObjective(TipsBike * BikeShifts + TipsScooter * ScooterShifts, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413175358_nl4opt_prob_236/",
+    "problem_path": "data/nl4opt/prob_236/"
+}

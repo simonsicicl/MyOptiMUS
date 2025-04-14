@@ -1,0 +1,173 @@
+{
+    "background": "A sailor is planning his meals with a choice between crab cakes and lobster rolls, aiming to meet his nutritional needs while minimizing his intake of unsaturated fat.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Minimum units of vitamin A needed",
+            "symbol": "VitaminAmin",
+            "value": 80,
+            "shape": [],
+            "code": "VitaminAmin = data[\"VitaminAmin\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum units of vitamin C needed",
+            "symbol": "VitaminCmin",
+            "value": 100,
+            "shape": [],
+            "code": "VitaminCmin = data[\"VitaminCmin\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of vitamin A in a crab cake",
+            "symbol": "VitaminAcrab",
+            "value": 5,
+            "shape": [],
+            "code": "VitaminAcrab = data[\"VitaminAcrab\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of vitamin C in a crab cake",
+            "symbol": "VitaminCcrab",
+            "value": 7,
+            "shape": [],
+            "code": "VitaminCcrab = data[\"VitaminCcrab\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of vitamin A in a lobster roll",
+            "symbol": "VitaminAlobster",
+            "value": 8,
+            "shape": [],
+            "code": "VitaminAlobster = data[\"VitaminAlobster\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of vitamin C in a lobster roll",
+            "symbol": "VitaminClobster",
+            "value": 4,
+            "shape": [],
+            "code": "VitaminClobster = data[\"VitaminClobster\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum fraction of meals that can be lobster rolls",
+            "symbol": "LobsterFractionMax",
+            "value": 0.4,
+            "shape": [],
+            "code": "LobsterFractionMax = data[\"LobsterFractionMax\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of unsaturated fat in a crab cake",
+            "symbol": "FatCrab",
+            "value": 4,
+            "shape": [],
+            "code": "FatCrab = data[\"FatCrab\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of unsaturated fat in a lobster roll",
+            "symbol": "FatLobster",
+            "value": 6,
+            "shape": [],
+            "code": "FatLobster = data[\"FatLobster\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The sailor must consume at least VitaminAmin units of vitamin A",
+            "status": "coded",
+            "formulation": "\\textup{VitaminAcrab} \\cdot \\textup{NumberOfCrabCakes} + \\textup{VitaminAlobster} \\cdot \\textup{NumberOfLobsterRolls} \\geq \\textup{VitaminAmin}",
+            "related_variables": [
+                "NumberOfCrabCakes",
+                "NumberOfLobsterRolls"
+            ],
+            "related_parameters": [
+                "VitaminAmin",
+                "VitaminAcrab",
+                "VitaminAlobster"
+            ],
+            "code": "# Ensure the sailor consumes at least VitaminAmin units of vitamin A\nmodel.addConstr(VitaminAcrab * NumberOfCrabCakes + VitaminAlobster * NumberOfLobsterRolls >= VitaminAmin, name=\"vitamin_A_minimum\")"
+        },
+        {
+            "description": "The sailor must consume at least VitaminCmin units of vitamin C",
+            "status": "coded",
+            "formulation": "\\textup{VitaminCcrab} \\cdot \\textup{NumberOfCrabCakes} + \\textup{VitaminClobster} \\cdot \\textup{NumberOfLobsterRolls} \\geq \\textup{VitaminCmin}",
+            "related_variables": [
+                "NumberOfCrabCakes",
+                "NumberOfLobsterRolls"
+            ],
+            "related_parameters": [
+                "VitaminCcrab",
+                "VitaminClobster",
+                "VitaminCmin"
+            ],
+            "code": "# Ensure the sailor consumes at least VitaminCmin units of vitamin C\nmodel.addConstr(VitaminCcrab * NumberOfCrabCakes + VitaminClobster * NumberOfLobsterRolls >= VitaminCmin, name=\"vitamin_C_minimum\")"
+        },
+        {
+            "description": "The sailor can consume at most LobsterFractionMax percent of total meals as lobster rolls",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfLobsterRolls} \\leq \\textup{LobsterFractionMax} \\cdot (\\textup{NumberOfLobsterRolls} + \\textup{NumberOfCrabCakes})",
+            "related_variables": [
+                "NumberOfLobsterRolls",
+                "NumberOfCrabCakes"
+            ],
+            "related_parameters": [
+                "LobsterFractionMax"
+            ],
+            "code": "# Constraint: Sailor can consume at most LobsterFractionMax percent of total meals as lobster rolls\nmodel.addConstr(NumberOfLobsterRolls <= LobsterFractionMax * (NumberOfLobsterRolls + NumberOfCrabCakes), \"max_lobster_fraction\")"
+        },
+        {
+            "description": "The number of crab cakes eaten must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfCrabCakes} \\geq 0",
+            "related_variables": [
+                "NumberOfCrabCakes"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint to ensure the number of crab cakes eaten is non-negative\nmodel.addConstr(NumberOfCrabCakes >= 0, name=\"crab_cakes_non_negative\")"
+        },
+        {
+            "description": "The number of lobster rolls eaten must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfLobsterRolls} \\geq 0",
+            "related_variables": [
+                "NumberOfLobsterRolls"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint to ensure the number of lobster rolls eaten is non-negative\nmodel.addConstr(NumberOfLobsterRolls >= 0, name=\"lobster_rolls_non_negative\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of crab cakes the sailor decides to eat",
+            "symbol": "NumberOfCrabCakes",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfCrabCakes = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfCrabCakes\")"
+        },
+        {
+            "definition": "The number of lobster rolls the sailor decides to eat",
+            "symbol": "NumberOfLobsterRolls",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfLobsterRolls = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfLobsterRolls\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the sailor's unsaturated fat intake from crab cakes and lobster rolls",
+            "status": "coded",
+            "formulation": "\\min z = \\textup{FatCrab} \\cdot \\textup{NumberOfCrabCakes} + \\textup{FatLobster} \\cdot \\textup{NumberOfLobsterRolls}",
+            "related_variables": [
+                "NumberOfCrabCakes",
+                "NumberOfLobsterRolls"
+            ],
+            "related_parameters": [
+                "FatCrab",
+                "FatLobster"
+            ],
+            "code": "# Define the objective function\nmodel.setObjective(FatCrab * NumberOfCrabCakes + FatLobster * NumberOfLobsterRolls, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 64.0,
+    "log_path": "logs/log_20250413110533_nl4opt_prob_111/",
+    "problem_path": "data/nl4opt/prob_111/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_111/data.json\", \"r\") as f:\n    data = json.load(f)\n\nVitaminAmin = data[\"VitaminAmin\"] # scalar parameter\nVitaminCmin = data[\"VitaminCmin\"] # scalar parameter\nVitaminAcrab = data[\"VitaminAcrab\"] # scalar parameter\nVitaminCcrab = data[\"VitaminCcrab\"] # scalar parameter\nVitaminAlobster = data[\"VitaminAlobster\"] # scalar parameter\nVitaminClobster = data[\"VitaminClobster\"] # scalar parameter\nLobsterFractionMax = data[\"LobsterFractionMax\"] # scalar parameter\nFatCrab = data[\"FatCrab\"] # scalar parameter\nFatLobster = data[\"FatLobster\"] # scalar parameter\nNumberOfCrabCakes = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfCrabCakes\")\nNumberOfLobsterRolls = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfLobsterRolls\")\n\n# Ensure the sailor consumes at least VitaminAmin units of vitamin A\nmodel.addConstr(VitaminAcrab * NumberOfCrabCakes + VitaminAlobster * NumberOfLobsterRolls >= VitaminAmin, name=\"vitamin_A_minimum\")\n\n# Ensure the sailor consumes at least VitaminCmin units of vitamin C\nmodel.addConstr(VitaminCcrab * NumberOfCrabCakes + VitaminClobster * NumberOfLobsterRolls >= VitaminCmin, name=\"vitamin_C_minimum\")\n\n# Constraint: Sailor can consume at most LobsterFractionMax percent of total meals as lobster rolls\nmodel.addConstr(NumberOfLobsterRolls <= LobsterFractionMax * (NumberOfLobsterRolls + NumberOfCrabCakes), \"max_lobster_fraction\")\n\n# Add constraint to ensure the number of crab cakes eaten is non-negative\nmodel.addConstr(NumberOfCrabCakes >= 0, name=\"crab_cakes_non_negative\")\n\n# Add constraint to ensure the number of lobster rolls eaten is non-negative\nmodel.addConstr(NumberOfLobsterRolls >= 0, name=\"lobster_rolls_non_negative\")\n\n# Define the objective function\nmodel.setObjective(FatCrab * NumberOfCrabCakes + FatLobster * NumberOfLobsterRolls, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

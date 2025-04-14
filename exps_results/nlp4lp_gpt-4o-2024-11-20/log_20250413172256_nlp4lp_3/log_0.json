@@ -1,0 +1,240 @@
+{
+    "background": "The task is to plan the expansion of energy capacity to meet a certain demand over a period while considering the costs and capacities of different energy sources and their lifetimes.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of time periods",
+            "symbol": "T",
+            "value": "",
+            "shape": [],
+            "code": "T = data[\"T\"] # scalar parameter"
+        },
+        {
+            "definition": "The demand in period t",
+            "symbol": "Demand",
+            "value": "",
+            "shape": [
+                "T"
+            ],
+            "code": "Demand = np.array(data[\"Demand\"]) # ['T']"
+        },
+        {
+            "definition": "The maximum oil capacity in period t",
+            "symbol": "OilCap",
+            "value": "",
+            "shape": [
+                "T"
+            ],
+            "code": "OilCap = np.array(data[\"OilCap\"]) # ['T']"
+        },
+        {
+            "definition": "The cost of coal per unit",
+            "symbol": "CoalCost",
+            "value": 0,
+            "shape": [],
+            "code": "CoalCost = data[\"CoalCost\"] # scalar parameter"
+        },
+        {
+            "definition": "The cost of nuclear energy per unit",
+            "symbol": "NukeCost",
+            "value": 0,
+            "shape": [],
+            "code": "NukeCost = data[\"NukeCost\"] # scalar parameter"
+        },
+        {
+            "definition": "The maximum nuclear capacity",
+            "symbol": "MaxNuke",
+            "value": 0,
+            "shape": [],
+            "code": "MaxNuke = data[\"MaxNuke\"] # scalar parameter"
+        },
+        {
+            "definition": "The lifetime of a coal plant",
+            "symbol": "CoalLife",
+            "value": 0,
+            "shape": [],
+            "code": "CoalLife = data[\"CoalLife\"] # scalar parameter"
+        },
+        {
+            "definition": "The lifetime of a nuclear plant",
+            "symbol": "NukeLife",
+            "value": 0,
+            "shape": [],
+            "code": "NukeLife = data[\"NukeLife\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Constraint to meet energy demand in each period t by summing energy production across all sources.",
+            "status": "formulated",
+            "formulation": "\\sum_{t=1}^{T} \\left( \\textup{CoalProd}_{t} + \\textup{OilProd}_{t} + \\textup{NukeProd}_{t} \\right) \\geq \\textup{Demand}_{t}, \\quad \\forall t \\in {1,...,T}",
+            "related_variables": [
+                "CoalProd",
+                "OilProd",
+                "NukeProd"
+            ],
+            "related_parameters": [
+                "Demand"
+            ]
+        },
+        {
+            "description": "Ensure that the energy produced from oil in period t does not exceed the maximum oil capacity in period t.",
+            "status": "formulated",
+            "formulation": "\\\\textup{OilProd}_t \\\\leq \\\\textup{OilCap}_t, \\\\quad \\\\forall t \\\\in \\\\{1, 2, \\\\dots, T\\\\}",
+            "related_variables": [
+                "OilProd"
+            ],
+            "related_parameters": [
+                "OilCap"
+            ]
+        },
+        {
+            "description": "The nuclear energy production for each period t should not exceed the maximum nuclear capacity.",
+            "status": "formulated",
+            "formulation": "\\textup{NukeProd}_{t} \\leq \\textup{MaxNuke}, \\quad \\forall t \\in \\{1, 2, ..., T\\}",
+            "related_variables": [
+                "NukeProd"
+            ],
+            "related_parameters": [
+                "MaxNuke",
+                "T"
+            ]
+        },
+        {
+            "description": "Constraint ensuring that oil production in period t does not exceed its capacity.",
+            "status": "formulated",
+            "formulation": "\\textup{OilProd}_{t} \\leq \\textup{OilCap}_{t}, \\quad \\forall t \\in {1,...,T}",
+            "related_variables": [
+                "OilProd"
+            ],
+            "related_parameters": [
+                "OilCap"
+            ]
+        },
+        {
+            "description": "Constraint ensuring that nuclear production does not exceed the maximum nuclear capacity.",
+            "status": "formulated",
+            "formulation": "\\textup{NukeProd}_{t} \\leq \\textup{MaxNuke}, \\quad \\forall t \\in {1,...,T}",
+            "related_variables": [
+                "NukeProd"
+            ],
+            "related_parameters": [
+                "MaxNuke"
+            ]
+        },
+        {
+            "description": "Constraint ensuring coal production is non-negative.",
+            "status": "formulated",
+            "formulation": "\\textup{CoalProd}_{t} \\geq 0, \\quad \\forall t \\in {1,...,T}",
+            "related_variables": [
+                "CoalProd"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Constraint ensuring oil production is non-negative.",
+            "status": "formulated",
+            "formulation": "\\textup{OilProd}_{t} \\geq 0, \\quad \\forall t \\in {1,...,T}",
+            "related_variables": [
+                "OilProd"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Constraint ensuring nuclear production is non-negative.",
+            "status": "formulated",
+            "formulation": "\\textup{NukeProd}_{t} \\geq 0, \\quad \\forall t \\in {1,...,T}",
+            "related_variables": [
+                "NukeProd"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Ensure that energy production meets or exceeds demand in each period.",
+            "status": "formulated",
+            "formulation": "\\textup{CoalProd}_{t} + \\textup{OilProd}_{t} + \\textup{NukeProd}_{t} \\geq \\textup{Demand}_{t} \\quad \\forall t \\in \\{1, \\dots, T\\}",
+            "related_variables": [
+                "CoalProd",
+                "OilProd",
+                "NukeProd"
+            ],
+            "related_parameters": [
+                "Demand",
+                "T"
+            ]
+        },
+        {
+            "description": "Restrict the production of oil to its maximum capacity in each period.",
+            "status": "formulated",
+            "formulation": "\\textup{OilProd}_{t} \\leq \\textup{OilCap}_{t} \\quad \\forall t \\in \\{1, \\dots, T\\}",
+            "related_variables": [
+                "OilProd"
+            ],
+            "related_parameters": [
+                "OilCap",
+                "T"
+            ]
+        },
+        {
+            "description": "Restrict the production of nuclear energy to its maximum capacity over all periods.",
+            "status": "formulated",
+            "formulation": "\\textup{NukeProd}_{t} \\leq \\textup{MaxNuke} \\quad \\forall t \\in \\{1, \\dots, T\\}",
+            "related_variables": [
+                "NukeProd"
+            ],
+            "related_parameters": [
+                "MaxNuke",
+                "T"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Energy produced from coal in period t",
+            "symbol": "CoalProd",
+            "shape": [
+                "T"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "Energy produced from oil in period t",
+            "symbol": "OilProd",
+            "shape": [
+                "T"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "Energy produced from nuclear sources in period t",
+            "symbol": "NukeProd",
+            "shape": [
+                "T"
+            ],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total cost of the capacity expansion plan, including the costs of producing energy from coal, nuclear, and oil sources.",
+            "status": "formulated",
+            "formulation": "\\sum_{t=1}^{T} \\Big( \\textup{CoalCost} \\cdot \\textup{CoalProd}_{t} + \\textup{NukeCost} \\cdot \\textup{NukeProd}_{t} \\Big)",
+            "related_variables": [
+                "CoalProd",
+                "OilProd",
+                "NukeProd"
+            ],
+            "related_parameters": [
+                "CoalCost",
+                "NukeCost",
+                "T"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413172256_nlp4lp_3/",
+    "problem_path": "data/nlp4lp/3/"
+}

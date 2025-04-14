@@ -1,0 +1,184 @@
+{
+    "background": "A hot dog company is deciding how many small and large butcher shops to build, each with different production capacities and staffing requirements, to meet a minimum daily production target with a limited number of available workers.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of hot dogs produced per day by a small shop",
+            "symbol": "HotDogsSmall",
+            "value": 30,
+            "shape": [],
+            "code": "HotDogsSmall = data[\"HotDogsSmall\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of workers required for a small shop",
+            "symbol": "WorkersSmall",
+            "value": 2,
+            "shape": [],
+            "code": "WorkersSmall = data[\"WorkersSmall\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of hot dogs produced per day by a large shop",
+            "symbol": "HotDogsLarge",
+            "value": 70,
+            "shape": [],
+            "code": "HotDogsLarge = data[\"HotDogsLarge\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of workers required for a large shop",
+            "symbol": "WorkersLarge",
+            "value": 4,
+            "shape": [],
+            "code": "WorkersLarge = data[\"WorkersLarge\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of hot dogs that must be produced per day",
+            "symbol": "MinHotDogs",
+            "value": 500,
+            "shape": [],
+            "code": "MinHotDogs = data[\"MinHotDogs\"] # scalar parameter"
+        },
+        {
+            "definition": "Total number of workers available",
+            "symbol": "TotalWorkers",
+            "value": 30,
+            "shape": [],
+            "code": "TotalWorkers = data[\"TotalWorkers\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Constraints ensuring non-negativity, production target, and workforce limitation for the butcher shops.",
+            "status": "coded",
+            "formulation": "\\textup{SmallShops} \\geq 0 \\quad \\textup{(non-negativity for small shops)}\\\\\n\\textup{LargeShops} \\geq 0 \\quad \\textup{(non-negativity for large shops)}\\\\\n\\textup{HotDogsSmall} \\cdot \\textup{SmallShops} + \\textup{HotDogsLarge} \\cdot \\textup{LargeShops} \\geq \\textup{MinHotDogs} \\quad \\textup{(minimum daily production)}\\\\\n\\textup{WorkersSmall} \\cdot \\textup{SmallShops} + \\textup{WorkersLarge} \\cdot \\textup{LargeShops} \\leq \\textup{TotalWorkers} \\quad \\textup{(worker availability constraint)}",
+            "related_variables": [
+                "SmallShops",
+                "LargeShops"
+            ],
+            "related_parameters": [
+                "HotDogsSmall",
+                "WorkersSmall",
+                "HotDogsLarge",
+                "WorkersLarge",
+                "MinHotDogs",
+                "TotalWorkers"
+            ],
+            "code": "# Add non-negativity, production target, and workforce limitation constraints\n\n# Non-negativity for small shops\nmodel.addConstr(SmallShops >= 0, name=\"non_negativity_small_shops\")\n\n# Non-negativity for large shops\nmodel.addConstr(LargeShops >= 0, name=\"non_negativity_large_shops\")\n\n# Minimum daily production constraint\nmodel.addConstr(HotDogsSmall * SmallShops + HotDogsLarge * LargeShops >= MinHotDogs, name=\"minimum_hotdogs_production\")\n\n# Worker availability constraint\nmodel.addConstr(WorkersSmall * SmallShops + WorkersLarge * LargeShops <= TotalWorkers, name=\"worker_availability_constraint\")"
+        },
+        {
+            "description": "Ensure that the number of large shops is non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{LargeShops} \\\\geq 0",
+            "related_variables": [
+                "LargeShops"
+            ],
+            "related_parameters": [],
+            "code": "# No additional code needed because Gurobi variables are non-negative by default unless explicitly defined with lower bounds less than zero."
+        },
+        {
+            "description": "The total daily hot dogs produced by small and large butcher shops must be at least MinHotDogs.",
+            "status": "coded",
+            "formulation": "\\textup{HotDogsSmall} \\cdot \\textup{SmallShops} + \\textup{HotDogsLarge} \\cdot \\textup{LargeShops} \\geq \\textup{MinHotDogs}",
+            "related_variables": [
+                "SmallShops",
+                "LargeShops"
+            ],
+            "related_parameters": [
+                "HotDogsSmall",
+                "HotDogsLarge",
+                "MinHotDogs"
+            ],
+            "code": "# Add constraint for minimum daily hot dog production\nmodel.addConstr(HotDogsSmall * SmallShops + HotDogsLarge * LargeShops >= MinHotDogs, name=\"min_hot_dog_production\")"
+        },
+        {
+            "description": "The total number of workers required for small and large butcher shops cannot exceed the total available workers.",
+            "status": "coded",
+            "formulation": "\\textup{SmallShops} \\cdot \\textup{WorkersSmall} + \\textup{LargeShops} \\cdot \\textup{WorkersLarge} \\leq \\textup{TotalWorkers}",
+            "related_variables": [
+                "SmallShops",
+                "LargeShops"
+            ],
+            "related_parameters": [
+                "WorkersSmall",
+                "WorkersLarge",
+                "TotalWorkers"
+            ],
+            "code": "# Add constraint for total workers required by small and large butcher shops\nmodel.addConstr(SmallShops * WorkersSmall + LargeShops * WorkersLarge <= TotalWorkers, name=\"total_workers_constraint\")"
+        },
+        {
+            "description": "Ensure that the number of small shops is also non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{SmallShops} \\\\geq 0",
+            "related_variables": [
+                "SmallShops"
+            ],
+            "related_parameters": [],
+            "code": "# Non-negativity constraint for SmallShops is implicitly ensured by the default lower bound of 0 in gurobipy variables."
+        },
+        {
+            "description": "The total daily production must meet or exceed the minimum daily production target",
+            "status": "coded",
+            "formulation": "\\textup{HotDogsSmall} \\cdot \\textup{SmallShops} + \\textup{HotDogsLarge} \\cdot \\textup{LargeShops} \\geq \\textup{MinHotDogs}",
+            "related_variables": [
+                "SmallShops",
+                "LargeShops"
+            ],
+            "related_parameters": [
+                "HotDogsSmall",
+                "HotDogsLarge",
+                "MinHotDogs"
+            ],
+            "code": "# Add total daily production constraint\nmodel.addConstr(HotDogsSmall * SmallShops + HotDogsLarge * LargeShops >= MinHotDogs, name=\"daily_production_target\")"
+        },
+        {
+            "description": "The total worker requirement must not exceed the total available workers",
+            "status": "coded",
+            "formulation": "\\textup{WorkersSmall} \\cdot \\textup{SmallShops} + \\textup{WorkersLarge} \\cdot \\textup{LargeShops} \\leq \\textup{TotalWorkers}",
+            "related_variables": [
+                "SmallShops",
+                "LargeShops"
+            ],
+            "related_parameters": [
+                "WorkersSmall",
+                "WorkersLarge",
+                "TotalWorkers"
+            ],
+            "code": "# Add worker requirement constraint\nmodel.addConstr(\n    WorkersSmall * SmallShops + WorkersLarge * LargeShops <= TotalWorkers,\n    name=\"worker_requirement\"\n)"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of small butcher shops to build",
+            "symbol": "SmallShops",
+            "shape": [],
+            "status": "coded",
+            "code": "SmallShops = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"SmallShops\")"
+        },
+        {
+            "definition": "Number of large butcher shops to build",
+            "symbol": "LargeShops",
+            "shape": [],
+            "status": "coded",
+            "code": "LargeShops = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"LargeShops\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of small and large butcher shops",
+            "status": "coded",
+            "formulation": "\\textup{SmallShops} + \\textup{LargeShops}",
+            "related_variables": [
+                "SmallShops",
+                "LargeShops"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(SmallShops + LargeShops, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 7.142857142857143,
+    "log_path": "logs/log_20250414061011_nl4opt_prob_82/",
+    "problem_path": "data/nl4opt/prob_82/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_82/data.json\", \"r\") as f:\n    data = json.load(f)\n\nHotDogsSmall = data[\"HotDogsSmall\"] # scalar parameter\nWorkersSmall = data[\"WorkersSmall\"] # scalar parameter\nHotDogsLarge = data[\"HotDogsLarge\"] # scalar parameter\nWorkersLarge = data[\"WorkersLarge\"] # scalar parameter\nMinHotDogs = data[\"MinHotDogs\"] # scalar parameter\nTotalWorkers = data[\"TotalWorkers\"] # scalar parameter\nSmallShops = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"SmallShops\")\nLargeShops = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"LargeShops\")\n\n# Add non-negativity, production target, and workforce limitation constraints\n\n# Non-negativity for small shops\nmodel.addConstr(SmallShops >= 0, name=\"non_negativity_small_shops\")\n\n# Non-negativity for large shops\nmodel.addConstr(LargeShops >= 0, name=\"non_negativity_large_shops\")\n\n# Minimum daily production constraint\nmodel.addConstr(HotDogsSmall * SmallShops + HotDogsLarge * LargeShops >= MinHotDogs, name=\"minimum_hotdogs_production\")\n\n# Worker availability constraint\nmodel.addConstr(WorkersSmall * SmallShops + WorkersLarge * LargeShops <= TotalWorkers, name=\"worker_availability_constraint\")\n\n# No additional code needed because Gurobi variables are non-negative by default unless explicitly defined with lower bounds less than zero.\n\n# Add constraint for minimum daily hot dog production\nmodel.addConstr(HotDogsSmall * SmallShops + HotDogsLarge * LargeShops >= MinHotDogs, name=\"min_hot_dog_production\")\n\n# Add constraint for total workers required by small and large butcher shops\nmodel.addConstr(SmallShops * WorkersSmall + LargeShops * WorkersLarge <= TotalWorkers, name=\"total_workers_constraint\")\n\n# Non-negativity constraint for SmallShops is implicitly ensured by the default lower bound of 0 in gurobipy variables.\n\n# Add total daily production constraint\nmodel.addConstr(HotDogsSmall * SmallShops + HotDogsLarge * LargeShops >= MinHotDogs, name=\"daily_production_target\")\n\n# Add worker requirement constraint\nmodel.addConstr(\n    WorkersSmall * SmallShops + WorkersLarge * LargeShops <= TotalWorkers,\n    name=\"worker_requirement\"\n)\n\n# Set objective\nmodel.setObjective(SmallShops + LargeShops, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

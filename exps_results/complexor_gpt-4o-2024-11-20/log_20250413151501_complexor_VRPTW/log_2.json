@@ -1,0 +1,285 @@
+{
+    "background": "The Vehicle Routing Problem with Time Windows (VRPTW) aims to optimize the distribution of goods between depots and customers using a fleet of vehicles with limited capacity, ensuring customers' demands are met within specific time windows while respecting the vehicles' routing restrictions.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "symbol": "CustomerCount",
+            "definition": "The number of customers to be supplied",
+            "shape": [],
+            "code": "CustomerCount = data[\"CustomerCount\"] # scalar parameter"
+        },
+        {
+            "symbol": "VehicleCount",
+            "definition": "The number of vehicles available for distribution",
+            "shape": [],
+            "code": "VehicleCount = data[\"VehicleCount\"] # scalar parameter"
+        },
+        {
+            "symbol": "CustomerDemand",
+            "definition": "The demand of each customer",
+            "shape": [
+                "CustomerCount"
+            ],
+            "code": "CustomerDemand = np.array(data[\"CustomerDemand\"]) # ['CustomerCount']"
+        },
+        {
+            "symbol": "CustomerLBTW",
+            "definition": "The lower bound of the time window for each customer",
+            "shape": [
+                "CustomerCount"
+            ],
+            "code": "CustomerLBTW = np.array(data[\"CustomerLBTW\"]) # ['CustomerCount']"
+        },
+        {
+            "symbol": "CustomerUBTW",
+            "definition": "The upper bound of the time window for each customer",
+            "shape": [
+                "CustomerCount"
+            ],
+            "code": "CustomerUBTW = np.array(data[\"CustomerUBTW\"]) # ['CustomerCount']"
+        },
+        {
+            "symbol": "CustomerDistance",
+            "definition": "The distance from each customer to every other customer",
+            "shape": [
+                "CustomerCount",
+                "CustomerCount"
+            ],
+            "code": "CustomerDistance = np.array(data[\"CustomerDistance\"]) # ['CustomerCount', 'CustomerCount']"
+        },
+        {
+            "symbol": "CustomerServiceTime",
+            "definition": "The service time required for each customer",
+            "shape": [
+                "CustomerCount"
+            ],
+            "code": "CustomerServiceTime = np.array(data[\"CustomerServiceTime\"]) # ['CustomerCount']"
+        },
+        {
+            "symbol": "VehicleCapacity",
+            "definition": "The capacity of each vehicle",
+            "shape": [
+                "VehicleCount"
+            ],
+            "code": "VehicleCapacity = np.array(data[\"VehicleCapacity\"]) # ['VehicleCount']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The total demand assigned to each vehicle does not exceed its capacity.",
+            "status": "coded",
+            "formulation": "\\sum_{j=1}^{\\textup{CustomerCount}} \\textup{CustomerDemand}_{j} \\cdot \\textup{CustomerAssigned}_{i,j} \\leq \\textup{VehicleCapacity}_{i}, \\quad \\forall i \\in \\{1,2,\\ldots, \\textup{VehicleCount}\\}",
+            "related_variables": [
+                "CustomerAssigned"
+            ],
+            "related_parameters": [
+                "CustomerDemand",
+                "VehicleCapacity",
+                "CustomerCount",
+                "VehicleCount"
+            ],
+            "code": "# Add vehicle capacity constraints\nfor i in range(VehicleCount):\n    model.addConstr(\n        gp.quicksum(CustomerAssigned[i, j] * CustomerDemand[j] for j in range(CustomerCount)) <= VehicleCapacity[i],\n        name=f\"vehicle_capacity_{i}\"\n    )"
+        },
+        {
+            "description": "Each customer j must be served within the time window from CustomerLBTW_j to CustomerUBTW_j.",
+            "status": "coded",
+            "formulation": "\\textup{CustomerLBTW}_{j} \\leq \\textup{CustomerServiceStartTime}_{j} \\leq \\textup{CustomerUBTW}_{j}, \\quad \\forall j \\in \\{1, \\dots, \\textup{CustomerCount}\\}",
+            "related_variables": [
+                "CustomerServiceStartTime"
+            ],
+            "related_parameters": [
+                "CustomerLBTW",
+                "CustomerUBTW",
+                "CustomerCount"
+            ],
+            "code": "# Add time window constraints for each customer\nfor j in range(CustomerCount):\n    model.addConstr(CustomerLBTW[j] <= CustomerServiceStartTime[j], name=f\"CustomerStartTimeLB_{j}\")\n    model.addConstr(CustomerServiceStartTime[j] <= CustomerUBTW[j], name=f\"CustomerStartTimeUB_{j}\")"
+        },
+        {
+            "description": "The number of vehicles used must not exceed VehicleCount.",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{\\textup{VehicleCount}} \\textup{VehicleUsed}_{i} \\leq \\textup{VehicleCount}",
+            "related_variables": [
+                "VehicleUsed"
+            ],
+            "related_parameters": [
+                "VehicleCount"
+            ],
+            "code": "# Add constraint to limit the number of vehicles used\nmodel.addConstr(gp.quicksum(VehicleUsed[i] for i in range(VehicleCount)) <= VehicleCount, name=\"vehicle_limit\")"
+        },
+        {
+            "description": "The binary assignment constraint ensures that each entry in \\textup{CustomerAssigned} represents a binary decision.",
+            "status": "coded",
+            "formulation": "\\textup{CustomerAssigned}_{i,j} \\in \\{0,1\\}, \\quad \\forall i \\in \\{1,2,\\ldots, \\textup{VehicleCount}\\}, \\quad \\forall j \\in \\{1,2,\\ldots, \\textup{CustomerCount}\\}",
+            "related_variables": [
+                "CustomerAssigned"
+            ],
+            "related_parameters": [
+                "CustomerCount",
+                "VehicleCount"
+            ],
+            "code": "# No additional code needed. The integrality of CustomerAssigned is already correctly set as binary in its variable definition."
+        },
+        {
+            "description": "Time propagation constraint to ensure that if customer j is visited before customer k, the service at k respects the travel time and service time from j to k.",
+            "status": "coded",
+            "formulation": "\\textup{CustomerServiceStartTime}_{k} \\geq \\textup{CustomerServiceStartTime}_{j} + \\textup{CustomerServiceTime}_{j} + \\textup{CustomerDistance}_{j,k}, \\quad \\forall j, k \\in \\{1, \\dots, \\textup{CustomerCount}\\}, \\ j \\neq k",
+            "related_variables": [
+                "CustomerServiceStartTime"
+            ],
+            "related_parameters": [
+                "CustomerServiceTime",
+                "CustomerDistance",
+                "CustomerCount"
+            ],
+            "code": "# Add time propagation constraints to ensure service sequencing respects travel and service times\nfor j in range(CustomerCount):\n    for k in range(CustomerCount):\n        if j != k:\n            model.addConstr(\n                CustomerServiceStartTime[k] >= CustomerServiceStartTime[j] + CustomerServiceTime[j] + CustomerDistance[j, k],\n                name=f\"time_propagation_{j}_{k}\"\n            )"
+        },
+        {
+            "description": "Ensure each VehicleUsed variable is activated only if the vehicle is assigned to at least one customer.",
+            "status": "coded",
+            "formulation": "\\sum_{j=1}^{\\textup{CustomerCount}} \\textup{CustomerAssigned}_{i,j} \\leq \\textup{CustomerCount} \\cdot \\textup{VehicleUsed}_{i} \\quad \\forall i \\in \\{1, \\dots, \\textup{VehicleCount}\\}",
+            "related_variables": [
+                "VehicleUsed",
+                "CustomerAssigned"
+            ],
+            "related_parameters": [
+                "CustomerCount",
+                "VehicleCount"
+            ],
+            "code": "# Add constraints to ensure VehicleUsed is activated only if at least one customer is assigned to the vehicle\nfor i in range(VehicleCount):\n    model.addConstr(gp.quicksum(CustomerAssigned[i, j] for j in range(CustomerCount)) <= CustomerCount * VehicleUsed[i], name=f\"vehicle_activation_{i}\")"
+        },
+        {
+            "description": "Ensure a route connection exists only if both customers are visited by the same vehicle.",
+            "status": "coded",
+            "formulation": "\\textup{RouteConnection}_{j,k} \\leq \\sum_{i=1}^{\\textup{VehicleCount}} \\textup{CustomerAssigned}_{i,j} \\cdot \\textup{CustomerAssigned}_{i,k} \\quad \\forall \\ j, \\ k \\in \\{1, ..., \\textup{CustomerCount}\\}",
+            "related_variables": [
+                "RouteConnection",
+                "CustomerAssigned"
+            ],
+            "related_parameters": [
+                "CustomerCount",
+                "VehicleCount"
+            ],
+            "code": "# Add route connection constraints to ensure a route exists only if both customers are visited by the same vehicle\nfor j in range(CustomerCount):\n    for k in range(CustomerCount):\n        model.addConstr(\n            RouteConnection[j, k] <= gp.quicksum(CustomerAssigned[i, j] * CustomerAssigned[i, k] for i in range(VehicleCount)),\n            name=f\"route_connection_{j}_{k}\"\n        )"
+        },
+        {
+            "description": "Ensure each customer is visited exactly once by any vehicle.",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{\\textup{VehicleCount}} \\textup{CustomerAssigned}_{i,j} = 1 \\quad \\forall \\ j \\in \\{1, ..., \\textup{CustomerCount}\\}",
+            "related_variables": [
+                "CustomerAssigned"
+            ],
+            "related_parameters": [
+                "CustomerCount",
+                "VehicleCount"
+            ],
+            "code": "# Add constraints to ensure each customer is visited exactly once by any vehicle\nfor j in range(CustomerCount):\n    model.addConstr(gp.quicksum(CustomerAssigned[i, j] for i in range(VehicleCount)) == 1, name=f\"visit_customer_once_{j}\")"
+        },
+        {
+            "description": "Ensure vehicle capacity is not exceeded across its assigned customers.",
+            "status": "coded",
+            "formulation": "\\sum_{j=1}^{\\textup{CustomerCount}} \\textup{CustomerDemand}_{j} \\cdot \\textup{CustomerAssigned}_{i,j} \\leq \\textup{VehicleCapacity}_{i} \\quad \\forall \\ i \\in \\{1, ..., \\textup{VehicleCount}\\}",
+            "related_variables": [
+                "CustomerAssigned"
+            ],
+            "related_parameters": [
+                "CustomerDemand",
+                "VehicleCapacity",
+                "CustomerCount",
+                "VehicleCount"
+            ],
+            "code": "# Add vehicle capacity constraints\nfor i in range(VehicleCount):\n    model.addConstr(\n        gp.quicksum(CustomerAssigned[i, j] * CustomerDemand[j] for j in range(CustomerCount)) \n        <= VehicleCapacity[i],\n        name=f\"vehicle_capacity_{i}\"\n    )"
+        },
+        {
+            "description": "Enforce time window constraints for customer service start times.",
+            "status": "coded",
+            "formulation": "\\textup{CustomerLBTW}_{j} \\leq \\textup{CustomerServiceStartTime}_{j} \\leq \\textup{CustomerUBTW}_{j} \\quad \\forall \\ j \\in \\{1, ..., \\textup{CustomerCount}\\}",
+            "related_variables": [
+                "CustomerServiceStartTime"
+            ],
+            "related_parameters": [
+                "CustomerLBTW",
+                "CustomerUBTW",
+                "CustomerCount"
+            ],
+            "code": "# Add time window constraints for customer service start times\nfor j in range(CustomerCount):\n    model.addConstr(CustomerLBTW[j] <= CustomerServiceStartTime[j], name=f\"CustomerServiceStartTime_LB_{j}\")\n    model.addConstr(CustomerServiceStartTime[j] <= CustomerUBTW[j], name=f\"CustomerServiceStartTime_UB_{j}\")"
+        },
+        {
+            "description": "Ensure service start time accounts for travel time between connected customers.",
+            "status": "coded",
+            "formulation": "\\textup{CustomerServiceStartTime}_{k} \\geq \\textup{CustomerServiceStartTime}_{j} + \\textup{CustomerServiceTime}_{j} + \\textup{CustomerDistance}_{j,k} \\cdot \\textup{RouteConnection}_{j,k} - M \\cdot (1 - \\textup{RouteConnection}_{j,k}) \\quad \\forall \\ j, k \\in \\{1, ..., \\textup{CustomerCount}\\}",
+            "related_variables": [
+                "CustomerServiceStartTime",
+                "RouteConnection"
+            ],
+            "related_parameters": [
+                "CustomerDistance",
+                "CustomerServiceTime",
+                "CustomerCount"
+            ],
+            "code": "# Add constraints to ensure service start time accounts for travel time\nM = 1e6  # A large constant (big-M method)\nfor j in range(CustomerCount):\n    for k in range(CustomerCount):\n        if j != k:\n            model.addConstr(\n                CustomerServiceStartTime[k] >= CustomerServiceStartTime[j] \n                + CustomerServiceTime[j] \n                + CustomerDistance[j, k] * RouteConnection[j, k]\n                - M * (1 - RouteConnection[j, k]),\n                name=f\"service_start_time_{j}_{k}\"\n            )"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Binary variable indicating whether vehicle i is assigned to customer j.",
+            "symbol": "CustomerAssigned",
+            "shape": [
+                "VehicleCount",
+                "CustomerCount"
+            ],
+            "status": "coded",
+            "code": "CustomerAssigned = model.addVars(VehicleCount, CustomerCount, vtype=gp.GRB.BINARY, name=\"CustomerAssigned\")"
+        },
+        {
+            "definition": "The start time of service at each customer.",
+            "symbol": "CustomerServiceStartTime",
+            "shape": [
+                "CustomerCount"
+            ],
+            "status": "coded",
+            "code": "CustomerServiceStartTime = model.addVars(CustomerCount, vtype=gp.GRB.CONTINUOUS, name=\"CustomerServiceStartTime\")"
+        },
+        {
+            "definition": "Binary variable indicating whether vehicle i is used.",
+            "symbol": "VehicleUsed",
+            "shape": [
+                "VehicleCount"
+            ],
+            "status": "coded",
+            "code": "VehicleUsed = model.addVars(VehicleCount, vtype=gp.GRB.BINARY, name=\"VehicleUsed\")"
+        },
+        {
+            "definition": "Binary variable indicating whether there is a route from customer j to customer k.",
+            "symbol": "RouteConnection",
+            "shape": [
+                "CustomerCount",
+                "CustomerCount"
+            ],
+            "status": "coded",
+            "code": "RouteConnection = model.addVars(CustomerCount, CustomerCount, vtype=gp.GRB.BINARY, name=\"RouteConnection\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total travel distance between customers while ensuring all customer demands are fulfilled within their respective time windows and vehicle capacity limits.",
+            "status": "coded",
+            "formulation": "\\min \\sum_{i=1}^{\\textup{VehicleCount}} \\sum_{j=0}^{\\textup{CustomerCount}} \\sum_{k=0}^{\\textup{CustomerCount}} \\textup{CustomerDistance}_{j,k} \\cdot \\textup{RouteConnection}_{j,k}",
+            "related_variables": [
+                "RouteConnection"
+            ],
+            "related_parameters": [
+                "CustomerDistance",
+                "VehicleCount",
+                "CustomerCount"
+            ],
+            "code": "# Set objective\nmodel.setObjective(gp.quicksum(CustomerDistance[j, k] * RouteConnection[j, k] for i in range(VehicleCount) for j in range(CustomerCount) for k in range(CustomerCount)), gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 3,
+    "error_message": null,
+    "obj_val": "infeasible",
+    "log_path": "logs/log_20250413151501_complexor_VRPTW/",
+    "problem_path": "data/complexor/VRPTW/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/complexor/VRPTW/data.json\", \"r\") as f:\n    data = json.load(f)\n\nCustomerCount = data[\"CustomerCount\"] # scalar parameter\nVehicleCount = data[\"VehicleCount\"] # scalar parameter\nCustomerDemand = np.array(data[\"CustomerDemand\"]) # ['CustomerCount']\nCustomerLBTW = np.array(data[\"CustomerLBTW\"]) # ['CustomerCount']\nCustomerUBTW = np.array(data[\"CustomerUBTW\"]) # ['CustomerCount']\nCustomerDistance = np.array(data[\"CustomerDistance\"]) # ['CustomerCount', 'CustomerCount']\nCustomerServiceTime = np.array(data[\"CustomerServiceTime\"]) # ['CustomerCount']\nVehicleCapacity = np.array(data[\"VehicleCapacity\"]) # ['VehicleCount']\nCustomerAssigned = model.addVars(VehicleCount, CustomerCount, vtype=gp.GRB.BINARY, name=\"CustomerAssigned\")\nCustomerServiceStartTime = model.addVars(CustomerCount, vtype=gp.GRB.CONTINUOUS, name=\"CustomerServiceStartTime\")\nVehicleUsed = model.addVars(VehicleCount, vtype=gp.GRB.BINARY, name=\"VehicleUsed\")\nRouteConnection = model.addVars(CustomerCount, CustomerCount, vtype=gp.GRB.BINARY, name=\"RouteConnection\")\n\n# Add vehicle capacity constraints\nfor i in range(VehicleCount):\n    model.addConstr(\n        gp.quicksum(CustomerAssigned[i, j] * CustomerDemand[j] for j in range(CustomerCount)) <= VehicleCapacity[i],\n        name=f\"vehicle_capacity_{i}\"\n    )\n\n# Add time window constraints for each customer\nfor j in range(CustomerCount):\n    model.addConstr(CustomerLBTW[j] <= CustomerServiceStartTime[j], name=f\"CustomerStartTimeLB_{j}\")\n    model.addConstr(CustomerServiceStartTime[j] <= CustomerUBTW[j], name=f\"CustomerStartTimeUB_{j}\")\n\n# Add constraint to limit the number of vehicles used\nmodel.addConstr(gp.quicksum(VehicleUsed[i] for i in range(VehicleCount)) <= VehicleCount, name=\"vehicle_limit\")\n\n# No additional code needed. The integrality of CustomerAssigned is already correctly set as binary in its variable definition.\n\n# Add time propagation constraints to ensure service sequencing respects travel and service times\nfor j in range(CustomerCount):\n    for k in range(CustomerCount):\n        if j != k:\n            model.addConstr(\n                CustomerServiceStartTime[k] >= CustomerServiceStartTime[j] + CustomerServiceTime[j] + CustomerDistance[j, k],\n                name=f\"time_propagation_{j}_{k}\"\n            )\n\n# Add constraints to ensure VehicleUsed is activated only if at least one customer is assigned to the vehicle\nfor i in range(VehicleCount):\n    model.addConstr(gp.quicksum(CustomerAssigned[i, j] for j in range(CustomerCount)) <= CustomerCount * VehicleUsed[i], name=f\"vehicle_activation_{i}\")\n\n# Add route connection constraints to ensure a route exists only if both customers are visited by the same vehicle\nfor j in range(CustomerCount):\n    for k in range(CustomerCount):\n        model.addConstr(\n            RouteConnection[j, k] <= gp.quicksum(CustomerAssigned[i, j] * CustomerAssigned[i, k] for i in range(VehicleCount)),\n            name=f\"route_connection_{j}_{k}\"\n        )\n\n# Add constraints to ensure each customer is visited exactly once by any vehicle\nfor j in range(CustomerCount):\n    model.addConstr(gp.quicksum(CustomerAssigned[i, j] for i in range(VehicleCount)) == 1, name=f\"visit_customer_once_{j}\")\n\n# Add vehicle capacity constraints\nfor i in range(VehicleCount):\n    model.addConstr(\n        gp.quicksum(CustomerAssigned[i, j] * CustomerDemand[j] for j in range(CustomerCount)) \n        <= VehicleCapacity[i],\n        name=f\"vehicle_capacity_{i}\"\n    )\n\n# Add time window constraints for customer service start times\nfor j in range(CustomerCount):\n    model.addConstr(CustomerLBTW[j] <= CustomerServiceStartTime[j], name=f\"CustomerServiceStartTime_LB_{j}\")\n    model.addConstr(CustomerServiceStartTime[j] <= CustomerUBTW[j], name=f\"CustomerServiceStartTime_UB_{j}\")\n\n# Add constraints to ensure service start time accounts for travel time\nM = 1e6  # A large constant (big-M method)\nfor j in range(CustomerCount):\n    for k in range(CustomerCount):\n        if j != k:\n            model.addConstr(\n                CustomerServiceStartTime[k] >= CustomerServiceStartTime[j] \n                + CustomerServiceTime[j] \n                + CustomerDistance[j, k] * RouteConnection[j, k]\n                - M * (1 - RouteConnection[j, k]),\n                name=f\"service_start_time_{j}_{k}\"\n            )\n\n# Set objective\nmodel.setObjective(gp.quicksum(CustomerDistance[j, k] * RouteConnection[j, k] for i in range(VehicleCount) for j in range(CustomerCount) for k in range(CustomerCount)), gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

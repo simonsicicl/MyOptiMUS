@@ -1,0 +1,148 @@
+{
+    "background": "This is a transportation problem involving the transfer of goods from multiple origins to multiple destinations, each with their own supply and demand constraints, aiming to minimize the total transportation cost.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "symbol": "NumberOfOrigins",
+            "definition": "The total number of origins",
+            "shape": [],
+            "code": "NumberOfOrigins = data[\"NumberOfOrigins\"] # scalar parameter"
+        },
+        {
+            "symbol": "NumberOfDestinations",
+            "definition": "The total number of destinations",
+            "shape": [],
+            "code": "NumberOfDestinations = data[\"NumberOfDestinations\"] # scalar parameter"
+        },
+        {
+            "symbol": "SupplyOfOrigin",
+            "definition": "The supply available at each origin",
+            "shape": [
+                "NumberOfOrigins"
+            ],
+            "code": "SupplyOfOrigin = np.array(data[\"SupplyOfOrigin\"]) # ['NumberOfOrigins']"
+        },
+        {
+            "symbol": "DemandOfDestination",
+            "definition": "The demand that needs to be satisfied at each destination",
+            "shape": [
+                "NumberOfDestinations"
+            ],
+            "code": "DemandOfDestination = np.array(data[\"DemandOfDestination\"]) # ['NumberOfDestinations']"
+        },
+        {
+            "symbol": "CostPerUnit",
+            "definition": "The cost of transporting a unit from each origin to each destination",
+            "shape": [
+                "NumberOfOrigins",
+                "NumberOfDestinations"
+            ],
+            "code": "CostPerUnit = np.array(data[\"CostPerUnit\"]) # ['NumberOfOrigins', 'NumberOfDestinations']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Total supply from each origin must be exactly SupplyOfOrigin.",
+            "status": "formulated",
+            "formulation": "\\sum_{j=1}^{\\textup{NumberOfDestinations}} \\textup{UnitsTransported}_{i,j} = \\textup{SupplyOfOrigin}_{i}, \\quad \\forall i \\in [1, \\textup{NumberOfOrigins}]",
+            "related_variables": [
+                "UnitsTransported"
+            ],
+            "related_parameters": [
+                "NumberOfOrigins",
+                "NumberOfDestinations",
+                "SupplyOfOrigin"
+            ]
+        },
+        {
+            "description": "The total demand at each destination must be exactly satisfied by the units transported from all origins.",
+            "status": "formulated",
+            "formulation": "\\sum_{i=1}^{\\textup{NumberOfOrigins}} \\textup{UnitsTransported}_{i,j} = \\textup{DemandOfDestination}_{j}, \\quad \\forall j = 1, 2, \\dots, \\textup{NumberOfDestinations}",
+            "related_variables": [
+                "UnitsTransported"
+            ],
+            "related_parameters": [
+                "NumberOfOrigins",
+                "NumberOfDestinations",
+                "DemandOfDestination"
+            ]
+        },
+        {
+            "description": "The number of units transported from each origin i to each destination j must be non-negative.",
+            "status": "formulated",
+            "formulation": "\\textup{UnitsTransported}_{i, j} \\geq 0, \\quad \\forall i \\in \\{1, 2, \\ldots, \\textup{NumberOfOrigins}\\}, \\forall j \\in \\{1, 2, \\ldots, \\textup{NumberOfDestinations}\\}",
+            "related_variables": [
+                "UnitsTransported"
+            ],
+            "related_parameters": [
+                "NumberOfOrigins",
+                "NumberOfDestinations"
+            ]
+        },
+        {
+            "description": "The total units transported from each origin cannot exceed its supply.",
+            "status": "formulated",
+            "formulation": "\\sum_{j=1}^{\\textup{NumberOfDestinations}} \\textup{UnitsTransported}_{i,j} \\leq \\textup{SupplyOfOrigin}_{i} \\quad \\forall i",
+            "related_variables": [
+                "UnitsTransported"
+            ],
+            "related_parameters": [
+                "SupplyOfOrigin",
+                "NumberOfDestinations"
+            ]
+        },
+        {
+            "description": "The total units received at each destination must meet its demand.",
+            "status": "formulated",
+            "formulation": "\\sum_{i=1}^{\\textup{NumberOfOrigins}} \\textup{UnitsTransported}_{i,j} = \\textup{DemandOfDestination}_{j} \\quad \\forall j",
+            "related_variables": [
+                "UnitsTransported"
+            ],
+            "related_parameters": [
+                "DemandOfDestination",
+                "NumberOfOrigins"
+            ]
+        },
+        {
+            "description": "The number of units transported from each origin to each destination must be non-negative.",
+            "status": "formulated",
+            "formulation": "\\textup{UnitsTransported}_{i,j} \\geq 0 \\quad \\forall i, j",
+            "related_variables": [
+                "UnitsTransported"
+            ],
+            "related_parameters": []
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of units transported from a specific origin to a specific destination.",
+            "symbol": "UnitsTransported",
+            "shape": [
+                "NumberOfOrigins",
+                "NumberOfDestinations"
+            ],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total transportation cost across all origins and destinations.",
+            "status": "formulated",
+            "formulation": "\\sum_{i=1}^{\\textup{NumberOfOrigins}} \\sum_{j=1}^{\\textup{NumberOfDestinations}} \\textup{CostPerUnit}_{i,j} \\cdot \\textup{UnitsTransported}_{i,j}",
+            "related_variables": [
+                "UnitsTransported"
+            ],
+            "related_parameters": [
+                "CostPerUnit",
+                "NumberOfOrigins",
+                "NumberOfDestinations"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413151346_complexor_transp/",
+    "problem_path": "data/complexor/transp/"
+}

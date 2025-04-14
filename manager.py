@@ -57,7 +57,8 @@ class Manager(Agent):
                         )
                     }
                 ]
-            except:
+            except Exception as e:
+                print(e)
                 return ("CRASHED", state)
 
             for cnt in range(2, -2, -1):
@@ -85,6 +86,7 @@ class Manager(Agent):
                     decision = json.loads(decision)
                     break
                 except Exception as e:
+                    print(e)
                     print("\n    Invalid decision! Trying again ...")
                 
         
@@ -120,7 +122,8 @@ class Manager(Agent):
                         f.write(state["code"])
 
                 self.conversation_state["round"] += 1
-            except:
+            except Exception as e:
+                print(e)
                 return ("CRASHED", state)
         print("The problem is NOT SOLVED!")
         return "The problem is NOT SOLVED!", state

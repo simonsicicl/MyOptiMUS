@@ -1,0 +1,138 @@
+{
+    "background": "This problem involves optimizing the number of raw rolls cut from a stock roll to meet specific width orders using various cutting patterns.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "symbol": "NumWidths",
+            "definition": "The number of widths to be cut",
+            "shape": [],
+            "code": "NumWidths = data[\"NumWidths\"] # scalar parameter"
+        },
+        {
+            "symbol": "NumPatterns",
+            "definition": "The total number of patterns",
+            "shape": [],
+            "code": "NumPatterns = data[\"NumPatterns\"] # scalar parameter"
+        },
+        {
+            "symbol": "Widths",
+            "definition": "The set of widths to be cut from the roll",
+            "shape": [
+                "NumWidths"
+            ],
+            "code": "Widths = np.array(data[\"Widths\"]) # ['NumWidths']"
+        },
+        {
+            "symbol": "RollWidth",
+            "definition": "The width of the raw roll",
+            "shape": [],
+            "code": "RollWidth = data[\"RollWidth\"] # scalar parameter"
+        },
+        {
+            "symbol": "Orders",
+            "definition": "The number of orders for each width",
+            "shape": [
+                "NumWidths"
+            ],
+            "code": "Orders = np.array(data[\"Orders\"]) # ['NumWidths']"
+        },
+        {
+            "symbol": "NumRollsWidthPattern",
+            "definition": "The number of rolls of each width i in each pattern j",
+            "shape": [
+                "NumWidths",
+                "NumPatterns"
+            ],
+            "code": "NumRollsWidthPattern = np.array(data[\"NumRollsWidthPattern\"]) # ['NumWidths', 'NumPatterns']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Ensures the total number of rolls produced for each width is non-negative.",
+            "status": "coded",
+            "formulation": "\\\\forall i \\\\quad ( \\\\sum_{j=1}^{\\textup{NumPatterns}} \\textup{NumRollsWidthPattern}_{i,j} \\\\cdot \\textup{PatternsUsed}_{j} \\\\geq 0 )",
+            "related_variables": [
+                "PatternsUsed"
+            ],
+            "related_parameters": [
+                "NumWidths",
+                "NumPatterns",
+                "NumRollsWidthPattern"
+            ],
+            "code": "# Add constraints ensuring the total number of rolls produced for each width is non-negative\nfor i in range(NumWidths):\n    model.addConstr(\n        gp.quicksum(NumRollsWidthPattern[i, j] * PatternsUsed[j] for j in range(NumPatterns)) >= 0, \n        name=f\"non_negative_rolls_width_{i}\"\n    )"
+        },
+        {
+            "description": "The total number of rolls cut for each width i must meet or exceed Orders_i.",
+            "status": "coded",
+            "formulation": "\\sum_{j=1}^{\\textup{NumPatterns}} \\textup{NumRollsWidthPattern}_{ij} \\cdot \\textup{PatternsUsed}_{j} \\geq \\textup{Orders}_{i}, \\quad \\forall i = 1, 2, \\dots, \\textup{NumWidths}.",
+            "related_variables": [
+                "PatternsUsed"
+            ],
+            "related_parameters": [
+                "NumRollsWidthPattern",
+                "Orders",
+                "NumWidths",
+                "NumPatterns"
+            ],
+            "code": "# Add constraints to ensure total rolls cut for each width i meet or exceed orders\nfor i in range(NumWidths):\n    model.addConstr(\n        gp.quicksum(NumRollsWidthPattern[i, j] * PatternsUsed[j] for j in range(NumPatterns)) >= Orders[i],\n        name=f\"meet_order_width_{i}\"\n    )"
+        },
+        {
+            "description": "The number of rolls cut using each pattern must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{PatternsUsed}_j \\geq 0, \\quad \\forall j \\in [1, \\textup{NumPatterns}]",
+            "related_variables": [
+                "PatternsUsed"
+            ],
+            "related_parameters": [
+                "NumPatterns"
+            ],
+            "code": "# Non-negativity constraint for number of rolls cut\nfor j in range(NumPatterns):\n    model.addConstr(PatternsUsed[j] >= 0, name=f\"non_negativity_pattern_{j}\")"
+        },
+        {
+            "description": "Ensure that orders for each width are satisfied by the cutting patterns used.",
+            "status": "coded",
+            "formulation": "\\sum_{j=1}^{\\textup{NumPatterns}} \\textup{NumRollsWidthPattern}_{i,j} \\cdot \\textup{PatternsUsed}_{j} \\geq \\textup{Orders}_{i}, \\quad \\forall i = 1, \\dots, \\textup{NumWidths}",
+            "related_variables": [
+                "PatternsUsed"
+            ],
+            "related_parameters": [
+                "NumRollsWidthPattern",
+                "Orders",
+                "NumWidths",
+                "NumPatterns"
+            ],
+            "code": "# Add constraints to ensure orders for each width are satisfied by the cutting patterns used\nfor i in range(NumWidths):\n    model.addConstr(\n        gp.quicksum(NumRollsWidthPattern[i, j] * PatternsUsed[j] for j in range(NumPatterns)) >= Orders[i],\n        name=f\"OrderSatisfaction_width{i}\"\n    )"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of times each pattern is used in the cutting process.",
+            "symbol": "PatternsUsed",
+            "shape": [
+                "NumPatterns"
+            ],
+            "status": "coded",
+            "code": "PatternsUsed = model.addVars(NumPatterns, vtype=gp.GRB.INTEGER, name=\"PatternsUsed\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of raw rolls cut to satisfy all orders.",
+            "status": "coded",
+            "formulation": "\\min \\sum_{j=1}^{\\textup{NumPatterns}} \\textup{PatternsUsed}_{j}",
+            "related_variables": [
+                "PatternsUsed"
+            ],
+            "related_parameters": [
+                "NumPatterns"
+            ],
+            "code": "# Set objective\nmodel.setObjective(gp.quicksum(PatternsUsed[j] for j in range(NumPatterns)), gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413145836_complexor_cut/",
+    "problem_path": "data/complexor/cut/"
+}

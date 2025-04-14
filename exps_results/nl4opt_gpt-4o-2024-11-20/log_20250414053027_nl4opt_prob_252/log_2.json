@@ -1,0 +1,215 @@
+{
+    "background": "A production company is arranging transportation for their movie by using mixes of large and small mobile production units, which vary in capacity and space requirements. They must accommodate a certain number of people while adhering to preferences and logistic constraints.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of people each large mobile production unit can hold",
+            "symbol": "LargeUnitCapacity",
+            "value": 6,
+            "shape": [],
+            "code": "LargeUnitCapacity = data[\"LargeUnitCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of parking spots taken by each large mobile production unit",
+            "symbol": "LargeUnitSpots",
+            "value": 2,
+            "shape": [],
+            "code": "LargeUnitSpots = data[\"LargeUnitSpots\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of people each small mobile production unit can hold",
+            "symbol": "SmallUnitCapacity",
+            "value": 2,
+            "shape": [],
+            "code": "SmallUnitCapacity = data[\"SmallUnitCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of parking spots taken by each small mobile production unit",
+            "symbol": "SmallUnitSpots",
+            "value": 1,
+            "shape": [],
+            "code": "SmallUnitSpots = data[\"SmallUnitSpots\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of small mobile production units required",
+            "symbol": "MinSmallUnits",
+            "value": 5,
+            "shape": [],
+            "code": "MinSmallUnits = data[\"MinSmallUnits\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum proportion of all vehicles that must be large mobile production units",
+            "symbol": "MinLargeUnitProportion",
+            "value": 0.75,
+            "shape": [],
+            "code": "MinLargeUnitProportion = data[\"MinLargeUnitProportion\"] # scalar parameter"
+        },
+        {
+            "definition": "Total number of people to transport",
+            "symbol": "TotalPeople",
+            "value": 80,
+            "shape": [],
+            "code": "TotalPeople = data[\"TotalPeople\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of large mobile production units should be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{LargeUnits} \\geq 0",
+            "related_variables": [
+                "LargeUnits"
+            ],
+            "related_parameters": [],
+            "code": "# Non-negativity constraint for LargeUnits\nmodel.addConstr(LargeUnits >= 0, name=\"non_negativity_LargeUnits\")"
+        },
+        {
+            "description": "The number of small mobile production units must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{SmallUnits} \\geq 0",
+            "related_variables": [
+                "SmallUnits"
+            ],
+            "related_parameters": [],
+            "code": "# Non-negativity constraint for SmallUnits\nmodel.addConstr(SmallUnits >= 0, name=\"non_negativity_SmallUnits\")"
+        },
+        {
+            "description": "The number of small mobile units used must be at least MinSmallUnits.",
+            "status": "coded",
+            "formulation": "\\textup{SmallUnits} \\geq \\textup{MinSmallUnits}",
+            "related_variables": [
+                "SmallUnits"
+            ],
+            "related_parameters": [
+                "MinSmallUnits"
+            ],
+            "code": "# Add constraint to enforce minimum number of small mobile units\nmodel.addConstr(SmallUnits >= MinSmallUnits, name=\"min_small_units\")"
+        },
+        {
+            "description": "Large mobile units must constitute at least MinLargeUnitProportion of all vehicles",
+            "status": "coded",
+            "formulation": "(1 - \\textup{MinLargeUnitProportion}) \\cdot \\textup{LargeUnits} \\geq \\textup{MinLargeUnitProportion} \\cdot \\textup{SmallUnits}",
+            "related_variables": [
+                "LargeUnits",
+                "SmallUnits"
+            ],
+            "related_parameters": [
+                "MinLargeUnitProportion"
+            ],
+            "code": "# Add constraint: large mobile units must constitute at least MinLargeUnitProportion of all vehicles\nmodel.addConstr((1 - MinLargeUnitProportion) * LargeUnits >= MinLargeUnitProportion * SmallUnits, name=\"MinLargeUnitProportion_constraint\")"
+        },
+        {
+            "description": "The sum of people carried by large and small mobile units must be equal to or exceed TotalPeople",
+            "status": "coded",
+            "formulation": "\\\\textup{LargeUnits} \\\\times \\\\textup{LargeUnitCapacity} + \\\\textup{SmallUnits} \\\\times \\\\textup{SmallUnitCapacity} \\\\geq \\\\textup{TotalPeople}",
+            "related_variables": [
+                "LargeUnits",
+                "SmallUnits"
+            ],
+            "related_parameters": [
+                "LargeUnitCapacity",
+                "SmallUnitCapacity",
+                "TotalPeople"
+            ],
+            "code": "# Add constraint to ensure the total people carried by large and small units meets or exceeds TotalPeople\nmodel.addConstr(\n    LargeUnits * LargeUnitCapacity + SmallUnits * SmallUnitCapacity >= TotalPeople,\n    name=\"people_transport_constraint\"\n)"
+        },
+        {
+            "description": "Total capacity of the mobile production units must accommodate all people",
+            "status": "coded",
+            "formulation": "\\textup{LargeUnits} \\cdot \\textup{LargeUnitCapacity} + \\textup{SmallUnits} \\cdot \\textup{SmallUnitCapacity} \\geq \\textup{TotalPeople}",
+            "related_variables": [
+                "LargeUnits",
+                "SmallUnits"
+            ],
+            "related_parameters": [
+                "LargeUnitCapacity",
+                "SmallUnitCapacity",
+                "TotalPeople"
+            ],
+            "code": "# Ensure total capacity of mobile units accommodates all people\nmodel.addConstr(\n    LargeUnits * LargeUnitCapacity + SmallUnits * SmallUnitCapacity >= TotalPeople,\n    name=\"capacity_constraint\"\n)"
+        },
+        {
+            "description": "Minimum number of small mobile production units required",
+            "status": "coded",
+            "formulation": "\\textup{SmallUnits} \\geq \\textup{MinSmallUnits}",
+            "related_variables": [
+                "SmallUnits"
+            ],
+            "related_parameters": [
+                "MinSmallUnits"
+            ],
+            "code": "# Add constraint for minimum number of small mobile production units\nmodel.addConstr(SmallUnits >= MinSmallUnits, name=\"min_small_units\")"
+        },
+        {
+            "description": "Minimum proportion of large mobile production units among all units",
+            "status": "coded",
+            "formulation": "(1 - \\textup{MinLargeUnitProportion}) \\cdot \\textup{LargeUnits} - \\textup{MinLargeUnitProportion} \\cdot \\textup{SmallUnits} \\geq 0",
+            "related_variables": [
+                "LargeUnits",
+                "SmallUnits"
+            ],
+            "related_parameters": [
+                "MinLargeUnitProportion"
+            ],
+            "code": "# Add constraint for the minimum proportion of large mobile production units\nmodel.addConstr(\n    (1 - MinLargeUnitProportion) * LargeUnits - MinLargeUnitProportion * SmallUnits >= 0,\n    name=\"min_large_unit_proportion\"\n)"
+        },
+        {
+            "description": "Definition of the total number of mobile production units",
+            "status": "coded",
+            "formulation": "\\textup{TotalUnits} = \\textup{LargeUnits} + \\textup{SmallUnits}",
+            "related_variables": [
+                "TotalUnits",
+                "LargeUnits",
+                "SmallUnits"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint for TotalUnits definition\nmodel.addConstr(TotalUnits == LargeUnits + SmallUnits, name=\"total_units_definition\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of large mobile production units used for transportation.",
+            "symbol": "LargeUnits",
+            "shape": [],
+            "status": "coded",
+            "code": "LargeUnits = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"LargeUnits\")"
+        },
+        {
+            "definition": "The number of small mobile production units used for transportation.",
+            "symbol": "SmallUnits",
+            "shape": [],
+            "status": "coded",
+            "code": "SmallUnits = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"SmallUnits\")"
+        },
+        {
+            "definition": "Total number of mobile production units used",
+            "symbol": "TotalUnits",
+            "shape": [],
+            "status": "coded",
+            "code": "TotalUnits = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TotalUnits\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of parking spots occupied by the mobile production units",
+            "status": "coded",
+            "formulation": "\\textup{LargeUnits} \\cdot \\textup{LargeUnitSpots} + \\textup{SmallUnits} \\cdot \\textup{SmallUnitSpots}",
+            "related_variables": [
+                "LargeUnits",
+                "SmallUnits"
+            ],
+            "related_parameters": [
+                "LargeUnitSpots",
+                "SmallUnitSpots"
+            ],
+            "code": "# Set objective\nmodel.setObjective(LargeUnits * LargeUnitSpots + SmallUnits * SmallUnitSpots, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 35.0,
+    "log_path": "logs/log_20250414053027_nl4opt_prob_252/",
+    "problem_path": "data/nl4opt/prob_252/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_252/data.json\", \"r\") as f:\n    data = json.load(f)\n\nLargeUnitCapacity = data[\"LargeUnitCapacity\"] # scalar parameter\nLargeUnitSpots = data[\"LargeUnitSpots\"] # scalar parameter\nSmallUnitCapacity = data[\"SmallUnitCapacity\"] # scalar parameter\nSmallUnitSpots = data[\"SmallUnitSpots\"] # scalar parameter\nMinSmallUnits = data[\"MinSmallUnits\"] # scalar parameter\nMinLargeUnitProportion = data[\"MinLargeUnitProportion\"] # scalar parameter\nTotalPeople = data[\"TotalPeople\"] # scalar parameter\nLargeUnits = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"LargeUnits\")\nSmallUnits = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"SmallUnits\")\nTotalUnits = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TotalUnits\")\n\n# Non-negativity constraint for LargeUnits\nmodel.addConstr(LargeUnits >= 0, name=\"non_negativity_LargeUnits\")\n\n# Non-negativity constraint for SmallUnits\nmodel.addConstr(SmallUnits >= 0, name=\"non_negativity_SmallUnits\")\n\n# Add constraint to enforce minimum number of small mobile units\nmodel.addConstr(SmallUnits >= MinSmallUnits, name=\"min_small_units\")\n\n# Add constraint: large mobile units must constitute at least MinLargeUnitProportion of all vehicles\nmodel.addConstr((1 - MinLargeUnitProportion) * LargeUnits >= MinLargeUnitProportion * SmallUnits, name=\"MinLargeUnitProportion_constraint\")\n\n# Add constraint to ensure the total people carried by large and small units meets or exceeds TotalPeople\nmodel.addConstr(\n    LargeUnits * LargeUnitCapacity + SmallUnits * SmallUnitCapacity >= TotalPeople,\n    name=\"people_transport_constraint\"\n)\n\n# Ensure total capacity of mobile units accommodates all people\nmodel.addConstr(\n    LargeUnits * LargeUnitCapacity + SmallUnits * SmallUnitCapacity >= TotalPeople,\n    name=\"capacity_constraint\"\n)\n\n# Add constraint for minimum number of small mobile production units\nmodel.addConstr(SmallUnits >= MinSmallUnits, name=\"min_small_units\")\n\n# Add constraint for the minimum proportion of large mobile production units\nmodel.addConstr(\n    (1 - MinLargeUnitProportion) * LargeUnits - MinLargeUnitProportion * SmallUnits >= 0,\n    name=\"min_large_unit_proportion\"\n)\n\n# Add constraint for TotalUnits definition\nmodel.addConstr(TotalUnits == LargeUnits + SmallUnits, name=\"total_units_definition\")\n\n# Set objective\nmodel.setObjective(LargeUnits * LargeUnitSpots + SmallUnits * SmallUnitSpots, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

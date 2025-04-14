@@ -1,0 +1,190 @@
+{
+    "background": "A concert organizer needs to transport equipment with a certain delivery rate using two types of transport methods: carts and trolleys, each requiring different numbers of workers.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Rate of equipment transportation by a cart",
+            "symbol": "CartRate",
+            "value": 5,
+            "shape": [],
+            "code": "CartRate = data[\"CartRate\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of workers required by a cart",
+            "symbol": "CartWorkers",
+            "value": 2,
+            "shape": [],
+            "code": "CartWorkers = data[\"CartWorkers\"] # scalar parameter"
+        },
+        {
+            "definition": "Rate of equipment transportation by a trolley",
+            "symbol": "TrolleyRate",
+            "value": 7,
+            "shape": [],
+            "code": "TrolleyRate = data[\"TrolleyRate\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of workers required by a trolley",
+            "symbol": "TrolleyWorkers",
+            "value": 4,
+            "shape": [],
+            "code": "TrolleyWorkers = data[\"TrolleyWorkers\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of trolleys to be used",
+            "symbol": "MinTrolleys",
+            "value": 12,
+            "shape": [],
+            "code": "MinTrolleys = data[\"MinTrolleys\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum percentage of the transportation that can be using trolleys",
+            "symbol": "MaxTrolleyPercentage",
+            "value": 0.4,
+            "shape": [],
+            "code": "MaxTrolleyPercentage = data[\"MaxTrolleyPercentage\"] # scalar parameter"
+        },
+        {
+            "definition": "Required rate of equipment delivery",
+            "symbol": "DeliveryRate",
+            "value": 100,
+            "shape": [],
+            "code": "DeliveryRate = data[\"DeliveryRate\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Number of carts must be non-negative",
+            "status": "formulated",
+            "formulation": "NumberOfCarts \\geq 0",
+            "related_variables": [
+                "NumberOfCarts"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Number of trolleys is non-negative and satisfies the minimum number required",
+            "status": "formulated",
+            "formulation": "\\textup{NumberOfTrolleys} \\geq \\max(0, \\textup{MinTrolleys})",
+            "related_variables": [
+                "NumberOfTrolleys"
+            ],
+            "related_parameters": [
+                "MinTrolleys"
+            ]
+        },
+        {
+            "description": "At least MinTrolleys trolleys must be used",
+            "status": "formulated",
+            "formulation": "\\textup{NumberOfTrolleys} \\geq \\textup{MinTrolleys}",
+            "related_variables": [
+                "NumberOfTrolleys"
+            ],
+            "related_parameters": [
+                "MinTrolleys"
+            ]
+        },
+        {
+            "description": "The total rate of transportation performed by trolleys must not exceed MaxTrolleyPercentage of the overall transportation rate.",
+            "status": "formulated",
+            "formulation": "\\textup{NumberOfTrolleys} \\cdot \\textup{TrolleyRate} \\leq \\textup{MaxTrolleyPercentage} \\cdot (\\textup{NumberOfCarts} \\cdot \\textup{CartRate} + \\textup{NumberOfTrolleys} \\cdot \\textup{TrolleyRate})",
+            "related_variables": [
+                "NumberOfCarts",
+                "NumberOfTrolleys"
+            ],
+            "related_parameters": [
+                "MaxTrolleyPercentage",
+                "CartRate",
+                "TrolleyRate"
+            ]
+        },
+        {
+            "description": "The total transportation rate from carts and trolleys must meet or exceed the required delivery rate.",
+            "status": "formulated",
+            "formulation": "\\textup{CartRate} \\cdot \\textup{NumberOfCarts} + \\textup{TrolleyRate} \\cdot \\textup{NumberOfTrolleys} \\geq \\textup{DeliveryRate}",
+            "related_variables": [
+                "NumberOfCarts",
+                "NumberOfTrolleys"
+            ],
+            "related_parameters": [
+                "CartRate",
+                "TrolleyRate",
+                "DeliveryRate"
+            ]
+        },
+        {
+            "description": "Ensure the use of at least the minimum number of trolleys",
+            "status": "formulated",
+            "formulation": "\\textup{NumberOfTrolleys} \\geq \\textup{MinTrolleys}",
+            "related_variables": [
+                "NumberOfTrolleys"
+            ],
+            "related_parameters": [
+                "MinTrolleys"
+            ]
+        },
+        {
+            "description": "Ensure the total delivery rate meets or exceeds the required delivery rate",
+            "status": "formulated",
+            "formulation": "\\textup{NumberOfCarts} \\times \\textup{CartRate} + \\textup{NumberOfTrolleys} \\times \\textup{TrolleyRate} \\geq \\textup{DeliveryRate}",
+            "related_variables": [
+                "NumberOfCarts",
+                "NumberOfTrolleys"
+            ],
+            "related_parameters": [
+                "CartRate",
+                "TrolleyRate",
+                "DeliveryRate"
+            ]
+        },
+        {
+            "description": "Ensure the maximum percentage of transportation using trolleys is not exceeded",
+            "status": "formulated",
+            "formulation": "\\textup{NumberOfTrolleys} \\times \\textup{TrolleyRate} \\leq \\textup{MaxTrolleyPercentage} \\times (\\textup{NumberOfCarts} \\times \\textup{CartRate} + \\textup{NumberOfTrolleys} \\times \\textup{TrolleyRate})",
+            "related_variables": [
+                "NumberOfCarts",
+                "NumberOfTrolleys"
+            ],
+            "related_parameters": [
+                "CartRate",
+                "TrolleyRate",
+                "MaxTrolleyPercentage"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of carts to be used for transportation",
+            "symbol": "NumberOfCarts",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "The number of trolleys to be used for transportation",
+            "symbol": "NumberOfTrolleys",
+            "shape": [],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of workers required for transportation",
+            "status": "formulated",
+            "formulation": "\\textup{Minimize} \\quad \\textup{TotalWorkers} = \\textup{NumberOfCarts} \\times \\textup{CartWorkers} + \\textup{NumberOfTrolleys} \\times \\textup{TrolleyWorkers}",
+            "related_variables": [
+                "NumberOfCarts",
+                "NumberOfTrolleys"
+            ],
+            "related_parameters": [
+                "CartWorkers",
+                "TrolleyWorkers"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413163808_nl4opt_prob_226/",
+    "problem_path": "data/nl4opt/prob_226/"
+}

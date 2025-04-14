@@ -1,0 +1,212 @@
+{
+    "background": "Bob is planning his diet based on servings of noodles and protein bars. He aims to minimize his daily meal expenses while meeting his caloric and protein intake requirements.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Cost per serving of noodles",
+            "symbol": "CostNoodles",
+            "value": 5,
+            "shape": [],
+            "code": "CostNoodles = data[\"CostNoodles\"] # scalar parameter"
+        },
+        {
+            "definition": "Calories per serving of noodles",
+            "symbol": "CaloriesNoodles",
+            "value": 600,
+            "shape": [],
+            "code": "CaloriesNoodles = data[\"CaloriesNoodles\"] # scalar parameter"
+        },
+        {
+            "definition": "Protein per serving of noodles in grams",
+            "symbol": "ProteinNoodles",
+            "value": 1.5,
+            "shape": [],
+            "code": "ProteinNoodles = data[\"ProteinNoodles\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost per serving of protein bars",
+            "symbol": "CostBars",
+            "value": 2.5,
+            "shape": [],
+            "code": "CostBars = data[\"CostBars\"] # scalar parameter"
+        },
+        {
+            "definition": "Calories per serving of protein bars",
+            "symbol": "CaloriesBars",
+            "value": 250,
+            "shape": [],
+            "code": "CaloriesBars = data[\"CaloriesBars\"] # scalar parameter"
+        },
+        {
+            "definition": "Protein per serving of protein bars in grams",
+            "symbol": "ProteinBars",
+            "value": 5,
+            "shape": [],
+            "code": "ProteinBars = data[\"ProteinBars\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum calorie intake per day",
+            "symbol": "MinCalories",
+            "value": 2000,
+            "shape": [],
+            "code": "MinCalories = data[\"MinCalories\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum protein intake per day in grams",
+            "symbol": "MinProtein",
+            "value": 16,
+            "shape": [],
+            "code": "MinProtein = data[\"MinProtein\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The total calories from noodles and protein bars should be at least the minimum required daily calorie intake.",
+            "status": "coded",
+            "formulation": "\\textup{CaloriesNoodles} \\times \\textup{ServingsNoodles} + \\textup{CaloriesBars} \\times \\textup{ServingsBars} \\geq \\textup{MinCalories}",
+            "related_variables": [
+                "ServingsNoodles",
+                "ServingsBars"
+            ],
+            "related_parameters": [
+                "CaloriesNoodles",
+                "CaloriesBars",
+                "MinCalories"
+            ],
+            "code": "# Add calorie intake constraint\nmodel.addConstr(CaloriesNoodles * ServingsNoodles + CaloriesBars * ServingsBars >= MinCalories, name=\"calorie_intake\")"
+        },
+        {
+            "description": "The total protein from noodles and protein bars should be at least MinProtein.",
+            "status": "coded",
+            "formulation": "\\textup{ProteinNoodles} \\cdot \\textup{ServingsNoodles} + \\textup{ProteinBars} \\cdot \\textup{ServingsBars} \\geq \\textup{MinProtein}",
+            "related_variables": [
+                "ServingsNoodles",
+                "ServingsBars"
+            ],
+            "related_parameters": [
+                "ProteinNoodles",
+                "ProteinBars",
+                "MinProtein"
+            ],
+            "code": "# Add total protein constraint\nmodel.addConstr(\n    ServingsNoodles * ProteinNoodles + ServingsBars * ProteinBars >= MinProtein,\n    name=\"total_protein_constraint\"\n)"
+        },
+        {
+            "description": "The number of noodle servings daily is non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{ServingsNoodles} \\geq 0",
+            "related_variables": [
+                "ServingsNoodles"
+            ],
+            "related_parameters": [],
+            "code": "# The variable \"ServingsNoodles\" is non-negative due to its default lower bound (0) in Gurobi. No additional constraint is needed."
+        },
+        {
+            "description": "The number of servings of protein bars cannot be negative.",
+            "status": "coded",
+            "formulation": "\\textup{ServingsBars} \\geq 0",
+            "related_variables": [
+                "ServingsBars"
+            ],
+            "related_parameters": [],
+            "code": "# Non-negativity constraint for ServingsBars\nmodel.addConstr(ServingsBars >= 0, name=\"non_negativity_ServingsBars\")"
+        },
+        {
+            "description": "The number of protein bar servings daily is non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{ServingsBars} \\geq 0",
+            "related_variables": [
+                "ServingsBars"
+            ],
+            "related_parameters": [],
+            "code": "# Non-negativity constraint for ServingsBars\nmodel.addConstr(ServingsBars >= 0, name=\"non_negativity_ServingsBars\")"
+        },
+        {
+            "description": "Total calorie intake from noodles and protein bars must meet or exceed the minimum daily calorie requirement.",
+            "status": "coded",
+            "formulation": "\\textup{CaloriesNoodles} \\cdot \\textup{ServingsNoodles} + \\textup{CaloriesBars} \\cdot \\textup{ServingsBars} \\geq \\textup{MinCalories}",
+            "related_variables": [
+                "ServingsNoodles",
+                "ServingsBars"
+            ],
+            "related_parameters": [
+                "CaloriesNoodles",
+                "CaloriesBars",
+                "MinCalories"
+            ],
+            "code": "# Add total calorie intake constraint\nmodel.addConstr(ServingsNoodles * CaloriesNoodles + ServingsBars * CaloriesBars >= MinCalories, name=\"calorie_intake_constraint\")"
+        },
+        {
+            "description": "Total protein intake from noodles and protein bars must meet or exceed the minimum daily protein requirement.",
+            "status": "coded",
+            "formulation": "\\textup{ProteinNoodles} \\cdot \\textup{ServingsNoodles} + \\textup{ProteinBars} \\cdot \\textup{ServingsBars} \\geq \\textup{MinProtein}",
+            "related_variables": [
+                "ServingsNoodles",
+                "ServingsBars"
+            ],
+            "related_parameters": [
+                "ProteinNoodles",
+                "ProteinBars",
+                "MinProtein"
+            ],
+            "code": "# Add protein intake constraint\nmodel.addConstr(ProteinNoodles * ServingsNoodles + ProteinBars * ServingsBars >= MinProtein, name=\"protein_intake\")"
+        },
+        {
+            "description": "The number of servings of noodles cannot be negative.",
+            "status": "coded",
+            "formulation": "\\textup{ServingsNoodles} \\geq 0",
+            "related_variables": [
+                "ServingsNoodles"
+            ],
+            "related_parameters": [],
+            "code": "# The variable \"ServingsNoodles\" is non-negative due to its default lower bound (0) in Gurobi's `addVar`."
+        },
+        {
+            "description": "The number of servings of protein bars cannot be negative.",
+            "status": "coded",
+            "formulation": "\\textup{ServingsBars} \\geq 0",
+            "related_variables": [
+                "ServingsBars"
+            ],
+            "related_parameters": [],
+            "code": "# Non-negativity constraint for ServingsBars is implicitly ensured by the variable's defined lower bound (default is 0)."
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of servings of noodles that Bob consumes daily.",
+            "symbol": "ServingsNoodles",
+            "shape": [],
+            "status": "coded",
+            "code": "ServingsNoodles = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"ServingsNoodles\")"
+        },
+        {
+            "definition": "The number of servings of protein bars that Bob consumes daily.",
+            "symbol": "ServingsBars",
+            "shape": [],
+            "status": "coded",
+            "code": "ServingsBars = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"ServingsBars\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total cost of the daily diet consisting of servings of noodles and protein bars.",
+            "status": "coded",
+            "formulation": "\\textup{Minimize:} \\quad \\textup{CostNoodles} \\cdot \\textup{ServingsNoodles} + \\textup{CostBars} \\cdot \\textup{ServingsBars}",
+            "related_variables": [
+                "ServingsNoodles",
+                "ServingsBars"
+            ],
+            "related_parameters": [
+                "CostNoodles",
+                "CostBars"
+            ],
+            "code": "# Set objective\nmodel.setObjective(CostNoodles * ServingsNoodles + CostBars * ServingsBars, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413172315_nl4opt_prob_205/",
+    "problem_path": "data/nl4opt/prob_205/"
+}

@@ -1,0 +1,318 @@
+{
+    "background": "DEC is planning to maximize profit for the next quarter by producing an optimal mix of systems. The production will consider the type of systems (workstations or general purpose), various components such as memories and disks, and other constraints such as demand and available resources.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of systems",
+            "symbol": "N",
+            "value": 0,
+            "shape": [],
+            "code": "N = data[\"N\"] # scalar parameter"
+        },
+        {
+            "definition": "Whether system i is a workstation",
+            "symbol": "IsWorkstation",
+            "value": 0,
+            "shape": [
+                "N"
+            ],
+            "code": "IsWorkstation = np.array(data[\"IsWorkstation\"]) # ['N']"
+        },
+        {
+            "definition": "Price of system i",
+            "symbol": "Price",
+            "value": 0,
+            "shape": [
+                "N"
+            ],
+            "code": "Price = np.array(data[\"Price\"]) # ['N']"
+        },
+        {
+            "definition": "Number of disk drives in system i",
+            "symbol": "DiskDrives",
+            "value": 0,
+            "shape": [
+                "N"
+            ],
+            "code": "DiskDrives = np.array(data[\"DiskDrives\"]) # ['N']"
+        },
+        {
+            "definition": "Number of 256K memory boards in system i",
+            "symbol": "MemoryBoards",
+            "value": 0,
+            "shape": [
+                "N"
+            ],
+            "code": "MemoryBoards = np.array(data[\"MemoryBoards\"]) # ['N']"
+        },
+        {
+            "definition": "Maximum number of CPUs available",
+            "symbol": "MaxCpu",
+            "value": 0,
+            "shape": [],
+            "code": "MaxCpu = data[\"MaxCpu\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum total disk drives",
+            "symbol": "MinDisk",
+            "value": 0,
+            "shape": [],
+            "code": "MinDisk = data[\"MinDisk\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum total disk drives",
+            "symbol": "MaxDisk",
+            "value": 0,
+            "shape": [],
+            "code": "MaxDisk = data[\"MaxDisk\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum total memory boards",
+            "symbol": "MinMemory",
+            "value": 0,
+            "shape": [],
+            "code": "MinMemory = data[\"MinMemory\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum total memory boards",
+            "symbol": "MaxMemory",
+            "value": 0,
+            "shape": [],
+            "code": "MaxMemory = data[\"MaxMemory\"] # scalar parameter"
+        },
+        {
+            "definition": "Demand of system i",
+            "symbol": "Demand",
+            "value": 0,
+            "shape": [
+                "N"
+            ],
+            "code": "Demand = np.array(data[\"Demand\"]) # ['N']"
+        },
+        {
+            "definition": "Demand for General Purpose systems",
+            "symbol": "DemandGP",
+            "value": 0,
+            "shape": [],
+            "code": "DemandGP = data[\"DemandGP\"] # scalar parameter"
+        },
+        {
+            "definition": "Demand for Workstations",
+            "symbol": "DemandWS",
+            "value": 0,
+            "shape": [],
+            "code": "DemandWS = data[\"DemandWS\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of preordered system i",
+            "symbol": "Preorder",
+            "value": 0,
+            "shape": [
+                "N"
+            ],
+            "code": "Preorder = np.array(data[\"Preorder\"]) # ['N']"
+        },
+        {
+            "definition": "Number of alternative memory configurations possible",
+            "symbol": "AltMemory",
+            "value": 0,
+            "shape": [],
+            "code": "AltMemory = data[\"AltMemory\"] # scalar parameter"
+        },
+        {
+            "definition": "Whether the alternative memory is compatible with system i",
+            "symbol": "AltCompatible",
+            "value": 0,
+            "shape": [
+                "N"
+            ],
+            "code": "AltCompatible = np.array(data[\"AltCompatible\"]) # ['N']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of systems produced is non-negative and integer",
+            "status": "coded",
+            "formulation": "\\forall i \\in \\{1, \\ldots, N\\}, \\quad \\textup{SystemsProduced}_i \\in \\mathbb{Z}_{\\geq 0}",
+            "related_variables": [
+                "SystemsProduced"
+            ],
+            "related_parameters": [
+                "N"
+            ],
+            "code": "# The variable SystemsProduced is already defined with the correct integrality and bounds; no further constraints are necessary."
+        },
+        {
+            "description": "Ensure that each produced system corresponds to the specified type.",
+            "status": "coded",
+            "formulation": "\\\\forall i \\in \\{1, \\\\ldots, N\\}, \\quad (\\textup{IsWorkstation}[i] = 1 \\implies \\textup{SystemsProduced}[i] \\leq \\textup{DemandWS}) \\quad \\text{and} \\quad (\\textup{IsWorkstation}[i] = 0 \\implies \\textup{SystemsProduced}[i] \\leq \\textup{DemandGP})",
+            "related_variables": [
+                "SystemsProduced"
+            ],
+            "related_parameters": [
+                "N",
+                "IsWorkstation",
+                "DemandWS",
+                "DemandGP"
+            ],
+            "code": "# Ensure that each produced system corresponds to the specified type\nfor i in range(N):\n    model.addConstr((SystemsProduced[i] <= DemandWS) >> (IsWorkstation[i] == 1), name=f\"type_limitation_ws_{i}\")\n    model.addConstr((SystemsProduced[i] <= DemandGP) >> (IsWorkstation[i] == 0), name=f\"type_limitation_gp_{i}\")"
+        },
+        {
+            "description": "Production must not exceed the available CPUs",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{\\textup{N}} \\textup{SystemsProduced}_i \\leq \\textup{MaxCpu}",
+            "related_variables": [
+                "SystemsProduced"
+            ],
+            "related_parameters": [
+                "MaxCpu",
+                "N"
+            ],
+            "code": "```"
+        },
+        {
+            "description": "Total number of disk drives must be within the range specified by MinDisk and MaxDisk",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{N} (\\textup{DiskDrives}[i] \\cdot \\textup{SystemsProduced}[i]) \\geq \\textup{MinDisk} \\\\ \\sum_{i=1}^{N} (\\textup{DiskDrives}[i] \\cdot \\textup{SystemsProduced}[i]) \\leq \\textup{MaxDisk}",
+            "related_variables": [
+                "SystemsProduced"
+            ],
+            "related_parameters": [
+                "DiskDrives",
+                "MinDisk",
+                "MaxDisk"
+            ],
+            "code": "# Total number of disk drives must be within the range specified by MinDisk and MaxDisk\ntotal_disk_drives = gp.quicksum(DiskDrives[i] * SystemsProduced[i] for i in range(N))\nmodel.addConstr(total_disk_drives >= MinDisk, name=\"MinDiskConstraint\")\nmodel.addConstr(total_disk_drives <= MaxDisk, name=\"MaxDiskConstraint\")"
+        },
+        {
+            "description": "Total memory boards constraint",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{N} \\textup{SystemsProduced}_{i} \\times \\textup{MemoryBoards}_{i} \\geq \\textup{MinMemory} \\quad \\text{and} \\quad \\sum_{i=1}^{N} \\textup{SystemsProduced}_{i} \\times \\textup{MemoryBoards}_{i} \\leq \\textup{MaxMemory}",
+            "related_variables": [
+                "SystemsProduced"
+            ],
+            "related_parameters": [
+                "MemoryBoards",
+                "MinMemory",
+                "MaxMemory"
+            ],
+            "code": "# Total memory boards constraint: lower bound\nmemory_usage_lb = gp.quicksum(SystemsProduced[i] * MemoryBoards[i] for i in range(N))\nmodel.addConstr(memory_usage_lb >= MinMemory, name=\"min_memory_usage\")\n\n# Total memory boards constraint: upper bound\nmemory_usage_ub = gp.quicksum(SystemsProduced[i] * MemoryBoards[i] for i in range(N))\nmodel.addConstr(memory_usage_ub <= MaxMemory, name=\"max_memory_usage\")"
+        },
+        {
+            "description": "Production of each system type must not exceed its corresponding demand",
+            "status": "coded",
+            "formulation": "\\textup{SystemsProduced}_{i} \\leq \\textup{Demand}_{i} \\quad \\forall i \\in \\{1, \\dots, N\\}",
+            "related_variables": [
+                "SystemsProduced"
+            ],
+            "related_parameters": [
+                "Demand"
+            ],
+            "code": "# Add production not exceeding demand constraints\nfor i in range(N):\n    model.addConstr(SystemsProduced[i] <= Demand[i], name=\"prod_limit_{}\".format(i))"
+        },
+        {
+            "description": "Total production of general purpose systems must not exceed DemandGP",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{N} (1 - \\textup{IsWorkstation}_{i}) \\cdot \\textup{SystemsProduced}_{i} \\leq \\textup{DemandGP}",
+            "related_variables": [
+                "SystemsProduced"
+            ],
+            "related_parameters": [
+                "N",
+                "IsWorkstation",
+                "DemandGP"
+            ],
+            "code": "```"
+        },
+        {
+            "description": "The total production of workstations must not exceed DemandWS",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{N} (\\textup{IsWorkstation}_i \\cdot \\textup{SystemsProduced}_i) \\leq \\textup{DemandWS}",
+            "related_variables": [
+                "SystemsProduced"
+            ],
+            "related_parameters": [
+                "IsWorkstation",
+                "DemandWS"
+            ],
+            "code": "# Add constraint for total production of workstations not exceeding DemandWS\nmodel.addConstr(gp.quicksum(IsWorkstation[i] * SystemsProduced[i] for i in range(N)) <= DemandWS, name=\"total_workstation_production\")"
+        },
+        {
+            "description": "Preorder systems must be fulfilled as specified by Preorder",
+            "status": "coded",
+            "formulation": "\\textup{SystemsProduced}_{i} \\geq \\textup{Preorder}_{i} \\quad \\forall i \\in \\{1, \\ldots, \\textup{N}\\}",
+            "related_variables": [
+                "SystemsProduced"
+            ],
+            "related_parameters": [
+                "Preorder",
+                "N"
+            ],
+            "code": "# Ensure preorder systems are fulfilled\nfor i in range(N):\n    model.addConstr(SystemsProduced[i] >= Preorder[i], name=f\"preorder_fulfillment_{i}\")"
+        },
+        {
+            "description": "Each system must be produced only if compatible with alternative memory configurations",
+            "status": "coded",
+            "formulation": "\\textup{SystemsProduced}_{i} \\leq \\textup{AltCompatible}_{i} \\cdot M \\quad \\forall i \\in \\{1, ..., N\\}",
+            "related_variables": [
+                "SystemsProduced"
+            ],
+            "related_parameters": [
+                "AltCompatible",
+                "N"
+            ],
+            "code": "# Each system must be produced only if compatible with alternative memory configurations\nfor i in range(N):\n    model.addConstr(SystemsProduced[i] <= AltCompatible[i] * M, name=f\"compatibility_{i}\")"
+        },
+        {
+            "description": "The total number of systems produced using alternative memory must not exceed the number of available alternative memory configurations",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{N} \\textup{SystemsProduced}_i \\cdot \\textup{AltCompatible}_i \\leq \\textup{AltMemory}",
+            "related_variables": [
+                "SystemsProduced"
+            ],
+            "related_parameters": [
+                "AltCompatible",
+                "AltMemory"
+            ],
+            "code": "# Ensure the total number of systems produced using alternative memory does not exceed available configurations\nalt_memory_constraint = model.addConstr(\n    gp.quicksum(SystemsProduced[i] * AltCompatible[i] for i in range(N)) <= AltMemory,\n    name=\"alt_memory_usage\"\n)"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of systems of type i produced",
+            "symbol": "SystemsProduced",
+            "shape": [
+                "N"
+            ],
+            "status": "coded",
+            "code": "SystemsProduced = model.addVars(N, vtype=gp.GRB.INTEGER, name=\"SystemsProduced\")"
+        },
+        {
+            "definition": "A large positive number, bigger than any possible number of systems produced",
+            "symbol": "M",
+            "shape": [],
+            "status": "coded",
+            "code": "M = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"M\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total profit from producing systems",
+            "status": "coded",
+            "formulation": "\\max \\left( \\sum_{i=1}^{N} \\textup{SystemsProduced}_i \\times \\textup{Price}_i \\right)",
+            "related_variables": [
+                "SystemsProduced"
+            ],
+            "related_parameters": [
+                "Price"
+            ],
+            "code": "# Set objective\nmodel.setObjective(gp.quicksum(SystemsProduced[i] * Price[i] for i in range(N)), gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413074723_nlp4lp_2/",
+    "problem_path": "data/nlp4lp/2/"
+}

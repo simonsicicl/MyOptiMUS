@@ -1,0 +1,176 @@
+{
+    "background": "A bakery uses a stand-mixer and a slow bake oven to make bread and cookies.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Maximum operational hours per year for the stand-mixer and the oven",
+            "symbol": "MaxHours",
+            "value": 3000,
+            "shape": [],
+            "code": "MaxHours = data[\"MaxHours\"] # scalar parameter"
+        },
+        {
+            "definition": "Hours taken in the stand mixer to make a loaf of bread",
+            "symbol": "BreadMixerHours",
+            "value": 1,
+            "shape": [],
+            "code": "BreadMixerHours = data[\"BreadMixerHours\"] # scalar parameter"
+        },
+        {
+            "definition": "Hours taken in the oven to bake a loaf of bread",
+            "symbol": "BreadOvenHours",
+            "value": 3,
+            "shape": [],
+            "code": "BreadOvenHours = data[\"BreadOvenHours\"] # scalar parameter"
+        },
+        {
+            "definition": "Hours taken in the stand mixer to make a batch of cookies",
+            "symbol": "CookieMixerHours",
+            "value": 0.5,
+            "shape": [],
+            "code": "CookieMixerHours = data[\"CookieMixerHours\"] # scalar parameter"
+        },
+        {
+            "definition": "Hours taken in the oven to bake a batch of cookies",
+            "symbol": "CookieOvenHours",
+            "value": 1,
+            "shape": [],
+            "code": "CookieOvenHours = data[\"CookieOvenHours\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit per loaf of bread",
+            "symbol": "ProfitBread",
+            "value": 5,
+            "shape": [],
+            "code": "ProfitBread = data[\"ProfitBread\"] # scalar parameter"
+        },
+        {
+            "definition": "Profit per batch of cookies",
+            "symbol": "ProfitCookies",
+            "value": 3,
+            "shape": [],
+            "code": "ProfitCookies = data[\"ProfitCookies\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The total hours of the stand mixer used for making bread and cookies cannot exceed the maximum operational hours.",
+            "status": "coded",
+            "formulation": "\\textup{BreadMixerHours} \\\\cdot \\textup{BreadProduced} + \\textup{CookieMixerHours} \\\\cdot \\textup{CookiesProduced} \\\\leq \\textup{MaxHours}",
+            "related_variables": [
+                "BreadProduced",
+                "CookiesProduced"
+            ],
+            "related_parameters": [
+                "BreadMixerHours",
+                "CookieMixerHours",
+                "MaxHours"
+            ],
+            "code": "# Add constraint for maximum operational hours for the stand mixer\nmodel.addConstr(\n    BreadProduced * BreadMixerHours + CookiesProduced * CookieMixerHours <= MaxHours,\n    name=\"mixer_hours_limit\"\n)"
+        },
+        {
+            "description": "The total oven hours for bread and cookies cannot exceed the maximum operational hours (MaxHours).",
+            "status": "coded",
+            "formulation": "\\\\textup{BreadOvenHours} \\\\times \\\\textup{BreadProduced} + \\\\textup{CookieOvenHours} \\\\times \\\\textup{CookiesProduced} \\\\leq \\\\textup{MaxHours}",
+            "related_variables": [
+                "BreadProduced",
+                "CookiesProduced"
+            ],
+            "related_parameters": [
+                "BreadOvenHours",
+                "CookieOvenHours",
+                "MaxHours"
+            ],
+            "code": "# Add constraint for total oven hours not exceeding maximum operational hours\nmodel.addConstr(\n    BreadProduced * BreadOvenHours + CookiesProduced * CookieOvenHours <= MaxHours,\n    name=\"total_oven_hours_constraint\"\n)"
+        },
+        {
+            "description": "The number of loaves of bread produced must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{BreadProduced} \\geq 0",
+            "related_variables": [
+                "BreadProduced"
+            ],
+            "related_parameters": [],
+            "code": "# The non-negativity of the output is already enforced by the variable bounds set during its definition (lower bound defaults to 0 in Gurobi)."
+        },
+        {
+            "description": "The number of batches of cookies produced must be non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{CookiesProduced} \\\\geq 0",
+            "related_variables": [
+                "CookiesProduced"
+            ],
+            "related_parameters": [],
+            "code": "# Non-negativity constraint for CookiesProduced\nmodel.addConstr(CookiesProduced >= 0, name=\"non_negativity_CookiesProduced\")"
+        },
+        {
+            "description": "Total stand-mixer usage hours for producing bread and cookies cannot exceed \\textup{MaxHours}.",
+            "status": "coded",
+            "formulation": "\\textup{BreadMixerHours} \\cdot \\textup{BreadProduced} + \\textup{CookieMixerHours} \\cdot \\textup{CookiesProduced} \\leq \\textup{MaxHours}",
+            "related_variables": [
+                "BreadProduced",
+                "CookiesProduced"
+            ],
+            "related_parameters": [
+                "BreadMixerHours",
+                "CookieMixerHours",
+                "MaxHours"
+            ],
+            "code": "# Add constraint to ensure total stand-mixer usage hours do not exceed MaxHours\nmodel.addConstr(BreadMixerHours * BreadProduced + CookieMixerHours * CookiesProduced <= MaxHours, name=\"mixer_usage_limit\")"
+        },
+        {
+            "description": "Total oven usage hours for producing bread and cookies cannot exceed \\textup{MaxHours}.",
+            "status": "coded",
+            "formulation": "\\textup{BreadOvenHours} \\cdot \\textup{BreadProduced} + \\textup{CookieOvenHours} \\cdot \\textup{CookiesProduced} \\leq \\textup{MaxHours}",
+            "related_variables": [
+                "BreadProduced",
+                "CookiesProduced"
+            ],
+            "related_parameters": [
+                "BreadOvenHours",
+                "CookieOvenHours",
+                "MaxHours"
+            ],
+            "code": "# Add constraint for total oven usage hours\nmodel.addConstr(\n    BreadOvenHours * BreadProduced + CookieOvenHours * CookiesProduced <= MaxHours,\n    name=\"total_oven_usage\"\n)"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of loaves of bread produced.",
+            "symbol": "BreadProduced",
+            "shape": [],
+            "status": "coded",
+            "code": "BreadProduced = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"BreadProduced\")"
+        },
+        {
+            "definition": "The number of batches of cookies produced.",
+            "symbol": "CookiesProduced",
+            "shape": [],
+            "status": "coded",
+            "code": "CookiesProduced = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"CookiesProduced\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total profit from bread and cookies production.",
+            "status": "coded",
+            "formulation": "\\max \\quad \\textup{ProfitBread} \\cdot \\textup{BreadProduced} + \\textup{ProfitCookies} \\cdot \\textup{CookiesProduced}",
+            "related_variables": [
+                "BreadProduced",
+                "CookiesProduced"
+            ],
+            "related_parameters": [
+                "ProfitBread",
+                "ProfitCookies"
+            ],
+            "code": "# Set objective\nmodel.setObjective(ProfitBread * BreadProduced + ProfitCookies * CookiesProduced, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 9000.0,
+    "log_path": "logs/log_20250413172721_nl4opt_prob_21/",
+    "problem_path": "data/nl4opt/prob_21/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_21/data.json\", \"r\") as f:\n    data = json.load(f)\n\nMaxHours = data[\"MaxHours\"] # scalar parameter\nBreadMixerHours = data[\"BreadMixerHours\"] # scalar parameter\nBreadOvenHours = data[\"BreadOvenHours\"] # scalar parameter\nCookieMixerHours = data[\"CookieMixerHours\"] # scalar parameter\nCookieOvenHours = data[\"CookieOvenHours\"] # scalar parameter\nProfitBread = data[\"ProfitBread\"] # scalar parameter\nProfitCookies = data[\"ProfitCookies\"] # scalar parameter\nBreadProduced = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"BreadProduced\")\nCookiesProduced = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"CookiesProduced\")\n\n# Add constraint for maximum operational hours for the stand mixer\nmodel.addConstr(\n    BreadProduced * BreadMixerHours + CookiesProduced * CookieMixerHours <= MaxHours,\n    name=\"mixer_hours_limit\"\n)\n\n# Add constraint for total oven hours not exceeding maximum operational hours\nmodel.addConstr(\n    BreadProduced * BreadOvenHours + CookiesProduced * CookieOvenHours <= MaxHours,\n    name=\"total_oven_hours_constraint\"\n)\n\n# The non-negativity of the output is already enforced by the variable bounds set during its definition (lower bound defaults to 0 in Gurobi).\n\n# Non-negativity constraint for CookiesProduced\nmodel.addConstr(CookiesProduced >= 0, name=\"non_negativity_CookiesProduced\")\n\n# Add constraint to ensure total stand-mixer usage hours do not exceed MaxHours\nmodel.addConstr(BreadMixerHours * BreadProduced + CookieMixerHours * CookiesProduced <= MaxHours, name=\"mixer_usage_limit\")\n\n# Add constraint for total oven usage hours\nmodel.addConstr(\n    BreadOvenHours * BreadProduced + CookieOvenHours * CookiesProduced <= MaxHours,\n    name=\"total_oven_usage\"\n)\n\n# Set objective\nmodel.setObjective(ProfitBread * BreadProduced + ProfitCookies * CookiesProduced, gp.GRB.MAXIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

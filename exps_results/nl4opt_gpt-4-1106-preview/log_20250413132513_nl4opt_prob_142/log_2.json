@@ -1,0 +1,189 @@
+{
+    "background": "A chemistry teacher is planning to conduct experiments that produce green gas using red and blue liquids. Each experiment also produces a certain amount of smelly gas. The lab has limited quantities of red and blue liquids, and there is a maximum limit on the amount of smelly gas that can be produced.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Units of the red liquid mixed in experiment 1",
+            "symbol": "Red1",
+            "value": 3,
+            "shape": [],
+            "code": "Red1 = data[\"Red1\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of the blue liquid mixed in experiment 1",
+            "symbol": "Blue1",
+            "value": 4,
+            "shape": [],
+            "code": "Blue1 = data[\"Blue1\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of green gas produced in experiment 1",
+            "symbol": "Green1",
+            "value": 5,
+            "shape": [],
+            "code": "Green1 = data[\"Green1\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of smelly gas produced in experiment 1",
+            "symbol": "Smelly1",
+            "value": 1,
+            "shape": [],
+            "code": "Smelly1 = data[\"Smelly1\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of the red liquid mixed in experiment 2",
+            "symbol": "Red2",
+            "value": 5,
+            "shape": [],
+            "code": "Red2 = data[\"Red2\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of the blue liquid mixed in experiment 2",
+            "symbol": "Blue2",
+            "value": 3,
+            "shape": [],
+            "code": "Blue2 = data[\"Blue2\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of green gas produced in experiment 2",
+            "symbol": "Green2",
+            "value": 6,
+            "shape": [],
+            "code": "Green2 = data[\"Green2\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of smelly gas produced in experiment 2",
+            "symbol": "Smelly2",
+            "value": 2,
+            "shape": [],
+            "code": "Smelly2 = data[\"Smelly2\"] # scalar parameter"
+        },
+        {
+            "definition": "Total units of red liquid available",
+            "symbol": "TotalRed",
+            "value": 80,
+            "shape": [],
+            "code": "TotalRed = data[\"TotalRed\"] # scalar parameter"
+        },
+        {
+            "definition": "Total units of blue liquid available",
+            "symbol": "TotalBlue",
+            "value": 70,
+            "shape": [],
+            "code": "TotalBlue = data[\"TotalBlue\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum units of smelly gas allowed",
+            "symbol": "MaxSmelly",
+            "value": 10,
+            "shape": [],
+            "code": "MaxSmelly = data[\"MaxSmelly\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of experiments 1 must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfExperiment1} \\geq 0",
+            "related_variables": [
+                "NumberOfExperiment1"
+            ],
+            "related_parameters": [],
+            "code": "# Since NumberOfExperiment1 is already defined as an integer variable, we just need to add a constraint to ensure it is non-negative\nmodel.addConstr(NumberOfExperiment1 >= 0, name=\"non_negativity_NumberOfExperiment1\")"
+        },
+        {
+            "description": "The number of times experiment 2 is conducted must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfExperiment2} \\geq 0",
+            "related_variables": [
+                "NumberOfExperiment2"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint for non-negativity of the number of times experiment 2 is conducted\nmodel.addConstr(NumberOfExperiment2 >= 0, name=\"exp2_non_negative\")"
+        },
+        {
+            "description": "Total units of red liquid used in both experiments cannot exceed TotalRed",
+            "status": "coded",
+            "formulation": "\\textup{Red1} \\cdot \\textup{NumberOfExperiment1} + \\textup{Red2} \\cdot \\textup{NumberOfExperiment2} \\leq \\textup{TotalRed}",
+            "related_variables": [
+                "NumberOfExperiment1",
+                "NumberOfExperiment2"
+            ],
+            "related_parameters": [
+                "Red1",
+                "Red2",
+                "TotalRed"
+            ],
+            "code": "# Add constraint for total units of red liquid used in experiments\nmodel.addConstr(Red1 * NumberOfExperiment1 + Red2 * NumberOfExperiment2 <= TotalRed, name=\"red_liquid_usage\")"
+        },
+        {
+            "description": "Total units of blue liquid used in both experiments cannot exceed TotalBlue",
+            "status": "coded",
+            "formulation": "\\textup{Blue1} \\cdot \\textup{NumberOfExperiment1} + \\textup{Blue2} \\cdot \\textup{NumberOfExperiment2} \\leq \\textup{TotalBlue}",
+            "related_variables": [
+                "NumberOfExperiment1",
+                "NumberOfExperiment2"
+            ],
+            "related_parameters": [
+                "Blue1",
+                "Blue2",
+                "TotalBlue"
+            ],
+            "code": "# Add constraint for total units of blue liquid used in experiments\nmodel.addConstr(Blue1 * NumberOfExperiment1 + Blue2 * NumberOfExperiment2 <= TotalBlue, name=\"blue_liquid_usage\")"
+        },
+        {
+            "description": "Total units of smelly gas from all experiments cannot exceed the maximum allowed",
+            "status": "coded",
+            "formulation": "\\textup{Smelly1} \\cdot \\textup{NumberOfExperiment1} + \\textup{Smelly2} \\cdot \\textup{NumberOfExperiment2} \\leq \\textup{MaxSmelly}",
+            "related_variables": [
+                "NumberOfExperiment1",
+                "NumberOfExperiment2"
+            ],
+            "related_parameters": [
+                "Smelly1",
+                "Smelly2",
+                "MaxSmelly"
+            ],
+            "code": "# Constraint for the total units of smelly gas from all experiments\nmodel.addConstr(Smelly1 * NumberOfExperiment1 + Smelly2 * NumberOfExperiment2 <= MaxSmelly, name=\"max_smelly_gas\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of times experiment 1 is conducted",
+            "symbol": "NumberOfExperiment1",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfExperiment1 = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfExperiment1\")"
+        },
+        {
+            "definition": "The number of times experiment 2 is conducted",
+            "symbol": "NumberOfExperiment2",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfExperiment2 = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfExperiment2\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total amount of green gas produced from both experiments",
+            "status": "coded",
+            "formulation": "\\max \\textup{Green1} \\times \\textup{NumberOfExperiment1} + \\textup{Green2} \\times \\textup{NumberOfExperiment2}",
+            "related_variables": [
+                "NumberOfExperiment1",
+                "NumberOfExperiment2"
+            ],
+            "related_parameters": [
+                "Green1",
+                "Green2"
+            ],
+            "code": "# Set objective\nmodel.setObjective(Green1 * NumberOfExperiment1 + Green2 * NumberOfExperiment2, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 50.0,
+    "log_path": "logs/log_20250413132513_nl4opt_prob_142/",
+    "problem_path": "data/nl4opt/prob_142/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_142/data.json\", \"r\") as f:\n    data = json.load(f)\n\nRed1 = data[\"Red1\"] # scalar parameter\nBlue1 = data[\"Blue1\"] # scalar parameter\nGreen1 = data[\"Green1\"] # scalar parameter\nSmelly1 = data[\"Smelly1\"] # scalar parameter\nRed2 = data[\"Red2\"] # scalar parameter\nBlue2 = data[\"Blue2\"] # scalar parameter\nGreen2 = data[\"Green2\"] # scalar parameter\nSmelly2 = data[\"Smelly2\"] # scalar parameter\nTotalRed = data[\"TotalRed\"] # scalar parameter\nTotalBlue = data[\"TotalBlue\"] # scalar parameter\nMaxSmelly = data[\"MaxSmelly\"] # scalar parameter\nNumberOfExperiment1 = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfExperiment1\")\nNumberOfExperiment2 = model.addVar(vtype=gp.GRB.INTEGER, name=\"NumberOfExperiment2\")\n\n# Since NumberOfExperiment1 is already defined as an integer variable, we just need to add a constraint to ensure it is non-negative\nmodel.addConstr(NumberOfExperiment1 >= 0, name=\"non_negativity_NumberOfExperiment1\")\n\n# Add constraint for non-negativity of the number of times experiment 2 is conducted\nmodel.addConstr(NumberOfExperiment2 >= 0, name=\"exp2_non_negative\")\n\n# Add constraint for total units of red liquid used in experiments\nmodel.addConstr(Red1 * NumberOfExperiment1 + Red2 * NumberOfExperiment2 <= TotalRed, name=\"red_liquid_usage\")\n\n# Add constraint for total units of blue liquid used in experiments\nmodel.addConstr(Blue1 * NumberOfExperiment1 + Blue2 * NumberOfExperiment2 <= TotalBlue, name=\"blue_liquid_usage\")\n\n# Constraint for the total units of smelly gas from all experiments\nmodel.addConstr(Smelly1 * NumberOfExperiment1 + Smelly2 * NumberOfExperiment2 <= MaxSmelly, name=\"max_smelly_gas\")\n\n# Set objective\nmodel.setObjective(Green1 * NumberOfExperiment1 + Green2 * NumberOfExperiment2, gp.GRB.MAXIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

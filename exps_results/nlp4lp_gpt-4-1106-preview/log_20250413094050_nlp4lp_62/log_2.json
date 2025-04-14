@@ -1,0 +1,165 @@
+{
+    "background": "A manufacturer needs to decide the production quantity of different parts, considering machine constraints, to maximize profit.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "The number of machines available",
+            "symbol": "M",
+            "value": "",
+            "shape": [],
+            "code": "M = data[\"M\"] # scalar parameter"
+        },
+        {
+            "definition": "The number of types of parts to produce",
+            "symbol": "P",
+            "value": "",
+            "shape": [],
+            "code": "P = data[\"P\"] # scalar parameter"
+        },
+        {
+            "definition": "The time required to produce a batch on machine m for part p",
+            "symbol": "TimeRequired",
+            "value": "",
+            "shape": [
+                "M",
+                "P"
+            ],
+            "code": "TimeRequired = np.array(data[\"TimeRequired\"]) # ['M', 'P']"
+        },
+        {
+            "definition": "The cost of operating machine m for a month",
+            "symbol": "MachineCosts",
+            "value": "",
+            "shape": [
+                "M"
+            ],
+            "code": "MachineCosts = np.array(data[\"MachineCosts\"]) # ['M']"
+        },
+        {
+            "definition": "The time each machine m is available for production each month",
+            "symbol": "Availability",
+            "value": "",
+            "shape": [
+                "M"
+            ],
+            "code": "Availability = np.array(data[\"Availability\"]) # ['M']"
+        },
+        {
+            "definition": "The price at which part p can be sold",
+            "symbol": "Prices",
+            "value": "",
+            "shape": [
+                "P"
+            ],
+            "code": "Prices = np.array(data[\"Prices\"]) # ['P']"
+        },
+        {
+            "definition": "The setup time required before producing a batch of part p",
+            "symbol": "SetupTime",
+            "value": "",
+            "shape": [
+                "P"
+            ],
+            "code": "SetupTime = np.array(data[\"SetupTime\"]) # ['P']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "Each machine can be used for up to its availability hours per month.",
+            "status": "coded",
+            "formulation": "\\sum_{p=1}^{\\textup{P}} (\\textup{ProductionBatch}_{m,p} \\cdot \\textup{TimeRequired}_{m,p}) \\leq \\textup{Availability}_m \\quad \\forall m \\in \\{1, \\ldots, \\textup{M}\\}",
+            "related_variables": [
+                "ProductionBatch"
+            ],
+            "related_parameters": [
+                "TimeRequired",
+                "Availability",
+                "M",
+                "P"
+            ],
+            "code": "# Each machine can be used for up to its availability hours per month\nfor m in range(M):\n    model.addConstr(gp.quicksum(ProductionBatch[m, p] * TimeRequired[m, p] for p in range(P)) <= Availability[m], \n                    name=f\"machine_availability_{m}\")"
+        },
+        {
+            "description": "Total production and setup time for part p on machine m should not exceed available time for machine m",
+            "status": "runtime_error",
+            "formulation": "\\textup{TimeRequired}_{m,p} \\cdot \\textup{ProductionBatch}_{m,p} + \\textup{SetupTime}_p \\leq \\textup{Availability}_m \\quad \\forall m \\in M, \\forall p \\in P",
+            "related_variables": [
+                "ProductionBatch"
+            ],
+            "related_parameters": [
+                "TimeRequired",
+                "SetupTime",
+                "Availability"
+            ],
+            "code": "# Total production and setup time for all parts on each machine should not exceed available time for that machine\nfor m in M:\n    for p in P:\n        model.addConstr((TimeRequired[m, p] * ProductionBatch[m, p] + SetupTime[p]) <= Availability[m], name=f'time_availability_m{m}_p{p}')"
+        },
+        {
+            "description": "Each produced batch of any part on any machine must be non-negative",
+            "status": "coded",
+            "formulation": "\\forall m \\in \\{1, \\ldots, M\\}, \\quad \\forall p \\in \\{1, \\ldots, P\\}, \\quad \\textup{ProductionBatch}_{mp} \\geq 0",
+            "related_variables": [
+                "ProductionBatch"
+            ],
+            "related_parameters": [
+                "M",
+                "P"
+            ],
+            "code": "# Ensure that each produced batch of any part on any machine is non-negative\nfor m in range(M):\n    for p in range(P):\n        model.addConstr(ProductionBatch[m, p] >= 0, name=\"nonnegativity_constraint_batch_{}_{}\".format(m, p))"
+        },
+        {
+            "description": "Constraint for calculating the total production of each part across all machines",
+            "status": "coded",
+            "formulation": "\\forall p \\in \\{1,\\dots,P\\}, \\quad \\textup{TotalProduction}_p = \\sum_{m=1}^{M} \\textup{ProductionBatch}_{m,p}",
+            "related_variables": [
+                "ProductionBatch",
+                "TotalProduction"
+            ],
+            "related_parameters": [],
+            "code": "# Add total production constraints for each part across all machines\nfor p in range(P):\n    model.addConstr(TotalProduction[p] == gp.quicksum(ProductionBatch[m, p] for m in range(M)), name=f\"total_production_part_{p}\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of batches of part p produced on machine m",
+            "symbol": "ProductionBatch",
+            "shape": [
+                "M",
+                "P"
+            ],
+            "status": "coded",
+            "code": "ProductionBatch = model.addVars(M, P, vtype=gp.GRB.INTEGER, name=\"ProductionBatch\")"
+        },
+        {
+            "definition": "Total number of part p produced across all machines",
+            "symbol": "TotalProduction",
+            "shape": [
+                "P"
+            ],
+            "status": "coded",
+            "code": "TotalProduction = model.addVars(P, vtype=gp.GRB.CONTINUOUS, name=\"TotalProduction\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize profit which is the total revenue from selling parts minus the total operating costs of the machines",
+            "status": "coded",
+            "formulation": "\\max \\left( \\sum_{p=1}^{P} \\textup{Prices}_p \\cdot \\textup{TotalProduction}_p - \\sum_{m=1}^{M} \\textup{MachineCosts}_m \\right)",
+            "related_variables": [
+                "ProductionBatch",
+                "TotalProduction"
+            ],
+            "related_parameters": [
+                "MachineCosts",
+                "Prices"
+            ],
+            "code": "# Define the objective function\nmodel.setObjective(\n    gp.quicksum(Prices[p] * TotalProduction[p] for p in range(P))\n    - gp.quicksum(MachineCosts[m] for m in range(M)),\n    gp.GRB.MAXIMIZE\n)"
+        }
+    ],
+    "solution_status": "runtime_error",
+    "solver_output_status": "runtime_error",
+    "error_message": "Traceback (most recent call last):\n  File \"c:\\Users\\Simon\\Desktop\\Courses\\ECE 570\\ECE570_Project\\MyOptiMUS\\evaluator.py\", line 45, in run\n    exec(last_line, local_env, local_env)\n  File \"<string>\", line 2, in <module>\nTypeError: 'int' object is not iterable\n",
+    "obj_val": null,
+    "log_path": "logs/log_20250413094050_nlp4lp_62/",
+    "problem_path": "data/nlp4lp/62/",
+    "prep_code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nlp4lp/62/data.json\", \"r\") as f:\n    data = json.load(f)\n"
+}

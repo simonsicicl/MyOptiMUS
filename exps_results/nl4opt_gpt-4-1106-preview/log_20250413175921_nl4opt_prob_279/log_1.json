@@ -1,0 +1,128 @@
+{
+    "background": "A dessert shop needs to determine the number of matcha ice cream and orange sorbet desserts to make in order to minimize the total amount of flavouring needed, while complying with supply and proportion constraints.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Units of flavouring required for one order of matcha ice cream",
+            "symbol": "FlavouringMatcha",
+            "value": 2,
+            "shape": [],
+            "code": "FlavouringMatcha = data[\"FlavouringMatcha\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of ice cream required for one order of matcha ice cream",
+            "symbol": "IceCreamMatcha",
+            "value": 4,
+            "shape": [],
+            "code": "IceCreamMatcha = data[\"IceCreamMatcha\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of flavouring required for one order of orange sorbet",
+            "symbol": "FlavouringOrange",
+            "value": 4,
+            "shape": [],
+            "code": "FlavouringOrange = data[\"FlavouringOrange\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of water required for one order of orange sorbet",
+            "symbol": "WaterOrange",
+            "value": 3,
+            "shape": [],
+            "code": "WaterOrange = data[\"WaterOrange\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum proportion of desserts that must be matcha ice cream",
+            "symbol": "MinProportionMatcha",
+            "value": 0.15,
+            "shape": [],
+            "code": "MinProportionMatcha = data[\"MinProportionMatcha\"] # scalar parameter"
+        },
+        {
+            "definition": "Total units of ice cream available",
+            "symbol": "TotalIceCream",
+            "value": 600,
+            "shape": [],
+            "code": "TotalIceCream = data[\"TotalIceCream\"] # scalar parameter"
+        },
+        {
+            "definition": "Total units of water available",
+            "symbol": "TotalWater",
+            "value": 550,
+            "shape": [],
+            "code": "TotalWater = data[\"TotalWater\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of matcha ice cream orders should be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{MatchaIceCreamOrders} \\geq 0",
+            "related_variables": [
+                "MatchaIceCreamOrders"
+            ],
+            "related_parameters": [],
+            "code": "model.addConstr(MatchaIceCreamOrders >= 0, name=\"matcha_orders_non_negative\")"
+        },
+        {
+            "description": "The number of orange sorbet orders must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{OrangeSorbetOrders} \\geq 0",
+            "related_variables": [
+                "OrangeSorbetOrders"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint to ensure the number of orange sorbet orders is non-negative\nmodel.addConstr(OrangeSorbetOrders >= 0, name=\"non_negative_orange_sorbet_orders\")"
+        },
+        {
+            "description": "At least a certain proportion of the total desserts made must be matcha ice cream",
+            "status": "coded",
+            "formulation": "\\textup{MatchaIceCreamOrders} \\geq \\textup{MinProportionMatcha} \\times (\\textup{MatchaIceCreamOrders} + \\textup{OrangeSorbetOrders})",
+            "related_variables": [
+                "MatchaIceCreamOrders",
+                "OrangeSorbetOrders"
+            ],
+            "related_parameters": [
+                "MinProportionMatcha"
+            ],
+            "code": "# At least a certain proportion of total desserts made must be matcha ice cream\nmodel.addConstr(MatchaIceCreamOrders >= MinProportionMatcha * (MatchaIceCreamOrders + OrangeSorbetOrders), name=\"min_proportion_matcha\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of matcha ice cream orders made",
+            "symbol": "MatchaIceCreamOrders",
+            "shape": [],
+            "status": "coded",
+            "code": "MatchaIceCreamOrders = model.addVar(vtype=gp.GRB.INTEGER, name=\"MatchaIceCreamOrders\")"
+        },
+        {
+            "definition": "Number of orange sorbet orders made",
+            "symbol": "OrangeSorbetOrders",
+            "shape": [],
+            "status": "coded",
+            "code": "OrangeSorbetOrders = model.addVar(vtype=gp.GRB.INTEGER, name=\"OrangeSorbetOrders\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total amount of flavouring needed for making the desserts",
+            "status": "coded",
+            "formulation": "\\textup{TotalFlavouring} = \\textup{FlavouringMatcha} \\cdot \\textup{MatchaIceCreamOrders} + \\textup{FlavouringOrange} \\cdot \\textup{OrangeSorbetOrders}",
+            "related_variables": [
+                "MatchaIceCreamOrders",
+                "OrangeSorbetOrders"
+            ],
+            "related_parameters": [
+                "FlavouringMatcha",
+                "FlavouringOrange"
+            ],
+            "code": "# Set objective function\nmodel.setObjective(FlavouringMatcha * MatchaIceCreamOrders + FlavouringOrange * OrangeSorbetOrders, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413175921_nl4opt_prob_279/",
+    "problem_path": "data/nl4opt/prob_279/"
+}

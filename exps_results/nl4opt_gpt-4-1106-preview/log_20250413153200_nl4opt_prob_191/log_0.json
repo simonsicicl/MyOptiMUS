@@ -1,0 +1,184 @@
+{
+    "background": "A shipping company must decide how to transport packages using trucks and cars to minimize gas consumption, while meeting package delivery and trip constraints.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of packages transported per trip by truck",
+            "symbol": "PackageTruck",
+            "value": 50,
+            "shape": [],
+            "code": "PackageTruck = data[\"PackageTruck\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of packages transported per trip by car",
+            "symbol": "PackageCar",
+            "value": 30,
+            "shape": [],
+            "code": "PackageCar = data[\"PackageCar\"] # scalar parameter"
+        },
+        {
+            "definition": "Gas used per trip by truck",
+            "symbol": "GasTruck",
+            "value": 20,
+            "shape": [],
+            "code": "GasTruck = data[\"GasTruck\"] # scalar parameter"
+        },
+        {
+            "definition": "Gas used per trip by car",
+            "symbol": "GasCar",
+            "value": 15,
+            "shape": [],
+            "code": "GasCar = data[\"GasCar\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum number of truck trips",
+            "symbol": "MaxTruckTrips",
+            "value": 5,
+            "shape": [],
+            "code": "MaxTruckTrips = data[\"MaxTruckTrips\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum proportion of trips made by car",
+            "symbol": "MinCarTripProp",
+            "value": 0.33,
+            "shape": [],
+            "code": "MinCarTripProp = data[\"MinCarTripProp\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of packages to be transported",
+            "symbol": "MinPackages",
+            "value": 500,
+            "shape": [],
+            "code": "MinPackages = data[\"MinPackages\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of truck trips must be non-negative",
+            "status": "formulated",
+            "formulation": "\\textup{NumberOfTruckTrips} \\geq 0",
+            "related_variables": [
+                "NumberOfTruckTrips"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Number of car trips must be non-negative",
+            "status": "formulated",
+            "formulation": "\\textup{NumberOfCarTrips} \\geq 0",
+            "related_variables": [
+                "NumberOfCarTrips"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "The total number of truck trips should not exceed the maximum allowed truck trips",
+            "status": "formulated",
+            "formulation": "\\textup{NumberOfTruckTrips} \\leq \\textup{MaxTruckTrips}",
+            "related_variables": [
+                "NumberOfTruckTrips"
+            ],
+            "related_parameters": [
+                "MaxTruckTrips"
+            ]
+        },
+        {
+            "description": "At least MinCarTripProp of all trips must be made by cars",
+            "status": "formulated",
+            "formulation": "(1 - \\textup{MinCarTripProp}) \\times \\textup{NumberOfCarTrips} \\geq \\textup{MinCarTripProp} \\times \\textup{NumberOfTruckTrips}",
+            "related_variables": [
+                "NumberOfTruckTrips",
+                "NumberOfCarTrips"
+            ],
+            "related_parameters": [
+                "MinCarTripProp"
+            ]
+        },
+        {
+            "description": "At least MinPackages packages must be transported.",
+            "status": "formulated",
+            "formulation": "\\textup{NumberOfTruckTrips} \\times \\textup{PackageTruck} + \\textup{NumberOfCarTrips} \\times \\textup{PackageCar} \\geq \\textup{MinPackages}",
+            "related_variables": [
+                "NumberOfTruckTrips",
+                "NumberOfCarTrips"
+            ],
+            "related_parameters": [
+                "PackageTruck",
+                "PackageCar",
+                "MinPackages"
+            ]
+        },
+        {
+            "description": "Ensure that the minimum number of packages to be transported is met",
+            "status": "formulated",
+            "formulation": "\\textup{NumberOfTruckTrips} \\times \\textup{PackageTruck} + \\textup{NumberOfCarTrips} \\times \\textup{PackageCar} \\geq \\textup{MinPackages}",
+            "related_variables": [
+                "NumberOfTruckTrips",
+                "NumberOfCarTrips"
+            ],
+            "related_parameters": [
+                "PackageTruck",
+                "PackageCar",
+                "MinPackages"
+            ]
+        },
+        {
+            "description": "Ensure the number of truck trips does not exceed the maximum",
+            "status": "formulated",
+            "formulation": "\\textup{NumberOfTruckTrips} \\leq \\textup{MaxTruckTrips}",
+            "related_variables": [
+                "NumberOfTruckTrips"
+            ],
+            "related_parameters": [
+                "MaxTruckTrips"
+            ]
+        },
+        {
+            "description": "Enforce the minimum proportion of trips made by car",
+            "status": "formulated",
+            "formulation": "\\textup{NumberOfCarTrips} \\geq \\textup{MinCarTripProp} \\times (\\textup{NumberOfTruckTrips} + \\textup{NumberOfCarTrips})",
+            "related_variables": [
+                "NumberOfCarTrips",
+                "NumberOfTruckTrips"
+            ],
+            "related_parameters": [
+                "MinCarTripProp"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of trips made by truck",
+            "symbol": "NumberOfTruckTrips",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "The number of trips made by car",
+            "symbol": "NumberOfCarTrips",
+            "shape": [],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total amount of gas consumed for transporting packages",
+            "status": "formulated",
+            "formulation": "\\textup{TotalGasConsumed} = \\textup{NumberOfTruckTrips} \\times \\textup{GasTruck} + \\textup{NumberOfCarTrips} \\times \\textup{GasCar}",
+            "related_variables": [
+                "NumberOfTruckTrips",
+                "NumberOfCarTrips"
+            ],
+            "related_parameters": [
+                "GasTruck",
+                "GasCar"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413153200_nl4opt_prob_191/",
+    "problem_path": "data/nl4opt/prob_191/"
+}

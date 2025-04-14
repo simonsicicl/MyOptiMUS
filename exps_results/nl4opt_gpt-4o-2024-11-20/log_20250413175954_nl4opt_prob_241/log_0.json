@@ -1,0 +1,184 @@
+{
+    "background": "A dim sum restaurant utilizes two methods for food delivery: cart and hand. The goal is to schedule servers between these two methods to achieve a target number of customer interactions per hour while minimizing food refills.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of customer interactions per hour by cart",
+            "symbol": "InteractionsCart",
+            "value": 70,
+            "shape": [],
+            "code": "InteractionsCart = data[\"InteractionsCart\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of food refills per hour by cart",
+            "symbol": "RefillsCart",
+            "value": 5,
+            "shape": [],
+            "code": "RefillsCart = data[\"RefillsCart\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of customer interactions per hour by hand",
+            "symbol": "InteractionsHand",
+            "value": 85,
+            "shape": [],
+            "code": "InteractionsHand = data[\"InteractionsHand\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of food refills per hour by hand",
+            "symbol": "RefillsHand",
+            "value": 20,
+            "shape": [],
+            "code": "RefillsHand = data[\"RefillsHand\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum percentage of delivery shifts that must be by cart",
+            "symbol": "MinCartShiftsPercentage",
+            "value": 0.7,
+            "shape": [],
+            "code": "MinCartShiftsPercentage = data[\"MinCartShiftsPercentage\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of servers delivering by hand",
+            "symbol": "MinServersHand",
+            "value": 3,
+            "shape": [],
+            "code": "MinServersHand = data[\"MinServersHand\"] # scalar parameter"
+        },
+        {
+            "definition": "Target total number of customer interactions per hour",
+            "symbol": "TargetInteractions",
+            "value": 4000,
+            "shape": [],
+            "code": "TargetInteractions = data[\"TargetInteractions\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of servers delivering by cart must be non-negative.",
+            "status": "formulated",
+            "formulation": "\\textup{ServersCart} \\geq 0",
+            "related_variables": [
+                "ServersCart"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "Number of servers delivering by hand is non-negative.",
+            "status": "formulated",
+            "formulation": "\\textup{ServersHand} \\geq 0",
+            "related_variables": [
+                "ServersHand"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "At least MinCartShiftsPercentage of delivery shifts must be by cart",
+            "status": "formulated",
+            "formulation": "(1 - \\textup{MinCartShiftsPercentage}) \\cdot \\textup{ServersCart} \\geq \\textup{MinCartShiftsPercentage} \\cdot \\textup{ServersHand}",
+            "related_variables": [
+                "ServersCart",
+                "ServersHand"
+            ],
+            "related_parameters": [
+                "MinCartShiftsPercentage"
+            ]
+        },
+        {
+            "description": "At least MinServersHand servers must be delivering by hand.",
+            "status": "formulated",
+            "formulation": "\\\\textup{ServersHand} \\\\geq \\\\textup{MinServersHand}",
+            "related_variables": [
+                "ServersHand"
+            ],
+            "related_parameters": [
+                "MinServersHand"
+            ]
+        },
+        {
+            "description": "The total number of customer interactions must meet or exceed TargetInteractions per hour.",
+            "status": "formulated",
+            "formulation": "\\\\textup{InteractionsCart} \\\\cdot \\\\textup{ServersCart} + \\\\textup{InteractionsHand} \\\\cdot \\\\textup{ServersHand} \\\\geq \\\\textup{TargetInteractions}",
+            "related_variables": [
+                "ServersCart",
+                "ServersHand"
+            ],
+            "related_parameters": [
+                "InteractionsCart",
+                "InteractionsHand",
+                "TargetInteractions"
+            ]
+        },
+        {
+            "description": "Total customer interactions must meet or exceed the target",
+            "status": "formulated",
+            "formulation": "\\textup{ServersCart} \\cdot \\textup{InteractionsCart} + \\textup{ServersHand} \\cdot \\textup{InteractionsHand} \\geq \\textup{TargetInteractions}",
+            "related_variables": [
+                "ServersCart",
+                "ServersHand"
+            ],
+            "related_parameters": [
+                "InteractionsCart",
+                "InteractionsHand",
+                "TargetInteractions"
+            ]
+        },
+        {
+            "description": "Minimum percentage of total delivery shifts must be done by cart",
+            "status": "formulated",
+            "formulation": "\\textup{ServersCart} \\geq \\textup{MinCartShiftsPercentage} \\cdot (\\textup{ServersCart} + \\textup{ServersHand})",
+            "related_variables": [
+                "ServersCart",
+                "ServersHand"
+            ],
+            "related_parameters": [
+                "MinCartShiftsPercentage"
+            ]
+        },
+        {
+            "description": "At least the minimum number of servers must use hand delivery",
+            "status": "formulated",
+            "formulation": "\\textup{ServersHand} \\geq \\textup{MinServersHand}",
+            "related_variables": [
+                "ServersHand"
+            ],
+            "related_parameters": [
+                "MinServersHand"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of servers delivering by cart",
+            "symbol": "ServersCart",
+            "shape": [],
+            "status": "formulated"
+        },
+        {
+            "definition": "Number of servers delivering by hand",
+            "symbol": "ServersHand",
+            "shape": [],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of food refills per hour",
+            "status": "formulated",
+            "formulation": "\\textup{Minimize} \\quad \\textup{ServersCart} \\cdot \\textup{RefillsCart} + \\textup{ServersHand} \\cdot \\textup{RefillsHand}",
+            "related_variables": [
+                "ServersCart",
+                "ServersHand"
+            ],
+            "related_parameters": [
+                "RefillsCart",
+                "RefillsHand"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413175954_nl4opt_prob_241/",
+    "problem_path": "data/nl4opt/prob_241/"
+}

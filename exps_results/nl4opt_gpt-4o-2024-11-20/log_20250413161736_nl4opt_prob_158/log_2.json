@@ -1,0 +1,167 @@
+{
+    "background": "A school is organizing a field trip and requires buses of two sizes to transport students, with constraints on minimum students transported and parking limitations for the larger buses.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Capacity of a small bus",
+            "symbol": "SmallBusCapacity",
+            "value": 20,
+            "shape": [],
+            "code": "SmallBusCapacity = data[\"SmallBusCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Capacity of a large bus",
+            "symbol": "LargeBusCapacity",
+            "value": 50,
+            "shape": [],
+            "code": "LargeBusCapacity = data[\"LargeBusCapacity\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum number of students to be transported",
+            "symbol": "MinStudents",
+            "value": 500,
+            "shape": [],
+            "code": "MinStudents = data[\"MinStudents\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum proportion of large buses",
+            "symbol": "MaxLargeBusProportion",
+            "value": 0.2,
+            "shape": [],
+            "code": "MaxLargeBusProportion = data[\"MaxLargeBusProportion\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of small buses is non-negative",
+            "status": "coded",
+            "formulation": "\\\\textup{NumberOfSmallBuses} \\\\geq 0",
+            "related_variables": [
+                "NumberOfSmallBuses"
+            ],
+            "related_parameters": [],
+            "code": "# The non-negativity constraint is inherently satisfied as the variable `NumberOfSmallBuses` is continuous, so no additional constraint is needed."
+        },
+        {
+            "description": "The number of large buses is non-negative",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfLargeBuses} \\geq 0",
+            "related_variables": [
+                "NumberOfLargeBuses"
+            ],
+            "related_parameters": [],
+            "code": "# No code is needed because non-negativity is inherent to continuous variables in Gurobi."
+        },
+        {
+            "description": "The total number of students transported must be at least the minimum number of students required (MinStudents).",
+            "status": "coded",
+            "formulation": "\\\\textup{NumberOfSmallBuses} \\\\cdot \\\\textup{SmallBusCapacity} + \\\\textup{NumberOfLargeBuses} \\\\cdot \\\\textup{LargeBusCapacity} \\\\geq \\\\textup{MinStudents}",
+            "related_variables": [
+                "NumberOfSmallBuses",
+                "NumberOfLargeBuses"
+            ],
+            "related_parameters": [
+                "SmallBusCapacity",
+                "LargeBusCapacity",
+                "MinStudents"
+            ],
+            "code": "# Add total students transportation constraint\nmodel.addConstr(NumberOfSmallBuses * SmallBusCapacity + NumberOfLargeBuses * LargeBusCapacity >= MinStudents, name=\"min_students_transportation\")"
+        },
+        {
+            "description": "The number of large buses cannot exceed MaxLargeBusProportion times the total number of buses",
+            "status": "coded",
+            "formulation": "(1 - \\textup{MaxLargeBusProportion}) \\times \\textup{NumberOfLargeBuses} \\leq \\textup{MaxLargeBusProportion} \\times \\textup{NumberOfSmallBuses}",
+            "related_variables": [
+                "NumberOfSmallBuses",
+                "NumberOfLargeBuses"
+            ],
+            "related_parameters": [
+                "MaxLargeBusProportion"
+            ],
+            "code": "# Add constraint to limit the proportion of large buses\nmodel.addConstr((1 - MaxLargeBusProportion) * NumberOfLargeBuses <= MaxLargeBusProportion * NumberOfSmallBuses, \n                name=\"large_bus_proportion_limit\")"
+        },
+        {
+            "description": "Ensure the total number of students transported meets or exceeds the minimum required.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfSmallBuses} \\times \\textup{SmallBusCapacity} + \\textup{NumberOfLargeBuses} \\times \\textup{LargeBusCapacity} \\geq \\textup{MinStudents}",
+            "related_variables": [
+                "NumberOfSmallBuses",
+                "NumberOfLargeBuses"
+            ],
+            "related_parameters": [
+                "SmallBusCapacity",
+                "LargeBusCapacity",
+                "MinStudents"
+            ],
+            "code": "# Add constraint to ensure the total number of students transported meets or exceeds the minimum required\nmodel.addConstr(\n    NumberOfSmallBuses * SmallBusCapacity + NumberOfLargeBuses * LargeBusCapacity >= MinStudents,\n    name=\"min_students_transport\"\n)"
+        },
+        {
+            "description": "Ensure the number of large buses does not exceed the allowed maximum proportion of total buses.",
+            "status": "coded",
+            "formulation": "\\textup{NumberOfLargeBuses} \\leq \\textup{MaxLargeBusProportion} \\times \\textup{TotalBuses}",
+            "related_variables": [
+                "NumberOfLargeBuses",
+                "TotalBuses"
+            ],
+            "related_parameters": [
+                "MaxLargeBusProportion"
+            ],
+            "code": "# Add constraint to ensure the number of large buses does not exceed the allowed maximum proportion of total buses\nmodel.addConstr(NumberOfLargeBuses <= MaxLargeBusProportion * TotalBuses, name=\"large_bus_limit\")"
+        },
+        {
+            "description": "Auxiliary constraint enforcing the definition of TotalBuses as the sum of small and large buses.",
+            "status": "coded",
+            "formulation": "\\textup{TotalBuses} = \\textup{NumberOfSmallBuses} + \\textup{NumberOfLargeBuses}",
+            "related_variables": [
+                "NumberOfSmallBuses",
+                "NumberOfLargeBuses",
+                "TotalBuses"
+            ],
+            "related_parameters": [],
+            "code": "# Add constraint enforcing the definition of TotalBuses\nmodel.addConstr(TotalBuses == NumberOfSmallBuses + NumberOfLargeBuses, name=\"TotalBuses_definition\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of small buses to be utilized for transporting students",
+            "symbol": "NumberOfSmallBuses",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfSmallBuses = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfSmallBuses\")"
+        },
+        {
+            "definition": "The number of large buses to be utilized for transporting students",
+            "symbol": "NumberOfLargeBuses",
+            "shape": [],
+            "status": "coded",
+            "code": "NumberOfLargeBuses = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfLargeBuses\")"
+        },
+        {
+            "definition": "The total number of buses, which is the sum of the small and large buses.",
+            "symbol": "TotalBuses",
+            "shape": [],
+            "status": "coded",
+            "code": "TotalBuses = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TotalBuses\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of buses needed (small and large combined).",
+            "status": "coded",
+            "formulation": "\\textup{Minimize} \\quad \\textup{NumberOfSmallBuses} + \\textup{NumberOfLargeBuses}",
+            "related_variables": [
+                "NumberOfSmallBuses",
+                "NumberOfLargeBuses"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(NumberOfSmallBuses + NumberOfLargeBuses, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 19.23076923076923,
+    "log_path": "logs/log_20250413161736_nl4opt_prob_158/",
+    "problem_path": "data/nl4opt/prob_158/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_158/data.json\", \"r\") as f:\n    data = json.load(f)\n\nSmallBusCapacity = data[\"SmallBusCapacity\"] # scalar parameter\nLargeBusCapacity = data[\"LargeBusCapacity\"] # scalar parameter\nMinStudents = data[\"MinStudents\"] # scalar parameter\nMaxLargeBusProportion = data[\"MaxLargeBusProportion\"] # scalar parameter\nNumberOfSmallBuses = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfSmallBuses\")\nNumberOfLargeBuses = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumberOfLargeBuses\")\nTotalBuses = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"TotalBuses\")\n\n# The non-negativity constraint is inherently satisfied as the variable `NumberOfSmallBuses` is continuous, so no additional constraint is needed.\n\n# No code is needed because non-negativity is inherent to continuous variables in Gurobi.\n\n# Add total students transportation constraint\nmodel.addConstr(NumberOfSmallBuses * SmallBusCapacity + NumberOfLargeBuses * LargeBusCapacity >= MinStudents, name=\"min_students_transportation\")\n\n# Add constraint to limit the proportion of large buses\nmodel.addConstr((1 - MaxLargeBusProportion) * NumberOfLargeBuses <= MaxLargeBusProportion * NumberOfSmallBuses, \n                name=\"large_bus_proportion_limit\")\n\n# Add constraint to ensure the total number of students transported meets or exceeds the minimum required\nmodel.addConstr(\n    NumberOfSmallBuses * SmallBusCapacity + NumberOfLargeBuses * LargeBusCapacity >= MinStudents,\n    name=\"min_students_transport\"\n)\n\n# Add constraint to ensure the number of large buses does not exceed the allowed maximum proportion of total buses\nmodel.addConstr(NumberOfLargeBuses <= MaxLargeBusProportion * TotalBuses, name=\"large_bus_limit\")\n\n# Add constraint enforcing the definition of TotalBuses\nmodel.addConstr(TotalBuses == NumberOfSmallBuses + NumberOfLargeBuses, name=\"TotalBuses_definition\")\n\n# Set objective\nmodel.setObjective(NumberOfSmallBuses + NumberOfLargeBuses, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

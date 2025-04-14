@@ -1,0 +1,329 @@
+{
+    "background": "An investor needs to sell shares of an asset they purchased in order to raise a certain amount of money, taking into account taxes and transaction costs. The aim is to maximize the expected value of the remaining portfolio for the next year.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of different shares",
+            "symbol": "N",
+            "value": "",
+            "shape": [],
+            "code": "N = data[\"N\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of each share initially bought",
+            "symbol": "Bought",
+            "value": "",
+            "shape": [
+                "N"
+            ],
+            "code": "Bought = np.array(data[\"Bought\"]) # ['N']"
+        },
+        {
+            "definition": "Purchase price of each share",
+            "symbol": "BuyPrice",
+            "value": "",
+            "shape": [
+                "N"
+            ],
+            "code": "BuyPrice = np.array(data[\"BuyPrice\"]) # ['N']"
+        },
+        {
+            "definition": "Current market price of each share",
+            "symbol": "CurrentPrice",
+            "value": "",
+            "shape": [
+                "N"
+            ],
+            "code": "CurrentPrice = np.array(data[\"CurrentPrice\"]) # ['N']"
+        },
+        {
+            "definition": "Expected future market price of each share",
+            "symbol": "FuturePrice",
+            "value": "",
+            "shape": [
+                "N"
+            ],
+            "code": "FuturePrice = np.array(data[\"FuturePrice\"]) # ['N']"
+        },
+        {
+            "definition": "Transaction cost rate per share sold",
+            "symbol": "TransactionRate",
+            "value": "",
+            "shape": [],
+            "code": "TransactionRate = data[\"TransactionRate\"] # scalar parameter"
+        },
+        {
+            "definition": "Capital gains tax rate on the profit from selling shares",
+            "symbol": "TaxRate",
+            "value": "",
+            "shape": [],
+            "code": "TaxRate = data[\"TaxRate\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of money the investor needs to raise",
+            "symbol": "K",
+            "value": "",
+            "shape": [],
+            "code": "K = data[\"K\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of shares sold for each asset must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{SharesSold}_{i} \\geq 0, \\quad \\forall i \\in \\{1, 2, ..., \\textup{N}\\}",
+            "related_variables": [
+                "SharesSold"
+            ],
+            "related_parameters": [
+                "N"
+            ],
+            "code": "# Add non-negativity constraints for SharesSold\nfor i in range(N):\n    model.addConstr(SharesSold[i] >= 0, name=f\"non_negativity_SharesSold_{i}\")"
+        },
+        {
+            "description": "The number of shares sold for each asset must not exceed the number of shares initially bought for that asset.",
+            "status": "coded",
+            "formulation": "\\textup{SharesSold}_{i} \\leq \\textup{Bought}_{i} \\quad \\forall \\; i \\in \\{1, 2, ..., \\textup{N}\\}",
+            "related_variables": [
+                "SharesSold"
+            ],
+            "related_parameters": [
+                "Bought",
+                "N"
+            ],
+            "code": "# Add constraints to ensure SharesSold does not exceed Bought for each asset\nfor i in range(N):\n    model.addConstr(SharesSold[i] <= Bought[i], name=f\"SharesSold_constraint_{i}\")"
+        },
+        {
+            "description": "The net proceeds from selling shares after taxes and transaction costs must be at least K.",
+            "status": "coded",
+            "formulation": "\\\\sum_{i=1}^{N} \\\\textup{NetProceeds}_{i} \\\\geq \\\\textup{K}",
+            "related_variables": [
+                "NetProceeds"
+            ],
+            "related_parameters": [
+                "N",
+                "K"
+            ],
+            "code": "# Add net proceeds constraint\nmodel.addConstr(gp.quicksum(NetProceeds[i] for i in range(N)) >= K, name=\"net_proceeds_constraint\")"
+        },
+        {
+            "description": "Total net proceeds from selling shares must meet the required amount K after accounting for taxes and transactions.",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{\\textup{N}} \\textup{NetProceeds}_i \\geq \\textup{K}",
+            "related_variables": [
+                "NetProceeds"
+            ],
+            "related_parameters": [
+                "K",
+                "N"
+            ],
+            "code": "# Add constraint to ensure total net proceeds from selling shares meet or exceed the required amount K \nmodel.addConstr(NetProceeds.sum() >= K, name=\"net_proceeds_requirement\")"
+        },
+        {
+            "description": "Define gross proceeds for each asset sold.",
+            "status": "coded",
+            "formulation": "\\\\textup{GrossProceeds}_{i} = \\\\textup{CurrentPrice}_{i} \\\\times \\\\textup{SharesSold}_{i}, \\\\quad \\\\forall i = 1, ..., N",
+            "related_variables": [
+                "GrossProceeds",
+                "SharesSold"
+            ],
+            "related_parameters": [
+                "N",
+                "CurrentPrice"
+            ],
+            "code": "# Define gross proceeds for each asset sold\nfor i in range(N):\n    model.addConstr(GrossProceeds[i] == CurrentPrice[i] * SharesSold[i], name=f\"gross_proceeds_{i}\")"
+        },
+        {
+            "description": "Define net proceeds for each asset after taxes and transaction costs.",
+            "status": "coded",
+            "formulation": "\\\\textup{NetProceeds}_{i} = \\\\textup{GrossProceeds}_{i} - \\\\textup{TransactionRate} \\\\times \\\\textup{CurrentPrice}_{i} \\\\times \\\\textup{SharesSold}_{i} - \\\\textup{TaxRate} \\\\times (\\\\textup{CurrentPrice}_{i} - \\\\textup{BuyPrice}_{i}) \\\\times \\\\textup{SharesSold}_{i}, \\\\quad \\\\forall i = 1, ..., N",
+            "related_variables": [
+                "NetProceeds",
+                "GrossProceeds",
+                "SharesSold"
+            ],
+            "related_parameters": [
+                "N",
+                "TransactionRate",
+                "TaxRate",
+                "CurrentPrice",
+                "BuyPrice"
+            ],
+            "code": "# Add constraints to define NetProceeds for each asset\nfor i in range(N):\n    model.addConstr(\n        NetProceeds[i] == GrossProceeds[i] - \n        TransactionRate * CurrentPrice[i] * SharesSold[i] - \n        TaxRate * (CurrentPrice[i] - BuyPrice[i]) * SharesSold[i],\n        name=f\"NetProceeds_def_{i}\"\n    )"
+        },
+        {
+            "description": "Gross proceeds for each asset are the product of the current price and the number of shares sold.",
+            "status": "coded",
+            "formulation": "\\textup{GrossProceeds}_i = \\textup{CurrentPrice}_i \\times \\textup{SharesSold}_i \\quad \\forall i \\in \\{1, \\dots, \\textup{N}\\}",
+            "related_variables": [
+                "GrossProceeds",
+                "SharesSold"
+            ],
+            "related_parameters": [
+                "CurrentPrice",
+                "N"
+            ],
+            "code": "# Add constraints to ensure GrossProceeds are equal to the product of CurrentPrice and SharesSold\nfor i in range(N):\n    model.addConstr(GrossProceeds[i] == CurrentPrice[i] * SharesSold[i], name=f\"gross_proceeds_{i}\")"
+        },
+        {
+            "description": "Tax paid per asset is applied only on the profit per share (CurrentPrice - BuyPrice), if positive.",
+            "status": "coded",
+            "formulation": "\\textup{TaxPaid}_i \\geq \\textup{TaxRate} \\times (\\textup{CurrentPrice}_i - \\textup{BuyPrice}_i) \\times \\textup{SharesSold}_i, \\quad \\textup{TaxPaid}_i \\geq 0 \\quad \\forall i \\in \\{1, \\dots, \\textup{N}\\}",
+            "related_variables": [
+                "TaxPaid",
+                "SharesSold"
+            ],
+            "related_parameters": [
+                "TaxRate",
+                "CurrentPrice",
+                "BuyPrice",
+                "N"
+            ],
+            "code": "# Add tax paid constraints\nfor i in range(N):\n    model.addConstr(TaxPaid[i] >= TaxRate * (CurrentPrice[i] - BuyPrice[i]) * SharesSold[i], name=f\"tax_paid_positive_profit_{i}\")\n    model.addConstr(TaxPaid[i] >= 0, name=f\"non_negative_tax_paid_{i}\")"
+        },
+        {
+            "description": "Net proceeds are gross proceeds minus tax paid and transaction costs.",
+            "status": "coded",
+            "formulation": "\\textup{NetProceeds}_i = \\textup{GrossProceeds}_i - \\textup{TaxPaid}_i - (\\textup{TransactionRate} \\times \\textup{SharesSold}_i) \\quad \\forall i \\in \\{1, \\dots, \\textup{N}\\}",
+            "related_variables": [
+                "NetProceeds",
+                "GrossProceeds",
+                "SharesSold",
+                "TaxPaid"
+            ],
+            "related_parameters": [
+                "TransactionRate",
+                "N"
+            ],
+            "code": "# Add net proceeds constraints\nfor i in range(N):\n    model.addConstr(NetProceeds[i] == GrossProceeds[i] - TaxPaid[i] - (TransactionRate * SharesSold[i]), \n                    name=f\"net_proceeds_constraint_{i}\")"
+        },
+        {
+            "description": "The number of shares remaining is equal to the number of shares initially bought minus the number of shares sold for each asset.",
+            "status": "coded",
+            "formulation": "\\textup{SharesRemaining}_{i} = \\textup{Bought}_{i} - \\textup{SharesSold}_{i} \\quad \\forall \\ i \\in \\{1, \\dots, N\\}",
+            "related_variables": [
+                "SharesRemaining",
+                "SharesSold"
+            ],
+            "related_parameters": [
+                "Bought",
+                "N"
+            ],
+            "code": "# Add constraints to define SharesRemaining values\nfor i in range(N):\n    model.addConstr(SharesRemaining[i] == Bought[i] - SharesSold[i], name=f\"SharesRemaining_def_{i}\")"
+        },
+        {
+            "description": "The investor must raise at least the required amount \\textup{K} in net proceeds.",
+            "status": "coded",
+            "formulation": "\\sum_{i=1}^{N} \\textup{NetProceeds}_{i} \\geq \\textup{K}",
+            "related_variables": [
+                "NetProceeds"
+            ],
+            "related_parameters": [
+                "K",
+                "N"
+            ],
+            "code": "# Add net proceeds constraint\nmodel.addConstr(gp.quicksum(NetProceeds[i] for i in range(N)) >= K, name=\"net_proceeds_constraint\")"
+        },
+        {
+            "description": "Net proceeds are calculated as gross proceeds minus taxes and transaction costs for each asset.",
+            "status": "coded",
+            "formulation": "\\textup{NetProceeds}_{i} = \\textup{SharesSold}_{i} \\cdot \\textup{CurrentPrice}_{i} \\cdot (1 - \\textup{TransactionRate}) - \\textup{TaxPaid}_{i} \\quad \\forall \\ i \\in \\{1, \\dots, N\\}",
+            "related_variables": [
+                "NetProceeds",
+                "SharesSold",
+                "TaxPaid"
+            ],
+            "related_parameters": [
+                "CurrentPrice",
+                "TransactionRate",
+                "N"
+            ],
+            "code": "# Add net proceeds calculation constraints\nfor i in range(N):\n    model.addConstr(\n        NetProceeds[i] == SharesSold[i] * CurrentPrice[i] * (1 - TransactionRate) - TaxPaid[i],\n        name=f\"net_proceeds_calc_{i}\"\n    )"
+        },
+        {
+            "description": "Taxes paid are calculated as the tax rate applied to the capital gains for each asset.",
+            "status": "coded",
+            "formulation": "\\textup{TaxPaid}_{i} = \\textup{SharesSold}_{i} \\cdot \\max(\\textup{CurrentPrice}_{i} - \\textup{BuyPrice}_{i}, 0) \\cdot \\textup{TaxRate} \\quad \\forall \\ i \\in \\{1, \\dots, N\\}",
+            "related_variables": [
+                "TaxPaid",
+                "SharesSold"
+            ],
+            "related_parameters": [
+                "CurrentPrice",
+                "BuyPrice",
+                "TaxRate",
+                "N"
+            ],
+            "code": "# Add constraints for calculating taxes paid as a function of shares sold and capital gains\nfor i in range(N):\n    model.addConstr(\n        TaxPaid[i] == SharesSold[i] * gp.max_(CurrentPrice[i] - BuyPrice[i], 0) * TaxRate,\n        name=f\"tax_calculation_{i}\"\n    )"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Number of shares sold for each asset.",
+            "symbol": "SharesSold",
+            "shape": [
+                "N"
+            ],
+            "status": "coded",
+            "code": "SharesSold = model.addVars(N, vtype=gp.GRB.CONTINUOUS, name=\"SharesSold\")"
+        },
+        {
+            "definition": "The gross sale proceeds from selling shares of each asset.",
+            "symbol": "GrossProceeds",
+            "shape": [
+                "N"
+            ],
+            "status": "coded",
+            "code": "GrossProceeds = model.addVars(N, vtype=gp.GRB.CONTINUOUS, name=\"GrossProceeds\")"
+        },
+        {
+            "definition": "The net proceeds from selling shares of each asset after taxes and transaction costs.",
+            "symbol": "NetProceeds",
+            "shape": [
+                "N"
+            ],
+            "status": "coded",
+            "code": "NetProceeds = model.addVars(N, vtype=gp.GRB.CONTINUOUS, name=\"NetProceeds\")"
+        },
+        {
+            "definition": "Tax paid on the capital gains for each asset.",
+            "symbol": "TaxPaid",
+            "shape": [
+                "N"
+            ],
+            "status": "coded",
+            "code": "TaxPaid = model.addVars(N, vtype=gp.GRB.CONTINUOUS, name=\"TaxPaid\")"
+        },
+        {
+            "definition": "Number of shares remaining for each asset after some shares are sold.",
+            "symbol": "SharesRemaining",
+            "shape": [
+                "N"
+            ],
+            "status": "coded",
+            "code": "SharesRemaining = model.addVars(N, vtype=gp.GRB.CONTINUOUS, name=\"SharesRemaining\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the expected value of the investor's portfolio next year.",
+            "status": "coded",
+            "formulation": "\\max \\quad \\sum_{i=1}^{N} \\textup{SharesRemaining}_{i} \\cdot \\textup{FuturePrice}_{i}",
+            "related_variables": [
+                "SharesRemaining",
+                "SharesSold"
+            ],
+            "related_parameters": [
+                "FuturePrice",
+                "N"
+            ],
+            "code": "# Set objective\nmodel.setObjective(gp.quicksum(SharesRemaining[i] * FuturePrice[i] for i in range(N)), gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413153419_nlp4lp_18/",
+    "problem_path": "data/nlp4lp/18/"
+}

@@ -1,0 +1,117 @@
+{
+    "background": "A company is looking to minimize the total transportation cost of transporting goods from its depots to ports.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of depots",
+            "symbol": "numdepot",
+            "value": "",
+            "shape": [
+                "I"
+            ],
+            "code": "numdepot = np.array(data[\"numdepot\"]) # ['I']"
+        },
+        {
+            "definition": "Number of ports",
+            "symbol": "numport",
+            "value": "",
+            "shape": [
+                "J"
+            ],
+            "code": "numport = np.array(data[\"numport\"]) # ['J']"
+        },
+        {
+            "definition": "Cost per unit distance for transporting goods",
+            "symbol": "Price",
+            "value": "",
+            "shape": [],
+            "code": "Price = data[\"Price\"] # scalar parameter"
+        },
+        {
+            "definition": "Distance between depot i and port j",
+            "symbol": "Distance",
+            "value": "",
+            "shape": [
+                "I",
+                "J"
+            ],
+            "code": "Distance = np.array(data[\"Distance\"]) # ['I', 'J']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of depots should be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{numdepot} \\geq 0",
+            "related_variables": [],
+            "related_parameters": [
+                "numdepot"
+            ],
+            "code": "# The number of depots should be non-negative\n# This is inherently satisfied as numdepot is presumably an input parameter \n# rather than a decision variable, so no constraint needs to be added.\n# If numdepot were a decision variable, the code would ensure its non-negativity."
+        },
+        {
+            "description": "The number of ports must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{numport} \\geq 0",
+            "related_variables": [],
+            "related_parameters": [
+                "numport"
+            ],
+            "code": "# Since numport represents number of ports and should be non-negative,\n# it should be set up as a non-negative variable when it's created.\n# Therefore, no additional constraints are needed.\n# The constraint \"numport >= 0\" is implicitly handled by variable definition."
+        },
+        {
+            "description": "Cost per unit distance (Price) must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{Price} \\geq 0",
+            "related_variables": [],
+            "related_parameters": [
+                "Price"
+            ],
+            "code": "# Since Price is a parameter and not a variable, no constraint needs to be added to the model.\n# We only need to ensure that the Price parameter's value is set to a non-negative number before\n# using it in the model. This should be handled in the data preparation step."
+        },
+        {
+            "description": "Non-negative distance between each depot and port",
+            "status": "coded",
+            "formulation": "\\forall i \\in \\{1, ..., \\textup{numdepot}\\}, \\forall j \\in \\{1, ..., \\textup{numport}\\}, \\quad \\textup{Distance}_{ij} \\geq 0",
+            "related_variables": [],
+            "related_parameters": [
+                "Distance"
+            ],
+            "code": "# No need to add constraints because distances are assumed to be non-negative by the problem's nature.\n# The constraint is inherently satisfied and does not need to be explicitly modeled."
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Quantity of goods transported from depot i to port j",
+            "symbol": "QuantityShipped",
+            "shape": [
+                "numdepot",
+                "numport"
+            ],
+            "status": "runtime_error",
+            "code": "numdepot = data[\"numdepot\"]\\nnumport = data[\"numport\"]\\nQuantityShipped = model.addVars(range(numdepot), range(numport), vtype=gp.GRB.CONTINUOUS, name='QuantityShipped')"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total transportation cost from depots to ports",
+            "status": "coded",
+            "formulation": "\\min \\quad \\sum_{i=1}^{\\textup{numdepot}} \\sum_{j=1}^{\\textup{numport}} \\textup{Price} \\times \\textup{Distance}_{ij} \\times \\textup{QuantityShipped}_{ij}",
+            "related_variables": [
+                "QuantityShipped"
+            ],
+            "related_parameters": [
+                "Price",
+                "Distance"
+            ],
+            "code": "# Set objective function to minimize total transportation cost\nmodel.setObjective(gp.quicksum(Price * Distance[i, j] * QuantityShipped[i, j]\n                               for i in range(numdepot) for j in range(numport)), gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "runtime_error",
+    "solver_output_status": "runtime_error",
+    "error_message": "Traceback (most recent call last):\n  File \"c:\\Users\\Simon\\Desktop\\Courses\\ECE 570\\ECE570_Project\\MyOptiMUS\\evaluator.py\", line 39, in run\n    exec(last_line, local_env, local_env)\n  File \"<string>\", line 1\n    numdepot = data[\"numdepot\"]\\nnumport = data[\"numport\"]\\nQuantityShipped = model.addVars(range(numdepot), range(numport), vtype=gp.GRB.CONTINUOUS, name='QuantityShipped')\n                                ^\nSyntaxError: unexpected character after line continuation character\n",
+    "obj_val": null,
+    "log_path": "logs/log_20250413102914_nlp4lp_45/",
+    "problem_path": "data/nlp4lp/45/",
+    "prep_code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nlp4lp/45/data.json\", \"r\") as f:\n    data = json.load(f)\n"
+}

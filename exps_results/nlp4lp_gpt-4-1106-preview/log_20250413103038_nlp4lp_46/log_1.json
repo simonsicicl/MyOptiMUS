@@ -1,0 +1,181 @@
+{
+    "background": "A sports company produces multiple products using various raw materials. The amount of each raw material and the requirements for each product are known. Each product has an associated selling price, production cost, and market demand. The company aims to determine the number of each product to produce to maximize profit within the material limitations and market demand constraints.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of different raw materials",
+            "symbol": "N",
+            "value": "",
+            "shape": [],
+            "code": "N = data[\"N\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of different products",
+            "symbol": "M",
+            "value": "",
+            "shape": [],
+            "code": "M = data[\"M\"] # scalar parameter"
+        },
+        {
+            "definition": "Amount of raw material i available",
+            "symbol": "Available",
+            "value": "",
+            "shape": [
+                "N"
+            ],
+            "code": "Available = np.array(data[\"Available\"]) # ['N']"
+        },
+        {
+            "definition": "Amount of raw material i required to produce one unit of product j",
+            "symbol": "Requirements",
+            "value": "",
+            "shape": [
+                "N",
+                "M"
+            ],
+            "code": "Requirements = np.array(data[\"Requirements\"]) # ['N', 'M']"
+        },
+        {
+            "definition": "Price at which product j can be sold",
+            "symbol": "Prices",
+            "value": "",
+            "shape": [
+                "M"
+            ],
+            "code": "Prices = np.array(data[\"Prices\"]) # ['M']"
+        },
+        {
+            "definition": "Cost of producing one unit of product j",
+            "symbol": "Costs",
+            "value": "",
+            "shape": [
+                "M"
+            ],
+            "code": "Costs = np.array(data[\"Costs\"]) # ['M']"
+        },
+        {
+            "definition": "Demand for product j",
+            "symbol": "Demands",
+            "value": "",
+            "shape": [
+                "M"
+            ],
+            "code": "Demands = np.array(data[\"Demands\"]) # ['M']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "All products must be produced using available raw materials without exceeding their amounts",
+            "status": "coded",
+            "formulation": "\\sum_{j=1}^{M} \\textup{Requirements}_{ij} \\cdot X_j \\leq \\textup{Available}_i \\quad \\forall i \\in \\{1, ..., N\\}",
+            "related_variables": [
+                "X"
+            ],
+            "related_parameters": [
+                "Available",
+                "Requirements"
+            ],
+            "code": "# Raw materials usage constraint\nfor i in range(N):\n    model.addConstr(gp.quicksum(Requirements[i, j] * X[j] for j in range(M)) <= Available[i], name=f\"raw_material_usage_{i}\")"
+        },
+        {
+            "description": "Each product's production must not exceed the raw material requirements per unit",
+            "status": "coded",
+            "formulation": "\\sum_{j=1}^{M} \\textup{Requirements}_{ij} \\cdot \\textup{X}_{j} \\leq \\textup{Available}_{i} \\quad \\forall i \\in \\{1, ..., N\\}",
+            "related_variables": [
+                "X"
+            ],
+            "related_parameters": [
+                "N",
+                "M",
+                "Available",
+                "Requirements"
+            ],
+            "code": "# Each product's production must not exceed the raw material requirements per unit\nfor i in range(N):\n    model.addConstr(gp.quicksum(Requirements[i, j] * X[j] for j in range(M)) <= Available[i], name=f\"raw_material_requirements_{i}\")"
+        },
+        {
+            "description": "Each product's production should not exceed its market demand",
+            "status": "coded",
+            "formulation": "\\forall j \\in \\{1, \\dots, M\\}, \\quad \\textup{X}_{j} \\leq \\textup{Demands}_{j}",
+            "related_variables": [
+                "X"
+            ],
+            "related_parameters": [
+                "Demands"
+            ],
+            "code": "# Each product's production should not exceed its market demand\nfor j in range(M):\n    model.addConstr(X[j] <= Demands[j], name=f\"demand_limit_{j}\")"
+        },
+        {
+            "description": "The number of units produced of each product must be non-negative",
+            "status": "coded",
+            "formulation": "X_j \\geq 0 \\quad \\forall j \\in \\{1, 2, ..., M\\}",
+            "related_variables": [
+                "X"
+            ],
+            "related_parameters": [
+                "M"
+            ],
+            "code": "# Add non-negativity constraints for the number of units produced for each product\nfor j in range(M):\n    model.addConstr(X[j] >= 0, name=f\"nonnegativity_{j}\")"
+        },
+        {
+            "description": "Ensure that the production does not exceed the available amount of each raw material.",
+            "status": "coded",
+            "formulation": "\\sum_{j=1}^{M} \\textup{Requirements}_{i,j} \\times \\textup{X}_{j} \\leq \\textup{Available}_{i} \\quad \\forall i \\in \\{1, ..., N\\}",
+            "related_variables": [
+                "X"
+            ],
+            "related_parameters": [
+                "Requirements",
+                "Available",
+                "N",
+                "M"
+            ],
+            "code": "# Constraint: Production should not exceed available amount of raw materials\nfor i in range(N):\n    model.addConstr(gp.quicksum(Requirements[i, j] * X[j] for j in range(M)) <= Available[i], name=f\"raw_material_limit_{i}\")"
+        },
+        {
+            "description": "Ensure that the production does not exceed the market demands for each product.",
+            "status": "coded",
+            "formulation": "\\textup{X}_{j} \\leq \\textup{Demands}_{j} \\quad \\forall j \\in \\{1, ..., M\\}",
+            "related_variables": [
+                "X"
+            ],
+            "related_parameters": [
+                "Demands",
+                "M"
+            ],
+            "code": "# Ensure that the production does not exceed the market demands for each product\nfor j in range(M):\n    model.addConstr(X[j] <= Demands[j], name=f\"market_demand_{j}\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of units produced for product j",
+            "symbol": "X",
+            "shape": [
+                "M"
+            ],
+            "status": "coded",
+            "code": "X = model.addVars(M, vtype=gp.GRB.CONTINUOUS, name=\"X\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total profit by determining the number of units to produce for each product.",
+            "status": "coded",
+            "formulation": "\\max \\quad \\sum_{j=1}^{M} (\\textup{Prices}_{j} - \\textup{Costs}_{j}) \\times \\textup{X}_{j}",
+            "related_variables": [
+                "X"
+            ],
+            "related_parameters": [
+                "Prices",
+                "Costs",
+                "M"
+            ],
+            "code": "# Set objective\nmodel.setObjective(gp.quicksum((Prices[j] - Costs[j]) * X[j] for j in range(M)), gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413103038_nlp4lp_46/",
+    "problem_path": "data/nlp4lp/46/"
+}

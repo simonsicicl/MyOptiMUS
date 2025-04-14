@@ -1,0 +1,254 @@
+{
+    "background": "A science club has two tables for making slime, each using different quantities of powder and glue and producing different amounts of slime and mess. There is a limited supply of powder, glue, and a maximum mess tolerance.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Units of powder used at table 1",
+            "symbol": "Powder1",
+            "value": 3,
+            "shape": [],
+            "code": "Powder1 = data[\"Powder1\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of glue used at table 1",
+            "symbol": "Glue1",
+            "value": 5,
+            "shape": [],
+            "code": "Glue1 = data[\"Glue1\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of slime produced at table 1",
+            "symbol": "Slime1",
+            "value": 4,
+            "shape": [],
+            "code": "Slime1 = data[\"Slime1\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of powder used at table 2",
+            "symbol": "Powder2",
+            "value": 8,
+            "shape": [],
+            "code": "Powder2 = data[\"Powder2\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of glue used at table 2",
+            "symbol": "Glue2",
+            "value": 6,
+            "shape": [],
+            "code": "Glue2 = data[\"Glue2\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of slime produced at table 2",
+            "symbol": "Slime2",
+            "value": 5,
+            "shape": [],
+            "code": "Slime2 = data[\"Slime2\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of mess produced at table 1",
+            "symbol": "Mess1",
+            "value": 2,
+            "shape": [],
+            "code": "Mess1 = data[\"Mess1\"] # scalar parameter"
+        },
+        {
+            "definition": "Units of mess produced at table 2",
+            "symbol": "Mess2",
+            "value": 4,
+            "shape": [],
+            "code": "Mess2 = data[\"Mess2\"] # scalar parameter"
+        },
+        {
+            "definition": "Total available units of powder",
+            "symbol": "TotalPowder",
+            "value": 100,
+            "shape": [],
+            "code": "TotalPowder = data[\"TotalPowder\"] # scalar parameter"
+        },
+        {
+            "definition": "Total available units of glue",
+            "symbol": "TotalGlue",
+            "value": 90,
+            "shape": [],
+            "code": "TotalGlue = data[\"TotalGlue\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum allowable units of mess",
+            "symbol": "MaxMess",
+            "value": 30,
+            "shape": [],
+            "code": "MaxMess = data[\"MaxMess\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of setups for Table 1 must be non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{Table1Setups} \\\\geq 0",
+            "related_variables": [
+                "Table1Setups"
+            ],
+            "related_parameters": [],
+            "code": "# Since Table1Setups was defined as a continuous variable, it is already non-negative by default in Gurobi.\n# No additional constraint is needed."
+        },
+        {
+            "description": "The number of setups conducted at Table 2 must be non-negative.",
+            "status": "coded",
+            "formulation": "\\textup{Table2Setups} \\geq 0",
+            "related_variables": [
+                "Table2Setups"
+            ],
+            "related_parameters": [],
+            "code": "# The non-negativity of Table2Setups is inherent due to its default non-negative domain as a continuous variable,\n# so no constraint code is needed."
+        },
+        {
+            "description": "The total quantity of powder used by Table 1 and Table 2 must not exceed the total available powder.",
+            "status": "coded",
+            "formulation": "\\textup{Powder1} \\cdot \\textup{Table1Setups} + \\textup{Powder2} \\cdot \\textup{Table2Setups} \\leq \\textup{TotalPowder}",
+            "related_variables": [
+                "Table1Setups",
+                "Table2Setups"
+            ],
+            "related_parameters": [
+                "Powder1",
+                "Powder2",
+                "TotalPowder"
+            ],
+            "code": "# Add powder usage constraint\nmodel.addConstr(\n    Powder1 * Table1Setups + Powder2 * Table2Setups <= TotalPowder, \n    name=\"powder_usage_constraint\"\n)"
+        },
+        {
+            "description": "Total quantity of glue used by Table 1 and Table 2 does not exceed TotalGlue",
+            "status": "coded",
+            "formulation": "\\\\textup{Glue1} \\\\cdot \\\\textup{Table1Setups} + \\\\textup{Glue2} \\\\cdot \\\\textup{Table2Setups} \\\\leq \\\\textup{TotalGlue}",
+            "related_variables": [
+                "Table1Setups",
+                "Table2Setups"
+            ],
+            "related_parameters": [
+                "Glue1",
+                "Glue2",
+                "TotalGlue"
+            ],
+            "code": "# Add constraint for glue usage by Table 1 and Table 2\nmodel.addConstr(Glue1 * Table1Setups + Glue2 * Table2Setups <= TotalGlue, name=\"glue_usage_constraint\")"
+        },
+        {
+            "description": "The total mess produced by setups at Table 1 and Table 2 cannot exceed the allowable maximum mess (MaxMess).",
+            "status": "coded",
+            "formulation": "\\textup{Mess1} \\cdot \\textup{Table1Setups} + \\textup{Mess2} \\cdot \\textup{Table2Setups} \\leq \\textup{MaxMess}",
+            "related_variables": [
+                "Table1Setups",
+                "Table2Setups"
+            ],
+            "related_parameters": [
+                "Mess1",
+                "Mess2",
+                "MaxMess"
+            ],
+            "code": "# Add mess production constraint for tables\nmodel.addConstr(Mess1 * Table1Setups + Mess2 * Table2Setups <= MaxMess, name=\"mess_limit\")"
+        },
+        {
+            "description": "The total powder usage cannot exceed the available supply",
+            "status": "coded",
+            "formulation": "\\textup{Powder1} \\cdot \\textup{Table1Setups} + \\textup{Powder2} \\cdot \\textup{Table2Setups} \\leq \\textup{TotalPowder}",
+            "related_variables": [
+                "Table1Setups",
+                "Table2Setups"
+            ],
+            "related_parameters": [
+                "Powder1",
+                "Powder2",
+                "TotalPowder"
+            ],
+            "code": "# Add total powder usage constraint\nmodel.addConstr(Powder1 * Table1Setups + Powder2 * Table2Setups <= TotalPowder, name=\"total_powder_usage\")"
+        },
+        {
+            "description": "The total glue usage cannot exceed the available supply",
+            "status": "coded",
+            "formulation": "\\textup{Glue1} \\cdot \\textup{Table1Setups} + \\textup{Glue2} \\cdot \\textup{Table2Setups} \\leq \\textup{TotalGlue}",
+            "related_variables": [
+                "Table1Setups",
+                "Table2Setups"
+            ],
+            "related_parameters": [
+                "Glue1",
+                "Glue2",
+                "TotalGlue"
+            ],
+            "code": "# Add glue usage constraint\nmodel.addConstr(Glue1 * Table1Setups + Glue2 * Table2Setups <= TotalGlue, name=\"glue_usage_constraint\")"
+        },
+        {
+            "description": "The total mess produced cannot exceed the maximum allowable mess",
+            "status": "coded",
+            "formulation": "\\textup{Mess1} \\cdot \\textup{Table1Setups} + \\textup{Mess2} \\cdot \\textup{Table2Setups} \\leq \\textup{MaxMess}",
+            "related_variables": [
+                "Table1Setups",
+                "Table2Setups"
+            ],
+            "related_parameters": [
+                "Mess1",
+                "Mess2",
+                "MaxMess"
+            ],
+            "code": "# Add constraint to ensure total mess produced does not exceed the maximum allowable mess\nmodel.addConstr(Mess1 * Table1Setups + Mess2 * Table2Setups <= MaxMess, name=\"mess_limit\")"
+        },
+        {
+            "description": "The number of setups conducted at Table 1 must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{Table1Setups} \\geq 0",
+            "related_variables": [
+                "Table1Setups"
+            ],
+            "related_parameters": [],
+            "code": "# The non-negativity of Table1Setups is inherent due to its type being continuous and it starts as 0 by default.\n# No additional constraint is needed."
+        },
+        {
+            "description": "The number of setups conducted at Table 2 must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{Table2Setups} \\geq 0",
+            "related_variables": [
+                "Table2Setups"
+            ],
+            "related_parameters": [],
+            "code": "# The non-negativity of Table2Setups is inherent due to its type being CONTINUOUS in gurobipy\n# No additional code required to enforce the constraint: Table2Setups >= 0"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of setups conducted at Table 1.",
+            "symbol": "Table1Setups",
+            "shape": [],
+            "status": "coded",
+            "code": "Table1Setups = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"Table1Setups\")"
+        },
+        {
+            "definition": "The number of setups conducted at Table 2.",
+            "symbol": "Table2Setups",
+            "shape": [],
+            "status": "coded",
+            "code": "Table2Setups = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"Table2Setups\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Maximize the total amount of slime produced by both tables",
+            "status": "coded",
+            "formulation": "\\textup{Maximize:} \\\\quad Z = \\textup{Slime1} \\cdot \\textup{Table1Setups} + \\textup{Slime2} \\cdot \\textup{Table2Setups}",
+            "related_variables": [
+                "Table1Setups",
+                "Table2Setups"
+            ],
+            "related_parameters": [
+                "Slime1",
+                "Slime2"
+            ],
+            "code": "# Set objective\nmodel.setObjective(Slime1 * Table1Setups + Slime2 * Table2Setups, gp.GRB.MAXIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 60.0,
+    "log_path": "logs/log_20250413155349_nl4opt_prob_132/",
+    "problem_path": "data/nl4opt/prob_132/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_132/data.json\", \"r\") as f:\n    data = json.load(f)\n\nPowder1 = data[\"Powder1\"] # scalar parameter\nGlue1 = data[\"Glue1\"] # scalar parameter\nSlime1 = data[\"Slime1\"] # scalar parameter\nPowder2 = data[\"Powder2\"] # scalar parameter\nGlue2 = data[\"Glue2\"] # scalar parameter\nSlime2 = data[\"Slime2\"] # scalar parameter\nMess1 = data[\"Mess1\"] # scalar parameter\nMess2 = data[\"Mess2\"] # scalar parameter\nTotalPowder = data[\"TotalPowder\"] # scalar parameter\nTotalGlue = data[\"TotalGlue\"] # scalar parameter\nMaxMess = data[\"MaxMess\"] # scalar parameter\nTable1Setups = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"Table1Setups\")\nTable2Setups = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"Table2Setups\")\n\n# Since Table1Setups was defined as a continuous variable, it is already non-negative by default in Gurobi.\n# No additional constraint is needed.\n\n# The non-negativity of Table2Setups is inherent due to its default non-negative domain as a continuous variable,\n# so no constraint code is needed.\n\n# Add powder usage constraint\nmodel.addConstr(\n    Powder1 * Table1Setups + Powder2 * Table2Setups <= TotalPowder, \n    name=\"powder_usage_constraint\"\n)\n\n# Add constraint for glue usage by Table 1 and Table 2\nmodel.addConstr(Glue1 * Table1Setups + Glue2 * Table2Setups <= TotalGlue, name=\"glue_usage_constraint\")\n\n# Add mess production constraint for tables\nmodel.addConstr(Mess1 * Table1Setups + Mess2 * Table2Setups <= MaxMess, name=\"mess_limit\")\n\n# Add total powder usage constraint\nmodel.addConstr(Powder1 * Table1Setups + Powder2 * Table2Setups <= TotalPowder, name=\"total_powder_usage\")\n\n# Add glue usage constraint\nmodel.addConstr(Glue1 * Table1Setups + Glue2 * Table2Setups <= TotalGlue, name=\"glue_usage_constraint\")\n\n# Add constraint to ensure total mess produced does not exceed the maximum allowable mess\nmodel.addConstr(Mess1 * Table1Setups + Mess2 * Table2Setups <= MaxMess, name=\"mess_limit\")\n\n# The non-negativity of Table1Setups is inherent due to its type being continuous and it starts as 0 by default.\n# No additional constraint is needed.\n\n# The non-negativity of Table2Setups is inherent due to its type being CONTINUOUS in gurobipy\n# No additional code required to enforce the constraint: Table2Setups >= 0\n\n# Set objective\nmodel.setObjective(Slime1 * Table1Setups + Slime2 * Table2Setups, gp.GRB.MAXIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

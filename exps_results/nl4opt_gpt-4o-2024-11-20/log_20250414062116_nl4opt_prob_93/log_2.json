@@ -1,0 +1,166 @@
+{
+    "background": "A chemical plant is considering purchasing two types of generators, A and B, which produce hydrogen using different processes along with producing pollutants. The plant has a minimum hydrogen production requirement as well as a cap on the maximum pollutants allowed.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Hydrogen production of generator A",
+            "symbol": "HydrogenA",
+            "value": 40,
+            "shape": [],
+            "code": "HydrogenA = data[\"HydrogenA\"] # scalar parameter"
+        },
+        {
+            "definition": "Pollutants production of generator A",
+            "symbol": "PollutantsA",
+            "value": 300,
+            "shape": [],
+            "code": "PollutantsA = data[\"PollutantsA\"] # scalar parameter"
+        },
+        {
+            "definition": "Hydrogen production of generator B",
+            "symbol": "HydrogenB",
+            "value": 30,
+            "shape": [],
+            "code": "HydrogenB = data[\"HydrogenB\"] # scalar parameter"
+        },
+        {
+            "definition": "Pollutants production of generator B",
+            "symbol": "PollutantsB",
+            "value": 200,
+            "shape": [],
+            "code": "PollutantsB = data[\"PollutantsB\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum daily hydrogen production required",
+            "symbol": "MinHydrogen",
+            "value": 1000,
+            "shape": [],
+            "code": "MinHydrogen = data[\"MinHydrogen\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum allowed daily pollutant production",
+            "symbol": "MaxPollutants",
+            "value": 3000,
+            "shape": [],
+            "code": "MaxPollutants = data[\"MaxPollutants\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of generator A must be non-negative.",
+            "status": "coded",
+            "formulation": "\\\\textup{NumGeneratorA} \\\\geq 0",
+            "related_variables": [
+                "NumGeneratorA"
+            ],
+            "related_parameters": [],
+            "code": "# The variable \"NumGeneratorA\" already has a non-negative domain by default in Gurobi as it is declared as CONTINUOUS.\n# No additional constraint is needed for this requirement."
+        },
+        {
+            "description": "The quantity of generator B must be non-negative, ensuring feasibility in the optimization problem.",
+            "status": "coded",
+            "formulation": "\\textup{NumGeneratorB} \\geq 0",
+            "related_variables": [
+                "NumGeneratorB"
+            ],
+            "related_parameters": [],
+            "code": "# No code is needed; the non-negativity constraint is automatically ensured due to the default non-negative domain of continuous variables in Gurobi."
+        },
+        {
+            "description": "The total hydrogen production must be at least the minimum required hydrogen production (MinHydrogen).",
+            "status": "coded",
+            "formulation": "\\textup{HydrogenA} \\\\cdot \\textup{NumGeneratorA} + \\textup{HydrogenB} \\\\cdot \\textup{NumGeneratorB} \\geq \\textup{MinHydrogen}",
+            "related_variables": [
+                "NumGeneratorA",
+                "NumGeneratorB"
+            ],
+            "related_parameters": [
+                "HydrogenA",
+                "HydrogenB",
+                "MinHydrogen"
+            ],
+            "code": "# Add minimum hydrogen production constraint\nmodel.addConstr(\n    HydrogenA * NumGeneratorA + HydrogenB * NumGeneratorB >= MinHydrogen,\n    name=\"min_hydrogen_production\"\n)"
+        },
+        {
+            "description": "The total pollutants produced by generators of type A and B must not exceed MaxPollutants.",
+            "status": "coded",
+            "formulation": "\\\\textup{NumGeneratorA} \\\\cdot \\\\textup{PollutantsA} + \\\\textup{NumGeneratorB} \\\\cdot \\\\textup{PollutantsB} \\\\leq \\\\textup{MaxPollutants}",
+            "related_variables": [
+                "NumGeneratorA",
+                "NumGeneratorB"
+            ],
+            "related_parameters": [
+                "PollutantsA",
+                "PollutantsB",
+                "MaxPollutants"
+            ],
+            "code": "# Add constraint ensuring total pollutants from generators A and B do not exceed MaxPollutants\nmodel.addConstr(NumGeneratorA * PollutantsA + NumGeneratorB * PollutantsB <= MaxPollutants, name=\"pollutants_limit\")"
+        },
+        {
+            "description": "The total hydrogen produced must meet the minimum requirement.",
+            "status": "coded",
+            "formulation": "(\\textup{HydrogenA} \\cdot \\textup{NumGeneratorA}) + (\\textup{HydrogenB} \\cdot \\textup{NumGeneratorB}) \\geq \\textup{MinHydrogen}",
+            "related_variables": [
+                "NumGeneratorA",
+                "NumGeneratorB"
+            ],
+            "related_parameters": [
+                "HydrogenA",
+                "HydrogenB",
+                "MinHydrogen"
+            ],
+            "code": "# Add constraint to ensure total hydrogen produced meets the minimum requirement\nmodel.addConstr((HydrogenA * NumGeneratorA) + (HydrogenB * NumGeneratorB) >= MinHydrogen, name=\"min_hydrogen_requirement\")"
+        },
+        {
+            "description": "The total pollutants produced must not exceed the allowed maximum.",
+            "status": "coded",
+            "formulation": "(\\textup{PollutantsA} \\cdot \\textup{NumGeneratorA}) + (\\textup{PollutantsB} \\cdot \\textup{NumGeneratorB}) \\leq \\textup{MaxPollutants}",
+            "related_variables": [
+                "NumGeneratorA",
+                "NumGeneratorB"
+            ],
+            "related_parameters": [
+                "PollutantsA",
+                "PollutantsB",
+                "MaxPollutants"
+            ],
+            "code": "# Add total pollutant constraint\nmodel.addConstr((PollutantsA * NumGeneratorA) + (PollutantsB * NumGeneratorB) <= MaxPollutants, name=\"total_pollutants_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of generators of type A purchased",
+            "symbol": "NumGeneratorA",
+            "shape": [],
+            "status": "coded",
+            "code": "NumGeneratorA = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumGeneratorA\")"
+        },
+        {
+            "definition": "The number of generators of type B purchased",
+            "symbol": "NumGeneratorB",
+            "shape": [],
+            "status": "coded",
+            "code": "NumGeneratorB = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumGeneratorB\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of generators A and B purchased.",
+            "status": "coded",
+            "formulation": "\\textup{Minimize:} \\\\ \\textup{NumGeneratorA} + \\textup{NumGeneratorB}",
+            "related_variables": [
+                "NumGeneratorA",
+                "NumGeneratorB"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(NumGeneratorA + NumGeneratorB, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 3,
+    "error_message": null,
+    "obj_val": "infeasible",
+    "log_path": "logs/log_20250414062116_nl4opt_prob_93/",
+    "problem_path": "data/nl4opt/prob_93/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_93/data.json\", \"r\") as f:\n    data = json.load(f)\n\nHydrogenA = data[\"HydrogenA\"] # scalar parameter\nPollutantsA = data[\"PollutantsA\"] # scalar parameter\nHydrogenB = data[\"HydrogenB\"] # scalar parameter\nPollutantsB = data[\"PollutantsB\"] # scalar parameter\nMinHydrogen = data[\"MinHydrogen\"] # scalar parameter\nMaxPollutants = data[\"MaxPollutants\"] # scalar parameter\nNumGeneratorA = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumGeneratorA\")\nNumGeneratorB = model.addVar(vtype=gp.GRB.CONTINUOUS, name=\"NumGeneratorB\")\n\n# The variable \"NumGeneratorA\" already has a non-negative domain by default in Gurobi as it is declared as CONTINUOUS.\n# No additional constraint is needed for this requirement.\n\n# No code is needed; the non-negativity constraint is automatically ensured due to the default non-negative domain of continuous variables in Gurobi.\n\n# Add minimum hydrogen production constraint\nmodel.addConstr(\n    HydrogenA * NumGeneratorA + HydrogenB * NumGeneratorB >= MinHydrogen,\n    name=\"min_hydrogen_production\"\n)\n\n# Add constraint ensuring total pollutants from generators A and B do not exceed MaxPollutants\nmodel.addConstr(NumGeneratorA * PollutantsA + NumGeneratorB * PollutantsB <= MaxPollutants, name=\"pollutants_limit\")\n\n# Add constraint to ensure total hydrogen produced meets the minimum requirement\nmodel.addConstr((HydrogenA * NumGeneratorA) + (HydrogenB * NumGeneratorB) >= MinHydrogen, name=\"min_hydrogen_requirement\")\n\n# Add total pollutant constraint\nmodel.addConstr((PollutantsA * NumGeneratorA) + (PollutantsB * NumGeneratorB) <= MaxPollutants, name=\"total_pollutants_constraint\")\n\n# Set objective\nmodel.setObjective(NumGeneratorA + NumGeneratorB, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

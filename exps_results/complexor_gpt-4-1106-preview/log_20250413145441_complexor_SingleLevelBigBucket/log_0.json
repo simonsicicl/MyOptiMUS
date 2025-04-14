@@ -1,0 +1,292 @@
+{
+    "background": "Lot-sizing problems involve planning production across predefined periods with events such as orders or machine set-ups affecting costs and capacity where each item's demand, production capacity, and costs vary by period.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "symbol": "NumItems",
+            "definition": "The number of distinct items",
+            "shape": [],
+            "code": "NumItems = data[\"NumItems\"] # scalar parameter"
+        },
+        {
+            "symbol": "NumPeriods",
+            "definition": "The number of predefined periods",
+            "shape": [],
+            "code": "NumPeriods = data[\"NumPeriods\"] # scalar parameter"
+        },
+        {
+            "symbol": "Demand",
+            "definition": "The demand for each item across each period",
+            "shape": [
+                "NumItems",
+                "NumPeriods"
+            ],
+            "code": "Demand = np.array(data[\"Demand\"]) # ['NumItems', 'NumPeriods']"
+        },
+        {
+            "symbol": "TotalPeriodCapacity",
+            "definition": "The total production capacity available in each period",
+            "shape": [
+                "NumPeriods"
+            ],
+            "code": "TotalPeriodCapacity = np.array(data[\"TotalPeriodCapacity\"]) # ['NumPeriods']"
+        },
+        {
+            "symbol": "ItemCapacity",
+            "definition": "The specific production capacity of each item",
+            "shape": [
+                "NumItems",
+                "NumPeriods"
+            ],
+            "code": "ItemCapacity = np.array(data[\"ItemCapacity\"]) # ['NumItems', 'NumPeriods']"
+        },
+        {
+            "symbol": "HoldingCost",
+            "definition": "The holding cost for each item",
+            "shape": [
+                "NumItems"
+            ],
+            "code": "HoldingCost = np.array(data[\"HoldingCost\"]) # ['NumItems']"
+        },
+        {
+            "symbol": "BackorderCost",
+            "definition": "The backorder cost for each item",
+            "shape": [
+                "NumItems"
+            ],
+            "code": "BackorderCost = np.array(data[\"BackorderCost\"]) # ['NumItems']"
+        },
+        {
+            "symbol": "FixedCost",
+            "definition": "The fixed order cost for each item",
+            "shape": [
+                "NumItems"
+            ],
+            "code": "FixedCost = np.array(data[\"FixedCost\"]) # ['NumItems']"
+        },
+        {
+            "symbol": "InitialStock",
+            "definition": "The initial stock for each item",
+            "shape": [
+                "NumItems"
+            ],
+            "code": "InitialStock = np.array(data[\"InitialStock\"]) # ['NumItems']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of items produced in each period must meet the demand",
+            "status": "formulated",
+            "formulation": "\\forall i \\in \\{1, \\ldots, \\textup{NumItems}\\}, \\forall t \\in \\{1, \\ldots, \\textup{NumPeriods}\\} : \\quad \\textup{Production}_{it} \\geq \\textup{Demand}_{it}",
+            "related_variables": [
+                "Production"
+            ],
+            "related_parameters": [
+                "Demand"
+            ]
+        },
+        {
+            "description": "Total production for all items must not exceed the available capacity for each period",
+            "status": "formulated",
+            "formulation": "\\sum_{i=1}^{\\textup{NumItems}} \\textup{Production}_{i,t} \\leq \\textup{TotalPeriodCapacity}_t \\quad \\forall t \\in \\{1, \\ldots, \\textup{NumPeriods}\\}",
+            "related_variables": [
+                "Production"
+            ],
+            "related_parameters": [
+                "TotalPeriodCapacity",
+                "NumItems",
+                "NumPeriods"
+            ]
+        },
+        {
+            "description": "Each item's production should not exceed its specific capacity that might decrease in each period.",
+            "status": "formulated",
+            "formulation": "\\forall i \\in \\{1, ..., \\textup{NumItems}\\},\\quad \\forall t \\in \\{1, ..., \\textup{NumPeriods}\\},\\quad \\textup{Production}_{i,t} \\leq \\textup{ItemCapacity}_{i,t}",
+            "related_variables": [
+                "Production"
+            ],
+            "related_parameters": [
+                "NumItems",
+                "NumPeriods",
+                "ItemCapacity"
+            ]
+        },
+        {
+            "description": "Production amounts, initial stock, and holding costs for each item are non-negative",
+            "status": "formulated",
+            "formulation": "\\forall i \\in [1, \\textup{NumItems}], t \\in [1, \\textup{NumPeriods}]: \\quad \\textup{Production}_{it} \\geq 0 \\\\ \\forall i \\in [1, \\textup{NumItems}]: \\quad \\textup{InitialStock}_i \\geq 0 \\\\ \\forall i \\in [1, \\textup{NumItems}]: \\quad \\textup{HoldingCost}_i \\geq 0",
+            "related_variables": [
+                "Production"
+            ],
+            "related_parameters": [
+                "NumItems",
+                "NumPeriods",
+                "InitialStock",
+                "HoldingCost"
+            ]
+        },
+        {
+            "description": "Backorder costs and fixed order costs for each item are non-negative",
+            "status": "formulated",
+            "formulation": "\\forall i \\in \\{1, ..., \\textup{NumItems}\\}, \\quad \\textup{BackorderCost}_i \\geq 0 \\quad \\text{and} \\quad \\textup{FixedCost}_i \\geq 0",
+            "related_variables": [],
+            "related_parameters": [
+                "BackorderCost",
+                "FixedCost"
+            ]
+        },
+        {
+            "description": "Holding costs for unsold stock are incurred in subsequent periods",
+            "status": "formulated",
+            "formulation": "\\textup{Inventory}_{i,t} = \\textup{Inventory}_{i,t-1} + \\textup{Production}_{i, t} - \\textup{Demand}_{i, t} \\quad \\forall i \\in \\{1, ..., \\textup{NumItems}\\}, \\forall t \\in \\{2, ..., \\textup{NumPeriods}\\}",
+            "related_variables": [
+                "Inventory",
+                "Production"
+            ],
+            "related_parameters": [
+                "Demand",
+                "NumItems",
+                "NumPeriods"
+            ]
+        },
+        {
+            "description": "Ensure that production plus inventory, minus any backorder from the previous period, meets or exceeds demand for each period. Any shortfall is represented as backorder for the current period.",
+            "status": "formulated",
+            "formulation": "\\textup{Production}_{i,t} + \\textup{Inventory}_{i,t-1} - \\textup{Backorder}_{i,t-1} \\geq \\textup{Demand}_{i,t} - \\textup{Backorder}_{i,t} \\quad \\forall i \\in [1, \\textup{NumItems}], \\quad t \\in [2, \\textup{NumPeriods}] \\\\ \\textup{Production}_{i,1} + \\textup{InitialStock}_{i} \\geq \\textup{Demand}_{i,1} - \\textup{Backorder}_{i,1} \\quad \\forall i \\in [1, \\textup{NumItems}]",
+            "related_variables": [
+                "Production",
+                "Inventory",
+                "Backorder"
+            ],
+            "related_parameters": [
+                "Demand",
+                "InitialStock",
+                "NumItems",
+                "NumPeriods"
+            ]
+        },
+        {
+            "description": "Fixed cost is incurred if an order is placed or a machine is set-up or changed over in a period for an item",
+            "status": "formulated",
+            "formulation": "\\textup{FixedCostIncurred}_{ij} \\geq \\textup{Production}_{ij}; \\quad \\forall i \\in \\textup{NumItems}, j \\in \\textup{NumPeriods}",
+            "related_variables": [
+                "Production",
+                "FixedCostIncurred"
+            ],
+            "related_parameters": [
+                "FixedCost"
+            ]
+        },
+        {
+            "description": "Initial inventory balance for the first period",
+            "status": "formulated",
+            "formulation": "\\textup{Inventory}_{i,1} = \\textup{InitialStock}_{i} + \\textup{Production}_{i, 1} - \\textup{Demand}_{i, 1} \\quad \\forall i \\in \\{1, ..., \\textup{NumItems}\\}",
+            "related_variables": [
+                "Inventory",
+                "Production"
+            ],
+            "related_parameters": [
+                "InitialStock",
+                "Demand",
+                "NumItems"
+            ]
+        },
+        {
+            "description": "Binary variable indicating if an order is placed or a machine is set-up or changed over in a period for an item",
+            "status": "formulated",
+            "formulation": "\\textup{FixedCostIncurred}_{ij} \\geq 0; \\quad \\textup{FixedCostIncurred}_{ij} \\leq 1; \\quad \\textup{FixedCostIncurred}_{ij} \\in \\{0,1\\}; \\quad \\forall i \\in \\textup{NumItems}, j \\in \\textup{NumPeriods}",
+            "related_variables": [
+                "FixedCostIncurred"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "The inventory at the end of each period must equal the inventory at the beginning of the period plus production minus demand and backordered items carried forward.",
+            "status": "formulated",
+            "formulation": "\\textup{Inventory}_{it} = (\\textup{Inventory}_{i,t-1} + \\textup{Production}_{it} - \\textup{Demand}_{it} + \\textup{Backorder}_{it}) \\quad \\forall i \\in \\{1, ..., \\textup{NumItems}\\}, t \\in \\{2, ..., \\textup{NumPeriods}\\}",
+            "related_variables": [
+                "Inventory",
+                "Production",
+                "Demand",
+                "Backorder"
+            ],
+            "related_parameters": []
+        },
+        {
+            "description": "The initial inventory must take into account the initial stock for each item.",
+            "status": "formulated",
+            "formulation": "\\textup{Inventory}_{i1} = \\textup{InitialStock}_i + \\textup{Production}_{i1} - \\textup{Demand}_{i1} + \\textup{Backorder}_{i1} \\quad \\forall i \\in \\{1, ..., \\textup{NumItems}\\}",
+            "related_variables": [
+                "Inventory",
+                "InitialStock",
+                "Production",
+                "Demand",
+                "Backorder"
+            ],
+            "related_parameters": [
+                "InitialStock"
+            ]
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of each item produced in each period",
+            "symbol": "Production",
+            "shape": [
+                "NumItems",
+                "NumPeriods"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "Inventory level of each item at the end of each period",
+            "symbol": "Inventory",
+            "shape": [
+                "NumItems",
+                "NumPeriods"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "The backordered quantity of each item in each period",
+            "symbol": "Backorder",
+            "shape": [
+                "NumItems",
+                "NumPeriods"
+            ],
+            "status": "formulated"
+        },
+        {
+            "definition": "Binary variable indicating if an order is placed or a machine is set-up or changed over in a period for an item",
+            "symbol": "FixedCostIncurred",
+            "shape": [
+                "NumItems",
+                "NumPeriods"
+            ],
+            "status": "formulated"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total cost of production including holding costs, backorder costs, and fixed order costs",
+            "status": "formulated",
+            "formulation": "\\sum_{i=1}^{\\textup{NumItems}} \\sum_{t=1}^{\\textup{NumPeriods}} (\\textup{HoldingCost}_i \\cdot \\textup{Inventory}_{it} + \\textup{BackorderCost}_i \\cdot \\textup{Backorder}_{it} + \\textup{FixedCost}_i \\cdot \\textup{FixedCostIncurred}_{it})",
+            "related_variables": [
+                "Inventory",
+                "Backorder",
+                "FixedCostIncurred"
+            ],
+            "related_parameters": [
+                "HoldingCost",
+                "BackorderCost",
+                "FixedCost"
+            ]
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413145441_complexor_SingleLevelBigBucket/",
+    "problem_path": "data/complexor/SingleLevelBigBucket/"
+}

@@ -1,0 +1,199 @@
+{
+    "background": "A singer plans to hold pop and R&B concerts with constraints on audience numbers, practice days, and a preference for pop concerts.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of audience members per pop concert",
+            "symbol": "PopAudience",
+            "value": 100,
+            "shape": [],
+            "code": "PopAudience = data[\"PopAudience\"] # scalar parameter"
+        },
+        {
+            "definition": "Practice days required for one pop concert",
+            "symbol": "PopPracticeDays",
+            "value": 2,
+            "shape": [],
+            "code": "PopPracticeDays = data[\"PopPracticeDays\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of audience members per R&B concert",
+            "symbol": "RbAudience",
+            "value": 240,
+            "shape": [],
+            "code": "RbAudience = data[\"RbAudience\"] # scalar parameter"
+        },
+        {
+            "definition": "Practice days required for one R&B concert",
+            "symbol": "RbPracticeDays",
+            "value": 4,
+            "shape": [],
+            "code": "RbPracticeDays = data[\"RbPracticeDays\"] # scalar parameter"
+        },
+        {
+            "definition": "Minimum total number of audience members required",
+            "symbol": "MinAudience",
+            "value": 10000,
+            "shape": [],
+            "code": "MinAudience = data[\"MinAudience\"] # scalar parameter"
+        },
+        {
+            "definition": "Total available practice days",
+            "symbol": "AvailablePracticeDays",
+            "value": 180,
+            "shape": [],
+            "code": "AvailablePracticeDays = data[\"AvailablePracticeDays\"] # scalar parameter"
+        },
+        {
+            "definition": "Maximum proportion of R&B concerts",
+            "symbol": "MaxRbConcertsProportion",
+            "value": 0.4,
+            "shape": [],
+            "code": "MaxRbConcertsProportion = data[\"MaxRbConcertsProportion\"] # scalar parameter"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The number of pop concerts must be non-negative",
+            "status": "coded",
+            "formulation": "\\textup{PopConcerts} \\geq 0",
+            "related_variables": [
+                "PopConcerts"
+            ],
+            "related_parameters": [],
+            "code": "model.addConstr(PopConcerts >= 0, \"pop_concerts_nonnegativity\")"
+        },
+        {
+            "description": "The number of R&B concerts must be non-negative",
+            "status": "coded",
+            "formulation": "RbConcerts \\geq 0",
+            "related_variables": [
+                "RbConcerts"
+            ],
+            "related_parameters": [],
+            "code": "# Add non-negativity constraint for the number of R&B concerts\nmodel.addConstr(RbConcerts >= 0, name=\"RbConcerts_nonnegativity\")"
+        },
+        {
+            "description": "The total audience from pop concerts and R&B concerts must meet the minimum requirement",
+            "status": "coded",
+            "formulation": "\\textup{PopConcerts} \\cdot \\textup{PopAudience} + \\textup{RbConcerts} \\cdot \\textup{RbAudience} \\geq \\textup{MinAudience}",
+            "related_variables": [
+                "PopConcerts",
+                "RbConcerts"
+            ],
+            "related_parameters": [
+                "PopAudience",
+                "RbAudience",
+                "MinAudience"
+            ],
+            "code": "# Total audience constraint for pop and R&B concerts\nmodel.addConstr(PopConcerts * PopAudience + RbConcerts * RbAudience >= MinAudience, name=\"min_audience_requirement\")"
+        },
+        {
+            "description": "Total practice days for pop concerts and R&B concerts must not exceed AvailablePracticeDays",
+            "status": "coded",
+            "formulation": "\\textup{PopConcerts} \\times \\textup{PopPracticeDays} + \\textup{RbConcerts} \\times \\textup{RbPracticeDays} \\leq \\textup{AvailablePracticeDays}",
+            "related_variables": [
+                "PopConcerts",
+                "RbConcerts"
+            ],
+            "related_parameters": [
+                "PopPracticeDays",
+                "RbPracticeDays",
+                "AvailablePracticeDays"
+            ],
+            "code": "# Constraint: Total practice days for pop concerts and R&B concerts must not exceed AvailablePracticeDays\nmodel.addConstr(PopConcerts * PopPracticeDays + RbConcerts * RbPracticeDays <= AvailablePracticeDays, \"PracticeDaysLimit\")"
+        },
+        {
+            "description": "The number of R&B concerts cannot exceed MaxRbConcertsProportion times the total number of concerts",
+            "status": "coded",
+            "formulation": "\\textup{RbConcerts} \\leq \\textup{MaxRbConcertsProportion} \\cdot (\\textup{PopConcerts} + \\textup{RbConcerts})",
+            "related_variables": [
+                "PopConcerts",
+                "RbConcerts"
+            ],
+            "related_parameters": [
+                "MaxRbConcertsProportion"
+            ],
+            "code": "# Add constraint for the number of R&B concerts not to exceed the maximum proportion allowed\nmodel.addConstr(RbConcerts <= MaxRbConcertsProportion * (PopConcerts + RbConcerts), name=\"max_rb_concerts_proportion\")"
+        },
+        {
+            "description": "The total number of audience members from both types of concerts should be at least the minimum required",
+            "status": "coded",
+            "formulation": "\\textup{PopConcerts} \\cdot \\textup{PopAudience} + \\textup{RbConcerts} \\cdot \\textup{RbAudience} \\geq \\textup{MinAudience}",
+            "related_variables": [
+                "PopConcerts",
+                "RbConcerts"
+            ],
+            "related_parameters": [
+                "PopAudience",
+                "RbAudience",
+                "MinAudience"
+            ],
+            "code": "# Constraint: The total number of audience members from both types of concerts should be at least the minimum required\nmodel.addConstr(PopConcerts * PopAudience + RbConcerts * RbAudience >= MinAudience, name=\"min_audience_requirement\")"
+        },
+        {
+            "description": "The total practice days for all concerts must not exceed the available practice days",
+            "status": "coded",
+            "formulation": "\\textup{PopConcerts} \\cdot \\textup{PopPracticeDays} + \\textup{RbConcerts} \\cdot \\textup{RbPracticeDays} \\leq \\textup{AvailablePracticeDays}",
+            "related_variables": [
+                "PopConcerts",
+                "RbConcerts"
+            ],
+            "related_parameters": [
+                "PopPracticeDays",
+                "RbPracticeDays",
+                "AvailablePracticeDays"
+            ],
+            "code": "# Add constraint for total practice days for all concerts not to exceed available practice days\nmodel.addConstr(PopConcerts * PopPracticeDays + RbConcerts * RbPracticeDays <= AvailablePracticeDays, name=\"practice_days_limit\")"
+        },
+        {
+            "description": "The number of R&B concerts cannot exceed the maximum proportion allowed of the total concerts held",
+            "status": "coded",
+            "formulation": "\\textup{RbConcerts} \\leq \\textup{MaxRbConcertsProportion} \\cdot (\\textup{PopConcerts} + \\textup{RbConcerts})",
+            "related_variables": [
+                "PopConcerts",
+                "RbConcerts"
+            ],
+            "related_parameters": [
+                "MaxRbConcertsProportion"
+            ],
+            "code": "# The number of R&B concerts cannot exceed the maximum proportion allowed of the total concerts held\nmodel.addConstr(RbConcerts <= MaxRbConcertsProportion * (PopConcerts + RbConcerts), \"RbConcerts_proportion_constraint\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "The number of pop concerts the singer holds",
+            "symbol": "PopConcerts",
+            "shape": [],
+            "status": "coded",
+            "code": "PopConcerts = model.addVar(vtype=gp.GRB.INTEGER, name=\"PopConcerts\")"
+        },
+        {
+            "definition": "The number of R&B concerts the singer holds",
+            "symbol": "RbConcerts",
+            "shape": [],
+            "status": "coded",
+            "code": "RbConcerts = model.addVar(vtype=gp.GRB.INTEGER, name=\"RbConcerts\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the total number of pop and R&B concerts",
+            "status": "coded",
+            "formulation": "\\textup{Minimize: } \\textup{PopConcerts} + \\textup{RbConcerts}",
+            "related_variables": [
+                "PopConcerts",
+                "RbConcerts"
+            ],
+            "related_parameters": [],
+            "code": "# Set objective\nmodel.setObjective(PopConcerts + RbConcerts, gp.GRB.MINIMIZE)"
+        }
+    ],
+    "solution_status": "solved",
+    "solver_output_status": 2,
+    "error_message": null,
+    "obj_val": 65.0,
+    "log_path": "logs/log_20250413165454_nl4opt_prob_237/",
+    "problem_path": "data/nl4opt/prob_237/",
+    "code": "import json\nimport numpy as np\nimport math\n\nimport gurobipy as gp\n\n# Define model\nmodel = gp.Model('model')\n\nwith open(\"data/nl4opt/prob_237/data.json\", \"r\") as f:\n    data = json.load(f)\n\nPopAudience = data[\"PopAudience\"] # scalar parameter\nPopPracticeDays = data[\"PopPracticeDays\"] # scalar parameter\nRbAudience = data[\"RbAudience\"] # scalar parameter\nRbPracticeDays = data[\"RbPracticeDays\"] # scalar parameter\nMinAudience = data[\"MinAudience\"] # scalar parameter\nAvailablePracticeDays = data[\"AvailablePracticeDays\"] # scalar parameter\nMaxRbConcertsProportion = data[\"MaxRbConcertsProportion\"] # scalar parameter\nPopConcerts = model.addVar(vtype=gp.GRB.INTEGER, name=\"PopConcerts\")\nRbConcerts = model.addVar(vtype=gp.GRB.INTEGER, name=\"RbConcerts\")\n\nmodel.addConstr(PopConcerts >= 0, \"pop_concerts_nonnegativity\")\n\n# Add non-negativity constraint for the number of R&B concerts\nmodel.addConstr(RbConcerts >= 0, name=\"RbConcerts_nonnegativity\")\n\n# Total audience constraint for pop and R&B concerts\nmodel.addConstr(PopConcerts * PopAudience + RbConcerts * RbAudience >= MinAudience, name=\"min_audience_requirement\")\n\n# Constraint: Total practice days for pop concerts and R&B concerts must not exceed AvailablePracticeDays\nmodel.addConstr(PopConcerts * PopPracticeDays + RbConcerts * RbPracticeDays <= AvailablePracticeDays, \"PracticeDaysLimit\")\n\n# Add constraint for the number of R&B concerts not to exceed the maximum proportion allowed\nmodel.addConstr(RbConcerts <= MaxRbConcertsProportion * (PopConcerts + RbConcerts), name=\"max_rb_concerts_proportion\")\n\n# Constraint: The total number of audience members from both types of concerts should be at least the minimum required\nmodel.addConstr(PopConcerts * PopAudience + RbConcerts * RbAudience >= MinAudience, name=\"min_audience_requirement\")\n\n# Add constraint for total practice days for all concerts not to exceed available practice days\nmodel.addConstr(PopConcerts * PopPracticeDays + RbConcerts * RbPracticeDays <= AvailablePracticeDays, name=\"practice_days_limit\")\n\n# The number of R&B concerts cannot exceed the maximum proportion allowed of the total concerts held\nmodel.addConstr(RbConcerts <= MaxRbConcertsProportion * (PopConcerts + RbConcerts), \"RbConcerts_proportion_constraint\")\n\n# Set objective\nmodel.setObjective(PopConcerts + RbConcerts, gp.GRB.MINIMIZE)\n\n# Optimize model\nmodel.optimize()\n\n\n# Get model status\nstatus = model.status\n\nobj_val = None\n# check whether the model is infeasible, has infinite solutions, or has an optimal solution\nif status == gp.GRB.INFEASIBLE:\n    obj_val = \"infeasible\"\nelif status == gp.GRB.INF_OR_UNBD:\n    obj_val = \"infeasible or unbounded\"\nelif status == gp.GRB.UNBOUNDED:\n    obj_val = \"unbounded\"\nelif status == gp.GRB.OPTIMAL:\n    obj_val = model.objVal\n"
+}

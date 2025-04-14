@@ -1,0 +1,237 @@
+{
+    "background": "The company aims to minimize costs while managing different categories of requirements, each with varying strengths, costs associated with waste, and number of recruits.",
+    "problem_type": "LP",
+    "parameters": [
+        {
+            "definition": "Number of requirements categories",
+            "symbol": "K",
+            "value": "",
+            "shape": [],
+            "code": "K = data[\"K\"] # scalar parameter"
+        },
+        {
+            "definition": "Number of different requirements",
+            "symbol": "I",
+            "value": "",
+            "shape": [],
+            "code": "I = data[\"I\"] # scalar parameter"
+        },
+        {
+            "definition": "Strength of each requirement category",
+            "symbol": "Strength",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "Strength = np.array(data[\"Strength\"]) # ['K']"
+        },
+        {
+            "definition": "Cost reduction per unit less waste in each category",
+            "symbol": "LessOneWaste",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "LessOneWaste = np.array(data[\"LessOneWaste\"]) # ['K']"
+        },
+        {
+            "definition": "Additional cost per unit more waste in each category",
+            "symbol": "MoreOneWaste",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "MoreOneWaste = np.array(data[\"MoreOneWaste\"]) # ['K']"
+        },
+        {
+            "definition": "Number of recruits in each category",
+            "symbol": "Recruit",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "Recruit = np.array(data[\"Recruit\"]) # ['K']"
+        },
+        {
+            "definition": "Cost of redundancy per recruit in each category",
+            "symbol": "CostRedundancy",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "CostRedundancy = np.array(data[\"CostRedundancy\"]) # ['K']"
+        },
+        {
+            "definition": "Number of over-managed categories allowed",
+            "symbol": "NumOverman",
+            "value": "",
+            "shape": [],
+            "code": "NumOverman = data[\"NumOverman\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost of over-managing in each category",
+            "symbol": "CostOverman",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "CostOverman = np.array(data[\"CostOverman\"]) # ['K']"
+        },
+        {
+            "definition": "Number of short-work categories allowed",
+            "symbol": "NumShortwork",
+            "value": "",
+            "shape": [],
+            "code": "NumShortwork = data[\"NumShortwork\"] # scalar parameter"
+        },
+        {
+            "definition": "Cost of short-work in each category",
+            "symbol": "CostShort",
+            "value": "",
+            "shape": [
+                "K"
+            ],
+            "code": "CostShort = np.array(data[\"CostShort\"]) # ['K']"
+        }
+    ],
+    "constraints": [
+        {
+            "description": "The total number of over-managed categories must be less than or equal to the allowed maximum number of over-managed categories.",
+            "status": "coded",
+            "formulation": "\\sum_{k=1}^{\\textup{K}} \\textup{OverManagedCategory}_k \\leq \\textup{NumOverman}",
+            "related_variables": [
+                "OverManagedCategory"
+            ],
+            "related_parameters": [
+                "NumOverman",
+                "K"
+            ],
+            "code": "# Add constraint for the total number of over-managed categories\nmodel.addConstr(gp.quicksum(OverManagedCategory[k] for k in range(K)) <= NumOverman, name=\"over_managed_limit\")"
+        },
+        {
+            "description": "The number of short-work categories is limited by \\textup{NumShortwork}",
+            "status": "coded",
+            "formulation": "\\sum_{k=1}^{\\textup{K}} \\textup{ShortWorkCategory}_{k} \\leq \\textup{NumShortwork}",
+            "related_variables": [
+                "ShortWorkCategory"
+            ],
+            "related_parameters": [
+                "NumShortwork",
+                "K"
+            ],
+            "code": "# Add constraint to limit the number of short-work categories\nmodel.addConstr(gp.quicksum(ShortWorkCategory[k] for k in range(K)) <= NumShortwork, name=\"limit_short_work_categories\")"
+        },
+        {
+            "description": "Ensure that over-managed and short-work categories stay within their respective allowable limits.",
+            "status": "coded",
+            "formulation": "\\sum_{k=1}^{\\textup{K}} \\textup{OverManagedCategory}_{k} \\leq \\textup{NumOverman} \\\\ \\quad \\textup{and} \\\\ \\sum_{k=1}^{\\textup{K}} \\textup{ShortWorkCategory}_{k} \\leq \\textup{NumShortwork}",
+            "related_variables": [
+                "OverManagedCategory",
+                "ShortWorkCategory"
+            ],
+            "related_parameters": [
+                "K",
+                "NumOverman",
+                "NumShortwork"
+            ],
+            "code": "# Add constraints ensuring over-managed and short-work categories stay within their allowable limits\nmodel.addConstr(gp.quicksum(OverManagedCategory[k] for k in range(K)) <= NumOverman, \n                name=\"over_managed_limit\")\nmodel.addConstr(gp.quicksum(ShortWorkCategory[k] for k in range(K)) <= NumShortwork, \n                name=\"short_work_limit\")"
+        },
+        {
+            "description": "Set \\textup{OverManagedCategory}_k to 1 if category k is over-managed, otherwise set it to 0.",
+            "status": "coded",
+            "formulation": "\\textup{OverManagedCategory}_k \\in \\{0, 1\\} \\quad \\forall k \\in \\{1, \\dots, \\textup{K}\\}",
+            "related_variables": [
+                "OverManagedCategory"
+            ],
+            "related_parameters": [
+                "K"
+            ],
+            "code": "# Constraint does not require additional implementation as the variable OverManagedCategory is already defined as binary."
+        },
+        {
+            "description": "Binary restriction for short-work category classification",
+            "status": "coded",
+            "formulation": "\\textup{ShortWorkCategory}_{k} \\in \\{0, 1\\} \\quad \\forall k = 1, \\dots, \\textup{K}",
+            "related_variables": [
+                "ShortWorkCategory"
+            ],
+            "related_parameters": [
+                "K"
+            ],
+            "code": "# No additional code is needed since the binary restriction for ShortWorkCategory[k] is already enforced as it is declared with vtype=gp.GRB.BINARY."
+        },
+        {
+            "description": "The total number of over-managed categories should not exceed NumOverman.",
+            "status": "coded",
+            "formulation": "\\sum_{k=1}^{\\textup{K}} \\textup{OverManagedCategory}_k \\leq \\textup{NumOverman}",
+            "related_variables": [
+                "OverManagedCategory"
+            ],
+            "related_parameters": [
+                "NumOverman",
+                "K"
+            ],
+            "code": "# Add constraint to limit the total number of over-managed categories\nmodel.addConstr(gp.quicksum(OverManagedCategory[k] for k in range(K)) <= NumOverman, name=\"limit_overmanaged_categories\")"
+        },
+        {
+            "description": "The total number of short-work categories should not exceed NumShortwork.",
+            "status": "coded",
+            "formulation": "\\sum_{k=1}^{\\textup{K}} \\textup{ShortWorkCategory}_k \\leq \\textup{NumShortwork}",
+            "related_variables": [
+                "ShortWorkCategory"
+            ],
+            "related_parameters": [
+                "NumShortwork",
+                "K"
+            ],
+            "code": "# Add constraint to limit the total number of short-work categories\nmodel.addConstr(ShortWorkCategory.sum() <= NumShortwork, name=\"limit_shortwork_categories\")"
+        }
+    ],
+    "variables": [
+        {
+            "definition": "Binary variable indicating whether category k is over-managed",
+            "symbol": "OverManagedCategory",
+            "shape": [
+                "K"
+            ],
+            "status": "coded",
+            "code": "OverManagedCategory = model.addVars(K, vtype=gp.GRB.BINARY, name=\"OverManagedCategory\")"
+        },
+        {
+            "definition": "Binary variable indicating whether category k is short-work",
+            "symbol": "ShortWorkCategory",
+            "shape": [
+                "K"
+            ],
+            "status": "coded",
+            "code": "ShortWorkCategory = model.addVars(K, vtype=gp.GRB.BINARY, name=\"ShortWorkCategory\")"
+        }
+    ],
+    "objective": [
+        {
+            "description": "Minimize the overall costs of operations, including waste costs, redundancy costs, over-managing costs, and short-work costs.",
+            "status": "coded",
+            "formulation": "\\sum_{k=1}^{\\textup{K}} (\\textup{MoreOneWaste}_k \\times \\textup{Recruit}_k - \\textup{LessOneWaste}_k \\times \\textup{Recruit}_k + \\textup{CostRedundancy}_k \\times \\textup{Recruit}_k + \\textup{CostOverman}_k \\times \\textup{OverManagedCategory}_k + \\textup{CostShort}_k \\times \\textup{ShortWorkCategory}_k)",
+            "related_variables": [
+                "OverManagedCategory",
+                "ShortWorkCategory"
+            ],
+            "related_parameters": [
+                "MoreOneWaste",
+                "LessOneWaste",
+                "CostRedundancy",
+                "CostOverman",
+                "CostShort",
+                "Recruit",
+                "K"
+            ],
+            "code": "# Set objective\nmodel.setObjective(\n    gp.quicksum(\n        MoreOneWaste[k] * Recruit[k]\n        - LessOneWaste[k] * Recruit[k]\n        + CostRedundancy[k] * Recruit[k]\n        + CostOverman[k] * OverManagedCategory[k]\n        + CostShort[k] * ShortWorkCategory[k]\n        for k in range(K)\n    ),\n    gp.GRB.MINIMIZE\n)"
+        }
+    ],
+    "solution_status": null,
+    "solver_output_status": null,
+    "error_message": null,
+    "obj_val": null,
+    "log_path": "logs/log_20250413171737_nlp4lp_24/",
+    "problem_path": "data/nlp4lp/24/"
+}
